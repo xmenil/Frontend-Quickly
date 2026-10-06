@@ -76,6 +76,14 @@ export interface Product {
   isAvailable: boolean;
   hasVariants?: boolean;
   variants?: ProductVariant[];
+  originalPriceCents?: number;
+  images?: string[];
+  condition?: string;
+  soldCount?: number;
+  rating?: number;
+  ratingCount?: number;
+  freeShipping?: boolean;
+  brand?: string;
 }
 
 export interface CoverageZone {

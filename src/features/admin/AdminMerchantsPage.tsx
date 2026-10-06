@@ -93,7 +93,7 @@ export const AdminCouriersPage: React.FC = () => {
               className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/60 transition-colors text-xs"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
+                <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center font-bold text-sm">
                   <Bike className="w-6 h-6" />
                 </div>
                 <div>

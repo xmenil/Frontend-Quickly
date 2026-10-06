@@ -13,6 +13,7 @@ import { AuthLayout } from '../layouts/AuthLayout';
 import { HomePage } from '../features/catalog/HomePage';
 import { MerchantsPage } from '../features/catalog/MerchantsPage';
 import { MerchantDetailPage } from '../features/catalog/MerchantDetailPage';
+import { ProductDetailPage } from '../features/catalog/ProductDetailPage';
 import { CartPage } from '../features/cart/CartPage';
 import { CheckoutPage } from '../features/checkout/CheckoutPage';
 
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'negocios', element: <MerchantsPage /> },
       { path: 'negocios/:id', element: <MerchantDetailPage /> },
+      { path: 'producto/:id', element: <ProductDetailPage /> },
       { path: 'carrito', element: <CartPage /> },
       { path: 'checkout', element: <CheckoutPage /> },
     ],

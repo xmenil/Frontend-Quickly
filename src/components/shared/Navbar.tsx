@@ -70,7 +70,7 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Bar (Desktop / Tablet) */}
+          {/* Search Bar (Desktop / Tablet) - matches reference image with square berry button */}
           <form
             onSubmit={handleSearchSubmit}
             className="hidden sm:flex flex-1 max-w-md relative items-center"
@@ -79,28 +79,34 @@ export const Navbar: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar juanes, tacacho, farmacias, bodegas..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 pl-10 pr-4 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+              placeholder="¿Qué necesitas hoy?"
+              className="w-full bg-white border border-gray-200 rounded-xl py-2 pl-3.5 pr-12 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
             />
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 pointer-events-none" />
+            <button
+              type="submit"
+              aria-label="Buscar productos"
+              className="absolute right-1.5 top-1.5 bottom-1.5 w-8 rounded-lg bg-primary hover:bg-primary-hover text-white flex items-center justify-center transition-colors"
+            >
+              <Search className="w-4 h-4" />
+            </button>
           </form>
 
           {/* Actions & Role Links */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick role dashboard link based on active role */}
+            {/* Quick role dashboard link based on active role - unified berry style */}
             {activeRole === 'comercio' && (
               <Link
                 to="/comercio/tienda"
-                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-selva-700 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors"
+                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary-50 border border-primary-200 px-3 py-1.5 rounded-full hover:bg-primary-100 transition-colors"
               >
                 <Store className="w-3.5 h-3.5" />
-                Panel Comercio
+                Panel Proveedor
               </Link>
             )}
             {activeRole === 'repartidor' && (
               <Link
                 to="/repartidor/solicitudes"
-                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full hover:bg-purple-100 transition-colors"
+                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary-50 border border-primary-200 px-3 py-1.5 rounded-full hover:bg-primary-100 transition-colors"
               >
                 <Bike className="w-3.5 h-3.5" />
                 Panel Repartidor
@@ -108,8 +114,8 @@ export const Navbar: React.FC = () => {
             )}
             {activeRole === 'admin' && (
               <Link
-                to="/admin/usuarios"
-                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors"
+                to="/admin/resumen"
+                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary-50 border border-primary-200 px-3 py-1.5 rounded-full hover:bg-primary-100 transition-colors"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Panel Admin
@@ -195,12 +201,26 @@ export const Navbar: React.FC = () => {
                   <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden sm:block" />
                 </button>
               ) : (
-                <Link
-                  to="/login"
-                  className="text-sm font-bold text-primary hover:text-primary-hover px-3 py-2"
-                >
-                  Iniciar sesión
-                </Link>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-semibold">
+                  <Link
+                    to="/registro"
+                    className="text-gray-700 hover:text-primary transition-colors hidden sm:block font-medium px-2 py-1"
+                  >
+                    Crea tu cuenta
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="text-primary hover:text-primary-hover font-bold px-3 py-1.5 rounded-xl hover:bg-primary-50 transition-colors border border-primary/20"
+                  >
+                    Ingresa
+                  </Link>
+                  <Link
+                    to="/cliente/pedidos"
+                    className="text-gray-700 hover:text-primary transition-colors hidden lg:block font-medium px-2 py-1"
+                  >
+                    Mis compras
+                  </Link>
+                </div>
               )}
 
               {/* Profile Menu Popover */}
@@ -258,6 +278,40 @@ export const Navbar: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Desktop Categories Sub-bar matching Mercado Libre navigation */}
+        <div className="hidden md:flex items-center justify-between py-2 border-t border-gray-100 text-xs text-gray-600 font-medium">
+          <div className="flex items-center gap-5">
+            <Link to="/negocios" className="flex items-center gap-1 hover:text-primary transition-colors font-semibold">
+              <span>Categorías</span>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+            </Link>
+            <Link to="/negocios?categoria=restaurantes" className="hover:text-primary transition-colors">
+              Restaurantes
+            </Link>
+            <Link to="/negocios?categoria=farmacias" className="hover:text-primary transition-colors">
+              Farmacias
+            </Link>
+            <Link to="/negocios?categoria=bodegas" className="hover:text-primary transition-colors">
+              Bodegas
+            </Link>
+            <Link to="/negocios?categoria=ropa" className="hover:text-primary transition-colors">
+              Moda Selva
+            </Link>
+            <Link to="/negocios?categoria=emprendedores" className="hover:text-primary transition-colors">
+              Cacao & Café
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4 text-[11px] text-gray-500">
+            <span className="flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              🚚 Envíos rápidos en Tingo María
+            </span>
+            <Link to="/cliente/ayuda" className="hover:text-primary transition-colors">
+              Ayuda
+            </Link>
           </div>
         </div>
 

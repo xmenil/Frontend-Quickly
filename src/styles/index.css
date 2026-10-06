@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --primary: #C60050;
-    --primary-hover: #A80043;
-    --primary-soft: #FFF1F6;
+    --primary: #BE185D;
+    --primary-hover: #9D174D;
+    --primary-soft: #FDF2F8;
     --surface: #FFFFFF;
     --text: #172033;
     --border: #E5E7EB;
@@ -21,7 +21,7 @@
 
   /* Accessible focus indicators */
   :focus-visible {
-    outline: 2px solid #C60050;
+    outline: 2px solid #BE185D;
     outline-offset: 2px;
   }
 }

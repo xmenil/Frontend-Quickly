@@ -18,6 +18,7 @@ import {
   X,
   LogOut,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -30,38 +31,40 @@ export const AdminLayout: React.FC = () => {
   const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;
 
   const navLinks = [
-    { to: '/admin/resumen', label: 'Panel Global', icon: <LayoutDashboard className="w-5 h-5 text-gray-500" /> },
+    { to: '/admin/resumen', label: 'Panel Global', icon: <LayoutDashboard className="w-4 h-4" /> },
     {
       to: '/admin/usuarios',
       label: 'Usuarios y Solicitudes',
-      icon: <Users className="w-5 h-5 text-gray-500" />,
+      icon: <Users className="w-4 h-4" />,
       badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
     },
-    { to: '/admin/comercios', label: 'Comercios de Tingo', icon: <Store className="w-5 h-5 text-gray-500" /> },
-    { to: '/admin/repartidores', label: 'Flota de Repartidores', icon: <Bike className="w-5 h-5 text-gray-500" /> },
-    { to: '/admin/pedidos', label: 'Monitor de Pedidos', icon: <ShoppingBag className="w-5 h-5 text-gray-500" /> },
-    { to: '/admin/zonas', label: 'Zonas y Tarifas', icon: <MapPin className="w-5 h-5 text-gray-500" /> },
+    { to: '/admin/comercios', label: 'Comercios de Tingo', icon: <Store className="w-4 h-4" /> },
+    { to: '/admin/repartidores', label: 'Flota de Repartidores', icon: <Bike className="w-4 h-4" /> },
+    { to: '/admin/pedidos', label: 'Monitor de Pedidos', icon: <ShoppingBag className="w-4 h-4" /> },
+    { to: '/admin/zonas', label: 'Zonas y Tarifas', icon: <MapPin className="w-4 h-4" /> },
     {
       to: '/admin/incidencias',
       label: 'Soporte e Incidencias',
-      icon: <AlertTriangle className="w-5 h-5 text-gray-500" />,
+      icon: <AlertTriangle className="w-4 h-4" />,
       badge: openTicketsCount > 0 ? openTicketsCount : undefined,
     },
-    { to: '/admin/reportes', label: 'Métricas de Plataforma', icon: <BarChart3 className="w-5 h-5 text-gray-500" /> },
-    { to: '/admin/auditoria', label: 'Historial de Auditoría', icon: <FileText className="w-5 h-5 text-gray-500" /> },
+    { to: '/admin/reportes', label: 'Métricas de Plataforma', icon: <BarChart3 className="w-4 h-4" /> },
+    { to: '/admin/auditoria', label: 'Historial de Auditoría', icon: <FileText className="w-4 h-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50/60 flex flex-col md:flex-row font-sans">
       {/* Mobile Top Header */}
-      <div className="md:hidden sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-md">
+      <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-subtle">
         <BrandLogo size="sm" showSubtitle={false} />
         <div className="flex items-center gap-2">
-          <span className="text-xs bg-red-600 px-2.5 py-0.5 rounded-full font-bold">Admin</span>
+          <span className="px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-white">
+            ADMIN
+          </span>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="touch-target p-2 text-slate-300 hover:text-white"
+            className="touch-target p-2 text-gray-600 rounded-xl hover:bg-gray-100"
             aria-label="Menú administrador"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -69,22 +72,17 @@ export const AdminLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - clean white matching provider sidebar */}
       <aside
-        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-64 lg:w-72 bg-slate-900 text-slate-100 flex flex-col transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-200 md:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div>
-            <BrandLogo size="md" />
-            <span className="inline-block mt-2 text-[11px] font-extrabold uppercase tracking-wider bg-red-600/30 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-md">
-              Administración Central
-            </span>
-          </div>
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <BrandLogo size="sm" />
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white"
+            className="md:hidden text-gray-400 hover:text-gray-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -97,19 +95,19 @@ export const AdminLayout: React.FC = () => {
               to={link.to}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `touch-target flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all ${
                   isActive
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-primary-50 text-primary font-bold shadow-none'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-ink font-medium'
                 }`
               }
             >
               <div className="flex items-center gap-3">
-                {link.icon}
+                <span className="text-inherit">{link.icon}</span>
                 <span>{link.label}</span>
               </div>
               {link.badge && (
-                <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">
+                <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                   {link.badge}
                 </span>
               )}
@@ -117,13 +115,13 @@ export const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 flex flex-col gap-2">
+        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
           <Link
             to="/"
-            className="flex items-center justify-between text-xs font-semibold text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800"
+            className="flex items-center justify-between text-xs font-semibold text-gray-600 hover:text-primary p-2 rounded-xl hover:bg-gray-50"
           >
             <span>Ver vista cliente</span>
-            <ChevronRight className="w-4 h-4 text-slate-500" />
+            <ChevronRight className="w-4 h-4 text-gray-400" />
           </Link>
           <button
             type="button"
@@ -131,7 +129,7 @@ export const AdminLayout: React.FC = () => {
               logout();
               navigate('/login');
             }}
-            className="flex items-center gap-2 text-xs font-semibold text-red-400 hover:bg-red-950/30 p-2 rounded-xl"
+            className="flex items-center gap-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 p-2 rounded-xl"
           >
             <LogOut className="w-4 h-4" />
             <span>Cerrar sesión</span>
@@ -140,9 +138,28 @@ export const AdminLayout: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header Bar for Desktop */}
+        <header className="hidden md:flex h-16 bg-white border-b border-gray-100 px-8 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary text-white shadow-sm">
+              ADMINISTRADOR
+            </span>
+            <span className="text-xs text-gray-400 font-medium">Panel de Control General</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <span>{currentUser?.name || 'Administración'}</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12">
+          <Outlet />
+        </main>
+      </div>
 
       <DemoSwitcher />
     </div>

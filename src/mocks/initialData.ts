@@ -595,6 +595,37 @@ export const INITIAL_PRODUCTS: Product[] = [
 
   // --- Moda Selva Tingo (m_moda_selva) ---
   {
+    id: 'p_zapatillas_vans',
+    merchantId: 'm_moda_selva',
+    name: 'Zapatillas Vans Hombre Brooklyn Ls Negro',
+    description: 'Zapatillas urbanas de corte clásico, confeccionadas con gamuza premium y lona de alta densidad. Suela exterior de caucho con patrón waffle vulcanizado para un agarre excepcional y plantilla acolchada para máxima amortiguación durante todo el día.',
+    category: 'ropa',
+    priceCents: 19920, // S/ 199.20
+    originalPriceCents: 24900, // S/ 249.00 (-20%)
+    stock: 45,
+    imageUrl: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80',
+    ],
+    isAvailable: true,
+    condition: 'Nuevo',
+    soldCount: 520,
+    rating: 4.8,
+    ratingCount: 175,
+    freeShipping: true,
+    brand: 'VANS Oficial',
+    hasVariants: true,
+    variants: [
+      { id: 'v_talla_40', name: 'Talla 40 EU', priceDifferenceCents: 0, isAvailable: true },
+      { id: 'v_talla_41', name: 'Talla 41 EU', priceDifferenceCents: 0, isAvailable: true },
+      { id: 'v_talla_42', name: 'Talla 42 EU', priceDifferenceCents: 0, isAvailable: true },
+      { id: 'v_talla_43', name: 'Talla 43 EU', priceDifferenceCents: 0, isAvailable: true },
+    ],
+  },
+  {
     id: 'p_polo_bella_durmiente',
     merchantId: 'm_moda_selva',
     name: 'Polo Algodón Ilustración "La Bella Durmiente"',

@@ -14,7 +14,6 @@ import {
   Phone,
   CheckCircle2,
   AlertTriangle,
-  ArrowRight,
   Package,
   Banknote,
   ShieldCheck,
@@ -60,9 +59,9 @@ export const CourierActiveDeliveryPage: React.FC = () => {
 
   if (!activeOrderData) {
     return (
-      <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 text-center text-slate-400 space-y-3">
-        <Bike className="w-12 h-12 mx-auto text-slate-600 mb-2" />
-        <h2 className="text-white font-bold text-base">No tienes entregas activas</h2>
+      <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-3 shadow-subtle">
+        <Bike className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+        <h2 className="text-ink font-bold text-base">No tienes entregas activas</h2>
         <p className="text-xs">
           Acepta una solicitud en la pestaña "Solicitudes" para comenzar una entrega en Tingo María.
         </p>
@@ -114,16 +113,16 @@ export const CourierActiveDeliveryPage: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Active Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
             Entrega en Curso
           </span>
-          <h1 className="text-lg font-black text-white">{activeOrderData.purchaseCode}</h1>
+          <h1 className="text-lg font-black text-ink">{activeOrderData.purchaseCode}</h1>
         </div>
         <div className="text-right">
-          <span className="text-[10px] text-slate-400 block">Tarifa a cobrar</span>
-          <span className="text-base font-extrabold text-emerald-400">
+          <span className="text-[10px] text-gray-400 block">Tarifa a cobrar</span>
+          <span className="text-base font-extrabold text-emerald-600">
             {formatCents(activeOrderData.deliveryFeeCents)}
           </span>
         </div>
@@ -132,10 +131,10 @@ export const CourierActiveDeliveryPage: React.FC = () => {
       {/* Step Tracker Pills */}
       <div className="grid grid-cols-2 gap-2 text-xs font-bold">
         <div
-          className={`p-3 rounded-2xl border flex items-center gap-2 ${
+          className={`p-3 rounded-2xl border flex items-center gap-2 transition-all ${
             isAtStoreStage
-              ? 'bg-primary/20 border-primary text-white ring-2 ring-primary/40'
-              : 'bg-slate-950 border-slate-800 text-emerald-400'
+              ? 'bg-primary-50 border-primary-200 text-primary ring-2 ring-primary/20'
+              : 'bg-white border-gray-100 text-emerald-600'
           }`}
         >
           <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">
@@ -145,13 +144,13 @@ export const CourierActiveDeliveryPage: React.FC = () => {
         </div>
 
         <div
-          className={`p-3 rounded-2xl border flex items-center gap-2 ${
+          className={`p-3 rounded-2xl border flex items-center gap-2 transition-all ${
             isInTransitStage
-              ? 'bg-primary/20 border-primary text-white ring-2 ring-primary/40'
-              : 'bg-slate-950 border-slate-800 text-slate-500'
+              ? 'bg-primary-50 border-primary-200 text-primary ring-2 ring-primary/20'
+              : 'bg-white border-gray-100 text-gray-400'
           }`}
         >
-          <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-[10px]">
+          <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px]">
             2
           </span>
           <span>Entrega al Cliente</span>
@@ -159,7 +158,7 @@ export const CourierActiveDeliveryPage: React.FC = () => {
       </div>
 
       {/* Schematic Map View */}
-      <div className="rounded-3xl overflow-hidden border border-slate-800 shadow-xl">
+      <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-subtle">
         <SchematicMap
           orderStatus={activeOrderData.status}
           merchantName={activeOrderData.merchantName}
@@ -171,7 +170,7 @@ export const CourierActiveDeliveryPage: React.FC = () => {
 
       {/* Current Stage Instruction Box */}
       {isAtStoreStage && (
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-3xl space-y-3">
+        <div className="bg-white border border-gray-100 p-4 rounded-3xl space-y-3 shadow-subtle">
           <div className="flex items-center justify-between text-xs text-primary font-bold">
             <span className="flex items-center gap-1.5">
               <Store className="w-4 h-4" />
@@ -180,24 +179,24 @@ export const CourierActiveDeliveryPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSimulatedContactTarget(activeOrderData.merchantName)}
-              className="touch-target p-1 text-slate-400 hover:text-white flex items-center gap-1 text-[11px]"
+              className="touch-target p-1 text-gray-400 hover:text-primary flex items-center gap-1 text-[11px]"
             >
               <Phone className="w-3.5 h-3.5" /> Llamar
             </button>
           </div>
 
           <div>
-            <h3 className="font-extrabold text-white text-base">{activeOrderData.merchantName}</h3>
-            <p className="text-xs text-slate-300 font-medium mt-0.5">
+            <h3 className="font-extrabold text-ink text-base">{activeOrderData.merchantName}</h3>
+            <p className="text-xs text-gray-600 font-medium mt-0.5">
               {activeOrderData.merchantAddress}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               Teléfono local: {activeOrderData.merchantPhone}
             </p>
           </div>
 
-          <div className="p-2.5 bg-slate-900 rounded-xl text-xs text-slate-300 space-y-1">
-            <span className="text-[11px] font-bold text-slate-400 block uppercase">
+          <div className="p-2.5 bg-gray-50 rounded-xl text-xs text-gray-600 space-y-1">
+            <span className="text-[11px] font-bold text-gray-500 block uppercase">
               Verifica los paquetes:
             </span>
             {activeOrderData.items.map((it, idx) => (
@@ -212,7 +211,7 @@ export const CourierActiveDeliveryPage: React.FC = () => {
             variant="primary"
             size="lg"
             onClick={handleConfirmPickup}
-            className="w-full text-base font-bold shadow-lg"
+            className="w-full text-base font-bold shadow-sm"
           >
             <Package className="w-5 h-5 mr-2" />
             <span>Confirmar Retiro en Tienda</span>
@@ -221,8 +220,8 @@ export const CourierActiveDeliveryPage: React.FC = () => {
       )}
 
       {isInTransitStage && (
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-3xl space-y-3">
-          <div className="flex items-center justify-between text-xs text-emerald-400 font-bold">
+        <div className="bg-white border border-gray-100 p-4 rounded-3xl space-y-3 shadow-subtle">
+          <div className="flex items-center justify-between text-xs text-emerald-700 font-bold">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
               <span>PASO 2: En camino al destino del cliente</span>
@@ -230,49 +229,49 @@ export const CourierActiveDeliveryPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSimulatedContactTarget(activeOrderData.customerName)}
-              className="touch-target p-1 text-slate-400 hover:text-white flex items-center gap-1 text-[11px]"
+              className="touch-target p-1 text-gray-400 hover:text-primary flex items-center gap-1 text-[11px]"
             >
               <Phone className="w-3.5 h-3.5" /> Llamar al cliente
             </button>
           </div>
 
           <div>
-            <h3 className="font-extrabold text-white text-base">{activeOrderData.customerName}</h3>
-            <p className="text-xs text-slate-200 font-bold mt-0.5">
+            <h3 className="font-extrabold text-ink text-base">{activeOrderData.customerName}</h3>
+            <p className="text-xs text-ink font-bold mt-0.5">
               {activeOrderData.addressSnapshot.street} #{activeOrderData.addressSnapshot.number}
             </p>
-            <p className="text-xs text-amber-300 mt-1 font-medium bg-amber-950/40 p-2 rounded-xl border border-amber-900/50">
+            <p className="text-xs text-amber-800 mt-1 font-medium bg-amber-50 p-2 rounded-xl border border-amber-200">
               Ref: {activeOrderData.addressSnapshot.reference}
             </p>
           </div>
 
           {/* Cash collection alert or prepay notice */}
           {activeOrderData.paymentMethod === 'efectivo' ? (
-            <div className="p-3 bg-amber-900/40 border border-amber-700/60 rounded-2xl space-y-1 text-xs text-amber-200">
-              <div className="flex items-center gap-2 font-bold text-sm text-white">
-                <Banknote className="w-5 h-5 text-emerald-400" />
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1 text-xs text-amber-800">
+              <div className="flex items-center gap-2 font-bold text-sm text-ink">
+                <Banknote className="w-5 h-5 text-emerald-600" />
                 <span>COBRAR EN EFECTIVO: {formatCents(activeOrderData.totalCents)}</span>
               </div>
               {activeOrderData.changeDue && activeOrderData.changeDue > 0 ? (
-                <p className="text-[11px] text-amber-300">
+                <p className="text-[11px] text-amber-700">
                   ⚠️ El cliente paga con {formatCents(activeOrderData.cashPaid || 0)}. Entregar vuelto de{' '}
                   <strong>{formatCents(activeOrderData.changeDue)}</strong>.
                 </p>
               ) : null}
             </div>
           ) : (
-            <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-2xl flex items-center gap-2 text-xs text-emerald-300">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
               <span>Pedido ya prepagado con Yape/Tarjeta. ¡NO COBRAR AL CLIENTE!</span>
             </div>
           )}
 
           <Button
             type="button"
-            variant="selva"
+            variant="primary"
             size="lg"
             onClick={handleConfirmDelivered}
-            className="w-full text-base font-bold shadow-lg"
+            className="w-full text-base font-bold shadow-sm"
           >
             <CheckCircle2 className="w-5 h-5 mr-2" />
             <span>Confirmar Entrega Realizada</span>
@@ -285,7 +284,7 @@ export const CourierActiveDeliveryPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowIncidentModal(true)}
-          className="touch-target w-full text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-950/30 p-2.5 rounded-2xl border border-red-900/40 flex items-center justify-center gap-2 transition-colors"
+          className="touch-target w-full text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2.5 rounded-2xl border border-rose-200 flex items-center justify-center gap-2 transition-colors"
         >
           <AlertTriangle className="w-4 h-4" />
           <span>Reportar Incidencia en Ruta</span>

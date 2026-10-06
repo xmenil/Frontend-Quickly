@@ -29,14 +29,14 @@ export const RegisterCourierPage: React.FC = () => {
       </div>
 
       {isSubmitted ? (
-        <div className="p-6 bg-purple-50 border border-purple-200 rounded-2xl text-center space-y-3">
-          <Clock className="w-12 h-12 text-purple-600 mx-auto" />
-          <h2 className="text-base font-bold text-purple-900">Solicitud en Revisión</h2>
-          <p className="text-xs text-purple-800 leading-relaxed">
+        <div className="p-6 bg-primary-50 border border-primary-200 rounded-2xl text-center space-y-3">
+          <Clock className="w-12 h-12 text-primary mx-auto" />
+          <h2 className="text-base font-bold text-ink">Solicitud en Revisión</h2>
+          <p className="text-xs text-gray-700 leading-relaxed">
             Tu postulación como repartidor en <strong>{vehicleType}</strong> ha sido registrada y está{' '}
-            <span className="font-semibold">pendiente de aprobación</span> por la administración de Quickly.
+            <span className="font-semibold text-primary">pendiente de aprobación</span> por la administración de Quickly.
           </p>
-          <div className="p-3 bg-white/80 rounded-xl border border-purple-200 text-xs text-gray-600">
+          <div className="p-3 bg-white/90 rounded-xl border border-primary-100 text-xs text-gray-600">
             💡 Puedes ir al panel de <strong>Admin</strong> para aprobar la cuenta de repartidor de prueba.
           </div>
           <Button

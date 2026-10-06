@@ -107,7 +107,7 @@ export const AdminOverviewPage: React.FC = () => {
         {/* Couriers Card */}
         <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center font-bold">
               <Bike className="w-6 h-6" />
             </div>
             <div>

@@ -15,10 +15,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm active:bg-primary-900',
-      secondary: 'bg-primary-light text-primary hover:bg-primary-100 font-semibold',
-      outline: 'border border-gray-300 bg-white text-ink hover:bg-gray-50 active:bg-gray-100',
+      secondary: 'bg-primary-50 text-primary hover:bg-primary-100 font-semibold',
+      outline: 'border border-primary text-primary bg-white hover:bg-primary-50 active:bg-primary-100',
       ghost: 'text-ink hover:bg-gray-100 active:bg-gray-200',
-      danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
+      danger: 'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800',
       selva: 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
     };
 

@@ -29,8 +29,21 @@ import {
 export const CheckoutPage: React.FC = () => {
   const { items, clearCart } = useCartStore();
   const { merchants, products, addresses, zones, createPurchase } = useDataStore();
-  const { currentUser } = useAuthStore();
+  const { currentUser, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+
+  // High-level operation gatekeeper: redirect unauthenticated visitor to login
+  React.useEffect(() => {
+    if (!isAuthenticated || !currentUser) {
+      navigate('/login', {
+        state: {
+          from: '/checkout',
+          message: 'Inicia sesión para finalizar tu pedido de forma rápida y segura',
+        },
+        replace: true,
+      });
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   // Steps: 1: Dirección -> 2: Pago -> 3: Revisión
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -50,6 +63,10 @@ export const CheckoutPage: React.FC = () => {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+
+  if (!isAuthenticated || !currentUser) {
+    return null;
+  }
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
   const selectedZone = zones.find((z) => z.id === selectedAddress?.zoneId);
@@ -394,7 +411,7 @@ export const CheckoutPage: React.FC = () => {
                         <span className="font-extrabold text-sm text-ink">Yape / Plin</span>
                       </div>
                     </div>
-                    <span className="text-xs text-purple-700 bg-purple-50 font-bold px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs text-primary bg-primary-50 font-bold px-2.5 py-0.5 rounded-full border border-primary-200">
                       Recomendado
                     </span>
                   </div>

@@ -254,7 +254,6 @@ export const MerchantOrdersPage: React.FC = () => {
                     type="button"
                     variant="primary"
                     size="sm"
-                    className="bg-purple-600 hover:bg-purple-700"
                     onClick={() => handleAdvanceStatus(order.id, 'en_preparacion')}
                   >
                     <ChefHat className="w-4 h-4 mr-1" />

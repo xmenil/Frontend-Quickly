@@ -8,7 +8,9 @@ interface AuthState {
   activeRole: UserRole;
   isAuthenticated: boolean;
   loginDemo: (role: UserRole) => void;
-  login: (email: string) => { success: boolean; message?: string };
+  login: (identifier: string) => { success: boolean; message?: string };
+  loginGoogle: () => { success: boolean; user: User };
+  registerCustomer: (data: { name: string; email: string; phone: string }) => { success: boolean; user: User };
   logout: () => void;
   switchRole: (role: UserRole) => void;
   updateProfile: (updates: Partial<User>) => void;
@@ -18,13 +20,16 @@ const STORAGE_KEY = 'quickly_auth_v1';
 
 function getStoredUser(): User | null {
   const raw = localStorage.getItem(STORAGE_KEY);
-  return safeJsonParse<User | null>(raw, INITIAL_USERS[0]); // Default to demo customer
+  if (!raw) return null; // Guest mode when no session is stored
+  return safeJsonParse<User | null>(raw, null);
 }
 
+const initialUser = getStoredUser();
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  currentUser: getStoredUser(),
-  activeRole: getStoredUser()?.role || 'cliente',
-  isAuthenticated: true,
+  currentUser: initialUser,
+  activeRole: initialUser?.role || 'cliente',
+  isAuthenticated: Boolean(initialUser),
 
   loginDemo: (role: UserRole) => {
     const user = INITIAL_USERS.find(u => u.role === role && u.status === 'activo') || INITIAL_USERS[0];
@@ -36,11 +41,72 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  login: (email: string) => {
-    const user = INITIAL_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+  loginGoogle: () => {
+    const googleUser: User = {
+      id: 'u_google_cliente',
+      name: 'Nilver Valdivia',
+      email: 'nilver.valdivia@gmail.com',
+      phone: '962 123 456',
+      role: 'cliente',
+      status: 'activo',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(googleUser));
+    set({
+      currentUser: googleUser,
+      activeRole: 'cliente',
+      isAuthenticated: true,
+    });
+    return { success: true, user: googleUser };
+  },
+
+  registerCustomer: (data: { name: string; email: string; phone: string }) => {
+    const newUser: User = {
+      id: `u_cust_${Date.now()}`,
+      name: data.name.trim() || 'Nuevo Cliente',
+      email: data.email.trim().toLowerCase(),
+      phone: data.phone.trim(),
+      role: 'cliente',
+      status: 'activo',
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+    set({
+      currentUser: newUser,
+      activeRole: 'cliente',
+      isAuthenticated: true,
+    });
+    return { success: true, user: newUser };
+  },
+
+  login: (identifier: string) => {
+    const clean = identifier.trim().toLowerCase();
+    const cleanDigits = clean.replace(/\D/g, '');
+    const user = INITIAL_USERS.find(
+      u => u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))
+    );
+
     if (!user) {
-      return { success: false, message: 'Usuario no encontrado. Prueba con los accesos demo rápidos.' };
+      // Create instant customer session so any entered test email/phone works smoothly
+      const fallbackUser: User = {
+        id: `u_cust_${Date.now()}`,
+        name: clean.includes('@') ? clean.split('@')[0] : 'Cliente Quickly',
+        email: clean.includes('@') ? clean : `${cleanDigits || 'usuario'}@quickly.pe`,
+        phone: cleanDigits ? `+51 ${cleanDigits}` : '962 123 456',
+        role: 'cliente',
+        status: 'activo',
+        createdAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackUser));
+      set({
+        currentUser: fallbackUser,
+        activeRole: 'cliente',
+        isAuthenticated: true,
+      });
+      return { success: true };
     }
+
     if (user.status === 'suspendido') {
       return { success: false, message: 'Esta cuenta está suspendida por administración.' };
     }

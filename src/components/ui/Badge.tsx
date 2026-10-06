@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'selva';
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'primary-solid';
   size?: 'sm' | 'md';
   icon?: React.ReactNode;
 }
@@ -30,12 +30,12 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variants = {
     default: 'bg-gray-100 text-gray-800 border-gray-200',
-    success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-50 text-amber-800 border-amber-200',
-    danger: 'bg-red-50 text-red-800 border-red-200',
-    info: 'bg-blue-50 text-blue-800 border-blue-200',
-    purple: 'bg-purple-50 text-purple-800 border-purple-200',
-    selva: 'bg-teal-50 text-teal-800 border-teal-200',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200 font-medium',
+    danger: 'bg-rose-50 text-rose-700 border-rose-200 font-medium',
+    info: 'bg-sky-50 text-sky-700 border-sky-200 font-medium',
+    primary: 'bg-primary-50 text-primary border-primary-200 font-medium',
+    'primary-solid': 'bg-primary text-white border-transparent font-bold',
   };
 
   const sizes = {
@@ -69,19 +69,19 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus }> = ({ status }) 
       );
     case 'confirmado':
       return (
-        <Badge variant="info" icon={<CheckCircle2 className="w-3.5 h-3.5" />}>
+        <Badge variant="primary" icon={<CheckCircle2 className="w-3.5 h-3.5" />}>
           Confirmado
         </Badge>
       );
     case 'en_preparacion':
       return (
-        <Badge variant="purple" icon={<ChefHat className="w-3.5 h-3.5" />}>
+        <Badge variant="warning" icon={<ChefHat className="w-3.5 h-3.5" />}>
           En preparación
         </Badge>
       );
     case 'listo_recoger':
       return (
-        <Badge variant="selva" icon={<PackageCheck className="w-3.5 h-3.5" />}>
+        <Badge variant="success" icon={<PackageCheck className="w-3.5 h-3.5" />}>
           Listo para recojo
         </Badge>
       );
@@ -121,7 +121,7 @@ export const PurchaseStatusBadge: React.FC<{ status: ParentPurchaseStatus }> = (
     case 'en_proceso':
       return <Badge variant="info">En proceso</Badge>;
     case 'entrega_parcial':
-      return <Badge variant="purple">Entrega parcial</Badge>;
+      return <Badge variant="primary">Entrega parcial</Badge>;
     case 'completado':
       return <Badge variant="success">Completado</Badge>;
     case 'cancelado':
@@ -157,7 +157,7 @@ export const PaymentStatusBadge: React.FC<{ status: PaymentStatus; method?: stri
       );
     case 'reembolso_pendiente':
       return (
-        <Badge variant="purple" icon={<RotateCcw className="w-3.5 h-3.5" />}>
+        <Badge variant="primary" icon={<RotateCcw className="w-3.5 h-3.5" />}>
           Reembolso pendiente
         </Badge>
       );
@@ -173,13 +173,13 @@ export const PaymentStatusBadge: React.FC<{ status: PaymentStatus; method?: stri
 };
 
 export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
-  const configs = {
-    cliente: { label: 'Cliente', variant: 'info' as const },
-    comercio: { label: 'Comercio', variant: 'selva' as const },
-    repartidor: { label: 'Repartidor', variant: 'purple' as const },
-    admin: { label: 'Administrador', variant: 'danger' as const },
+  const configs: Record<UserRole, { label: string; variant: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'primary-solid' }> = {
+    cliente: { label: 'Cliente', variant: 'primary-solid' },
+    comercio: { label: 'Proveedor', variant: 'primary-solid' },
+    repartidor: { label: 'Repartidor', variant: 'primary-solid' },
+    admin: { label: 'Administrador', variant: 'primary-solid' },
   };
 
-  const c = configs[role] || { label: role, variant: 'default' as const };
-  return <Badge variant={c.variant}>{c.label}</Badge>;
+  const c = configs[role] || { label: role, variant: 'primary-solid' };
+  return <Badge variant={c.variant} className="uppercase font-bold tracking-wider text-[11px] px-3 py-1">{c.label}</Badge>;
 };

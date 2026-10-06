@@ -8,19 +8,21 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#C60050',
-          hover: '#A80043',
+          DEFAULT: '#BE185D', // Vibrant Berry Carmine / Magenta from reference
+          hover: '#9D174D',
+          active: '#831843',
           light: '#FFF1F6',
-          50: '#FDF2F7',
-          100: '#FCE7F0',
-          200: '#F9CFE2',
-          300: '#F5A6C8',
-          400: '#EE6EA5',
-          500: '#E13B82',
-          600: '#C60050',
-          700: '#A80043',
-          800: '#8A0038',
-          900: '#730030',
+          50: '#FDF2F8',
+          100: '#FCE7F3',
+          200: '#FBCFE8',
+          300: '#F472B6',
+          400: '#E11D48',
+          500: '#EC4899',
+          600: '#DB2777',
+          700: '#BE185D',
+          800: '#9D174D',
+          900: '#831843',
+          950: '#500724',
         },
         surface: {
           DEFAULT: '#FFFFFF',
