@@ -4,6 +4,7 @@ import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { ProductDetailModal } from './ProductDetailModal';
+import { QuickCategoryStrip } from '../../components/shared/QuickCategoryStrip';
 import { Product, MerchantCategory } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
@@ -178,6 +179,11 @@ export const HomePage: React.FC = () => {
           <MapPin className="w-3.5 h-3.5 text-primary" />
           <span>Tingo María, Huánuco</span>
         </div>
+      </div>
+
+      {/* Mercado Libre Style Quick Buttons Carousel Strip matching reference screenshot */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle px-3 sm:px-6 py-2">
+        <QuickCategoryStrip />
       </div>
 
       {/* Top Section: 2-Column Grid (Hero & Categories on Left, Tu Carrito on Right) */}
