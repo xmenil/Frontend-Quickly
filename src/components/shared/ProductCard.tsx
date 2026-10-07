@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Merchant } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
-import { Plus, Heart, AlertCircle, Sparkles } from 'lucide-react';
+import { ShoppingCart, Heart, AlertCircle, Sparkles } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useDataStore } from '../../store/dataStore';
 
@@ -143,7 +143,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   : 'bg-primary text-white hover:bg-primary-hover shadow-sm active:scale-98'
               }`}
             >
-              <Plus className="w-3.5 h-3.5" />
+              <ShoppingCart className="w-3.5 h-3.5" />
               <span>Agregar al carrito</span>
             </button>
           </div>
@@ -169,7 +169,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               }`}
               aria-label={`Agregar ${product.name} al carrito`}
             >
-              <Plus className="w-4 h-4" />
+              <ShoppingCart className="w-4 h-4" />
             </button>
           </div>
         )}

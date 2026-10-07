@@ -4,7 +4,7 @@ import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
 import { formatCents } from '../../lib/currency';
 import {
-  ShoppingBag,
+  ShoppingCart,
   Sparkles,
   ArrowRight,
   Check,
@@ -199,28 +199,37 @@ export const BigStoreProductsSection: React.FC = () => {
                 </span>
               </div>
 
-              {/* Add to Cart Button */}
-              <button
-                type="button"
-                onClick={(e) => handleAddToCart(e, product)}
-                className={`mt-3 w-full py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
-                  isJustAdded
-                    ? 'bg-emerald-600 text-white shadow-emerald-200'
-                    : 'bg-primary hover:bg-primary-hover text-white shadow-primary/20'
-                }`}
-              >
-                {isJustAdded ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>¡Agregado!</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>Agregar al carrito</span>
-                  </>
-                )}
-              </button>
+              {/* Bottom Row: Price on left, Cart Icon Button on right */}
+              <div className="flex items-end justify-between gap-2 mt-3 pt-2 border-t border-gray-100/80">
+                <div>
+                  {product.originalPriceCents && (
+                    <p className="text-[11px] text-gray-400 line-through">
+                      {formatCents(product.originalPriceCents)}
+                    </p>
+                  )}
+                  <span className="text-sm sm:text-base font-black text-ink leading-tight block">
+                    {formatCents(product.priceCents)}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => handleAddToCart(e, product)}
+                  title="Agregar al carrito"
+                  aria-label={`Agregar ${product.name} al carrito`}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                    isJustAdded
+                      ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                      : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
+                  }`}
+                >
+                  {isJustAdded ? (
+                    <Check className="w-4 h-4 stroke-[3]" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </Link>
           );
         })}

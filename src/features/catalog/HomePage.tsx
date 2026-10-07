@@ -11,101 +11,34 @@ import { BigStoreProductsSection } from '../../components/shared/BigStoreProduct
 import { Product, MerchantCategory } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
-  UtensilsCrossed,
-  Pill,
-  ShoppingBasket,
-  Shirt,
-  Sparkles,
   ArrowRight,
   MapPin,
   Clock,
   Check,
   Bike,
-  Plus,
-  Minus,
-  Trash2,
   Truck,
-  ChevronRight,
-  ShoppingBag,
+  ShoppingCart,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const { merchants, products } = useDataStore();
-  const { items: cartItems, updateQuantity, removeItem, addItem } = useCartStore();
+  const { addItem } = useCartStore();
   const { isAuthenticated, currentUser } = useAuthStore();
   const navigate = useNavigate();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
 
-  // Default mock cart items matching reference image if cart is empty
-  const defaultSampleItems = [
-    {
-      id: 'mock_1',
-      productId: 'p_combo_1',
-      name: 'Combo Familiar',
-      priceCents: 4590,
-      quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'mock_2',
-      productId: 'p_botiquin_1',
-      name: 'Botiquín rápido',
-      priceCents: 2850,
-      quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&auto=format&fit=crop&q=80',
-    },
-  ];
-
-  // Active items for the mini-cart display
-  const displayCartItems = cartItems.length > 0
-    ? cartItems.map((ci) => {
-        const prod = products.find((p) => p.id === ci.productId);
-        return {
-          id: ci.id,
-          productId: ci.productId,
-          name: prod?.name || 'Producto Quickly',
-          priceCents: ci.unitPriceCents,
-          quantity: ci.quantity,
-          imageUrl: prod?.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
-        };
-      })
-    : defaultSampleItems;
-
-  const subtotalCents = displayCartItems.reduce((acc, it) => acc + it.priceCents * it.quantity, 0);
-  const deliveryFeeCents = 500; // S/ 5.00
-  const totalCents = subtotalCents + deliveryFeeCents;
-
+  // Categorías con botones simples de texto (sin iconos)
   const categories: {
     id: MerchantCategory;
     name: string;
-    icon: React.ReactNode;
   }[] = [
-    {
-      id: 'restaurantes',
-      name: 'Restaurantes',
-      icon: <UtensilsCrossed className="w-5 h-5 text-primary" />,
-    },
-    {
-      id: 'farmacias',
-      name: 'Farmacias',
-      icon: <Pill className="w-5 h-5 text-primary" />,
-    },
-    {
-      id: 'bodegas',
-      name: 'Bodegas',
-      icon: <ShoppingBasket className="w-5 h-5 text-primary" />,
-    },
-    {
-      id: 'ropa',
-      name: 'Ropa',
-      icon: <Shirt className="w-5 h-5 text-primary" />,
-    },
-    {
-      id: 'emprendedores',
-      name: 'Emprendedores',
-      icon: <Sparkles className="w-5 h-5 text-primary" />,
-    },
+    { id: 'restaurantes', name: 'Restaurantes' },
+    { id: 'farmacias', name: 'Farmacias' },
+    { id: 'bodegas', name: 'Bodegas' },
+    { id: 'ropa', name: 'Ropa' },
+    { id: 'emprendedores', name: 'Emprendedores' },
   ];
 
   // 4 Featured products matching the reference images
@@ -153,19 +86,10 @@ export const HomePage: React.FC = () => {
         quantity: 1,
         unitPriceCents: item.priceCents,
       });
-    }
-  };
-
-  const handleCheckoutClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login', {
-        state: {
-          from: '/checkout',
-          message: 'Inicia sesión para finalizar tu pedido de forma segura',
-        },
-      });
-    } else {
-      navigate('/checkout');
+      setAddedFeaturedId(item.id);
+      setTimeout(() => {
+        setAddedFeaturedId((curr) => (curr === item.id ? null : curr));
+      }, 1500);
     }
   };
 
@@ -187,148 +111,49 @@ export const HomePage: React.FC = () => {
         <QuickCategoryStrip />
       </div>
 
-      {/* Top Section: 2-Column Grid (Hero & Categories on Left, Tu Carrito on Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (Hero Card + Categories Row) */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Hero Banner: Amazon Selva Landscape */}
-          <div className="relative rounded-2xl overflow-hidden shadow-subtle min-h-[220px] sm:min-h-[260px] flex flex-col justify-end p-6 sm:p-8 text-white select-none group">
-            {/* Background Mountain/Jungle Photo */}
-            <img
-              src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=1200&auto=format&fit=crop&q=80"
-              alt="Selva de Tingo María"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
-            />
-            {/* Gradient Overlay for high text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+      {/* Top Section: Full Width Hero Banner & Simple Text Category Buttons */}
+      <div className="space-y-4">
+        {/* Hero Banner: Amazon Selva Landscape (Full Width) */}
+        <div className="relative rounded-2xl overflow-hidden shadow-subtle min-h-[220px] sm:min-h-[280px] flex flex-col justify-end p-6 sm:p-8 text-white select-none group w-full">
+          {/* Background Mountain/Jungle Photo */}
+          <img
+            src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=1400&auto=format&fit=crop&q=80"
+            alt="Selva de Tingo María"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
+          />
+          {/* Gradient Overlay for high text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
 
-            <div className="relative z-10 space-y-2 max-w-xl">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm">
-                Todo lo que necesitas, en un solo lugar
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-200 font-normal leading-relaxed drop-shadow">
-                Restaurantes, farmacias, bodegas, ropa y más. ¡A un clic de ti!
-              </p>
+          <div className="relative z-10 space-y-2 max-w-2xl">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm">
+              Todo lo que necesitas, en un solo lugar
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-200 font-normal leading-relaxed drop-shadow">
+              Restaurantes, farmacias, bodegas, ropa y más. ¡A un clic de ti!
+            </p>
 
-              {/* Carousel Pagination Dots */}
-              <div className="flex items-center gap-1.5 pt-3">
-                <span className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                <span className="w-2 h-2 rounded-full bg-white/40" />
-                <span className="w-2 h-2 rounded-full bg-white/40" />
-                <span className="w-2 h-2 rounded-full bg-white/40" />
-                <span className="w-2 h-2 rounded-full bg-white/40" />
-              </div>
+            {/* Carousel Pagination Dots */}
+            <div className="flex items-center gap-1.5 pt-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
             </div>
-          </div>
-
-          {/* Categories Row (Unified Soft Berry/Pink cards from reference image) */}
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/negocios?categoria=${cat.id}`}
-                className="bg-primary-50/70 hover:bg-primary-100/70 border border-pink-100 hover:border-primary-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center gap-1.5 transition-all duration-150 hover:scale-102"
-              >
-                <div className="w-9 h-9 rounded-xl bg-white shadow-subtle flex items-center justify-center">
-                  {cat.icon}
-                </div>
-                <span className="text-[11px] sm:text-xs font-bold text-ink truncate w-full">
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
           </div>
         </div>
 
-        {/* Right Column: "Tu carrito" Card (Identical to image) */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-100 shadow-subtle p-5 flex flex-col justify-between space-y-4">
-          <div className="space-y-4">
-            {/* Header with Berry Badge */}
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <h2 className="text-sm font-bold text-ink">Tu carrito</h2>
-              <span className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow-sm">
-                {displayCartItems.reduce((acc, it) => acc + it.quantity, 0)}
-              </span>
-            </div>
-
-            {/* Cart Items List */}
-            <div className="space-y-3 max-h-[170px] overflow-y-auto pr-1">
-              {displayCartItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-10 h-10 rounded-xl object-cover border border-gray-100 flex-shrink-0"
-                    />
-                    <div className="truncate">
-                      <p className="font-bold text-ink truncate">{item.name}</p>
-                      <p className="text-gray-500 font-semibold">{formatCents(item.priceCents)}</p>
-                    </div>
-                  </div>
-
-                  {/* Quantity Stepper and Trash */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="px-1.5 py-0.5 hover:bg-gray-200 text-gray-600"
-                        aria-label="Disminuir"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="px-2 font-bold text-ink text-xs">{item.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="px-1.5 py-0.5 hover:bg-gray-200 text-gray-600"
-                        aria-label="Aumentar"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.id)}
-                      className="text-primary hover:text-primary-hover p-1 transition-colors"
-                      aria-label="Eliminar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pricing Summary & Checkout Button */}
-          <div className="pt-3 border-t border-gray-100 space-y-2 text-xs">
-            <div className="flex justify-between text-gray-500">
-              <span>Subtotal</span>
-              <span className="font-semibold text-ink">{formatCents(subtotalCents)}</span>
-            </div>
-            <div className="flex justify-between text-gray-500">
-              <span>Delivery</span>
-              <span className="font-semibold text-ink">{formatCents(deliveryFeeCents)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-black text-ink pt-1 border-t border-gray-100">
-              <span>Total</span>
-              <span>{formatCents(totalCents)}</span>
-            </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleCheckoutClick}
-                className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-98"
-              >
-                <span>Finalizar pedido</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+        {/* Categories Row: Botones simples de texto y sin iconos */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              to={`/negocios?categoria=${cat.id}`}
+              className="py-2 px-4 sm:px-5 rounded-xl bg-white hover:bg-primary hover:text-white border border-gray-200 hover:border-primary text-gray-800 text-xs sm:text-sm font-bold transition-all shadow-2xs hover:shadow-xs active:scale-98"
+            >
+              {cat.name}
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -375,24 +200,37 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="p-3.5 flex flex-col flex-1 justify-between space-y-3">
+              <div className="p-3.5 flex flex-col flex-1 justify-between space-y-2">
                 <div>
                   <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-1">
                     {item.name}
                   </h4>
-                  <p className="text-[11px] text-gray-400 font-medium">{item.merchantName}</p>
-                  <p className="text-xs sm:text-sm font-black text-ink mt-1">
-                    {formatCents(item.priceCents)}
-                  </p>
+                  <p className="text-[11px] text-gray-400 font-medium mt-0.5">{item.merchantName}</p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={(e) => handleAddFeatured(e, item)}
-                  className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-sm active:scale-98"
-                >
-                  Agregar al carrito
-                </button>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                  <span className="text-xs sm:text-sm font-black text-ink">
+                    {formatCents(item.priceCents)}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleAddFeatured(e, item)}
+                    title="Agregar al carrito"
+                    aria-label={`Agregar ${item.name} al carrito`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shadow-xs active:scale-90 cursor-pointer ${
+                      addedFeaturedId === item.id
+                        ? 'bg-emerald-600 text-white shadow-emerald-200'
+                        : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
+                    }`}
+                  >
+                    {addedFeaturedId === item.id ? (
+                      <Check className="w-4 h-4 stroke-[3]" />
+                    ) : (
+                      <ShoppingCart className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </Link>
           ))}
