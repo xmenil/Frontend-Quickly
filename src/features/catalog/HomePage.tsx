@@ -7,6 +7,7 @@ import { ProductDetailModal } from './ProductDetailModal';
 import { QuickCategoryStrip } from '../../components/shared/QuickCategoryStrip';
 import { CategoryGridSection } from '../../components/shared/CategoryGridSection';
 import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
+import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
 import { Product, MerchantCategory } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
@@ -25,8 +26,6 @@ import {
   Trash2,
   Truck,
   ChevronRight,
-  User as UserIcon,
-  Coins,
   ShoppingBag,
 } from 'lucide-react';
 
@@ -339,126 +338,8 @@ export const HomePage: React.FC = () => {
       {/* Official Big Stores & Supermarkets Section (from tiendas_tingo_maria.json) */}
       <OfficialStoresSection />
 
-      {/* Mercado Libre Style Discovery Row matching Capture 1 */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {/* Card 1: Visto recientemente */}
-          <Link
-            to="/producto/p_zapatillas_vans"
-            className="group bg-white rounded-2xl border border-gray-100 shadow-subtle p-3.5 flex flex-col justify-between hover:border-primary-300 hover:shadow-md transition-all text-left"
-          >
-            <div>
-              <span className="text-xs font-bold text-ink block mb-2">Visto recientemente</span>
-              <div className="aspect-square w-full rounded-xl bg-gray-50 overflow-hidden mb-2.5 flex items-center justify-center">
-                <img
-                  src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=300&auto=format&fit=crop&q=80"
-                  alt="Zapatillas Vans"
-                  className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <p className="text-xs font-bold text-ink truncate group-hover:text-primary transition-colors">
-                Zapatillas Vans Hombre Brooklyn Ls Negro
-              </p>
-              <p className="text-[11px] text-gray-400 line-through mt-0.5">S/ 249</p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black text-ink">S/ 199.20</span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">20% OFF</span>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-emerald-600 block mt-2">
-              Envío gratis
-            </span>
-          </Link>
-
-          {/* Card 2: Ingresa a tu cuenta */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle p-3.5 flex flex-col justify-between text-left">
-            <div>
-              <span className="text-xs font-bold text-ink block mb-2">
-                {isAuthenticated ? 'Tu cuenta activa' : 'Ingresa a tu cuenta'}
-              </span>
-              <div className="aspect-square w-full rounded-xl bg-primary-50/70 border border-pink-100 flex items-center justify-center mb-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary">
-                  <UserIcon className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 font-medium leading-snug">
-                {isAuthenticated
-                  ? `Hola ${currentUser?.name}, tienes envíos y beneficios activos.`
-                  : 'Disfruta de ofertas y compra sin límites en Tingo María.'}
-              </p>
-            </div>
-            <Link
-              to={isAuthenticated ? '/cliente/perfil' : '/login'}
-              className="mt-3 w-full py-2 px-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary text-xs font-bold text-center block transition-colors"
-            >
-              {isAuthenticated ? 'Ver mi cuenta' : 'Ingresar a tu cuenta'}
-            </Link>
-          </div>
-
-          {/* Card 3: Ingresa tu ubicación */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle p-3.5 flex flex-col justify-between text-left">
-            <div>
-              <span className="text-xs font-bold text-ink block mb-2">Ingresa tu ubicación</span>
-              <div className="aspect-square w-full rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-center mb-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary">
-                  <MapPin className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 font-medium leading-snug">
-                Consulta costos y tiempos de entrega en Tingo María y Rupa Rupa.
-              </p>
-            </div>
-            <Link
-              to="/cliente/direcciones"
-              className="mt-3 w-full py-2 px-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary text-xs font-bold text-center block transition-colors"
-            >
-              Ingresar ubicación
-            </Link>
-          </div>
-
-          {/* Card 4: Menos de S/ 30 */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle p-3.5 flex flex-col justify-between text-left">
-            <div>
-              <span className="text-xs font-bold text-ink block mb-2">Menos de S/ 30</span>
-              <div className="aspect-square w-full rounded-xl bg-amber-50/70 border border-amber-100 flex items-center justify-center mb-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-amber-600">
-                  <Coins className="w-6 h-6 text-amber-600" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 font-medium leading-snug">
-                Descubre platos, combos y productos locales con precios bajos.
-              </p>
-            </div>
-            <Link
-              to="/negocios"
-              className="mt-3 w-full py-2 px-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary text-xs font-bold text-center block transition-colors"
-            >
-              Mostrar productos
-            </Link>
-          </div>
-
-          {/* Card 5: Más vendidos */}
-          <div className="col-span-2 sm:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-subtle p-3.5 flex flex-col justify-between text-left">
-            <div>
-              <span className="text-xs font-bold text-ink block mb-2">Más vendidos</span>
-              <div className="aspect-square w-full rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center justify-center mb-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
-                  <ShoppingBag className="w-6 h-6 text-emerald-600" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 font-medium leading-snug">
-                Explora los productos y restaurantes que son tendencia hoy.
-              </p>
-            </div>
-            <Link
-              to="/negocios"
-              className="mt-3 w-full py-2 px-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary text-xs font-bold text-center block transition-colors"
-            >
-              Ir a Más vendidos
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* Big Stores Products & Deals Showcase (replaces previous buttons row) */}
+      <BigStoreProductsSection />
 
       {/* Productos Destacados Section */}
       <div className="space-y-3">

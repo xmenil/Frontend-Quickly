@@ -123,6 +123,22 @@ function getInitialStoredData(): StoredDataPayload {
   if (raw) {
     const parsed = safeJsonParse<StoredDataPayload | null>(raw, null);
     if (parsed && parsed.merchants && parsed.products) {
+      const existingMerchantIds = new Set(parsed.merchants.map((m) => m.id));
+      const missingMerchants = INITIAL_MERCHANTS.filter((m) => !existingMerchantIds.has(m.id));
+
+      const existingProductIds = new Set(parsed.products.map((p) => p.id));
+      const missingProducts = INITIAL_PRODUCTS.filter((p) => !existingProductIds.has(p.id));
+
+      if (missingMerchants.length > 0 || missingProducts.length > 0) {
+        const merged: StoredDataPayload = {
+          ...parsed,
+          merchants: [...parsed.merchants, ...missingMerchants],
+          products: [...parsed.products, ...missingProducts],
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      }
+
       return parsed;
     }
   }

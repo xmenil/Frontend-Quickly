@@ -1,25 +1,16 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
-import { formatCents } from '../../lib/currency';
 import {
   Building2,
-  Store,
-  MapPin,
   Star,
   Clock,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
-  Sparkles,
-  ShoppingBag,
 } from 'lucide-react';
 
 export const OfficialStoresSection: React.FC = () => {
   const { merchants, products } = useDataStore();
-  const { addItem } = useCartStore();
-  const navigate = useNavigate();
 
   // Big stores from tiendas_tingo_maria.json
   const bigStoreIds = [
@@ -34,22 +25,6 @@ export const OfficialStoresSection: React.FC = () => {
   ];
 
   const bigStores = merchants.filter((m) => bigStoreIds.includes(m.id));
-
-  // Big store products
-  const featuredBigProducts = products
-    .filter((p) => bigStoreIds.includes(p.merchantId))
-    .slice(0, 8);
-
-  const handleAddToCart = (e: React.MouseEvent, product: typeof featuredBigProducts[0]) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: 1,
-      unitPriceCents: product.priceCents,
-    });
-  };
 
   return (
     <section className="space-y-6 my-8 select-none">
@@ -171,83 +146,6 @@ export const OfficialStoresSection: React.FC = () => {
             </Link>
           );
         })}
-      </div>
-
-      {/* Featured Products from Big Stores (Mercado Libre Style Carousel Cards) */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle p-5 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base sm:text-lg font-black text-ink flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span>Productos de Tiendas y Supermercados de Tingo María</span>
-            </h3>
-            <p className="text-xs text-gray-400">
-              Alimentos, electrodomésticos, tecnología y artículos del hogar con entrega rápida
-            </p>
-          </div>
-          <Link
-            to="/negocios"
-            className="text-xs font-bold text-primary hover:underline hidden sm:inline-flex items-center gap-1"
-          >
-            Ver todos <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {featuredBigProducts.map((item) => {
-            const store = merchants.find((m) => m.id === item.merchantId);
-            return (
-              <Link
-                key={item.id}
-                to={`/producto/${item.id}`}
-                className="group bg-white rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-card p-3 flex flex-col justify-between transition-all duration-200 text-left"
-              >
-                <div>
-                  {/* Product Image */}
-                  <div className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden mb-2.5 flex items-center justify-center p-2 relative">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {item.freeShipping && (
-                      <span className="absolute top-1.5 left-1.5 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
-                        Envío rápido
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="text-[10px] font-bold text-gray-400 block truncate">
-                    {store?.name || 'Tienda oficial'}
-                  </span>
-                  <h4 className="font-bold text-xs sm:text-[13px] text-ink group-hover:text-primary transition-colors line-clamp-2 mt-0.5 leading-snug">
-                    {item.name}
-                  </h4>
-
-                  {item.originalPriceCents && (
-                    <p className="text-[11px] text-gray-400 line-through mt-1">
-                      {formatCents(item.originalPriceCents)}
-                    </p>
-                  )}
-
-                  <p className="text-sm sm:text-base font-black text-ink mt-0.5">
-                    {formatCents(item.priceCents)}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => handleAddToCart(e, item)}
-                  className="mt-3 w-full py-2 px-3 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Agregar</span>
-                </button>
-              </Link>
-            );
-          })}
-        </div>
       </div>
     </section>
   );
