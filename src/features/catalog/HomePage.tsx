@@ -5,6 +5,7 @@ import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { ProductDetailModal } from './ProductDetailModal';
 import { QuickCategoryStrip } from '../../components/shared/QuickCategoryStrip';
+import { CategoryGridSection } from '../../components/shared/CategoryGridSection';
 import { Product, MerchantCategory } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
@@ -330,6 +331,9 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Mercado Libre Style 4x3 Categorías Grid Section matching Capture 1 */}
+      <CategoryGridSection />
 
       {/* Mercado Libre Style Discovery Row matching Capture 1 */}
       <div className="space-y-3">

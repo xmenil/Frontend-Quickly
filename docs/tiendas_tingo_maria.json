@@ -1,0 +1,2407 @@
+{
+  "version": "1.0",
+  "fecha_investigacion": "2026-10-07",
+  "proyecto": "Quickly: centralización del delivery en Tingo María",
+  "ambito_geografico": {
+    "ciudad": "Tingo María",
+    "distrito": "Rupa-Rupa",
+    "provincia": "Leoncio Prado",
+    "departamento": "Huánuco",
+    "pais": "Perú",
+    "fundamento": "Informe INNOVACIÓN II.docx adjunto: título, introducción y características del prototipo."
+  },
+  "alcance": {
+    "descripcion": "Directorio documentado de comercios de surtido amplio y cadenas de hogar y tecnología; no es un censo completo ni un ranking de fama o tamaño.",
+    "inventario": "Categorías y artículos recuperados de fuentes públicas; no es el inventario completo de cada tienda.",
+    "exhaustivo": false,
+    "incluye_precios": false,
+    "stock_confirmado": false,
+    "negocios_contactados": false
+  },
+  "criterios_de_datos": {
+    "null": "Dato no encontrado o no verificable; no debe reemplazarse por información inventada.",
+    "telefonos": "Normalizados con código de Perú. Se distingue local, negocio y central nacional. No se realizaron llamadas.",
+    "imagenes": "Cada ficha tiene una imagen directa recuperada o una página de origen y un estado explícito. No se incorporaron imágenes de negocios homónimos de otros países.",
+    "categorias": "publicados significa evidencia en catálogo o publicación, no garantía de disponibilidad; rubro_historico_por_confirmar procede de documentación antigua.",
+    "mapas": "Enlaces de búsqueda construidos con direcciones publicadas; no son coordenadas ni pines exactos verificados.",
+    "marcas_nacionales": "Un catálogo online nacional o marketplace no acredita stock de una sucursal de Tingo María.",
+    "duplicados": "Importaciones El Balcón y Mall El Balcón se mantienen como fichas distintas con posible duplicidad; no afirmar que son dos empresas independientes."
+  },
+  "resumen": {
+    "fichas_principales": 13,
+    "fichas_complementarias": 2,
+    "total_fichas": 15,
+    "posibles_duplicados": [
+      [
+        "importaciones-el-balcon",
+        "mall-el-balcon"
+      ]
+    ],
+    "imagenes_directas_recuperadas": 10,
+    "fichas_sin_url_de_imagen_directa": 5,
+    "candidatos_pendientes": 7
+  },
+  "tiendas": [
+    {
+      "id": "importaciones-el-balcon",
+      "nombre": "Importaciones El Balcón",
+      "tipo_negocio": "importadora_multirrubro",
+      "grupo": "principal",
+      "descripcion": "Comercio local con productos nacionales, importados y de temporada.",
+      "telefonos": [],
+      "ubicaciones": [
+        {
+          "direccion": "Jr. Monzón 417 / Av. Alameda Perú 300 y 310",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Monz%C3%B3n%20417%20/%20Av.%20Alameda%20Per%C3%BA%20300%20y%20310%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        },
+        {
+          "direccion": "Jr. Callao 268",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Callao%20268%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://img5.findglocal.com/273/236/1527485392732367.jpg",
+        "pagina_fuente": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/100219078466901/Importaciones-el-balc%C3%B3n",
+        "tipo": "publicacion_comercial",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/100219078466901/"
+      },
+      "categorias": [
+        {
+          "id": "hogar",
+          "nombre": "Hogar",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        },
+        {
+          "id": "cocina",
+          "nombre": "Cocina y camping",
+          "articulos": [
+            "Mini cocina a gas portátil"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        },
+        {
+          "id": "dulceria",
+          "nombre": "Dulcería",
+          "articulos": [
+            "Chocolates para regalo"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        },
+        {
+          "id": "regalos",
+          "nombre": "Regalos y temporada",
+          "articulos": [
+            "Detalles para fechas especiales"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "balcon_publicaciones"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Horario publicado: lunes a domingo de 08:00 a 21:00.",
+        "No encontré un teléfono atribuible de forma inequívoca a este perfil.",
+        "Existe otro perfil llamado Mall El Balcón, con dirección cercana. Se conserva separado: la relación societaria y la duplicidad requieren confirmación."
+      ],
+      "fuentes": [
+        "balcon_publicaciones"
+      ]
+    },
+    {
+      "id": "mall-el-balcon",
+      "nombre": "Mall El Balcón",
+      "tipo_negocio": "comercio_multirrubro",
+      "grupo": "principal",
+      "descripcion": "Perfil comercial de venta de artículos nacionales, importados y de temporada.",
+      "telefonos": [
+        {
+          "numero": "+51937301540",
+          "ambito": "negocio_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "mall_balcon_contacto"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Jr. Monzón 421 / Av. Alameda Perú 300 y 310",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "direccion_publicada_con_variantes",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Monz%C3%B3n%20421%20/%20Av.%20Alameda%20Per%C3%BA%20300%20y%20310%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "mall_balcon_contacto"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": null,
+        "pagina_fuente": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/227981974697054/Mall-El-Balc%C3%B3n",
+        "tipo": "foto_de_perfil",
+        "estado": "pagina_con_imagen_identificada_sin_url_utilizable",
+        "descripcion": "La imagen de perfil enlazada usa Facebook Graph y no pudo recuperarse.",
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/227981974697054/"
+      },
+      "categorias": [
+        {
+          "id": "variedades",
+          "nombre": "Productos nacionales e importados",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "mall_balcon_perfil"
+          ]
+        },
+        {
+          "id": "temporada",
+          "nombre": "Artículos de temporada",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "mall_balcon_perfil"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "No sumar automáticamente esta ficha a Importaciones El Balcón como una empresa adicional: posible duplicado pendiente.",
+        "Se omitió el horario: los directorios discrepan, incluyendo una ficha de 24 horas.",
+        "La web publicada tiene una URL irregular y no se validó."
+      ],
+      "fuentes": [
+        "mall_balcon_contacto",
+        "mall_balcon_perfil"
+      ]
+    },
+    {
+      "id": "supermercado-baraton",
+      "nombre": "Supermercado Baratón",
+      "tipo_negocio": "supermercado_multirrubro",
+      "grupo": "principal",
+      "descripcion": "Autoservicio con alimentos, artículos para el hogar y otros rubros.",
+      "telefonos": [
+        {
+          "numero": "+51931524929",
+          "ambito": "negocio_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "baraton_contacto"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Enrique Pimentel 644",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Enrique%20Pimentel%20644%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "baraton_contacto"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": null,
+        "pagina_fuente": "https://www.facebook.com/supermercado.baraton/",
+        "tipo": "portada_del_negocio",
+        "estado": "portada_indexada_sin_url_directa",
+        "descripcion": "La portada está identificada en el perfil de Facebook; no se obtuvo un enlace directo fiable.",
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/supermercado.baraton/",
+        "instagram": "https://www.instagram.com/supermercado.baraton/"
+      },
+      "categorias": [
+        {
+          "id": "alimentos",
+          "nombre": "Alimentos",
+          "articulos": [
+            "Ramen coreano"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_ramen"
+          ]
+        },
+        {
+          "id": "ferreteria",
+          "nombre": "Ferretería",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_ferreteria"
+          ]
+        },
+        {
+          "id": "regalos",
+          "nombre": "Regalos",
+          "articulos": [
+            "Bolsas para regalos"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_regalos"
+          ]
+        },
+        {
+          "id": "electrohogar",
+          "nombre": "Electrodomésticos",
+          "articulos": [],
+          "evidencia_articulos": "rubro_historico_por_confirmar",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_estudio"
+          ]
+        },
+        {
+          "id": "moda",
+          "nombre": "Ropa y calzado",
+          "articulos": [],
+          "evidencia_articulos": "rubro_historico_por_confirmar",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_estudio"
+          ]
+        },
+        {
+          "id": "belleza",
+          "nombre": "Belleza",
+          "articulos": [],
+          "evidencia_articulos": "rubro_historico_por_confirmar",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_estudio"
+          ]
+        },
+        {
+          "id": "juguetes",
+          "nombre": "Juguetería",
+          "articulos": [],
+          "evidencia_articulos": "rubro_historico_por_confirmar",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "baraton_estudio"
+          ]
+        }
+      ],
+      "delivery_publicado": true,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "El estudio comercial no demuestra stock vigente.",
+        "Delivery informado por un directorio; cobertura y condiciones no confirmadas."
+      ],
+      "fuentes": [
+        "baraton_contacto",
+        "baraton_perfil",
+        "baraton_ramen",
+        "baraton_ferreteria",
+        "baraton_regalos",
+        "baraton_estudio"
+      ]
+    },
+    {
+      "id": "minisol",
+      "nombre": "Minisol",
+      "tipo_negocio": "supermercado_multirrubro",
+      "grupo": "principal",
+      "descripcion": "Supermercado local con alimentos y productos de consumo para el hogar.",
+      "telefonos": [
+        {
+          "numero": "+51921140576",
+          "ambito": "local_tito_jaime",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "minisol_publicaciones"
+          ]
+        },
+        {
+          "numero": "+51973886615",
+          "ambito": "local_tito_jaime_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "minisol_contacto"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Tito Jaime 478",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Tito%20Jaime%20478%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "minisol_publicaciones"
+          ]
+        },
+        {
+          "direccion": "Jr. Monzón 380",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "otra_ficha; vigencia_del_local_por_confirmar",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Monz%C3%B3n%20380%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "minisol_monzon"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://www.fullpubli.com/images/logos/minisol_fullpublicidad.png",
+        "pagina_fuente": "https://www.fullpubli.com/",
+        "tipo": "logo",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/minisoltm/"
+      },
+      "categorias": [
+        {
+          "id": "lacteos",
+          "nombre": "Lácteos",
+          "articulos": [
+            "Leche Gloria UHT Light"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "minisol_publicaciones"
+          ]
+        },
+        {
+          "id": "galletas",
+          "nombre": "Galletas y snacks",
+          "articulos": [
+            "Galleta Field Coronita Chocolate, pack de 6"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "minisol_publicaciones"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Cuidado del hogar",
+          "articulos": [
+            "Raid Max Matapulgas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "minisol_publicaciones"
+          ]
+        }
+      ],
+      "delivery_publicado": true,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Las publicaciones consultadas corresponden a mayo y junio de 2026; promociones vencidas y stock no confirmado.",
+        "La dirección principal está corroborada como 478; otro proveedor publica 475.",
+        "Los contactos del perfil de Monzón son distintos; no se asignaron al local principal.",
+        "El surtido completo no está publicado en una fuente accesible."
+      ],
+      "fuentes": [
+        "minisol_publicaciones",
+        "minisol_contacto",
+        "minisol_monzon",
+        "logos_fullpubli"
+      ]
+    },
+    {
+      "id": "supermercado-lukita",
+      "nombre": "Supermercado Lukita",
+      "tipo_negocio": "supermercado_multirrubro",
+      "grupo": "principal",
+      "descripcion": "Autoservicio local con catálogo de alimentos, hogar, tecnología y temporada.",
+      "telefonos": [
+        {
+          "numero": "+51946080269",
+          "ambito": "negocio_publicado_en_web",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Jr. Julio Burga 307",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Julio%20Burga%20307%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://superlukita.com/wp-content/uploads/2023/09/n1.jpg",
+        "pagina_fuente": "https://superlukita.com/nosotros/",
+        "tipo": "imagen_institucional_del_sitio",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://superlukita.com/",
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/SupermercadoLukita/"
+      },
+      "categorias": [
+        {
+          "id": "abarrotes",
+          "nombre": "Abarrotes y conservas",
+          "articulos": [
+            "Duraznos A-1 en mitades 820 g",
+            "Atún A1",
+            "Aceite Mirasol"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_catalogo"
+          ]
+        },
+        {
+          "id": "lacteos",
+          "nombre": "Lácteos",
+          "articulos": [
+            "Leche Gloria evaporada 395 g",
+            "Leche Gloria sin lactosa 170 g"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_web"
+          ]
+        },
+        {
+          "id": "bebidas",
+          "nombre": "Bebidas",
+          "articulos": [
+            "Agua",
+            "Gaseosas",
+            "Ron",
+            "Vino",
+            "Whisky"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "limpieza",
+          "nombre": "Limpieza e higiene",
+          "articulos": [
+            "Detergentes",
+            "Champú",
+            "Pasta dental",
+            "Jaboncillos"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "electrohogar",
+          "nombre": "Electrohogar",
+          "articulos": [
+            "Arroceras",
+            "Lavadoras",
+            "Licuadoras",
+            "Refrigeradoras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "muebles",
+          "nombre": "Muebles y dormitorio",
+          "articulos": [
+            "Escritorios",
+            "Roperos",
+            "Colchones",
+            "Sábanas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "tecnologia",
+          "nombre": "Tecnología",
+          "articulos": [
+            "Cargadores",
+            "Accesorios para celular",
+            "Smartwatch"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "libreria",
+          "nombre": "Librería y oficina",
+          "articulos": [
+            "Cuadernos",
+            "Lapiceros",
+            "Archivadores"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "calzado",
+          "nombre": "Calzado",
+          "articulos": [
+            "Zapatillas unisex",
+            "Sandalias infantiles"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "juguetes",
+          "nombre": "Juguetes",
+          "articulos": [
+            "Peluche Picachu grande",
+            "Carros a batería"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_web"
+          ]
+        },
+        {
+          "id": "deporte",
+          "nombre": "Deporte",
+          "articulos": [
+            "Bicicletas",
+            "Pelotas",
+            "Scooter"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_nosotros"
+          ]
+        },
+        {
+          "id": "temporada",
+          "nombre": "Temporada y decoración",
+          "articulos": [],
+          "evidencia_articulos": "categorias_publicadas_sin_desglose_en_esta_ficha",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "lukita_catalogo"
+          ]
+        }
+      ],
+      "delivery_publicado": true,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "El sitio publica muchas más referencias; esta ficha organiza categorías y una selección de artículos, no exporta todo el inventario.",
+        "El nombre oficial consultado es Lukita; no se equipara automáticamente con toda mención de Luquita."
+      ],
+      "fuentes": [
+        "lukita_web",
+        "lukita_nosotros",
+        "lukita_catalogo"
+      ]
+    },
+    {
+      "id": "feria-continental",
+      "nombre": "Feria Continental",
+      "tipo_negocio": "tienda_de_variedades",
+      "grupo": "principal",
+      "descripcion": "Comercio con campaña escolar, artículos para regalos y juguetería.",
+      "telefonos": [
+        {
+          "numero": "+51935228809",
+          "ambito": "contacto_de_campana_publicado",
+          "whatsapp_confirmado": true,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "feria_publicaciones"
+          ]
+        },
+        {
+          "numero": "+51962569182",
+          "ambito": "local_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "feria_contacto"
+          ]
+        },
+        {
+          "numero": "+5162564011",
+          "ambito": "fijo_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "feria_contacto"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Alameda Perú 284",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "direccion_publicada_con_variantes",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Alameda%20Per%C3%BA%20284%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "feria_contacto"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": null,
+        "pagina_fuente": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/750638951656172/Feria-Continental",
+        "tipo": "foto_de_perfil",
+        "estado": "pagina_con_imagen_identificada_sin_url_utilizable",
+        "descripcion": "Las fotos de publicaciones devolvieron 404 y la foto de perfil de Facebook no pudo recuperarse.",
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/750638951656172/"
+      },
+      "categorias": [
+        {
+          "id": "libreria",
+          "nombre": "Librería y útiles escolares",
+          "articulos": [
+            "Cartulina dúplex"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "feria_publicaciones"
+          ]
+        },
+        {
+          "id": "juguetes",
+          "nombre": "Juguetes",
+          "articulos": [
+            "Carritos Hot Wheels"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "feria_publicaciones"
+          ]
+        },
+        {
+          "id": "regalos",
+          "nombre": "Regalos y artículos para fiestas",
+          "articulos": [],
+          "evidencia_articulos": "clasificacion_en_directorio_sin_listado",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "feria_contacto"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Algunas publicaciones dan Alameda Perú 280 y el directorio indica 284; confirmar puerta de atención.",
+        "No se reutilizan los teléfonos de la sucursal de Satipo.",
+        "Publicaciones de productos de 2024 y 2025; vigencia del catálogo pendiente."
+      ],
+      "fuentes": [
+        "feria_publicaciones",
+        "feria_contacto"
+      ]
+    },
+    {
+      "id": "galeria-san-benito",
+      "nombre": "Galería San Benito",
+      "tipo_negocio": "galeria_textil_y_hogar",
+      "grupo": "principal",
+      "descripcion": "Comercio de ropa, calzado, accesorios, textiles de hogar y artículos deportivos.",
+      "telefonos": [
+        {
+          "numero": "+51981558030",
+          "ambito": "negocio_publicado",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "san_benito"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Tito Jaime 238",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Tito%20Jaime%20238%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "direccion": "Av. Alameda Perú 246",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Alameda%20Per%C3%BA%20246%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "san_benito"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://img5.findglocal.com/442/671/122192845034426716.jpg",
+        "pagina_fuente": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/390886447439321/Galer%C3%ADa-San-Benito---Tingo-Mar%C3%ADa",
+        "tipo": "publicacion_comercial",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {
+        "facebook": "https://www.facebook.com/390886447439321/"
+      },
+      "categorias": [
+        {
+          "id": "ropa",
+          "nombre": "Ropa",
+          "articulos": [
+            "Palazos",
+            "Jeans",
+            "Chompas",
+            "Blusas",
+            "Ropa infantil"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "id": "calzado",
+          "nombre": "Calzado",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "id": "lenceria",
+          "nombre": "Lencería",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_listado_completo",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "id": "bolsos",
+          "nombre": "Bolsos y equipaje",
+          "articulos": [
+            "Carteras",
+            "Maletas",
+            "Mochilas",
+            "Pañaleras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Textiles del hogar",
+          "articulos": [
+            "Colchas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        },
+        {
+          "id": "deporte",
+          "nombre": "Deporte",
+          "articulos": [
+            "Artículos deportivos",
+            "Suplementos deportivos"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "san_benito"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Publicaciones consultadas de agosto y septiembre de 2026.",
+        "Ofrece venta mayorista y minorista según el perfil; confirmar condiciones."
+      ],
+      "fuentes": [
+        "san_benito"
+      ]
+    },
+    {
+      "id": "tiendas-efe",
+      "nombre": "Tiendas EFE Tingo María",
+      "tipo_negocio": "cadena_electrodomesticos_y_tecnologia",
+      "grupo": "principal",
+      "descripcion": "Sucursal de cadena nacional de electrodomésticos, tecnología y hogar.",
+      "telefonos": [
+        {
+          "numero": "+5112002890",
+          "ambito": "central_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "efe_local"
+          ]
+        },
+        {
+          "numero": "+5162561414",
+          "ambito": "local_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "efe_local"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Antonio Raymondi 379",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Antonio%20Raymondi%20379%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "efe_local"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://www.fullpubli.com/images/logos/efe_fullpublicidad.png",
+        "pagina_fuente": "https://www.fullpubli.com/",
+        "tipo": "logo",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://www.efe.com.pe/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrohogar",
+          "nombre": "Electrohogar",
+          "articulos": [
+            "Refrigeradoras",
+            "Lavadoras",
+            "Cocinas"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "efe_web"
+          ]
+        },
+        {
+          "id": "tecnologia",
+          "nombre": "Tecnología",
+          "articulos": [
+            "Televisores",
+            "Laptops",
+            "Celulares"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "efe_web"
+          ]
+        },
+        {
+          "id": "audio",
+          "nombre": "Audio y videojuegos",
+          "articulos": [],
+          "evidencia_articulos": "categorias_publicadas",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "efe_web"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Dormitorio y deporte",
+          "articulos": [],
+          "evidencia_articulos": "categorias_publicadas",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "efe_web"
+          ]
+        }
+      ],
+      "delivery_publicado": true,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Categorías del catálogo nacional; disponibilidad y retiro en Tingo María requieren consulta."
+      ],
+      "fuentes": [
+        "efe_local",
+        "efe_web",
+        "logos_fullpubli"
+      ]
+    },
+    {
+      "id": "la-curacao",
+      "nombre": "La Curacao Tingo María",
+      "tipo_negocio": "cadena_electrodomesticos_y_tecnologia",
+      "grupo": "principal",
+      "descripcion": "Sucursal de cadena nacional con tecnología, electrodomésticos y hogar.",
+      "telefonos": [
+        {
+          "numero": "+5112002870",
+          "ambito": "central_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "curacao_web"
+          ]
+        },
+        {
+          "numero": "+5162562761",
+          "ambito": "local_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "curacao_local"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Antonio Raymondi 587",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Antonio%20Raymondi%20587%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "curacao_local"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://api-image-admin-bucket-prod.s3.amazonaws.com/mall_185/2026_2_5/logo/sub-folder/sub-f/73b5cd24-d425-4629-b78b-ba364f4d8535.png",
+        "pagina_fuente": "https://www.minka.com.pe/tiendas/curacao",
+        "tipo": "logo_nacional",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://www.lacuracao.pe/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrohogar",
+          "nombre": "Electrohogar",
+          "articulos": [
+            "Lavadoras",
+            "Refrigeradoras",
+            "Cocinas"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "curacao_web"
+          ]
+        },
+        {
+          "id": "tecnologia",
+          "nombre": "Tecnología",
+          "articulos": [
+            "Televisores",
+            "Laptops",
+            "Celulares"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "curacao_web"
+          ]
+        },
+        {
+          "id": "oficina",
+          "nombre": "Oficina y papelería",
+          "articulos": [
+            "Cuadernos",
+            "Útiles escolares"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "marketplace_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "curacao_web"
+          ]
+        },
+        {
+          "id": "mascotas",
+          "nombre": "Mascotas",
+          "articulos": [
+            "Alimentos",
+            "Camas",
+            "Juguetes"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "marketplace_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "curacao_web"
+          ]
+        }
+      ],
+      "delivery_publicado": true,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "La imagen representa la marca nacional y procede de Minka; no es una fotografía de la sucursal local.",
+        "El marketplace incluye vendedores terceros. La sucursal no necesariamente mantiene estos productos."
+      ],
+      "fuentes": [
+        "curacao_local",
+        "curacao_web",
+        "curacao_logo"
+      ]
+    },
+    {
+      "id": "importaciones-sur",
+      "nombre": "Importaciones Sur",
+      "tipo_negocio": "importadora_electrohogar_y_maquinaria",
+      "grupo": "principal",
+      "descripcion": "Comercio de electrodomésticos, cómputo, dormitorio y máquinas de campo.",
+      "telefonos": [
+        {
+          "numero": "+5162561658",
+          "ambito": "local_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "sur_contacto"
+          ]
+        },
+        {
+          "numero": "+5162562289",
+          "ambito": "local_segun_directorio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "sur_contacto"
+          ]
+        },
+        {
+          "numero": "+51991814855",
+          "ambito": "contacto_de_empresa; sucursal_no_especificada",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "sur_productos"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Jr. Callao 244",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Jr.%20Callao%20244%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "sur_contacto"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://www.fullpubli.com/images/logos/importaciones_sur_fullpublicidad.png",
+        "pagina_fuente": "https://www.fullpubli.com/",
+        "tipo": "logo",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": null,
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrohogar",
+          "nombre": "Electrodomésticos",
+          "articulos": [
+            "Televisores LCD",
+            "Refrigeradoras",
+            "Cocinas",
+            "Lavadoras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "sur_productos"
+          ]
+        },
+        {
+          "id": "computo",
+          "nombre": "Cómputo y electrónica",
+          "articulos": [
+            "Equipos de cómputo",
+            "Cámaras digitales"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "sur_productos"
+          ]
+        },
+        {
+          "id": "dormitorio",
+          "nombre": "Dormitorio",
+          "articulos": [
+            "Colchones"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "sur_productos"
+          ]
+        },
+        {
+          "id": "campo",
+          "nombre": "Máquinas de campo",
+          "articulos": [
+            "Motosierras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "sur_productos"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "El anuncio de productos no tiene fecha visible; confirmar referencias vigentes.",
+        "El anuncio combina direcciones de Lima y Tingo María; el celular no se presenta como exclusivo del local."
+      ],
+      "fuentes": [
+        "sur_contacto",
+        "sur_productos",
+        "logos_fullpubli"
+      ]
+    },
+    {
+      "id": "carsa",
+      "nombre": "Carsa Tingo María",
+      "tipo_negocio": "cadena_electrodomesticos_y_tecnologia",
+      "grupo": "principal",
+      "descripcion": "Cadena nacional con electrodomésticos, celulares, hogar y motos.",
+      "telefonos": [
+        {
+          "numero": "+5116126862",
+          "ambito": "televentas_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "carsa_web"
+          ]
+        },
+        {
+          "numero": "+5116126863",
+          "ambito": "atencion_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "carsa_web"
+          ]
+        },
+        {
+          "numero": "+51984728888",
+          "ambito": "atencion_nacional",
+          "whatsapp_confirmado": true,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "carsa_web"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Antonio Raymondi 568",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Antonio%20Raymondi%20568%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "carsa_gallo_locales"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://logosenvector.com/logo/img/carsa-362.jpg",
+        "pagina_fuente": "https://logosenvector.com/logo/carsa-362",
+        "tipo": "logo_nacional",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://www.carsa.pe/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrohogar",
+          "nombre": "Electrohogar",
+          "articulos": [
+            "Refrigeradora LG VT38SPYC",
+            "Lavadora LG WT17BVTB",
+            "Cocina Indurama Cantabria"
+          ],
+          "evidencia_articulos": "productos_publicados",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "carsa_web"
+          ]
+        },
+        {
+          "id": "tecnologia",
+          "nombre": "Tecnología",
+          "articulos": [
+            "Televisores",
+            "Celulares",
+            "Equipos de cómputo"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "carsa_web"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Hogar",
+          "articulos": [],
+          "evidencia_articulos": "categoria_publicada",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "carsa_web"
+          ]
+        },
+        {
+          "id": "motos",
+          "nombre": "Motos",
+          "articulos": [],
+          "evidencia_articulos": "rubro_de_distribuidor; modelos_locales_no_confirmados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "suzuki_distribuidores"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Los teléfonos corresponden a canales nacionales, no a una línea exclusiva de Tingo María.",
+        "El catálogo nacional no acredita stock local."
+      ],
+      "fuentes": [
+        "carsa_web",
+        "carsa_gallo_locales",
+        "suzuki_distribuidores",
+        "carsa_logo"
+      ]
+    },
+    {
+      "id": "el-gallo-mas-gallo",
+      "nombre": "El Gallo Más Gallo Tingo María",
+      "tipo_negocio": "cadena_electrodomesticos",
+      "grupo": "principal",
+      "descripcion": "Cadena de electrodomésticos y motos con presencia documentada en Tingo María.",
+      "telefonos": [
+        {
+          "numero": "+5116126863",
+          "ambito": "atencion_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "gallo_web"
+          ]
+        },
+        {
+          "numero": "+5116126862",
+          "ambito": "televentas_nacional",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "gallo_web"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Raimondi 603 - 501",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "texto_ambiguo_publicado_en_web",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Raimondi%20603%20-%20501%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "gallo_web"
+          ]
+        },
+        {
+          "direccion": "Av. Raimondi 500-506",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "direccion_alternativa_en_directorio_afiliados",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Raimondi%20500-506%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "carsa_gallo_locales"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://static.catalogos-pe.com/images/shops/ell-gallo-mas-gallo-thumbnail.png",
+        "pagina_fuente": "https://catalogos-pe.com/el-gallo-mas-gallo",
+        "tipo": "logo_nacional",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://www.elgallomasgallo.com.pe/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrodomesticos",
+          "nombre": "Electrodomésticos",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_inventario_local",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "gallo_web"
+          ]
+        },
+        {
+          "id": "motos",
+          "nombre": "Motos",
+          "articulos": [],
+          "evidencia_articulos": "rubro_publicado_sin_inventario_local",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "gallo_web"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "La web de la marca y Alfin Banco publican numeraciones distintas. Confirmar dirección antes de usarla para reparto.",
+        "No se asignaron los artículos de Carsa a esta sucursal: no hay un inventario local accesible."
+      ],
+      "fuentes": [
+        "gallo_web",
+        "carsa_gallo_locales",
+        "gallo_logo"
+      ]
+    },
+    {
+      "id": "credivargas",
+      "nombre": "Credivargas Tingo María",
+      "tipo_negocio": "cadena_electrodomesticos_y_tecnologia",
+      "grupo": "principal",
+      "descripcion": "Cadena comercial con sucursal local y catálogo nacional de electrodomésticos.",
+      "telefonos": [
+        {
+          "numero": "+51961616995",
+          "ambito": "compras_web_nacional",
+          "whatsapp_confirmado": true,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "credivargas_web"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Alameda Perú 764",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Alameda%20Per%C3%BA%20764%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "credivargas_empresa"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": "https://credivargas.pe/images/logo-credivargas-full.png",
+        "pagina_fuente": "https://credivargas.pe/credito-digital.php",
+        "tipo": "logo_nacional",
+        "estado": "imagen_recuperada",
+        "descripcion": null,
+        "archivo_local": null
+      },
+      "sitio_web": "https://www.credivargas.pe/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "electrohogar",
+          "nombre": "Electrohogar",
+          "articulos": [
+            "Refrigeradoras",
+            "Lavadoras"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "credivargas_web"
+          ]
+        },
+        {
+          "id": "tecnologia",
+          "nombre": "Tecnología",
+          "articulos": [
+            "Televisores",
+            "Celulares",
+            "Cómputo"
+          ],
+          "evidencia_articulos": "categorias_y_tipos_del_catalogo",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "credivargas_web"
+          ]
+        },
+        {
+          "id": "sonido",
+          "nombre": "Sonido",
+          "articulos": [],
+          "evidencia_articulos": "categoria_publicada",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "credivargas_web"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Decohogar",
+          "articulos": [],
+          "evidencia_articulos": "categoria_publicada",
+          "ambito": "catalogo_nacional",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "credivargas_web"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "La dirección procede del listado oficial indexado; el enlace directo tiene redirecciones.",
+        "El teléfono de asesoría web es nacional.",
+        "No se usa el número de cobranzas como contacto para pedidos."
+      ],
+      "fuentes": [
+        "credivargas_empresa",
+        "credivargas_web",
+        "credivargas_logo"
+      ]
+    },
+    {
+      "id": "ruben-market",
+      "nombre": "Ruben Market",
+      "tipo_negocio": "minimarket_multirrubro",
+      "grupo": "complementario",
+      "descripcion": "Comercio con alimentos, bebidas y artículos de uso diario.",
+      "telefonos": [
+        {
+          "numero": "+51981225119",
+          "ambito": "negocio_publicado_en_micrositio",
+          "whatsapp_confirmado": null,
+          "estado": "publicado_sin_prueba_de_llamada",
+          "fuentes": [
+            "ruben_web"
+          ]
+        }
+      ],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Alameda Perú 645",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "publicada",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Alameda%20Per%C3%BA%20645%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "ruben_web"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": null,
+        "pagina_fuente": "https://ruben-market.ueniweb.com/",
+        "tipo": "sin_imagen_verificada",
+        "estado": "no_encontrada",
+        "descripcion": "No se encontró una foto o logo identificable del comercio.",
+        "archivo_local": null
+      },
+      "sitio_web": "https://ruben-market.ueniweb.com/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "abarrotes",
+          "nombre": "Abarrotes",
+          "articulos": [
+            "Azúcar",
+            "Aceite",
+            "Conservas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        },
+        {
+          "id": "lacteos",
+          "nombre": "Lácteos",
+          "articulos": [
+            "Leche",
+            "Yogurt"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        },
+        {
+          "id": "frescos",
+          "nombre": "Alimentos frescos",
+          "articulos": [
+            "Frutas",
+            "Verduras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        },
+        {
+          "id": "bebidas",
+          "nombre": "Bebidas",
+          "articulos": [
+            "Gaseosas",
+            "Vinos",
+            "Cervezas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        },
+        {
+          "id": "hogar",
+          "nombre": "Hogar",
+          "articulos": [
+            "Utensilios de cocina",
+            "Productos de limpieza"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        },
+        {
+          "id": "escolar",
+          "nombre": "Papelería y escolar",
+          "articulos": [
+            "Mochilas"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "ruben_web"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "No hay evidencia suficiente para clasificarlo entre las tiendas más grandes o famosas; opción adicional de surtido amplio.",
+        "Micrositio sin fecha de actualización visible; existencia operativa y productos requieren confirmación."
+      ],
+      "fuentes": [
+        "ruben_web"
+      ]
+    },
+    {
+      "id": "plaza-moon",
+      "nombre": "Plaza Moon",
+      "tipo_negocio": "minimarket",
+      "grupo": "complementario",
+      "descripcion": "Comercio anunciado con productos comestibles, bebidas y alimentos frescos.",
+      "telefonos": [],
+      "ubicaciones": [
+        {
+          "direccion": "Av. Raymongi, esquina Jr. Pucallpa",
+          "ciudad": "Tingo María",
+          "distrito": "Rupa-Rupa",
+          "provincia": "Leoncio Prado",
+          "departamento": "Huánuco",
+          "pais": "Perú",
+          "estado": "transcripcion_literal; ortografia_y_puerta_por_confirmar",
+          "latitud": null,
+          "longitud": null,
+          "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Av.%20Raymongi%2C%20esquina%20Jr.%20Pucallpa%2C%20Tingo%20Mar%C3%ADa%2C%20Per%C3%BA",
+          "tipo_enlace_mapa": "busqueda_por_texto; no es un pin geocodificado verificado",
+          "fuentes": [
+            "plaza_web"
+          ]
+        }
+      ],
+      "imagen_empresa": {
+        "url": null,
+        "pagina_fuente": "https://plaza-moon.ueniweb.com/",
+        "tipo": "sin_imagen_verificada",
+        "estado": "no_encontrada",
+        "descripcion": "No se encontró una foto o logo identificable del comercio.",
+        "archivo_local": null
+      },
+      "sitio_web": "https://plaza-moon.ueniweb.com/",
+      "redes_sociales": {},
+      "categorias": [
+        {
+          "id": "alimentos",
+          "nombre": "Alimentos",
+          "articulos": [
+            "Pan",
+            "Leche",
+            "Carnes"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "plaza_web"
+          ]
+        },
+        {
+          "id": "frescos",
+          "nombre": "Frutas y verduras",
+          "articulos": [
+            "Frutas",
+            "Verduras"
+          ],
+          "evidencia_articulos": "publicados",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "plaza_web"
+          ]
+        },
+        {
+          "id": "bebidas",
+          "nombre": "Bebidas y licores",
+          "articulos": [],
+          "evidencia_articulos": "categorias_publicadas",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "plaza_web"
+          ]
+        },
+        {
+          "id": "postres",
+          "nombre": "Postres",
+          "articulos": [],
+          "evidencia_articulos": "categoria_publicada",
+          "ambito": "negocio_local",
+          "stock_actual_confirmado": false,
+          "fuentes": [
+            "plaza_web"
+          ]
+        }
+      ],
+      "delivery_publicado": null,
+      "estado_operativo_actual": "no_confirmado_directamente",
+      "tamano_y_popularidad": "sin ranking ni medición de tamaño; selección por surtido, cadena o presencia pública",
+      "observaciones": [
+        "Sin teléfono público recuperado.",
+        "No hay evidencia suficiente de tamaño o fama; opción adicional.",
+        "La descripción del micrositio parece genérica y no tiene fecha; confirmar operación."
+      ],
+      "fuentes": [
+        "plaza_web"
+      ]
+    }
+  ],
+  "candidatos_pendientes": [
+    {
+      "nombre": "Supermercado Kalidda",
+      "direccion": "Jr. Francisco Bolognesi 126, Tingo María",
+      "telefono": null,
+      "imagen_url": null,
+      "categorias": [],
+      "fuentes": [
+        "refrescana_puntos"
+      ],
+      "motivo_pendiente": "Solo se obtuvo una mención como punto de venta de RefresCaña. Sin teléfono, imagen ni catálogo propio. No confundir con la empresa de gas Cálidda."
+    },
+    {
+      "nombre": "Grupo Full Artefactos",
+      "direccion": "Referencia empresarial indexada: centro de Tingo María, número 393; calle por confirmar",
+      "telefono": null,
+      "imagen_url": "https://www.fullpubli.com/images/logos/full_artefactos_fullpublicidad.png",
+      "categorias": [],
+      "fuentes": [
+        "full_artefactos_registro",
+        "logos_fullpubli"
+      ],
+      "motivo_pendiente": "Ficha empresarial y logo de proveedor; faltan datos comerciales inequívocos de la tienda local y catálogo actual."
+    },
+    {
+      "nombre": "Comercial Aquino",
+      "direccion": null,
+      "telefono": null,
+      "imagen_url": "https://www.fullpubli.com/images/logos/comercial_aquino_fullpublicidad.png",
+      "categorias": [
+        "Abarrotes, según estudio histórico"
+      ],
+      "fuentes": [
+        "aquino_estudio",
+        "logos_fullpubli"
+      ],
+      "motivo_pendiente": "La información detallada encontrada es histórica; no se asigna el teléfono de un homónimo sin verificar."
+    },
+    {
+      "nombre": "Mall TINGO",
+      "direccion": "Av. Tito Jaime 570, Tingo María",
+      "telefonos_publicados": [
+        "+51959703901",
+        "+51963315372"
+      ],
+      "imagen_url": null,
+      "categorias": [
+        "Regalos personalizados",
+        "Juguetería"
+      ],
+      "fuentes": [
+        "directorio_tiendas"
+      ],
+      "motivo_pendiente": "Hay datos de tienda de regalos; el nombre Mall no demuestra que sea una gran tienda de surtido general."
+    },
+    {
+      "nombre": "Multiventas TINGO MARIA",
+      "direccion": "Av. Ucayali 336, Tingo María",
+      "telefono": null,
+      "imagen_url": null,
+      "categorias": [
+        "Artículos de pesca, según descripción de directorio"
+      ],
+      "fuentes": [
+        "directorio_tiendas"
+      ],
+      "motivo_pendiente": "La descripción sugiere especialización en pesca. Sin evidencia de gran tienda multirrubro."
+    },
+    {
+      "nombre": "Supermayorista Don Saavedra",
+      "direccion": null,
+      "telefono": null,
+      "imagen_url": null,
+      "categorias": [],
+      "fuentes": [
+        "directorio_globuya"
+      ],
+      "motivo_pendiente": "Aparece en el resultado indexado, pero no se recuperó una ficha suficiente para identificarlo y atribuirle datos."
+    },
+    {
+      "nombre": "Marcimex Tingo María",
+      "direccion": null,
+      "telefono": null,
+      "imagen_url": null,
+      "categorias": [],
+      "fuentes": [
+        "carsa_gallo_locales"
+      ],
+      "motivo_pendiente": "El listado actual consultado no incluye una sucursal de Marcimex en Tingo María. Las referencias históricas no bastan para afirmar una tienda vigente."
+    }
+  ],
+  "fuentes": {
+    "balcon_publicaciones": {
+      "titulo": "Importaciones El Balcón: publicaciones, direcciones y productos",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/100219078466901/Importaciones-el-balc%C3%B3n",
+      "tipo": "republicacion_red_social",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "mall_balcon_contacto": {
+      "titulo": "Mall El Balcón: contacto",
+      "url": "https://pe.todosnegocios.com/mall-el-balc%C3%B3n-937-301-540",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "mall_balcon_perfil": {
+      "titulo": "Mall El Balcón: perfil comercial",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/227981974697054/Mall-El-Balc%C3%B3n",
+      "tipo": "republicacion_red_social",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "baraton_contacto": {
+      "titulo": "Supermercado Baratón: dirección y teléfono",
+      "url": "https://pe.todosnegocios.com/supermercado-barat%C3%B3n-931-524-929",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "baraton_perfil": {
+      "titulo": "Supermercado Baratón: perfil y portada",
+      "url": "https://www.facebook.com/supermercado.baraton/",
+      "tipo": "red_social_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado; acceso directo restringido"
+    },
+    "baraton_ramen": {
+      "titulo": "Baratón: publicación de ramen coreano",
+      "url": "https://www.facebook.com/supermercado.baraton/posts/el-aut%C3%A9ntico-ramen-coreano-ya-est%C3%A1-en-supermercado-barat%C3%B3n-encuentra-tus-varieda/1104157162136930/",
+      "tipo": "red_social_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado"
+    },
+    "baraton_ferreteria": {
+      "titulo": "Baratón: publicación de ferretería",
+      "url": "https://www.facebook.com/supermercado.baraton/posts/todos-estos-productos-de-ferreter%C3%ADa-los-encuentras-en-supermercado-barat%C3%B3n-%EF%B8%8Fvis%C3%AD/1102465252306121/",
+      "tipo": "red_social_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado"
+    },
+    "baraton_regalos": {
+      "titulo": "Baratón: bolsas para regalos",
+      "url": "https://www.facebook.com/supermercado.baraton/posts/-peque%C3%B1as-en-tama%C3%B1o-grandes-en-detalles-dale-a-tus-obsequios-el-empaque-perfecto/1081147497771230/",
+      "tipo": "red_social_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado"
+    },
+    "baraton_estudio": {
+      "titulo": "Baratón: estudio académico comercial, sin garantía de inventario actual",
+      "url": "https://es.scribd.com/presentation/635923055/TRABAJO-DE-GESTION-pptxBARATON-pptx222",
+      "tipo": "trabajo_academico_no_oficial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "minisol_publicaciones": {
+      "titulo": "Minisol: publicaciones y contacto de Tingo María",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/1436672556620972/MINISOL",
+      "tipo": "republicacion_red_social",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "minisol_contacto": {
+      "titulo": "Minisol: local de Av. Tito Jaime 478",
+      "url": "https://pe.todosnegocios.com/minisol_5g-921-140-576",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "minisol_monzon": {
+      "titulo": "Minisol: ficha distinta en Jr. Monzón 380",
+      "url": "https://pe.todosnegocios.com/minisol_1N-973-879-020",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "lukita_web": {
+      "titulo": "Supermercado Lukita: catálogo web",
+      "url": "https://superlukita.com/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "lukita_nosotros": {
+      "titulo": "Supermercado Lukita: empresa, categorías y contacto",
+      "url": "https://superlukita.com/nosotros/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "lukita_catalogo": {
+      "titulo": "Supermercado Lukita: productos publicados",
+      "url": "https://superlukita.com/productos/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado; acceso directo intermitente"
+    },
+    "feria_publicaciones": {
+      "titulo": "Feria Continental: publicaciones y contacto",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/750638951656172/Feria-Continental",
+      "tipo": "republicacion_red_social",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "feria_contacto": {
+      "titulo": "Feria Continental: datos comerciales",
+      "url": "https://pe.todosnegocios.com/feria-continental-962-569-182",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "san_benito": {
+      "titulo": "Galería San Benito: productos, locales y teléfono",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/390886447439321/Galer%C3%ADa-San-Benito---Tingo-Mar%C3%ADa",
+      "tipo": "republicacion_red_social",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "efe_local": {
+      "titulo": "Tiendas EFE: local de Tingo María",
+      "url": "https://pe.todosnegocios.com/tiendas-efe-tingo-mar%C3%ADa-01-2002890",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "efe_web": {
+      "titulo": "Tiendas EFE: categorías del catálogo nacional",
+      "url": "https://www.efe.com.pe/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "curacao_local": {
+      "titulo": "La Curacao: local de Tingo María",
+      "url": "https://pe.todosnegocios.com/la-curacao-tingo-mar%C3%ADa-01-2002870",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "curacao_web": {
+      "titulo": "La Curacao: catálogo nacional y atención",
+      "url": "https://www.lacuracao.pe/stores/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "sur_contacto": {
+      "titulo": "Importaciones Sur: dirección y teléfonos",
+      "url": "https://deperu.com/comercios/vehiculos-servicio-autopartes/importaciones-sur-srltda-383170",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "sur_productos": {
+      "titulo": "Importaciones Sur: productos y contactos publicados",
+      "url": "https://www.aiyellow.com/imporsurito/",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "carsa_web": {
+      "titulo": "Carsa: catálogo y canales nacionales",
+      "url": "https://www.carsa.pe/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "carsa_gallo_locales": {
+      "titulo": "Alfin Banco: direcciones de Carsa y El Gallo Más Gallo",
+      "url": "https://alfinbanco.pe/tiendas-carsa",
+      "tipo": "entidad_financiera_directorio_afiliados",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "suzuki_distribuidores": {
+      "titulo": "Suzuki Perú: Carsa Tingo María como distribuidor",
+      "url": "https://www.suzukimotos.pe/distribuidores-autorizados/",
+      "tipo": "fabricante",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "gallo_web": {
+      "titulo": "El Gallo Más Gallo: locales y atención nacional",
+      "url": "https://www.elgallomasgallo.com.pe/",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "credivargas_empresa": {
+      "titulo": "Credivargas: listado de tiendas con Tingo María",
+      "url": "https://catalogo.credivargas.pe/quienes-somos",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado; el enlace presenta redirecciones"
+    },
+    "credivargas_web": {
+      "titulo": "Credivargas: categorías y canales nacionales",
+      "url": "https://www.credivargas.pe/acerca.php?idA=quienes-somos",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido del encabezado y pie; cuerpo de página con error"
+    },
+    "ruben_web": {
+      "titulo": "Ruben Market: productos y datos de contacto",
+      "url": "https://ruben-market.ueniweb.com/",
+      "tipo": "micrositio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "plaza_web": {
+      "titulo": "Plaza Moon: productos y dirección",
+      "url": "https://plaza-moon.ueniweb.com/",
+      "tipo": "micrositio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "refrescana_puntos": {
+      "titulo": "RefresCaña: puntos de venta en Tingo María",
+      "url": "https://www.refrescana.com/",
+      "tipo": "sitio_proveedor",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "logos_fullpubli": {
+      "titulo": "Full Publicidad: logos de clientes Minisol, EFE, Importaciones Sur y Comercial Aquino",
+      "url": "https://www.fullpubli.com/",
+      "tipo": "sitio_proveedor_publicidad",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "curacao_logo": {
+      "titulo": "Minka: logo de La Curacao",
+      "url": "https://www.minka.com.pe/tiendas/curacao",
+      "tipo": "sitio_centro_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "carsa_logo": {
+      "titulo": "Logo de Carsa",
+      "url": "https://logosenvector.com/logo/carsa-362",
+      "tipo": "repositorio_logos",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_busqueda_imagenes"
+    },
+    "gallo_logo": {
+      "titulo": "Logo de El Gallo Más Gallo en catálogo peruano",
+      "url": "https://catalogos-pe.com/el-gallo-mas-gallo",
+      "tipo": "directorio_catalogos",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_busqueda_imagenes"
+    },
+    "credivargas_logo": {
+      "titulo": "Credivargas: logo en página de crédito digital",
+      "url": "https://credivargas.pe/credito-digital.php",
+      "tipo": "sitio_negocio",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_busqueda_imagenes"
+    },
+    "directorio_comercios": {
+      "titulo": "Directorio local de centros comerciales",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/171688-42/genre/109527622457518/Centros%2Bcomerciales",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "directorio_tiendas": {
+      "titulo": "Directorio de tiendas de Tingo María",
+      "url": "https://www.findglocal.com/PE/Tingo-Mar%C3%ADa/171688-42",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado"
+    },
+    "directorio_globuya": {
+      "titulo": "Directorio de tiendas, con mención indexada de Don Saavedra",
+      "url": "https://www.globuya.com/PE/Tingo-Mar%C3%ADa/171688",
+      "tipo": "directorio_comercial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "contenido_consultado; resultados indexados y página difieren"
+    },
+    "full_artefactos_registro": {
+      "titulo": "Grupo Full Artefactos: ficha empresarial",
+      "url": "https://compuempresa.com/info/grupo-full-artefactos-eirl-73312C9371323F9B",
+      "tipo": "directorio_empresarial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado"
+    },
+    "aquino_estudio": {
+      "titulo": "Comercial Aquino: estudio histórico",
+      "url": "https://www.clubensayos.com/Negocios/Analisis-de-la-empresa-comercial-de-Abarrotes-Aquino/2399952.html",
+      "tipo": "trabajo_academico_no_oficial",
+      "fecha_consulta": "2026-10-07",
+      "acceso": "resultado_indexado; histórico"
+    }
+  }
+}
