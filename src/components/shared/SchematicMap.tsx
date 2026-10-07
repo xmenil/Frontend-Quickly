@@ -1,6 +1,6 @@
 import React from 'react';
 import { OrderStatus } from '../../domain/types';
-import { Store, Home, Bike, Info } from 'lucide-react';
+import { Store, Home, Bike, Info, Phone } from 'lucide-react';
 
 interface SchematicMapProps {
   orderStatus: OrderStatus;
@@ -9,6 +9,7 @@ interface SchematicMapProps {
   customerAddress: string;
   zoneName?: string;
   courierName?: string;
+  courierPhone?: string;
 }
 
 export const SchematicMap: React.FC<SchematicMapProps> = ({
@@ -18,28 +19,29 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   customerAddress,
   zoneName = 'Centro de Tingo María',
   courierName,
+  courierPhone,
 }) => {
   // Determine courier position on schematic route based on status
-  let courierProgressPercent = 0; // 0% at merchant, 50% midpoint, 100% delivered
+  let courierProgressPercent = 0; // 0% at merchant, 60% in transit, 100% delivered
   if (orderStatus === 'en_camino') courierProgressPercent = 60;
   if (orderStatus === 'entregado') courierProgressPercent = 100;
   if (orderStatus === 'listo_recoger') courierProgressPercent = 10;
 
   return (
-    <div className="w-full bg-slate-900 rounded-2xl overflow-hidden shadow-card border border-slate-800 text-white flex flex-col">
+    <div className="w-full bg-slate-900 rounded-3xl overflow-hidden shadow-card border border-slate-800 text-white flex flex-col">
       {/* Map Header */}
-      <div className="p-3.5 bg-slate-800/90 border-b border-slate-700/60 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-semibold text-slate-200">Mapa Esquemático — Tingo María</span>
+      <div className="p-4 bg-slate-800/95 border-b border-slate-700/60 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-bold text-slate-100">Ruta Esquemática • Tingo María</span>
         </div>
-        <span className="text-[11px] text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-semibold text-slate-300 bg-slate-700/70 px-3 py-1 rounded-full border border-slate-600/50">
           {zoneName}
         </span>
       </div>
 
       {/* SVG Stylized Local Map */}
-      <div className="relative aspect-[16/9] w-full bg-[#131b2e] overflow-hidden select-none">
+      <div className="relative aspect-[16/9] w-full bg-slate-950 overflow-hidden select-none">
         <svg
           viewBox="0 0 600 340"
           className="w-full h-full"
@@ -61,9 +63,9 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
           <path
             d="M 50 70 Q 140 30 220 55 T 380 40 T 520 70 L 600 90 L 600 0 L 0 0 L 0 90 Z"
             fill="#0f172a"
-            opacity="0.8"
+            opacity="0.85"
           />
-          <text x="360" y="32" fill="#475569" fontSize="10" fontWeight="bold" letterSpacing="1">
+          <text x="360" y="32" fill="#64748b" fontSize="10" fontWeight="bold" letterSpacing="1">
             SILUETA LA BELLA DURMIENTE
           </text>
 
@@ -75,13 +77,13 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
             strokeWidth="32"
             strokeLinecap="round"
           />
-          <text x="75" y="220" fill="#38bdf8" fontSize="10" transform="rotate(-75 75 220)" opacity="0.6">
+          <text x="75" y="220" fill="#38bdf8" fontSize="10" fontWeight="bold" transform="rotate(-75 75 220)" opacity="0.7">
             RÍO HUALLAGA
           </text>
 
           {/* Puente Corpac */}
           <line x1="85" y1="140" x2="135" y2="140" stroke="#94a3b8" strokeWidth="6" strokeDasharray="3 2" />
-          <text x="50" y="132" fill="#94a3b8" fontSize="8">Puente Corpac</text>
+          <text x="50" y="132" fill="#cbd5e1" fontSize="9" fontWeight="bold">Puente Corpac</text>
 
           {/* Urban Grid Streets */}
           {/* Alameda Perú / Centro */}
@@ -97,20 +99,20 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
           <line x1="500" y1="60" x2="500" y2="300" stroke="#334155" strokeWidth="3" />
 
           {/* Landmark Labels */}
-          <text x="325" y="100" fill="#64748b" fontSize="9">Av. Alameda Perú</text>
-          <text x="325" y="170" fill="#64748b" fontSize="9">Plaza de Armas</text>
-          <text x="18" y="80" fill="#64748b" fontSize="9">Castillo Grande</text>
-          <text x="440" y="270" fill="#64748b" fontSize="9">Rupa Rupa / UNAS</text>
+          <text x="325" y="100" fill="#94a3b8" fontSize="9" fontWeight="500">Av. Alameda Perú</text>
+          <text x="325" y="170" fill="#94a3b8" fontSize="9" fontWeight="500">Plaza de Armas</text>
+          <text x="18" y="80" fill="#94a3b8" fontSize="9" fontWeight="500">Castillo Grande</text>
+          <text x="440" y="270" fill="#94a3b8" fontSize="9" fontWeight="500">Rupa Rupa / UNAS</text>
 
           {/* Plaza de Armas Green Park */}
-          <rect x="300" y="125" width="40" height="30" rx="4" fill="#065f46" opacity="0.7" />
+          <rect x="300" y="125" width="40" height="30" rx="4" fill="#065f46" opacity="0.8" />
 
           {/* Delivery Route Path */}
           <path
             id="deliveryRoute"
             d="M 230 110 L 320 110 L 320 230 L 450 230"
             fill="none"
-            stroke="#C60050"
+            stroke="#BE185D"
             strokeWidth="4"
             strokeDasharray="6 4"
             className={orderStatus === 'en_camino' ? 'animate-pulse' : ''}
@@ -118,7 +120,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
           {/* Origin Pin (Store) at (230, 110) */}
           <g transform="translate(230, 110)">
-            <circle r="14" fill="#C60050" />
+            <circle r="14" fill="#BE185D" />
             <circle r="6" fill="#ffffff" />
           </g>
 
@@ -131,8 +133,8 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
           {/* Moving Courier Icon on Route */}
           {courierProgressPercent > 0 && courierProgressPercent < 100 && (
             <g transform="translate(320, 180)" className="animate-bounce">
-              <circle r="16" fill="#3B82F6" />
-              <circle r="19" fill="none" stroke="#3B82F6" strokeWidth="2" opacity="0.6" className="animate-ping" />
+              <circle r="16" fill="#0284c7" />
+              <circle r="19" fill="none" stroke="#0284c7" strokeWidth="2" opacity="0.6" className="animate-ping" />
               {/* Little bike silhouette in SVG */}
               <circle cx="-5" cy="4" r="3" fill="white" />
               <circle cx="5" cy="4" r="3" fill="white" />
@@ -142,28 +144,40 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         </svg>
 
         {/* Floating status badge on map */}
-        <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl border border-slate-700 max-w-[280px] text-xs">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-            <span className="font-bold text-white truncate">{merchantName}</span>
+        <div className="absolute bottom-3 left-3 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-700 max-w-[300px] text-xs shadow-lg space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0" />
+            <span className="font-extrabold text-white truncate">{merchantName}</span>
           </div>
           <div className="flex items-center gap-2 text-slate-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0" />
             <span className="truncate">{customerAddress}</span>
           </div>
           {courierName && (
-            <div className="mt-1 pt-1 border-t border-slate-800 text-[11px] text-sky-400 flex items-center gap-1">
-              <Bike className="w-3 h-3" /> Repartidor: {courierName}
+            <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-sky-400">
+              <span className="flex items-center gap-1.5 truncate">
+                <Bike className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">Repartidor: {courierName}</span>
+              </span>
+              {courierPhone && (
+                <a
+                  href={`tel:${courierPhone.replace(/\s+/g, '')}`}
+                  className="touch-target inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold ml-2 underline flex-shrink-0"
+                >
+                  <Phone className="w-3 h-3" />
+                  <span>Llamar</span>
+                </a>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Mandatory Disclaimer from Section 5 */}
-      <div className="p-2.5 bg-slate-800/60 border-t border-slate-800 flex items-center gap-2 text-[11px] text-slate-400">
-        <Info className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+      {/* Map Disclaimer */}
+      <div className="p-3 bg-slate-800/80 border-t border-slate-800 flex items-center gap-2 text-xs text-slate-400">
+        <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
         <span>
-          Representación esquemática de Tingo María para simulación de ruta. No constituye GPS satelital en vivo.
+          Ruta esquemática de Tingo María para referencia de despacho.
         </span>
       </div>
     </div>
