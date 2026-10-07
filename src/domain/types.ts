@@ -19,7 +19,16 @@ export interface User {
   createdAt: string;
 }
 
-export type MerchantCategory = 'restaurantes' | 'farmacias' | 'bodegas' | 'ropa' | 'emprendedores';
+export type MerchantCategory =
+  | 'restaurantes'
+  | 'farmacias'
+  | 'bodegas'
+  | 'ropa'
+  | 'emprendedores'
+  | 'supermercados'
+  | 'tecnologia'
+  | 'electrohogar'
+  | 'hogar';
 
 export interface Merchant {
   id: string;

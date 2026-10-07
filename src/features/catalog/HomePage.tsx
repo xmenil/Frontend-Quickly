@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store/authStore';
 import { ProductDetailModal } from './ProductDetailModal';
 import { QuickCategoryStrip } from '../../components/shared/QuickCategoryStrip';
 import { CategoryGridSection } from '../../components/shared/CategoryGridSection';
+import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
 import { Product, MerchantCategory } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
@@ -334,6 +335,9 @@ export const HomePage: React.FC = () => {
 
       {/* Mercado Libre Style 4x3 Categorías Grid Section matching Capture 1 */}
       <CategoryGridSection />
+
+      {/* Official Big Stores & Supermarkets Section (from tiendas_tingo_maria.json) */}
+      <OfficialStoresSection />
 
       {/* Mercado Libre Style Discovery Row matching Capture 1 */}
       <div className="space-y-3">

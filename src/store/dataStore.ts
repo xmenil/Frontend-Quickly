@@ -100,7 +100,7 @@ interface DataState {
   resetToSeed: () => void;
 }
 
-const STORAGE_KEY = 'quickly_datastore_v1';
+const STORAGE_KEY = 'quickly_datastore_v2';
 
 interface StoredDataPayload {
   merchants: Merchant[];

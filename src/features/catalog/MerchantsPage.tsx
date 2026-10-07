@@ -69,10 +69,14 @@ export const MerchantsPage: React.FC = () => {
 
   const categories: { id: MerchantCategory | 'all'; label: string }[] = [
     { id: 'all', label: 'Todos los Comercios' },
+    { id: 'supermercados', label: 'Supermercados' },
+    { id: 'electrohogar', label: 'Electrohogar' },
+    { id: 'tecnologia', label: 'Tecnología' },
     { id: 'restaurantes', label: 'Restaurantes' },
     { id: 'farmacias', label: 'Farmacias' },
     { id: 'bodegas', label: 'Bodegas' },
     { id: 'ropa', label: 'Ropa y Calzado' },
+    { id: 'hogar', label: 'Hogar y Variedades' },
     { id: 'emprendedores', label: 'Emprendedores' },
   ];
 
