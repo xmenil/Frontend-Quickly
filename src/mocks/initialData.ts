@@ -114,6 +114,15 @@ export const INITIAL_USERS: User[] = [
     courierId: 'c_luis',
     createdAt: '2026-03-02T16:45:00Z',
   },
+  {
+    id: 'u_cliente_suspendido',
+    name: 'Jorge Luis - Cuenta Suspendida',
+    email: 'suspendido@quickly.pe',
+    phone: '962 000 111',
+    role: 'cliente',
+    status: 'suspendido',
+    createdAt: '2026-02-01T10:00:00Z',
+  },
 ];
 
 export const INITIAL_MERCHANTS: Merchant[] = [

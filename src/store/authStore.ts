@@ -8,7 +8,7 @@ interface AuthState {
   activeRole: UserRole;
   isAuthenticated: boolean;
   loginDemo: (role: UserRole) => void;
-  login: (identifier: string) => { success: boolean; message?: string };
+  login: (identifier: string, roleHint?: UserRole) => { success: boolean; message?: string; user?: User };
   loginGoogle: () => { success: boolean; user: User };
   registerCustomer: (data: { name: string; email: string; phone: string }) => { success: boolean; user: User };
   logout: () => void;
@@ -80,31 +80,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return { success: true, user: newUser };
   },
 
-  login: (identifier: string) => {
+  login: (identifier: string, roleHint?: UserRole) => {
     const clean = identifier.trim().toLowerCase();
     const cleanDigits = clean.replace(/\D/g, '');
-    const user = INITIAL_USERS.find(
-      u => u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))
+
+    // 1. Search for user matching identifier and matching roleHint
+    let user = INITIAL_USERS.find(
+      u => (u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))) &&
+           (!roleHint || u.role === roleHint)
     );
 
+    // 2. If not found with specific role, look for general match
     if (!user) {
-      // Create instant customer session so any entered test email/phone works smoothly
+      user = INITIAL_USERS.find(
+        u => u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))
+      );
+    }
+
+    // 3. Fallback: Create instant session respecting the roleHint or 'cliente'
+    if (!user) {
+      const assignedRole = roleHint || 'cliente';
       const fallbackUser: User = {
-        id: `u_cust_${Date.now()}`,
-        name: clean.includes('@') ? clean.split('@')[0] : 'Cliente Quickly',
+        id: `u_${assignedRole}_${Date.now()}`,
+        name: clean.includes('@') ? clean.split('@')[0] : `Usuario ${assignedRole}`,
         email: clean.includes('@') ? clean : `${cleanDigits || 'usuario'}@quickly.pe`,
         phone: cleanDigits ? `+51 ${cleanDigits}` : '962 123 456',
-        role: 'cliente',
+        role: assignedRole,
         status: 'activo',
         createdAt: new Date().toISOString(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackUser));
       set({
         currentUser: fallbackUser,
-        activeRole: 'cliente',
+        activeRole: assignedRole,
         isAuthenticated: true,
       });
-      return { success: true };
+      return { success: true, user: fallbackUser };
     }
 
     if (user.status === 'suspendido') {
@@ -120,7 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       activeRole: user.role,
       isAuthenticated: true,
     });
-    return { success: true };
+    return { success: true, user };
   },
 
   logout: () => {
