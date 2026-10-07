@@ -29,6 +29,8 @@ import {
   Play,
   Award,
   Zap,
+  Clock,
+  ShoppingCart,
 } from 'lucide-react';
 
 export const ProductDetailPage: React.FC = () => {
@@ -39,10 +41,10 @@ export const ProductDetailPage: React.FC = () => {
   const { addItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
 
-  // Find product or fallback to vans/first
+  // Find product or fallback to authentic Amazonian dish
   const product =
     products.find((p) => p.id === id) ||
-    products.find((p) => p.id === 'p_zapatillas_vans') ||
+    products.find((p) => p.id === 'p_tacacho_cecina') ||
     products[0];
 
   const merchant = merchants.find((m) => m.id === product?.merchantId) || merchants[0];
@@ -53,16 +55,16 @@ export const ProductDetailPage: React.FC = () => {
   const galleryImages = product?.images && product.images.length > 0
     ? product.images
     : [
-        product?.imageUrl || 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80',
+        product?.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&auto=format&fit=crop&q=80',
       ];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    product?.variants && product.variants.length > 0 ? product.variants[2]?.id || product.variants[0].id : ''
+    product?.variants && product.variants.length > 0 ? product.variants[0]?.id || '' : ''
   );
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -79,7 +81,7 @@ export const ProductDetailPage: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center">
         <h1 className="text-2xl font-bold text-ink mb-2">Producto no encontrado</h1>
-        <p className="text-gray-500 text-sm mb-6">El producto que buscas ya no está disponible.</p>
+        <p className="text-ink-light text-sm mb-6">El producto que buscas ya no está disponible en Tingo María.</p>
         <Link
           to="/"
           className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm"
@@ -90,11 +92,10 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const originalPriceCents = product.originalPriceCents || Math.round(product.priceCents * 1.25);
+  const originalPriceCents = product.originalPriceCents || Math.round(product.priceCents * 1.2);
   const discountPercent = Math.round(
     ((originalPriceCents - product.priceCents) / originalPriceCents) * 100
   );
-  const cuotaAmount = (product.priceCents / 100 / 6).toFixed(2);
 
   // Similar products in same category or merchant
   const similarProducts = products
@@ -158,7 +159,7 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 pb-28 sm:pb-8">
       {/* Toast Notification */}
       {showAddedToast && (
         <div className="fixed top-20 right-4 z-50 bg-white border border-primary/20 shadow-floating rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -534,21 +535,22 @@ export const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Price Box */}
-            <div className="space-y-1 pt-1">
-              <span className="text-xs text-gray-400 line-through">
+            <div className="space-y-1.5 pt-1">
+              <span className="text-xs text-gray-500 line-through tabular-nums">
                 {formatCents(originalPriceCents)}
               </span>
               <div className="flex items-baseline gap-2.5">
-                <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight">
+                <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight tabular-nums">
                   {formatCents(product.priceCents)}
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                   {discountPercent}% OFF
                 </span>
               </div>
-              <p className="text-xs text-gray-600 font-medium">
-                6 cuotas de <span className="font-bold text-ink">S/ {cuotaAmount}</span> sin interés
-              </p>
+              <div className="flex items-center gap-2 pt-1 text-xs text-ink-light">
+                <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span>Preparación y despacho: <strong className="text-ink tabular-nums">{merchant.prepTimeMinutes}-{merchant.prepTimeMinutes + 15} min</strong></span>
+              </div>
             </div>
 
             {/* Coupon Callout */}
@@ -794,6 +796,47 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             </Link>
           ))}
+        </div>
+      </div>
+
+      {/* Mobile Sticky Add-to-Cart Bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 shadow-floating flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <span className="text-[10px] text-gray-500 font-medium block">Total</span>
+          <span className="text-base font-black text-ink tabular-nums">
+            {formatCents(product.priceCents * selectedQuantity)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50">
+            <button
+              type="button"
+              onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+              className="p-2 text-gray-600 hover:text-ink touch-target flex items-center justify-center"
+              aria-label="Disminuir"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <span className="px-2 text-xs font-bold text-ink tabular-nums">{selectedQuantity}</span>
+            <button
+              type="button"
+              onClick={() => setSelectedQuantity(Math.min(product.stock, selectedQuantity + 1))}
+              className="p-2 text-gray-600 hover:text-ink touch-target flex items-center justify-center"
+              aria-label="Aumentar"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 touch-target active:scale-95"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Agregar</span>
+          </button>
         </div>
       </div>
     </div>

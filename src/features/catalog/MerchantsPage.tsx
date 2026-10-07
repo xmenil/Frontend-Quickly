@@ -69,25 +69,22 @@ export const MerchantsPage: React.FC = () => {
 
   const categories: { id: MerchantCategory | 'all'; label: string }[] = [
     { id: 'all', label: 'Todos los Comercios' },
-    { id: 'supermercados', label: 'Supermercados' },
-    { id: 'electrohogar', label: 'Electrohogar' },
-    { id: 'tecnologia', label: 'Tecnología' },
-    { id: 'restaurantes', label: 'Restaurantes' },
-    { id: 'farmacias', label: 'Farmacias' },
-    { id: 'bodegas', label: 'Bodegas' },
-    { id: 'ropa', label: 'Ropa y Calzado' },
-    { id: 'hogar', label: 'Hogar y Variedades' },
-    { id: 'emprendedores', label: 'Emprendedores' },
+    { id: 'restaurantes', label: 'Restaurantes Amazónicos' },
+    { id: 'farmacias', label: 'Boticas & Farmacias' },
+    { id: 'bodegas', label: 'Bodegas & Abarrotes' },
+    { id: 'emprendedores', label: 'Cacao, Café & Selva' },
+    { id: 'supermercados', label: 'Supermercados & Minimarkets' },
+    { id: 'ropa', label: 'Textiles & Confección' },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20">
       {/* Title & Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Comercios en Tingo María</h1>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Explora {merchants.filter((m) => m.status === 'activo').length} tiendas y negocios locales en Rupa Rupa
+          <p className="text-xs sm:text-sm text-ink-light font-medium">
+            Explora <span className="font-bold text-ink tabular-nums">{merchants.filter((m) => m.status === 'activo').length}</span> tiendas y negocios locales en Rupa Rupa y Castillo Grande
           </p>
         </div>
 
@@ -96,7 +93,7 @@ export const MerchantsPage: React.FC = () => {
           <button
             type="button"
             onClick={handleClearFilters}
-            className="self-start sm:self-auto touch-target text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 bg-primary-light px-3 py-1.5 rounded-full transition-colors"
+            className="self-start sm:self-auto touch-target text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 bg-primary-50 px-3.5 py-1.5 rounded-full border border-primary-200 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Limpiar filtros</span>
@@ -105,17 +102,17 @@ export const MerchantsPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-subtle space-y-4">
         {/* Search Input */}
         <div className="relative">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por negocio o nombre de plato/producto (ej: cecina, panadol, café)..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+            placeholder="Buscar por negocio o plato (ej: cecina, juane, paracetamol, café)..."
+            className="w-full min-h-[44px] bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all shadow-subtle"
           />
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5 pointer-events-none" />
+          <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5 pointer-events-none" />
         </div>
 
         {/* Category Chips Scrollable */}

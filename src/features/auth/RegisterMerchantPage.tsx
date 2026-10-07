@@ -34,15 +34,20 @@ export const RegisterMerchantPage: React.FC = () => {
       </div>
 
       {isSubmitted ? (
-        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
-          <Clock className="w-12 h-12 text-amber-600 mx-auto" />
-          <h2 className="text-base font-bold text-amber-900">Solicitud Enviada con Éxito</h2>
-          <p className="text-xs text-amber-800 leading-relaxed">
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3 animate-in fade-in">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-subtle">
+            <Clock className="w-7 h-7" />
+          </div>
+          <h2 className="text-base font-bold text-amber-950">Solicitud Enviada con Éxito</h2>
+          <p className="text-xs text-amber-900 leading-relaxed max-w-xs mx-auto">
             Tu negocio <strong>{businessName}</strong> ha quedado registrado como{' '}
-            <span className="font-semibold">pendiente de aprobación</span>.
+            <span className="font-semibold text-amber-950">pendiente de aprobación</span> por la administración de Quickly Tingo María.
           </p>
-          <div className="p-3 bg-white/80 rounded-xl border border-amber-200 text-xs text-gray-600">
-            💡 En este prototipo, puedes cambiar al rol de <strong>Admin</strong> desde el switcher demo para revisar y aprobar esta solicitud.
+          <div className="p-3 bg-white/90 rounded-xl border border-amber-200 text-xs text-gray-700 flex items-start gap-2 text-left">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span>
+              En este prototipo interactivo, puedes cambiar al rol de <strong>Admin</strong> desde el menú flotante para aprobar tu negocio al instante.
+            </span>
           </div>
           <Button
             variant="primary"
@@ -50,7 +55,7 @@ export const RegisterMerchantPage: React.FC = () => {
             className="w-full mt-2"
             onClick={() => navigate('/admin/usuarios')}
           >
-            Ir a Panel Admin para Aprobar Solicitud
+            Ir al Panel Admin para Aprobar Solicitud
           </Button>
         </div>
       ) : (

@@ -3,6 +3,8 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../domain/types';
 import { BrandLogo } from '../../components/shared/BrandLogo';
+import { Dialog } from '../../components/ui/Dialog';
+import { Button } from '../../components/ui/Button';
 import {
   UserCheck,
   Store,
@@ -17,6 +19,14 @@ import {
   AlertCircle,
   ArrowRight,
   Check,
+  Clock,
+  ShieldAlert,
+  HelpCircle,
+  MapPin,
+  Banknote,
+  UtensilsCrossed,
+  Shield,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface RoleOption {
@@ -121,6 +131,16 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
 
+  // Contextual account status modal (A-2)
+  const [accountModal, setAccountModal] = useState<{
+    type: 'pendiente' | 'suspendido';
+    title: string;
+    message: string;
+  } | null>(null);
+
+  // Onboarding modal (A-3)
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   const currentRole = ROLES[selectedRole];
 
   useEffect(() => {
@@ -154,7 +174,21 @@ export const LoginPage: React.FC = () => {
 
         navigate(targetPath, { replace: true });
       } else {
-        setError(result.message || 'Credenciales no válidas. Por favor verifica los datos.');
+        if (result.message?.includes('pendiente')) {
+          setAccountModal({
+            type: 'pendiente',
+            title: 'Cuenta en proceso de revisión',
+            message: `Tu registro como ${currentRole.label} ha sido recibido y se encuentra pendiente de aprobación por el equipo de Quickly en Tingo María.`,
+          });
+        } else if (result.message?.includes('suspendid')) {
+          setAccountModal({
+            type: 'suspendido',
+            title: 'Cuenta suspendida temporalmente',
+            message: `Tu cuenta de ${currentRole.label} se encuentra inactiva por administración. Comunícate con la central de Quickly para reactivarla.`,
+          });
+        } else {
+          setError(result.message || 'Credenciales no válidas. Por favor verifica los datos ingresados.');
+        }
       }
     }, 400);
   };
@@ -216,6 +250,18 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-ink-light max-w-sm mx-auto">
             Elige tu perfil para continuar en Quickly Tingo María
           </p>
+
+          {/* Quick Onboarding Trigger Pill (A-3) */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowOnboarding(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover hover:underline transition-all py-1 px-3 rounded-full bg-primary-50 border border-primary-200/80 shadow-subtle touch-target"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>¿Cómo funciona Quickly en Tingo María? Conoce las 3 claves</span>
+            </button>
+          </div>
         </div>
 
         {/* 1. ROOMY & FRIENDLY 4-ROLE SELECTOR */}
@@ -240,7 +286,7 @@ export const LoginPage: React.FC = () => {
                   role="tab"
                   aria-selected={isSelected}
                   onClick={() => setSelectedRole(roleKey)}
-                  className={`min-h-[56px] p-3 rounded-2xl border text-left transition-all flex items-center gap-3 select-none active:scale-98 touch-target ${
+                  className={`min-h-[56px] p-3 rounded-2xl border text-left transition-all flex items-center gap-3 select-none active:scale-[0.98] touch-target ${
                     isSelected
                       ? 'bg-primary-50/70 border-primary text-ink shadow-subtle ring-2 ring-primary/20'
                       : 'bg-white hover:bg-gray-50 border-gray-200 text-ink-light'
@@ -250,7 +296,7 @@ export const LoginPage: React.FC = () => {
                     className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                       isSelected
                         ? 'bg-primary text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-500'
+                        : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     <IconComp className="w-4 h-4" />
@@ -264,7 +310,7 @@ export const LoginPage: React.FC = () => {
                         <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 stroke-[3]" />
                       )}
                     </div>
-                    <span className="text-[11px] text-gray-500 block truncate">
+                    <span className="text-[11px] text-gray-600 block truncate">
                       {roleItem.subtitle}
                     </span>
                   </div>
@@ -275,9 +321,9 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* 2. SUBTLE & FRIENDLY DEMO HELPER PILL */}
-        <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200/80 flex items-center justify-between gap-2.5">
+        <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-white border border-gray-200 text-primary font-extrabold flex items-center justify-center text-xs flex-shrink-0 shadow-subtle">
+            <div className="w-8 h-8 rounded-xl bg-white border border-gray-200 text-primary font-black flex items-center justify-center text-xs flex-shrink-0 shadow-subtle">
               {currentRole.demoUser.initials}
             </div>
             <div className="min-w-0">
@@ -285,14 +331,14 @@ export const LoginPage: React.FC = () => {
                 <span className="text-xs font-bold text-ink truncate">
                   {currentRole.demoUser.name}
                 </span>
-                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
                   Demo
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleAutofill}
-                className="text-[11px] text-gray-500 hover:text-primary transition-colors text-left truncate block"
+                className="text-[11px] text-gray-600 hover:text-primary font-medium transition-colors text-left truncate block mt-0.5"
               >
                 Autocompletar formulario
               </button>
@@ -303,7 +349,7 @@ export const LoginPage: React.FC = () => {
             type="button"
             onClick={handleInstantDemoLogin}
             disabled={isLoading}
-            className="min-h-[40px] px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-60 flex-shrink-0 flex items-center gap-1.5"
+            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-60 flex-shrink-0 flex items-center gap-1.5 touch-target"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Entrar en 1 clic</span>
@@ -314,7 +360,7 @@ export const LoginPage: React.FC = () => {
         {error && (
           <div
             role="alert"
-            className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2.5 animate-in fade-in"
+            className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2.5 animate-in fade-in"
           >
             <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
             <span className="flex-1">{error}</span>
@@ -331,19 +377,21 @@ export const LoginPage: React.FC = () => {
                 Correo o teléfono celular
               </label>
               {isPhone && (
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                  <Phone className="w-3 h-3" />
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-emerald-700" />
                   Celular tingalés
                 </span>
               )}
             </div>
             <div className="relative flex items-center">
               <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
-                {isPhone ? <Phone className="w-4 h-4 text-emerald-600" /> : <Mail className="w-4 h-4" />}
+                {isPhone ? <Phone className="w-4 h-4 text-emerald-700" /> : <Mail className="w-4 h-4 text-gray-500" />}
               </div>
               <input
                 id="login_identifier"
                 type="text"
+                inputMode={isPhone ? 'tel' : 'email'}
+                autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="ejemplo@correo.com o 962 123 456"
@@ -367,12 +415,13 @@ export const LoginPage: React.FC = () => {
               </Link>
             </div>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
+              <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-500">
                 <Lock className="w-4 h-4" />
               </div>
               <input
                 id="login_password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -411,7 +460,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full min-h-[48px] py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-all active:scale-98 disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full min-h-[48px] py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 touch-target"
           >
             {isLoading ? (
               <>
@@ -432,7 +481,7 @@ export const LoginPage: React.FC = () => {
           <div className="space-y-3 pt-1">
             <div className="relative flex items-center justify-center">
               <div className="border-t border-gray-200 w-full" />
-              <span className="bg-white px-3 text-xs text-gray-500 font-normal">
+              <span className="bg-white px-3 text-xs text-gray-600 font-medium">
                 o continuar con
               </span>
             </div>
@@ -441,7 +490,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-ink text-xs sm:text-sm font-bold shadow-subtle transition-all active:scale-98 flex items-center justify-center gap-3"
+              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-ink text-xs sm:text-sm font-bold shadow-subtle transition-all active:scale-[0.98] flex items-center justify-center gap-3 touch-target"
             >
               <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
                 <path
@@ -479,7 +528,7 @@ export const LoginPage: React.FC = () => {
               </Link>
             </p>
           ) : (
-            <p className="text-gray-500 text-[11px]">
+            <p className="text-gray-600 text-xs">
               {currentRole.registerText}
             </p>
           )}
@@ -489,7 +538,7 @@ export const LoginPage: React.FC = () => {
         <div className="pt-2 border-t border-gray-100 text-center">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary transition-colors touch-target py-1"
           >
             <span>Explorar tiendas y menú como invitado</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -497,6 +546,140 @@ export const LoginPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* MODAL CONTEXTUAL DE ESTADO DE CUENTA (A-2) */}
+      <Dialog
+        isOpen={Boolean(accountModal)}
+        onClose={() => setAccountModal(null)}
+        title={accountModal?.title}
+        maxWidth="md"
+      >
+        {accountModal && (
+          <div className="space-y-4 pt-2">
+            <div
+              className={`p-4 rounded-2xl flex items-start gap-3 border ${
+                accountModal.type === 'pendiente'
+                  ? 'bg-amber-50 border-amber-200 text-amber-900'
+                  : 'bg-red-50 border-red-200 text-red-900'
+              }`}
+            >
+              {accountModal.type === 'pendiente' ? (
+                <Clock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <ShieldAlert className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="space-y-1 text-xs leading-relaxed">
+                <p className="font-semibold text-sm">
+                  {accountModal.type === 'pendiente'
+                    ? 'Validación en curso por el equipo Quickly'
+                    : 'Acceso pausado por administración'}
+                </p>
+                <p>{accountModal.message}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-ink-light space-y-2">
+              <p className="font-bold text-ink flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>¿Cómo proceder en esta demostración?</span>
+              </p>
+              {accountModal.type === 'pendiente' ? (
+                <p>
+                  Puedes ingresar como <strong>Administrador</strong> para aprobar esta cuenta desde la gestión de usuarios, o restaurar las credenciales demo activas con 1 clic.
+                </p>
+              ) : (
+                <p>
+                  Si crees que esto es un error, puedes contactar a la central telefónica de Quickly Tingo María al <strong>062-562112</strong> o ingresar con un perfil demo activo.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={() => {
+                  setAccountModal(null);
+                  handleAutofill();
+                }}
+              >
+                Cargar Demo Activo de {currentRole.label}
+              </Button>
+              {accountModal.type === 'pendiente' && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full"
+                  onClick={() => {
+                    setAccountModal(null);
+                    navigate('/admin/usuarios');
+                  }}
+                >
+                  Ir al Panel Admin
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Dialog>
+
+      {/* MODAL DE BIENVENIDA & ONBOARDING (A-3) */}
+      <Dialog
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        title="Bienvenido a Quickly Delivery"
+        description="Delivery centralizado de la Selva Alta en Tingo María"
+        maxWidth="lg"
+      >
+        <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Clave 1 */}
+            <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-100 space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                <UtensilsCrossed className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-bold text-ink">1. Gastronomía & Comercios</h3>
+              <p className="text-[11px] text-gray-600 leading-relaxed">
+                Tacacho con cecina, juane, boticas y abarrotes de los negocios de Tingo María.
+              </p>
+            </div>
+
+            {/* Clave 2 */}
+            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+                <Bike className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-bold text-ink">2. Envíos en 20-35 min</h3>
+              <p className="text-[11px] text-gray-600 leading-relaxed">
+                Despachos en moto y bici por Centro, UNAS, Castillo Grande, Rupa Rupa y Afilador.
+              </p>
+            </div>
+
+            {/* Clave 3 */}
+            <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-sm">
+                <Banknote className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-bold text-ink">3. Pagos transparentes</h3>
+              <p className="text-[11px] text-gray-600 leading-relaxed">
+                Yape, Plin y efectivo contra entrega con cálculo automático de vuelto.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full sm:w-auto"
+              onClick={() => setShowOnboarding(false)}
+            >
+              ¡Entendido! Continuar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

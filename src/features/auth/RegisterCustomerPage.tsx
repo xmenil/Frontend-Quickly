@@ -96,92 +96,106 @@ export const RegisterCustomerPage: React.FC = () => {
             <span>Registrarse con Google</span>
           </button>
 
-          {/* Divider matching Capture 5 */}
+          {/* Divider */}
           <div className="relative flex items-center justify-center">
             <div className="border-t border-gray-200 w-full" />
-            <span className="bg-white px-3 text-xs text-gray-400 font-normal">
-              O ingresa tu e-mail
+            <span className="bg-white px-3 text-xs text-ink-light font-medium">
+              O ingresa tu correo y datos
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* E-mail */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">E-mail</label>
+              <label htmlFor="reg_customer_email" className="block text-xs font-bold text-ink mb-1.5">
+                Correo electrónico
+              </label>
               <input
+                id="reg_customer_email"
                 type="email"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@correo.com"
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
+                className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
               />
             </div>
 
-            {/* Teléfono with Flag */}
+            {/* Teléfono with clean prefix */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
-              <div className="flex rounded-xl border border-gray-200 shadow-subtle overflow-hidden focus-within:ring-2 focus-within:ring-primary">
-                <div className="px-3 py-2.5 bg-gray-50 border-r border-gray-200 flex items-center gap-1.5 text-xs font-bold text-ink flex-shrink-0 select-none">
-                  <span>🇵🇪</span>
+              <label htmlFor="reg_customer_phone" className="block text-xs font-bold text-ink mb-1.5">
+                Teléfono celular (Tingo María)
+              </label>
+              <div className="flex rounded-xl border border-gray-300 shadow-subtle overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
+                <div className="px-3.5 py-2.5 bg-gray-50 border-r border-gray-200 flex items-center gap-1.5 text-xs font-bold text-ink flex-shrink-0 select-none">
+                  <span className="text-primary font-black">PE</span>
                   <span>+51</span>
-                  <span className="text-gray-400 text-[10px]">▼</span>
                 </div>
                 <input
+                  id="reg_customer_phone"
                   type="tel"
+                  inputMode="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="962 123 456"
                   required
-                  className="w-full px-3 py-2 text-sm text-ink placeholder-gray-400 focus:outline-none bg-white"
+                  className="w-full min-h-[44px] px-3.5 py-2 text-sm text-ink placeholder-gray-400 focus:outline-none bg-white"
                 />
               </div>
+              <p className="text-[11px] text-gray-500 mt-1">Recibirás confirmación de tus compras por WhatsApp</p>
             </div>
 
             {/* Nombre */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nombre</label>
+              <label htmlFor="reg_customer_name" className="block text-xs font-bold text-ink mb-1.5">
+                Nombres y Apellidos
+              </label>
               <input
+                id="reg_customer_name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej: Nilver Valdivia"
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
+                className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
               />
             </div>
 
             {/* Contraseña */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Contraseña</label>
-              <div className="relative">
+              <label htmlFor="reg_customer_password" className="block text-xs font-bold text-ink mb-1.5">
+                Contraseña
+              </label>
+              <div className="relative flex items-center">
                 <input
+                  id="reg_customer_password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
+                  className="w-full min-h-[44px] px-4 py-2.5 pr-11 rounded-xl border border-gray-300 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                  aria-label="Ver u ocultar contraseña"
+                  className="absolute right-3.5 text-gray-400 hover:text-ink p-1 transition-colors"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
 
-              {/* Password Requirement Bullets matching Capture 5 */}
-              <div className="mt-2 space-y-1 text-[11px] text-gray-500">
+              {/* Password Requirement Bullets */}
+              <div className="mt-2 space-y-1 text-[11px] text-ink-light">
                 <div className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${password.length >= 8 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  <span>Usa mínimo 8 caracteres.</span>
+                  <span>Mínimo 8 caracteres para mayor seguridad.</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${password.length >= 8 && /[0-9]/.test(password) ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  <span>No uses secuencias como 123 ni caracteres repetidos como aaa.</span>
+                  <span>Incluye números y letras.</span>
                 </div>
               </div>
             </div>
@@ -193,43 +207,46 @@ export const RegisterCustomerPage: React.FC = () => {
                   type="checkbox"
                   checked={allowContact}
                   onChange={(e) => setAllowContact(e.target.checked)}
-                  className="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer w-4 h-4"
                 />
-                <span>Acepto que me contacten por SMS y WhatsApp.</span>
+                <span>Acepto recibir el estado de mis pedidos por SMS y WhatsApp.</span>
               </label>
             </div>
 
-            {/* Legal terms text matching Capture 5 */}
-            <p className="text-[11px] text-gray-400 leading-relaxed pt-1">
-              Al continuar, acepto los{' '}
-              <span className="text-primary hover:underline cursor-pointer">
-                Términos y condiciones
+            {/* Legal terms text */}
+            <p className="text-[11px] text-gray-500 leading-relaxed pt-1">
+              Al continuar, confirmas estar de acuerdo con los{' '}
+              <span className="text-primary font-semibold hover:underline cursor-pointer">
+                Términos del Servicio Quickly
               </span>{' '}
-              y autorizo el uso de mis datos de acuerdo a la{' '}
-              <span className="text-primary hover:underline cursor-pointer">
-                Declaración de privacidad
-              </span>
-              .
+              en Tingo María.
             </p>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-all active:scale-98 disabled:opacity-70"
+              className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-all active:scale-98 disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Creando cuenta...' : 'Continuar'}
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Creando tu cuenta...</span>
+                </>
+              ) : (
+                <span>Crear mi cuenta gratis</span>
+              )}
             </button>
           </form>
 
           <div className="pt-3 border-t border-gray-100 text-center text-xs text-gray-600">
-            ¿Ya tienes cuenta?{' '}
+            ¿Ya tienes una cuenta registrada?{' '}
             <Link
               to="/login"
               state={{ from }}
-              className="font-bold text-primary hover:underline"
+              className="font-bold text-primary hover:underline ml-1"
             >
-              Inicia sesión
+              Iniciar sesión
             </Link>
           </div>
         </div>

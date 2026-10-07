@@ -108,18 +108,18 @@ export const MerchantDetailPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-6 border-b border-gray-100">
             <div>
               <div className="flex items-center gap-2.5 mb-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary-light px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold capitalize text-primary bg-primary-50 px-3 py-1 rounded-full border border-primary-200">
                   {merchant.category}
                 </span>
                 <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
                     merchant.isOpen
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-red-50 text-red-700'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-red-50 text-red-700 border border-red-200'
                   }`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${
+                    className={`w-2 h-2 rounded-full ${
                       merchant.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
                     }`}
                   />
@@ -128,45 +128,45 @@ export const MerchantDetailPage: React.FC = () => {
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-black text-ink">{merchant.name}</h1>
-              <p className="text-sm text-gray-600 max-w-2xl mt-2 leading-relaxed">
+              <p className="text-sm text-ink-light max-w-2xl mt-2 leading-relaxed">
                 {merchant.description}
               </p>
             </div>
 
             {/* Rating Box */}
             <div className="flex md:flex-col items-center md:items-end justify-between bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl">
-              <div className="flex items-center gap-1 text-ink font-black text-lg">
+              <div className="flex items-center gap-1.5 text-ink font-black text-lg">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                <span>{merchant.rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-400 font-normal">
+                <span className="tabular-nums">{merchant.rating.toFixed(1)}</span>
+                <span className="text-xs text-gray-500 font-medium tabular-nums">
                   ({merchant.ratingCount} valoraciones)
                 </span>
               </div>
-              <span className="text-xs text-gray-500 mt-1">Horario: {merchant.schedule}</span>
+              <span className="text-xs text-ink-light font-medium mt-1">Horario: {merchant.schedule}</span>
             </div>
           </div>
 
           {/* Quick Details Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 text-xs text-gray-600">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 text-xs text-ink-light">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 flex-shrink-0">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <span className="text-gray-400 block text-[11px]">Tiempo estimado</span>
-                <span className="font-bold text-ink">
+                <span className="text-gray-500 block text-[11px] font-medium">Tiempo estimado</span>
+                <span className="font-bold text-ink tabular-nums">
                   {merchant.prepTimeMinutes + 10}-{merchant.prepTimeMinutes + 20} min
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center text-primary flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary flex-shrink-0">
                 <Bike className="w-4 h-4" />
               </div>
               <div>
-                <span className="text-gray-400 block text-[11px]">Tarifa de envío</span>
-                <span className="font-bold text-ink">
+                <span className="text-gray-500 block text-[11px] font-medium">Tarifa de envío</span>
+                <span className="font-bold text-ink tabular-nums">
                   {formatCents(merchant.deliveryFeeCents)}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export const MerchantDetailPage: React.FC = () => {
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <div>
-                <span className="text-gray-400 block text-[11px]">Pedido mínimo</span>
+                <span className="text-gray-500 block text-[11px] font-medium">Pedido mínimo</span>
                 <span className="font-bold text-ink">
                   {formatCents(merchant.minOrderCents)}
                 </span>

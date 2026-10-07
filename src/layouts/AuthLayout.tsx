@@ -64,12 +64,12 @@ export const AuthLayout: React.FC = () => {
       </main>
 
       {/* Footer reassurance */}
-      <footer className="w-full max-w-6xl mx-auto mt-6 pt-4 border-t border-gray-200/60 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-2 z-10">
+      <footer className="w-full max-w-6xl mx-auto mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between text-xs text-ink-light gap-2 z-10">
         <div className="flex items-center gap-2 text-center sm:text-left">
           <Shield className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-          <span>Quickly Delivery • Plataforma para el desarrollo de la Selva Alta</span>
+          <span className="font-medium">Quickly Delivery • Plataforma para el desarrollo de la Selva Alta</span>
         </div>
-        <div className="flex items-center gap-4 text-gray-500">
+        <div className="flex items-center gap-3 text-gray-600 font-medium">
           <span>Castillo Grande</span>
           <span>•</span>
           <span>Centro</span>

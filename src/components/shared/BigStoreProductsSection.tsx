@@ -183,12 +183,12 @@ export const BigStoreProductsSection: React.FC = () => {
                 {/* Pricing */}
                 <div className="mt-1.5">
                   {product.originalPriceCents && (
-                    <p className="text-[11px] text-gray-400 line-through">
+                    <p className="text-[11px] text-gray-500 line-through tabular-nums">
                       {formatCents(product.originalPriceCents)}
                     </p>
                   )}
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-sm sm:text-base font-black text-ink">
+                    <span className="text-sm sm:text-base font-black text-ink tabular-nums">
                       {formatCents(product.priceCents)}
                     </span>
                   </div>
@@ -203,11 +203,11 @@ export const BigStoreProductsSection: React.FC = () => {
               <div className="flex items-end justify-between gap-2 mt-3 pt-2 border-t border-gray-100/80">
                 <div>
                   {product.originalPriceCents && (
-                    <p className="text-[11px] text-gray-400 line-through">
+                    <p className="text-[11px] text-gray-500 line-through tabular-nums">
                       {formatCents(product.originalPriceCents)}
                     </p>
                   )}
-                  <span className="text-sm sm:text-base font-black text-ink leading-tight block">
+                  <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
                     {formatCents(product.priceCents)}
                   </span>
                 </div>

@@ -29,15 +29,20 @@ export const RegisterCourierPage: React.FC = () => {
       </div>
 
       {isSubmitted ? (
-        <div className="p-6 bg-primary-50 border border-primary-200 rounded-2xl text-center space-y-3">
-          <Clock className="w-12 h-12 text-primary mx-auto" />
+        <div className="p-6 bg-primary-50 border border-primary-200 rounded-2xl text-center space-y-3 animate-in fade-in">
+          <div className="w-12 h-12 rounded-full bg-primary-100 text-primary flex items-center justify-center mx-auto shadow-subtle">
+            <Clock className="w-7 h-7" />
+          </div>
           <h2 className="text-base font-bold text-ink">Solicitud en Revisión</h2>
-          <p className="text-xs text-gray-700 leading-relaxed">
+          <p className="text-xs text-ink-light leading-relaxed max-w-xs mx-auto">
             Tu postulación como repartidor en <strong>{vehicleType}</strong> ha sido registrada y está{' '}
-            <span className="font-semibold text-primary">pendiente de aprobación</span> por la administración de Quickly.
+            <span className="font-semibold text-primary">pendiente de aprobación</span> por la administración de Quickly en Tingo María.
           </p>
-          <div className="p-3 bg-white/90 rounded-xl border border-primary-100 text-xs text-gray-600">
-            💡 Puedes ir al panel de <strong>Admin</strong> para aprobar la cuenta de repartidor de prueba.
+          <div className="p-3 bg-white/90 rounded-xl border border-primary-100 text-xs text-gray-700 flex items-start gap-2 text-left">
+            <Bike className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <span>
+              En este prototipo interactivo, puedes cambiar al rol de <strong>Admin</strong> desde el menú flotante para autorizar tu perfil y empezar a recibir pedidos.
+            </span>
           </div>
           <Button
             variant="primary"
@@ -45,7 +50,7 @@ export const RegisterCourierPage: React.FC = () => {
             className="w-full mt-2"
             onClick={() => navigate('/admin/usuarios')}
           >
-            Ver en Panel Admin
+            Ver en Panel Admin para Aprobación
           </Button>
         </div>
       ) : (
