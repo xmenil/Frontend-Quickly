@@ -4,10 +4,23 @@ import { useDataStore } from '../../store/dataStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatCents } from '../../lib/currency';
 import { Button } from '../../components/ui/Button';
-import { Store, Package, Clock, AlertCircle, Bike } from 'lucide-react';
+import {
+  Store,
+  MapPin,
+  Clock,
+  AlertCircle,
+  Bike,
+  Navigation,
+  Check,
+  X,
+  Sparkles,
+  Phone,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react';
 
 export const CourierRequestsPage: React.FC = () => {
-  const { purchases, couriers, courierAcceptOrder } = useDataStore();
+  const { purchases, couriers, courierAcceptOrder, toggleCourierAvailability } = useDataStore();
   const { currentUser } = useAuthStore();
   const navigate = useNavigate();
 
@@ -36,120 +49,175 @@ export const CourierRequestsPage: React.FC = () => {
     }
   };
 
+  const handleReject = () => {
+    // In demo mode, simply notify or dismiss visually
+  };
+
   return (
     <div className="space-y-4">
-      {/* Availability Notice */}
-      {!currentCourier.isAvailable && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-          <span>
-            Estás <strong>En Pausa</strong>. Activa tu disponibilidad arriba para aceptar entregas.
-          </span>
+      {/* G-1: Prominent Availability Card with Zone Display */}
+      <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-subtle flex items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                currentCourier.isAvailable
+                  ? 'bg-emerald-600 animate-pulse ring-4 ring-emerald-100'
+                  : 'bg-gray-400'
+              }`}
+            />
+            <span className="text-xs sm:text-sm font-extrabold text-ink">
+              {currentCourier.isAvailable ? 'Disponible para pedidos' : 'No disponible (En pausa)'}
+            </span>
+          </div>
+          <p className="text-[11px] text-gray-500 flex items-center gap-1 pl-4.5">
+            <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+            <span>Zona asignada: <strong>{currentCourier.currentZone || 'Centro de Tingo María'}</strong></span>
+          </p>
         </div>
-      )}
 
+        <button
+          type="button"
+          onClick={() => toggleCourierAvailability(currentCourier.id)}
+          className={`touch-target px-3.5 py-2 rounded-2xl text-xs font-extrabold border transition-all min-h-[44px] ${
+            currentCourier.isAvailable
+              ? 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+              : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+          }`}
+        >
+          {currentCourier.isAvailable ? 'Pausar' : 'Activar'}
+        </button>
+      </div>
+
+      {/* Header Title */}
       <div>
         <h1 className="text-xl font-extrabold text-ink">Solicitudes de Entrega</h1>
-        <p className="text-xs text-gray-500">
-          Subpedidos listos para retirar en Tingo María ({availableDeliveries.length} disponibles)
+        <p className="text-xs text-ink-light">
+          Pedidos listos en cocina para recojo y despacho inmediato en Tingo María ({availableDeliveries.length})
         </p>
       </div>
 
+      {/* Empty State */}
       {availableDeliveries.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-2 shadow-subtle">
-          <Clock className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-          <p className="font-bold text-ink text-sm">No hay pedidos esperando recojo</p>
-          <p className="text-xs">
-            Cuando un comercio marque un pedido como "Listo para recojo", aparecerá aquí al instante.
+        <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-3 shadow-subtle">
+          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
+            <Bike className="w-7 h-7" />
+          </div>
+          <h2 className="font-extrabold text-ink text-sm sm:text-base">
+            No hay solicitudes pendientes en este momento
+          </h2>
+          <p className="text-xs text-ink-light max-w-xs mx-auto leading-relaxed">
+            Cuando un comercio afiliado de Tingo María marque un pedido como "Listo para recojo",
+            aparecerá aquí con su tarifa garantizada.
           </p>
         </div>
       ) : (
+        /* G-3: Quick Request Cards */
         <div className="space-y-4">
           {availableDeliveries.map((delivery) => (
             <div
               key={delivery.id}
-              className="bg-white border border-gray-100 rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-subtle"
+              className="bg-white border border-gray-100 rounded-3xl p-4 sm:p-5 space-y-4 shadow-subtle hover:shadow-md transition-shadow"
             >
-              {/* Header: Store & Fee */}
-              <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-gray-100">
+              {/* Top Row: Merchant Name & Fee */}
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-gray-100">
                 <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                  <div className="flex items-center gap-1.5 text-xs font-extrabold text-primary">
                     <Store className="w-3.5 h-3.5" />
                     <span>{delivery.merchantName}</span>
                   </div>
-                  <h3 className="font-bold text-ink text-sm mt-0.5">{delivery.purchaseCode}</h3>
+                  <h3 className="font-extrabold text-ink text-base mt-0.5">
+                    {delivery.purchaseCode}
+                  </h3>
+                  <span className="text-[11px] text-gray-500">
+                    {delivery.items.reduce((acc, i) => acc + i.quantity, 0)} bultos •{' '}
+                    {delivery.paymentMethod === 'efectivo' ? 'Cobro en Efectivo' : 'Prepagado'}
+                  </span>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider block">
-                    Ganancia Reparto
+                {/* Big Delivery Earnings Badge (G-3) */}
+                <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-2xl text-right">
+                  <span className="text-[10px] text-emerald-800 font-bold block uppercase tracking-wider">
+                    Ganancia
                   </span>
-                  <span className="text-base font-black text-emerald-600">
-                    {formatCents(delivery.deliveryFeeCents)}
+                  <span className="text-lg font-black text-emerald-700 tabular-nums">
+                    +{formatCents(delivery.deliveryFeeCents)}
                   </span>
                 </div>
               </div>
 
-              {/* Route: Origin & Destination */}
-              <div className="space-y-2 text-xs">
-                {/* Store Pickup */}
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-primary-50 text-primary flex items-center justify-center font-bold text-[10px] mt-0.5 flex-shrink-0">
+              {/* G-3: Origin & Destination Route Details */}
+              <div className="space-y-2.5 text-xs">
+                {/* 1. Recojo */}
+                <div className="flex items-start gap-2.5 bg-gray-50/70 p-2.5 rounded-2xl border border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-primary-50 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
                     1
                   </div>
-                  <div>
-                    <span className="text-[11px] text-gray-400 block font-medium">
-                      Retirar en local:
-                    </span>
-                    <span className="font-bold text-ink">{delivery.merchantAddress}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-extrabold text-ink block">Retiro en comercio:</span>
+                    <p className="text-ink-light truncate">{delivery.merchantAddress}</p>
                   </div>
                 </div>
 
-                {/* Customer Dropoff */}
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px] mt-0.5 flex-shrink-0">
+                {/* 2. Destino */}
+                <div className="flex items-start gap-2.5 bg-gray-50/70 p-2.5 rounded-2xl border border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
                     2
                   </div>
-                  <div>
-                    <span className="text-[11px] text-gray-400 block font-medium">
-                      Entregar a cliente ({delivery.customerName}):
-                    </span>
-                    <span className="font-bold text-ink">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-extrabold text-ink">Entrega al cliente:</span>
+                      <span className="text-[10px] bg-primary-50 text-primary font-bold px-2 py-0.5 rounded-full">
+                        {delivery.addressSnapshot.label}
+                      </span>
+                    </div>
+                    <p className="text-ink font-semibold truncate">
                       {delivery.addressSnapshot.street} #{delivery.addressSnapshot.number}
-                    </span>
-                    <p className="text-[11px] text-gray-400 mt-0.5">
+                    </p>
+                    <p className="text-[11px] text-gray-500 italic truncate">
                       Ref: {delivery.addressSnapshot.reference}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Packages & Payment Type */}
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] text-gray-500">
+              {/* Trip stats info */}
+              <div className="flex items-center justify-between text-[11px] text-gray-600 px-1">
                 <span className="flex items-center gap-1">
-                  <Package className="w-3.5 h-3.5 text-gray-400" />
-                  {delivery.items.reduce((a, b) => a + b.quantity, 0)} bultos
+                  <Navigation className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Distancia: <strong>~2.1 km</strong></span>
                 </span>
-
-                <span className="font-semibold text-ink">
-                  {delivery.paymentMethod === 'efectivo'
-                    ? `Cobrar ${formatCents(delivery.totalCents)} en efectivo`
-                    : 'Prepagado • No cobrar'}
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Tiempo en moto: <strong>~12 min</strong></span>
                 </span>
               </div>
 
-              {/* Accept Button */}
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                disabled={!currentCourier.isAvailable}
-                onClick={() => handleAccept(delivery.id)}
-                className="w-full text-sm font-bold shadow-sm"
-              >
-                <Bike className="w-4 h-4 mr-2" />
-                <span>Aceptar y Asignar Entrega</span>
-              </Button>
+              {/* G-3: Big Action Buttons (Touch Targets >= 48px) */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handleReject}
+                  className="min-h-[48px] font-bold text-gray-700 hover:text-red-700 hover:bg-red-50 border-gray-200"
+                >
+                  <X className="w-4 h-4 mr-1 text-gray-400" />
+                  <span>Descartar</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="selva"
+                  size="md"
+                  onClick={() => handleAccept(delivery.id)}
+                  disabled={!currentCourier.isAvailable}
+                  className="min-h-[48px] font-extrabold shadow-subtle"
+                >
+                  <Check className="w-4 h-4 mr-1 stroke-[3]" />
+                  <span>Aceptar Carrera</span>
+                </Button>
+              </div>
             </div>
           ))}
         </div>

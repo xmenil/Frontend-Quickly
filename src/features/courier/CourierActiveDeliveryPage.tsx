@@ -5,7 +5,6 @@ import { useAuthStore } from '../../store/authStore';
 import { SchematicMap } from '../../components/shared/SchematicMap';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
-import { Input } from '../../components/ui/Input';
 import { formatCents } from '../../lib/currency';
 import {
   Bike,
@@ -17,6 +16,10 @@ import {
   Package,
   Banknote,
   ShieldCheck,
+  Check,
+  CloudRain,
+  ExternalLink,
+  Navigation,
 } from 'lucide-react';
 
 export const CourierActiveDeliveryPage: React.FC = () => {
@@ -28,7 +31,7 @@ export const CourierActiveDeliveryPage: React.FC = () => {
     couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
     couriers[0];
 
-  // Find active suborder assigned to this courier (status in listo_recoger or en_camino)
+  // Active suborder assigned to this courier (status in listo_recoger or en_camino)
   const activeOrderData = purchases.flatMap((p) =>
     p.merchantOrders
       .filter(
@@ -50,26 +53,28 @@ export const CourierActiveDeliveryPage: React.FC = () => {
 
   // Incident Modal State
   const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [incidentReason, setIncidentReason] = useState('Tránsito detenido por lluvia');
+  const [incidentReason, setIncidentReason] = useState('Lluvia intensa en Tingo María');
   const [incidentNote, setIncidentNote] = useState('');
   const [incidentSent, setIncidentSent] = useState(false);
 
-  // Simulated Call / SMS Modal
-  const [simulatedContactTarget, setSimulatedContactTarget] = useState<string | null>(null);
-
   if (!activeOrderData) {
     return (
-      <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-3 shadow-subtle">
-        <Bike className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-        <h2 className="text-ink font-bold text-base">No tienes entregas activas</h2>
-        <p className="text-xs">
-          Acepta una solicitud en la pestaña "Solicitudes" para comenzar una entrega en Tingo María.
-        </p>
+      <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-4 shadow-subtle my-4">
+        <div className="w-16 h-16 rounded-3xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
+          <Bike className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-ink font-extrabold text-lg">No tienes entregas activas en ruta</h2>
+          <p className="text-xs text-ink-light max-w-xs mx-auto">
+            Revisa las solicitudes de los comercios para comenzar una nueva carrera en Tingo María.
+          </p>
+        </div>
         <Button
           type="button"
           variant="primary"
           size="md"
           onClick={() => navigate('/repartidor/solicitudes')}
+          className="min-h-[48px] px-6 font-bold shadow-subtle"
         >
           Ver Solicitudes Disponibles
         </Button>
@@ -81,7 +86,12 @@ export const CourierActiveDeliveryPage: React.FC = () => {
   const isInTransitStage = activeOrderData.status === 'en_camino';
 
   const handleConfirmPickup = () => {
-    courierAdvanceDelivery(activeOrderData.id, currentCourier.id, 'pickup', 'Pedido retirado de la tienda');
+    courierAdvanceDelivery(
+      activeOrderData.id,
+      currentCourier.id,
+      'pickup',
+      'Pedido retirado de la tienda'
+    );
   };
 
   const handleConfirmDelivered = () => {
@@ -96,261 +106,245 @@ export const CourierActiveDeliveryPage: React.FC = () => {
     navigate('/repartidor/historial');
   };
 
-  const handleSubmitIncident = () => {
+  const handleSubmitIncident = (e: React.FormEvent) => {
+    e.preventDefault();
     courierReportIncident(
       activeOrderData.id,
       currentCourier.id,
       incidentReason,
-      incidentNote || 'Incidencia reportada por el repartidor.'
+      incidentNote.trim() || 'Reportado en trayecto de entrega'
     );
     setIncidentSent(true);
     setTimeout(() => {
       setIncidentSent(false);
       setShowIncidentModal(false);
-    }, 1500);
+    }, 2000);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Active Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-            Entrega en Curso
-          </span>
-          <h1 className="text-lg font-black text-ink">{activeOrderData.purchaseCode}</h1>
+    <div className="space-y-4 pb-20 sm:pb-8">
+      {/* Active Trip Header Badge */}
+      <div className="bg-ink text-white p-4 rounded-3xl shadow-sm flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center font-black">
+            <Bike className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-400">Entrega en curso:</span>
+              <span className="text-xs font-extrabold text-amber-300">{activeOrderData.purchaseCode}</span>
+            </div>
+            <div className="text-sm font-black text-white">
+              {isAtStoreStage ? 'Paso 1: Retirar en Tienda' : 'Paso 2: En Ruta al Cliente'}
+            </div>
+          </div>
         </div>
+
         <div className="text-right">
-          <span className="text-[10px] text-gray-400 block">Tarifa a cobrar</span>
-          <span className="text-base font-extrabold text-emerald-600">
-            {formatCents(activeOrderData.deliveryFeeCents)}
+          <span className="text-[10px] text-gray-400 uppercase font-bold block">Tu Ganancia</span>
+          <span className="text-base font-black text-emerald-400 tabular-nums">
+            +{formatCents(activeOrderData.deliveryFeeCents)}
           </span>
         </div>
       </div>
 
-      {/* Step Tracker Pills */}
-      <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-        <div
-          className={`p-3 rounded-2xl border flex items-center gap-2 transition-all ${
-            isAtStoreStage
-              ? 'bg-primary-50 border-primary-200 text-primary ring-2 ring-primary/20'
-              : 'bg-white border-gray-100 text-emerald-600'
-          }`}
-        >
-          <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">
-            1
-          </span>
-          <span>Retiro en Comercio</span>
-        </div>
-
-        <div
-          className={`p-3 rounded-2xl border flex items-center gap-2 transition-all ${
-            isInTransitStage
-              ? 'bg-primary-50 border-primary-200 text-primary ring-2 ring-primary/20'
-              : 'bg-white border-gray-100 text-gray-400'
-          }`}
-        >
-          <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px]">
-            2
-          </span>
-          <span>Entrega al Cliente</span>
-        </div>
-      </div>
-
-      {/* Schematic Map View */}
-      <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-subtle">
+      {/* Schematic Map Route Visualization */}
+      <div className="rounded-3xl overflow-hidden border border-gray-200 shadow-subtle">
         <SchematicMap
           orderStatus={activeOrderData.status}
           merchantName={activeOrderData.merchantName}
           merchantAddress={activeOrderData.merchantAddress}
           customerAddress={`${activeOrderData.addressSnapshot.street} #${activeOrderData.addressSnapshot.number}`}
           courierName={currentCourier.name}
+          courierPhone={currentCourier.phone}
         />
       </div>
 
-      {/* Current Stage Instruction Box */}
-      {isAtStoreStage && (
-        <div className="bg-white border border-gray-100 p-4 rounded-3xl space-y-3 shadow-subtle">
-          <div className="flex items-center justify-between text-xs text-primary font-bold">
-            <span className="flex items-center gap-1.5">
-              <Store className="w-4 h-4" />
-              <span>PASO 1: Dirígete a la tienda</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setSimulatedContactTarget(activeOrderData.merchantName)}
-              className="touch-target p-1 text-gray-400 hover:text-primary flex items-center gap-1 text-[11px]"
-            >
-              <Phone className="w-3.5 h-3.5" /> Llamar
-            </button>
-          </div>
+      {/* G-2: Destination Address with BIG FONT for motorcycle drivers */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-subtle space-y-4">
+        {/* Next Target Destination Banner */}
+        <div className="space-y-1">
+          <span className="text-[11px] font-extrabold text-primary uppercase tracking-wider block">
+            {isAtStoreStage ? '1. Punto de Retiro en Comercio' : '2. Dirección de Entrega Final'}
+          </span>
 
-          <div>
-            <h3 className="font-extrabold text-ink text-base">{activeOrderData.merchantName}</h3>
-            <p className="text-xs text-gray-600 font-medium mt-0.5">
-              {activeOrderData.merchantAddress}
-            </p>
-            <p className="text-[11px] text-gray-400 mt-1">
-              Teléfono local: {activeOrderData.merchantPhone}
-            </p>
-          </div>
+          {/* G-2: Large Address Heading */}
+          <h2 className="text-xl sm:text-2xl font-black text-ink leading-tight">
+            {isAtStoreStage
+              ? activeOrderData.merchantName
+              : `${activeOrderData.addressSnapshot.street} #${activeOrderData.addressSnapshot.number}`}
+          </h2>
 
-          <div className="p-2.5 bg-gray-50 rounded-xl text-xs text-gray-600 space-y-1">
-            <span className="text-[11px] font-bold text-gray-500 block uppercase">
-              Verifica los paquetes:
-            </span>
-            {activeOrderData.items.map((it, idx) => (
-              <p key={idx}>
-                • {it.quantity}x {it.productName}
+          {/* Local Reference in highlighted card */}
+          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs sm:text-sm text-amber-950 font-semibold flex items-start gap-2 mt-2">
+            <MapPin className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-amber-900 block">Referencia en Tingo María:</span>
+              <p className="mt-0.5">
+                {isAtStoreStage
+                  ? activeOrderData.merchantAddress
+                  : activeOrderData.addressSnapshot.reference}
               </p>
-            ))}
+            </div>
           </div>
-
-          <Button
-            type="button"
-            variant="primary"
-            size="lg"
-            onClick={handleConfirmPickup}
-            className="w-full text-base font-bold shadow-sm"
-          >
-            <Package className="w-5 h-5 mr-2" />
-            <span>Confirmar Retiro en Tienda</span>
-          </Button>
         </div>
-      )}
 
-      {isInTransitStage && (
-        <div className="bg-white border border-gray-100 p-4 rounded-3xl space-y-3 shadow-subtle">
-          <div className="flex items-center justify-between text-xs text-emerald-700 font-bold">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" />
-              <span>PASO 2: En camino al destino del cliente</span>
+        {/* Client / Store Contact Card with 1-Tap Direct Call Button (G-2) */}
+        <div className="bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100 flex items-center justify-between gap-3">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
+              {isAtStoreStage ? 'Contacto del Local' : 'Contacto del Cliente'}
             </span>
-            <button
-              type="button"
-              onClick={() => setSimulatedContactTarget(activeOrderData.customerName)}
-              className="touch-target p-1 text-gray-400 hover:text-primary flex items-center gap-1 text-[11px]"
-            >
-              <Phone className="w-3.5 h-3.5" /> Llamar al cliente
-            </button>
-          </div>
-
-          <div>
-            <h3 className="font-extrabold text-ink text-base">{activeOrderData.customerName}</h3>
-            <p className="text-xs text-ink font-bold mt-0.5">
-              {activeOrderData.addressSnapshot.street} #{activeOrderData.addressSnapshot.number}
+            <p className="font-extrabold text-sm text-ink truncate">
+              {isAtStoreStage ? activeOrderData.merchantName : activeOrderData.customerName}
             </p>
-            <p className="text-xs text-amber-800 mt-1 font-medium bg-amber-50 p-2 rounded-xl border border-amber-200">
-              Ref: {activeOrderData.addressSnapshot.reference}
+            <p className="text-xs text-gray-600 font-semibold">
+              {isAtStoreStage ? activeOrderData.merchantPhone : activeOrderData.customerPhone}
             </p>
           </div>
 
-          {/* Cash collection alert or prepay notice */}
-          {activeOrderData.paymentMethod === 'efectivo' ? (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1 text-xs text-amber-800">
-              <div className="flex items-center gap-2 font-bold text-sm text-ink">
-                <Banknote className="w-5 h-5 text-emerald-600" />
-                <span>COBRAR EN EFECTIVO: {formatCents(activeOrderData.totalCents)}</span>
+          {/* 1-Tap Call Button */}
+          <a
+            href={`tel:${(isAtStoreStage ? activeOrderData.merchantPhone : activeOrderData.customerPhone).replace(/\s+/g, '')}`}
+            className="touch-target inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-subtle min-h-[48px] flex-shrink-0"
+          >
+            <Phone className="w-4 h-4" />
+            <span>Llamar</span>
+          </a>
+        </div>
+
+        {/* Payment and Change Alert */}
+        {activeOrderData.paymentMethod === 'efectivo' ? (
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs sm:text-sm">
+            <div className="flex items-center gap-2.5">
+              <Banknote className="w-5 h-5 text-amber-700 flex-shrink-0" />
+              <div>
+                <span className="font-extrabold text-amber-950 block">Cobrar en Efectivo</span>
+                <span className="text-amber-800 font-semibold">
+                  Monto total: {formatCents(activeOrderData.totalCents)}
+                </span>
               </div>
-              {activeOrderData.changeDue && activeOrderData.changeDue > 0 ? (
-                <p className="text-[11px] text-amber-700">
-                  ⚠️ El cliente paga con {formatCents(activeOrderData.cashPaid || 0)}. Entregar vuelto de{' '}
-                  <strong>{formatCents(activeOrderData.changeDue)}</strong>.
-                </p>
-              ) : null}
             </div>
-          ) : (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
-              <ShieldCheck className="w-5 h-5 text-emerald-600" />
-              <span>Pedido ya prepagado con Yape/Tarjeta. ¡NO COBRAR AL CLIENTE!</span>
-            </div>
-          )}
+            {activeOrderData.changeDue ? (
+              <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-xl">
+                Dar vuelto: {formatCents(activeOrderData.changeDue)}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm text-emerald-900 font-bold">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <span>¡Pedido prepagado con Yape / Plin! No cobrar dinero al cliente.</span>
+          </div>
+        )}
 
+        {/* Package snapshot summary */}
+        <div className="text-xs text-gray-600 pt-2 border-t border-gray-100 space-y-1">
+          <span className="font-bold text-ink block">Contenido del paquete:</span>
+          <p>{activeOrderData.items.map((i) => `${i.quantity}x ${i.productName}`).join(' • ')}</p>
+        </div>
+      </div>
+
+      {/* G-2: BIG ACTION BUTTONS (h-14 / 56px minimum) for motorcycle use */}
+      <div className="space-y-3 pt-2">
+        {isAtStoreStage && (
           <Button
             type="button"
             variant="primary"
-            size="lg"
-            onClick={handleConfirmDelivered}
-            className="w-full text-base font-bold shadow-sm"
+            onClick={handleConfirmPickup}
+            className="w-full min-h-[56px] h-14 rounded-2xl text-base sm:text-lg font-black shadow-lg flex items-center justify-center gap-2 tracking-wide"
           >
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            <span>Confirmar Entrega Realizada</span>
+            <Package className="w-6 h-6" />
+            <span>Recogí el Pedido en Tienda</span>
           </Button>
-        </div>
-      )}
+        )}
 
-      {/* Report Incident Trigger */}
-      <div className="pt-1">
-        <button
+        {isInTransitStage && (
+          <Button
+            type="button"
+            variant="selva"
+            onClick={handleConfirmDelivered}
+            className="w-full min-h-[56px] h-14 rounded-2xl text-base sm:text-lg font-black shadow-lg flex items-center justify-center gap-2 tracking-wide"
+          >
+            <Check className="w-6 h-6 stroke-[3]" />
+            <span>Confirmar Entrega al Cliente</span>
+          </Button>
+        )}
+
+        {/* Incident Button (52px minimum) */}
+        <Button
           type="button"
+          variant="outline"
           onClick={() => setShowIncidentModal(true)}
-          className="touch-target w-full text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2.5 rounded-2xl border border-rose-200 flex items-center justify-center gap-2 transition-colors"
+          className="w-full min-h-[50px] h-13 rounded-2xl text-xs sm:text-sm font-bold text-red-700 border-2 border-red-200 hover:bg-red-50 flex items-center justify-center gap-2"
         >
-          <AlertTriangle className="w-4 h-4" />
-          <span>Reportar Incidencia en Ruta</span>
-        </button>
+          <AlertTriangle className="w-4 h-4 text-red-600" />
+          <span>Reportar Incidente / Lluvia / Demora</span>
+        </Button>
       </div>
 
       {/* Incident Modal */}
       <Dialog
         isOpen={showIncidentModal}
         onClose={() => setShowIncidentModal(false)}
-        title="Reportar Incidencia"
-        description="Registra un evento imprevisto. Esto no cancela la entrega automáticamente."
+        title="Reportar Incidente en Ruta"
+        description="Notifica a la central de Quickly sobre contratiempos viales en Tingo María"
         maxWidth="sm"
       >
         {incidentSent ? (
-          <div className="p-4 text-center space-y-2">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-            <p className="font-bold text-ink">Incidencia reportada a soporte</p>
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 font-bold flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <span>Incidente reportado a la administración. Tiempo ajustado en el mapa.</span>
           </div>
         ) : (
-          <div className="space-y-4">
-            <Input
-              label="Motivo del retraso o problema"
-              value={incidentReason}
-              onChange={(e) => setIncidentReason(e.target.value)}
-              required
-            />
-            <div>
-              <label className="text-xs font-bold text-ink block mb-1">Nota o detalle</label>
+          <form onSubmit={handleSubmitIncident} className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-ink block">Tipo de Inconveniente</label>
+              <select
+                value={incidentReason}
+                onChange={(e) => setIncidentReason(e.target.value)}
+                className="w-full text-xs sm:text-sm p-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+              >
+                <option value="Lluvia intensa en Tingo María">Lluvia intensa / Crecida de río</option>
+                <option value="Tráfico en Puente Corpac">Tráfico detenido en Puente Corpac</option>
+                <option value="Cliente no contesta llamadas">Cliente no responde al celular</option>
+                <option value="Dirección o referencia difícil">No se ubica la dirección</option>
+                <option value="Avería mecánica en moto">Problema mecánico en la moto</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-ink block">Comentario Adicional (Opcional)</label>
               <textarea
                 value={incidentNote}
                 onChange={(e) => setIncidentNote(e.target.value)}
-                placeholder="Ej: Lluvia torrencial en la Alameda, puente temporalmente bloqueado..."
+                placeholder="Detalla qué necesitas para que soporte te brinde asistencia..."
                 rows={3}
-                className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-ink"
+                className="w-full text-xs p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowIncidentModal(false)}>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setShowIncidentModal(false)}
+                className="min-h-[44px]"
+              >
                 Cancelar
               </Button>
-              <Button variant="danger" onClick={handleSubmitIncident}>
+              <Button
+                type="submit"
+                variant="danger"
+                size="md"
+                className="min-h-[44px] font-bold"
+              >
                 Enviar Reporte
               </Button>
             </div>
-          </div>
+          </form>
         )}
-      </Dialog>
-
-      {/* Simulated Contact Modal */}
-      <Dialog
-        isOpen={Boolean(simulatedContactTarget)}
-        onClose={() => setSimulatedContactTarget(null)}
-        title={`Contacto Simulado con ${simulatedContactTarget}`}
-        description="En este prototipo frontend no se realizan llamadas ni mensajes reales"
-        maxWidth="sm"
-      >
-        <div className="p-4 text-center space-y-3">
-          <Phone className="w-10 h-10 text-primary mx-auto" />
-          <p className="text-xs text-gray-600 leading-relaxed">
-            Número ficticio en Tingo María: <strong>962 444 555</strong>
-          </p>
-          <Button variant="primary" size="md" onClick={() => setSimulatedContactTarget(null)}>
-            Entendido
-          </Button>
-        </div>
       </Dialog>
     </div>
   );

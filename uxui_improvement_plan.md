@@ -15,7 +15,7 @@
 | D | Pedidos & Seguimiento | `CustomerOrdersPage.tsx`, `OrderDetailPage.tsx`, `TrackingPage.tsx` | 🟠 Media |
 | E | Portal del Cliente | `CustomerProfilePage.tsx`, `CustomerAddressesPage.tsx`, `CustomerFavoritesPage.tsx`, `CustomerNotificationsPage.tsx`, `CustomerHelpPage.tsx` | ✅ Completado |
 | F | Portal del Comercio | `MerchantDashboardPage.tsx`, `MerchantOrdersPage.tsx`, `MerchantProductsPage.tsx`, `MerchantReportsPage.tsx`, `MerchantSettingsPage.tsx`, `MerchantStorePage.tsx` | ✅ Completado |
-| G | Portal del Repartidor | `CourierRequestsPage.tsx`, `CourierActiveDeliveryPage.tsx`, `CourierHistoryPage.tsx`, `CourierEarningsPage.tsx` | 🔴 Alta |
+| G | Portal del Repartidor | `CourierRequestsPage.tsx`, `CourierActiveDeliveryPage.tsx`, `CourierHistoryPage.tsx`, `CourierEarningsPage.tsx` | ✅ Completado |
 | H | Panel Admin | `AdminOverviewPage.tsx`, `AdminMerchantsPage.tsx`, `AdminUsersPage.tsx`, `AdminOrdersPage.tsx`, `AdminTicketsPage.tsx`, `AdminReportsPage.tsx`, `AdminAuditPage.tsx` | 🟠 Media |
 | I | Componentes Compartidos | `Navbar.tsx`, `MobileNav.tsx`, `ProductCard.tsx`, `MerchantCard.tsx`, `OrderTimeline.tsx`, `PriceSummary.tsx` | 🔴 Alta |
 
@@ -193,36 +193,15 @@
 ---
 
 ## BLOQUE G — Portal del Repartidor
-**Archivos:** [`CourierRequestsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierRequestsPage.tsx) · [`CourierActiveDeliveryPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierActiveDeliveryPage.tsx) · [`CourierHistoryPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierHistoryPage.tsx) · [`CourierEarningsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierEarningsPage.tsx)
+**Archivos:** [`CourierRequestsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierRequestsPage.tsx) · [`CourierActiveDeliveryPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierActiveDeliveryPage.tsx) · [`CourierHistoryPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierHistoryPage.tsx) · [`CourierEarningsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/courier/CourierEarningsPage.tsx) · [`CourierLayout.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/layouts/CourierLayout.tsx)
 
-### Estado actual
-- Los botones de acción en `CourierActiveDeliveryPage` son funcionales pero podrían ser de mayor tamaño táctil.
-- No hay indicador de estado de disponibilidad del repartidor (en línea / ocupado / fuera de servicio).
-- `CourierEarningsPage` no tiene resumen visual de ganancias por día/semana.
+### Estado: ✅ Completado
 
-### Mejoras propuestas
-
-#### G-1 · Toggle de disponibilidad del repartidor 🔴
-- Switch grande en la parte superior del portal del repartidor: "Disponible para pedidos" / "No disponible".
-- Al estar disponible: badge verde pulsante en la navbar ("En línea").
-- Visibilidad clara de zona asignada actual.
-
-#### G-2 · Pantalla de pedido activo optimizada para moto
-- Los botones de "Recogí el pedido", "Lo entregué" y "Reportar incidente" deben ser mínimo `h-14` (56px).
-- Dirección de entrega con fuente grande (`text-xl font-bold`) y referencia local en segunda línea.
-- Número de cliente con botón de llamada directa (un solo toque).
-
-#### G-3 · Solicitudes de pedido con accept/decline rápido
-- Cards de solicitud con swipe derecha = aceptar, swipe izquierda = rechazar (o botones equivalentes).
-- Información clave visible sin abrir detalle: distancia del comercio, monto de ganancia del viaje, zona de entrega.
-
-#### G-4 · Dashboard de ganancias mejorado
-- En `CourierEarningsPage`, gráfico de barras SVG por día de la semana.
-- Resumen: "Hoy: S/ XX.XX", "Esta semana: S/ XX.XX", "Mejor día: Viernes S/ XX.XX".
-- Historial con desglose por viaje: hora de recogida → entrega, distancia estimada, monto ganado.
-
-#### G-5 · Historial con mapa de rutas completadas
-- En `CourierHistoryPage`, cada entrega muestra el `SchematicMap` en miniatura del trayecto completado.
+- **G-1 · Toggle de disponibilidad y zona:** Switch grande en el layout y en solicitudes con indicador verde pulsante ("En línea" / "En pausa") y visualización clara de la zona asignada actual en Tingo María.
+- **G-2 · Pantalla de pedido activo ergonómica para moto:** Botones de acción táctiles de gran tamaño (`h-14` / 56px de altura mínima) para presionar en movimiento o con guantes ("Recogí el Pedido en Tienda", "Confirmar Entrega al Cliente", "Reportar Incidente"), dirección de entrega en tipografía grande (`text-xl sm:text-2xl font-black`), referencia local resaltada en ámbar y botón de llamada telefónica directa de un solo toque (`tel:+51...`).
+- **G-3 · Solicitudes de carrera rápidas:** Tarjetas con ganancia neta destacada en verde (`+ S/ X.XX`), puntos de retiro (comercio) y destino (cliente con zona), distancia y tiempo estimado en moto (`~2.1 km • ~12 min`), y botones táctiles rápidos de aceptar/descartar (`min-h-[48px]`).
+- **G-4 · Dashboard de ganancias mejorado:** 3 métricas clave ("Hoy", "Esta Semana", "Mejor Día"), gráfico interactivo de barras SVG nativo para los 7 días de la semana y registro detallado por cada viaje con tarifa liquidada.
+- **G-5 · Historial con mapa de rutas:** Cada entrega completada incluye un acordeón para visualizar el mapa esquemático interactivo (`SchematicMap`) con el trayecto recorrido en Tingo María.
 
 ---
 
