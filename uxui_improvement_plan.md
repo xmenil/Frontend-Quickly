@@ -13,7 +13,7 @@
 | B | Catálogo & Descubrimiento | `HomePage.tsx`, `MerchantsPage.tsx`, `MerchantDetailPage.tsx`, `ProductDetailPage.tsx`, `ProductDetailModal.tsx` | 🔴 Alta |
 | C | Carrito & Checkout | `CartPage.tsx`, `CheckoutPage.tsx` | 🔴 Alta |
 | D | Pedidos & Seguimiento | `CustomerOrdersPage.tsx`, `OrderDetailPage.tsx`, `TrackingPage.tsx` | 🟠 Media |
-| E | Portal del Cliente | `CustomerProfilePage.tsx`, `CustomerAddressesPage.tsx`, `CustomerFavoritesPage.tsx`, `CustomerNotificationsPage.tsx`, `CustomerHelpPage.tsx` | 🟡 Normal |
+| E | Portal del Cliente | `CustomerProfilePage.tsx`, `CustomerAddressesPage.tsx`, `CustomerFavoritesPage.tsx`, `CustomerNotificationsPage.tsx`, `CustomerHelpPage.tsx` | ✅ Completado |
 | F | Portal del Comercio | `MerchantDashboardPage.tsx`, `MerchantOrdersPage.tsx`, `MerchantProductsPage.tsx`, `MerchantReportsPage.tsx`, `MerchantSettingsPage.tsx`, `MerchantStorePage.tsx` | 🔴 Alta |
 | G | Portal del Repartidor | `CourierRequestsPage.tsx`, `CourierActiveDeliveryPage.tsx`, `CourierHistoryPage.tsx`, `CourierEarningsPage.tsx` | 🔴 Alta |
 | H | Panel Admin | `AdminOverviewPage.tsx`, `AdminMerchantsPage.tsx`, `AdminUsersPage.tsx`, `AdminOrdersPage.tsx`, `AdminTicketsPage.tsx`, `AdminReportsPage.tsx`, `AdminAuditPage.tsx` | 🟠 Media |
@@ -169,36 +169,13 @@
 ## BLOQUE E — Portal del Cliente
 **Archivos:** [`CustomerProfilePage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/customer/CustomerProfilePage.tsx) · [`CustomerAddressesPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/customer/CustomerAddressesPage.tsx) · [`CustomerFavoritesPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/customer/CustomerFavoritesPage.tsx) · [`CustomerNotificationsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/customer/CustomerNotificationsPage.tsx) · [`CustomerHelpPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/customer/CustomerHelpPage.tsx)
 
-### Estado actual
-- El perfil del cliente es muy básico (2.640 bytes), prácticamente un placeholder.
-- La pantalla de favoritos no tiene acceso rápido a "agregar al carrito" desde la lista.
-- Las notificaciones no tienen distinción visual de leído/no leído.
+### Estado: ✅ Completado
 
-### Mejoras propuestas
-
-#### E-1 · Pantalla de perfil enriquecida
-- Avatar circular con iniciales del usuario como fallback (no imagen genérica).
-- Sección de estadísticas personales: "X pedidos realizados • S/ X.XX gastados en total • Y comercios distintos".
-- Acceso rápido a: Mis pedidos, Mis direcciones, Mis favoritos, Notificaciones, Ayuda.
-
-#### E-2 · Favoritos con acción directa
-- En `CustomerFavoritesPage`, cada `ProductCard` debe tener el botón "+ Agregar al carrito" activo.
-- Sección de "Comercios favoritos" separada de "Productos favoritos".
-
-#### E-3 · Notificaciones con estados visuales claros
-- Notificación no leída: fondo `primary-50` con punto en `primary` a la izquierda.
-- Notificación leída: fondo blanco, texto `ink-light`.
-- Tipos de notificación con ícono diferenciado: `Package` para pedidos, `Tag` para promociones, `ShieldCheck` para sistema.
-
-#### E-4 · Centro de ayuda mejorado (`CustomerHelpPage`)
-- Sección de preguntas frecuentes con acordeón colapsable.
-- Tiempo de respuesta estimado: "Respondemos en menos de 2 horas en horario de atención".
-- Botón de WhatsApp directo (link a `https://wa.me/...`).
-
-#### E-5 · Gestión de direcciones más intuitiva
-- Dirección predeterminada marcada con badge verde "Principal".
-- Botón de "Usar esta dirección" para cambiar la predeterminada con un solo tap.
-- Confirmación de eliminación con nombre de la dirección: "¿Eliminar 'Jr. Amazonas 123'?".
+- **E-1 · Pantalla de perfil enriquecida:** Avatar circular con iniciales degradadas y fallback de iniciales, tira de métricas en tiempo real (pedidos completados, total en soles con `formatCents`, comercios tingaleses probados y zona activa), accesos rápidos hacia Pedidos, Direcciones, Favoritos, Notificaciones y Ayuda, y formulario de datos personales con zona habitual.
+- **E-2 · Favoritos con acción directa:** Cada plato/producto cuenta con botón directo "+ Agregar al pedido" con feedback de 1.5s ("¡Agregado!"), pestañas divididas entre "Platos y Productos" y "Comercios", buscador integrado dentro de favoritos y estados vacíos cálidos ambientados en la gastronomía de Tingo María.
+- **E-3 · Notificaciones con estados visuales claros:** Notificaciones no leídas con fondo `primary-50` y punto pulsante `primary` a la izquierda, badges por tipo (`Package` para pedidos, `Bike` para entregas, `Tag` para promociones, `ShieldCheck` para sistema), filtros por todas/no leídas y acción de "Marcar todas como leídas".
+- **E-4 · Centro de ayuda mejorado:** Banner de tiempo de respuesta &lt; 2h en horario de 8:00 AM a 10:00 PM, botón directo a WhatsApp y central telefónica de Tingo María, preguntas frecuentes con buscador y acordeón interactivo, formulario de ticket de soporte con selección de pedido reciente e historial de tickets previos con respuestas de administración.
+- **E-5 · Gestión de direcciones intuitiva:** Dirección predeterminada destacada con badge esmeralda "Principal", botón directo de un solo tap "Usar como principal", modal de confirmación con nombre de la dirección al eliminar y tarifas/tiempos estimados por cada zona de Tingo María.
 
 ---
 

@@ -95,6 +95,7 @@ interface DataState {
   createSupportTicket: (ticket: Omit<SupportTicket, 'id' | 'createdAt' | 'status'>) => void;
   resolveSupportTicket: (ticketId: string, response: string) => void;
   markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: (userId?: string) => void;
 
   // Factory Reset
   resetToSeed: () => void;
@@ -860,6 +861,17 @@ export const useDataStore = create<DataState>((set, get) => ({
   markNotificationAsRead: (id) => {
     set((state) => {
       const updated = state.notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+      const nextState = { ...state, notifications: updated };
+      saveToLocalStorage(nextState);
+      return nextState;
+    });
+  },
+
+  markAllNotificationsAsRead: (userId) => {
+    set((state) => {
+      const updated = state.notifications.map((n) =>
+        !userId || n.userId === userId ? { ...n, isRead: true } : n
+      );
       const nextState = { ...state, notifications: updated };
       saveToLocalStorage(nextState);
       return nextState;
