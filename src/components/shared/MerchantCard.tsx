@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Merchant } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
-import { Star, Clock, Bike, Heart } from 'lucide-react';
+import { getMerchantFallbackBanner } from '../../lib/imageFallback';
+import { Star, Clock, Bike, Heart, Store } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 
 interface MerchantCardProps {
@@ -11,24 +12,51 @@ interface MerchantCardProps {
 
 export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
   const { favoriteMerchantIds, toggleFavoriteMerchant } = useDataStore();
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   const isFavorite = favoriteMerchantIds.includes(merchant.id);
 
   return (
     <div className="relative group bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-md hover:border-primary-200 transition-all duration-200 overflow-hidden flex flex-col">
-      {/* Banner */}
+      {/* Banner Container */}
       <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
-        <img
-          src={merchant.bannerUrl}
-          alt={merchant.name}
-          loading="lazy"
-          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-            !merchant.isOpen ? 'grayscale contrast-75 opacity-70' : ''
-          }`}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" fill="%23FFF1F6"><rect width="600" height="300" fill="%23FFF1F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="24">Comercio Quickly Tingo María</text></svg>';
-          }}
-        />
+        {/* Shimmer skeleton */}
+        {!imgLoaded && !imgError && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
+        )}
+
+        {imgError ? (
+          // Vector fallback banner
+          <div className="w-full h-full bg-gradient-to-br from-pink-50 via-rose-50/70 to-amber-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
+            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-1.5 border border-pink-100/80">
+              <Store className="w-7 h-7 text-primary" />
+            </div>
+            <span className="text-sm font-bold text-ink line-clamp-1 max-w-[90%]">
+              {merchant.name}
+            </span>
+            <span className="text-[11px] font-semibold text-primary">
+              Comercio Aliado • Tingo María
+            </span>
+          </div>
+        ) : (
+          <img
+            src={merchant.bannerUrl}
+            alt={merchant.name}
+            loading="lazy"
+            onLoad={() => setImgLoaded(true)}
+            onError={(e) => {
+              setImgError(true);
+              (e.target as HTMLImageElement).src = getMerchantFallbackBanner(
+                merchant.category,
+                merchant.name
+              );
+            }}
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+              !merchant.isOpen ? 'grayscale contrast-75 opacity-70' : ''
+            } ${!imgLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
+          />
+        )}
 
         {/* Favorite Button */}
         <button
@@ -56,7 +84,7 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
             </span>
           </div>
         ) : (
-          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 z-10">
             <span className="bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
               Abierto ahora
             </span>

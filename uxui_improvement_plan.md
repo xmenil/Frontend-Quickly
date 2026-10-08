@@ -17,7 +17,7 @@
 | F | Portal del Comercio | `MerchantDashboardPage.tsx`, `MerchantOrdersPage.tsx`, `MerchantProductsPage.tsx`, `MerchantReportsPage.tsx`, `MerchantSettingsPage.tsx`, `MerchantStorePage.tsx` | ✅ Completado |
 | G | Portal del Repartidor | `CourierRequestsPage.tsx`, `CourierActiveDeliveryPage.tsx`, `CourierHistoryPage.tsx`, `CourierEarningsPage.tsx` | ✅ Completado |
 | H | Panel Admin | `AdminOverviewPage.tsx`, `AdminMerchantsPage.tsx`, `AdminUsersPage.tsx`, `AdminOrdersPage.tsx`, `AdminTicketsPage.tsx`, `AdminReportsPage.tsx`, `AdminAuditPage.tsx` | 🟠 Media |
-| I | Componentes Compartidos | `Navbar.tsx`, `MobileNav.tsx`, `ProductCard.tsx`, `MerchantCard.tsx`, `OrderTimeline.tsx`, `PriceSummary.tsx` | 🔴 Alta |
+| I | Componentes Compartidos | `Navbar.tsx`, `MobileNav.tsx`, `ProductCard.tsx`, `MerchantCard.tsx`, `OrderTimeline.tsx`, `PriceSummary.tsx`, `ZoneSelector.tsx`, `SearchBar.tsx` | ✅ Completado |
 
 ---
 
@@ -239,12 +239,28 @@
 ---
 
 ## BLOQUE I — Componentes Compartidos
-**Archivos:** [`Navbar.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/Navbar.tsx) · [`MobileNav.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/MobileNav.tsx) · [`ProductCard.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/ProductCard.tsx) · [`MerchantCard.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/MerchantCard.tsx) · [`OrderTimeline.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/OrderTimeline.tsx)
+**Archivos:** [`Navbar.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/Navbar.tsx) · [`MobileNav.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/MobileNav.tsx) · [`ProductCard.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/ProductCard.tsx) · [`MerchantCard.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/MerchantCard.tsx) · [`OrderTimeline.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/OrderTimeline.tsx) · [`PriceSummary.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/PriceSummary.tsx) · [`ZoneSelector.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/ZoneSelector.tsx) · [`SearchBar.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/components/shared/SearchBar.tsx)
 
-### Estado actual
-- `Navbar.tsx` tiene 26 KB — muy grande, mezcla lógica de zonas, búsqueda, auth y carrito.
-- `MobileNav.tsx` está bien pero sin animación de selección de ítem activo.
-- `ProductCard.tsx` cumple los requisitos pero le falta el fallback SVG elegante en error de imagen.
+### Estado: ✅ Completado
+
+- **I-1 · Refactorización del `Navbar` (performance & modularidad):**
+  - Modularizado: Se extrajo `ZoneSelector.tsx` para selección de zonas reales de Tingo María y `SearchBar.tsx` con debounce de 300ms, sugerencias populares y rotación contextual de placeholders locales.
+  - Se extrajeron `CouponsModal.tsx` y `PlayModal.tsx`, reduciendo el footprint del `Navbar.tsx` de 26 KB a < 9 KB.
+- **I-2 · Animación de ítem activo en `MobileNav`:**
+  - Micro-animación de elevación `translateY(-2px)` (`-translate-y-0.5`) y escala en el ícono activo.
+  - Indicador superior/subrayado de 2px en color `primary` (`h-[2.5px] w-8 rounded-full bg-primary`) con transición suave.
+  - Fade-in de tipografía y mayor contraste de lectura.
+- **I-3 · Fallback elegante en imágenes de `ProductCard` y `MerchantCard`:**
+  - Generador de vectores SVG en `imageFallback.ts` adaptado por categoría (`Utensils` para comida típica, `Coffee` para café y cacao, `ShoppingBag` para bodegas, `Pill` para boticas y farmacias).
+  - Eliminación total de cuadros grises vacíos o imágenes rotas.
+  - Skeleton shimmer animado mientras carga la imagen.
+- **I-4 · `OrderTimeline` dinámico con etapas pulsantes:**
+  - Cálculo dinámico de tiempo transcurrido en español ("Justo ahora", "Hace 5 min", etc.) mediante `formatRelativeTime()`.
+  - Etapa activa con halo pulsante en `primary` (`ring-4 ring-pink-200 animate-pulse border-primary`) y punto indicador con `animate-ping`.
+  - Tips contextuales para despacho en moto en Tingo María.
+- **I-5 · `PriceSummary` con desglose visual por comercio:**
+  - Alerta y desglose individual por tienda cuando el carrito contiene platos o productos de múltiples comercios independientes.
+  - Especificación clara de subtotal de productos, delivery por cada local y total general sin cargos ocultos en `formatCents()`.
 
 ### Mejoras propuestas
 

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Merchant } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
-import { ShoppingCart, Heart, AlertCircle, Sparkles, Check } from 'lucide-react';
+import { getCategoryFallbackSvg } from '../../lib/imageFallback';
+import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useDataStore } from '../../store/dataStore';
 
@@ -23,10 +24,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { addItem } = useCartStore();
   const { favoriteProductIds, toggleFavoriteProduct } = useDataStore();
   const [isAdded, setIsAdded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const isFavorite = favoriteProductIds.includes(product.id);
   const isOutOfStock = product.stock <= 0 || !product.isAvailable;
   const isLowStock = product.stock > 0 && product.stock <= 3;
+
+  const category = (product.category || merchant?.category || '').toLowerCase();
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -58,25 +63,60 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  // Helper for category icon on fallback
+  const renderCategoryIcon = () => {
+    if (category.includes('farmacia') || category.includes('medicin')) {
+      return <Pill className="w-8 h-8 text-emerald-600" />;
+    }
+    if (category.includes('cafe') || category.includes('café') || category.includes('cacao')) {
+      return <Coffee className="w-8 h-8 text-amber-600" />;
+    }
+    if (category.includes('tienda') || category.includes('bodega') || category.includes('mercado')) {
+      return <ShoppingBag className="w-8 h-8 text-emerald-600" />;
+    }
+    return <Utensils className="w-8 h-8 text-primary" />;
+  };
+
   return (
     <div
       onClick={handleCardClick}
       className="group relative flex flex-col bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-md hover:border-primary-200 transition-all duration-200 overflow-hidden cursor-pointer"
     >
-      {/* Image Container */}
+      {/* Image Container with Fallback & Shimmer Loader */}
       <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          loading="lazy"
-          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-            isOutOfStock ? 'grayscale opacity-60' : ''
-          }`}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" fill="%23FFF1F6"><rect width="400" height="300" fill="%23FFF1F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="20">Quickly Tingo María</text></svg>';
-          }}
-        />
+        {/* Shimmer skeleton while loading */}
+        {!imgLoaded && !imgError && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
+        )}
+
+        {imgError ? (
+          // Elegant SVG/Vector Branded Fallback
+          <div className="w-full h-full bg-gradient-to-br from-pink-50 via-rose-50/70 to-amber-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
+            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 border border-pink-100/80">
+              {renderCategoryIcon()}
+            </div>
+            <span className="text-xs font-bold text-ink line-clamp-1 max-w-[90%]">
+              {product.name}
+            </span>
+            <span className="text-[10px] font-semibold text-primary mt-0.5">
+              Quickly • Tingo María
+            </span>
+          </div>
+        ) : (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            onLoad={() => setImgLoaded(true)}
+            onError={(e) => {
+              setImgError(true);
+              (e.target as HTMLImageElement).src = getCategoryFallbackSvg(category, product.name);
+            }}
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+              isOutOfStock ? 'grayscale opacity-60' : ''
+            } ${!imgLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
+          />
+        )}
 
         {/* Favorite Button */}
         <button
@@ -85,7 +125,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             e.stopPropagation();
             toggleFavoriteProduct(product.id);
           }}
-          className="absolute top-2.5 right-2.5 touch-target w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-600 hover:text-primary transition-colors"
+          className="absolute top-2.5 right-2.5 touch-target w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-600 hover:text-primary transition-colors z-10"
           aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
         >
           <Heart
@@ -97,15 +137,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Stock / Variant Badges */}
         {isOutOfStock ? (
-          <div className="absolute bottom-2 left-2 bg-red-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+          <div className="absolute bottom-2 left-2 bg-red-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm z-10">
             <AlertCircle className="w-3 h-3" /> Agotado
           </div>
         ) : isLowStock ? (
-          <div className="absolute bottom-2 left-2 bg-amber-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+          <div className="absolute bottom-2 left-2 bg-amber-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
             ¡Últimos {product.stock}!
           </div>
         ) : product.hasVariants ? (
-          <div className="absolute bottom-2 left-2 bg-ink/70 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+          <div className="absolute bottom-2 left-2 bg-ink/70 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
             <Sparkles className="w-3 h-3 text-amber-300" /> Variantes
           </div>
         ) : null}
