@@ -14,7 +14,7 @@
 | C | Carrito & Checkout | `CartPage.tsx`, `CheckoutPage.tsx` | 🔴 Alta |
 | D | Pedidos & Seguimiento | `CustomerOrdersPage.tsx`, `OrderDetailPage.tsx`, `TrackingPage.tsx` | 🟠 Media |
 | E | Portal del Cliente | `CustomerProfilePage.tsx`, `CustomerAddressesPage.tsx`, `CustomerFavoritesPage.tsx`, `CustomerNotificationsPage.tsx`, `CustomerHelpPage.tsx` | ✅ Completado |
-| F | Portal del Comercio | `MerchantDashboardPage.tsx`, `MerchantOrdersPage.tsx`, `MerchantProductsPage.tsx`, `MerchantReportsPage.tsx`, `MerchantSettingsPage.tsx`, `MerchantStorePage.tsx` | 🔴 Alta |
+| F | Portal del Comercio | `MerchantDashboardPage.tsx`, `MerchantOrdersPage.tsx`, `MerchantProductsPage.tsx`, `MerchantReportsPage.tsx`, `MerchantSettingsPage.tsx`, `MerchantStorePage.tsx` | ✅ Completado |
 | G | Portal del Repartidor | `CourierRequestsPage.tsx`, `CourierActiveDeliveryPage.tsx`, `CourierHistoryPage.tsx`, `CourierEarningsPage.tsx` | 🔴 Alta |
 | H | Panel Admin | `AdminOverviewPage.tsx`, `AdminMerchantsPage.tsx`, `AdminUsersPage.tsx`, `AdminOrdersPage.tsx`, `AdminTicketsPage.tsx`, `AdminReportsPage.tsx`, `AdminAuditPage.tsx` | 🟠 Media |
 | I | Componentes Compartidos | `Navbar.tsx`, `MobileNav.tsx`, `ProductCard.tsx`, `MerchantCard.tsx`, `OrderTimeline.tsx`, `PriceSummary.tsx` | 🔴 Alta |
@@ -180,37 +180,15 @@
 ---
 
 ## BLOQUE F — Portal del Comercio
-**Archivos:** [`MerchantDashboardPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantDashboardPage.tsx) · [`MerchantOrdersPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantOrdersPage.tsx) · [`MerchantProductsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantProductsPage.tsx) · [`MerchantReportsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantReportsPage.tsx)
+**Archivos:** [`MerchantDashboardPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantDashboardPage.tsx) · [`MerchantOrdersPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantOrdersPage.tsx) · [`MerchantProductsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantProductsPage.tsx) · [`MerchantReportsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantReportsPage.tsx) · [`MerchantSettingsPage.tsx`](file:///c:/Users/ThikPad/Desktop/qiycl/Frontend-Quickly/src/features/merchant/MerchantSettingsPage.tsx)
 
-### Estado actual
-- Los pedidos entrantes usan datos hardcodeados (`incomingOrders` con arrays fijos).
-- El dashboard KPI no tiene comparación con periodo anterior (tendencias).
-- `MerchantReportsPage` es muy básica; solo texto de KPI sin gráficos.
-- No hay indicador de si el comercio está "Abierto/Cerrado" activo en el propio portal.
+### Estado: ✅ Completado
 
-### Mejoras propuestas
-
-#### F-1 · Toggle "Abierto / Cerrado" en el dashboard del comercio
-- Switch prominente en la cabecera del dashboard con estado actual y hora estimada de cierre.
-- Al desactivar: mensaje de confirmación "¿Pausar recepción de pedidos durante X minutos o hasta mañana?".
-
-#### F-2 · Pedidos entrantes en tiempo real (simulado)
-- Lista de pedidos con auto-refresh visual (shimmer suave cada 10s).
-- Botón de acción principal por pedido: "Aceptar" (verde) y "Rechazar" (rojo), con confirmación rápida.
-- Timer regresivo por pedido: "Tiempo para confirmar: **3:45**" en ámbar.
-
-#### F-3 · Gráfico de ventas semanal en `MerchantReportsPage`
-- Gráfico de barras SVG nativo (sin librería externa) con ventas diarias de la semana.
-- KPIs: Ticket promedio, productos más vendidos (top 3), hora pico de pedidos.
-- Exportación CSV mejorada con nombre legible de producto (actualmente solo IDs).
-
-#### F-4 · Gestión de menú/productos mejorada
-- En `MerchantProductsPage`, botón de toggle "Disponible / Agotado" por producto en la lista (sin abrir modal).
-- Indicador visual de productos próximos a agotarse ("¡Últimas 3 unidades!") en ámbar.
-- Formulario de nuevo producto con preview en tiempo real de cómo se verá el `ProductCard`.
-
-#### F-5 · Configuración de tiempos de preparación por categoría
-- En `MerchantSettingsPage`, permitir definir tiempo de preparación diferenciado por tipo de producto (ej. "Platos calientes: 25 min", "Bebidas: 5 min").
+- **F-1 · Toggle "Abierto / Cerrado" en cabecera:** Switch prominente con badge en vivo ("Abierto ahora" / "Pausado / Cerrado"), horario de atención del día y modal interactivo para pausar recepción (30 min por cocina llena, 1 hora o hasta mañana).
+- **F-2 · Pedidos entrantes en tiempo real:** Eliminación de datos simulados fijos; conexión a subpedidos reales de la tienda, timer regresivo dinámico en ámbar ("Confirmar en: 3:45"), botones rápidos para "Aceptar y Preparar" y "Rechazar", y stepper en vivo con horas de la orden activa.
+- **F-3 · Gráfico de ventas semanal:** Gráfico de barras SVG nativo para los 7 días de la semana con selección interactiva, KPIs de ticket promedio con `formatCents`, hora pico tingalesa (12:30 - 2:00 PM), ranking de productos con barras relativas y exportación CSV con nombres de platos y comensales.
+- **F-4 · Gestión de menú y stock mejorada:** Botón de switch de disponibilidad inline de 1 solo toque ("Disponible" / "Agotado"), badges de alerta para productos próximos a agotarse ("¡Últimas X unidades!"), y formulario con previsualización en tiempo real idéntica al `ProductCard` del cliente.
+- **F-5 · Configuración de tiempos de preparación:** Tiempos diferenciados por categoría (platos de fondo 25 min, entradas 15 min, bebidas 8 min, repostería 10 min), tolerancia climática por lluvia en Tingo María (+10 min), medios de cobro habilitados y timbres de cocina.
 
 ---
 

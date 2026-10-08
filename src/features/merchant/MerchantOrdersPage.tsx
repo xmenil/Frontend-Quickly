@@ -222,7 +222,7 @@ export const MerchantOrdersPage: React.FC = () => {
               ) : null}
 
               {/* Action Buttons for Merchant */}
-              <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-end gap-2">
+              <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-end gap-2.5">
                 {/* Step 1: Pending -> Accept or Reject */}
                 {order.status === 'pendiente' && (
                   <>
@@ -230,19 +230,20 @@ export const MerchantOrdersPage: React.FC = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      className="min-h-[44px] px-4 font-bold text-red-600 border-red-200 hover:bg-red-50 text-xs"
                       onClick={() => setRejectOrderId(order.id)}
                     >
-                      <XCircle className="w-4 h-4 mr-1" />
+                      <XCircle className="w-4 h-4 mr-1.5" />
                       Rechazar Pedido
                     </Button>
                     <Button
                       type="button"
-                      variant="primary"
+                      variant="selva"
                       size="sm"
+                      className="min-h-[44px] px-5 font-bold text-xs shadow-subtle"
                       onClick={() => handleAdvanceStatus(order.id, 'confirmado')}
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                      <CheckCircle2 className="w-4 h-4 mr-1.5 stroke-[2.5]" />
                       Aceptar Pedido
                     </Button>
                   </>
@@ -254,9 +255,10 @@ export const MerchantOrdersPage: React.FC = () => {
                     type="button"
                     variant="primary"
                     size="sm"
+                    className="min-h-[44px] px-5 font-bold text-xs shadow-subtle"
                     onClick={() => handleAdvanceStatus(order.id, 'en_preparacion')}
                   >
-                    <ChefHat className="w-4 h-4 mr-1" />
+                    <ChefHat className="w-4 h-4 mr-1.5" />
                     Iniciar Preparación en Cocina
                   </Button>
                 )}
@@ -267,9 +269,10 @@ export const MerchantOrdersPage: React.FC = () => {
                     type="button"
                     variant="selva"
                     size="sm"
+                    className="min-h-[44px] px-5 font-bold text-xs shadow-subtle"
                     onClick={() => handleAdvanceStatus(order.id, 'listo_recoger')}
                   >
-                    <PackageCheck className="w-4 h-4 mr-1" />
+                    <PackageCheck className="w-4 h-4 mr-1.5 stroke-[2.5]" />
                     Marcar Listo para Recojo de Repartidor
                   </Button>
                 )}
