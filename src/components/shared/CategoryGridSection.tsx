@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, ChevronLeft, MoreHorizontal, LayoutGrid } from 'lucide-react';
 
 interface CategoryCardItem {
   id: string;
@@ -189,25 +189,39 @@ export const CategoryGridSection: React.FC = () => {
   };
 
   return (
-    <section className="relative w-full my-6 select-none">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-subtle p-5 sm:p-7 relative transition-all">
-        {/* Header matching Screenshot: "Categorías" + "Mostrar todas las categorías" + "•••" */}
-        <div className="flex items-center justify-between pb-4 sm:pb-5">
-          <div className="flex items-baseline gap-3">
-            <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight">
-              Categorías
-            </h2>
-            <Link
-              to="/negocios"
-              className="text-xs sm:text-sm font-semibold text-primary hover:text-primary-hover hover:underline transition-colors"
-            >
-              Mostrar todas las categorías
-            </Link>
+    <section className="w-full bg-[#FAF5F8]/50 border-y border-pink-100/50 py-8 sm:py-10 select-none relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative space-y-5">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-200/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
+              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-xl font-black text-ink tracking-tight">
+                  Categorías
+                </h2>
+                <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-primary-50 text-primary border border-primary-100 px-2 py-0.5 rounded-full">
+                  Explorar
+                </span>
+              </div>
+              <p className="text-xs text-ink-light">
+                Comercio, gastronomía, salud y servicios locales en Leoncio Prado
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              to="/negocios"
+              className="text-xs sm:text-sm font-bold text-primary hover:text-primary-hover hover:underline transition-colors mr-2"
+            >
+              Mostrar todas las categorías
+            </Link>
+
             {/* Page Indicators */}
-            <div className="flex items-center gap-1.5 mr-2">
+            <div className="flex items-center gap-1.5 mr-1">
               <span
                 onClick={() => setCurrentPage(1)}
                 className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
@@ -226,7 +240,7 @@ export const CategoryGridSection: React.FC = () => {
               type="button"
               onClick={togglePage}
               aria-label="Más opciones"
-              className="p-1 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -239,7 +253,7 @@ export const CategoryGridSection: React.FC = () => {
             <div
               key={item.id}
               onClick={() => handleCardClick(item)}
-              className="group bg-white rounded-xl border border-gray-100 hover:border-primary-300 hover:shadow-card p-3 flex items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+              className="group bg-white rounded-xl border border-pink-100/80 hover:border-primary-300 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-card p-3 flex items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
             >
               {/* Product / Category Thumbnail Box */}
               <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-gray-50/80 group-hover:bg-primary-50/50 flex items-center justify-center p-2 flex-shrink-0 border border-gray-100/60 group-hover:border-primary-100 transition-colors">
@@ -272,7 +286,7 @@ export const CategoryGridSection: React.FC = () => {
           type="button"
           onClick={togglePage}
           aria-label={currentPage === 1 ? 'Ver página siguiente' : 'Ver página anterior'}
-          className="absolute -right-3.5 sm:-right-4.5 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-floating border border-gray-100 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all z-20 hover:scale-108 active:scale-95"
+          className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-floating border border-gray-100 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all z-20 hover:scale-108 active:scale-95"
         >
           {currentPage === 1 ? (
             <ChevronRight className="w-5 h-5 stroke-[2.5]" />

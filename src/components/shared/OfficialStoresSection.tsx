@@ -27,44 +27,47 @@ export const OfficialStoresSection: React.FC = () => {
   const bigStores = merchants.filter((m) => bigStoreIds.includes(m.id));
 
   return (
-    <section className="space-y-6 my-8 select-none">
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-            <Building2 className="w-5 h-5" />
+    <section className="w-full bg-white border-y border-gray-150/70 py-8 sm:py-10 select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100/80">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-xl font-black text-ink tracking-tight">
+                  Grandes Tiendas y Supermercados
+                </h2>
+                <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-primary-50 text-primary border border-primary-100 px-2 py-0.5 rounded-full">
+                  Oficiales
+                </span>
+              </div>
+              <p className="text-xs text-ink-light">
+                Surtido completo de tiendas departamentales y supermercados en Tingo María
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight flex items-center gap-2">
-              <span>Grandes Tiendas y Supermercados</span>
-              <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-primary text-white px-2 py-0.5 rounded-full">
-                Oficiales
-              </span>
-            </h2>
-            <p className="text-xs text-gray-500">
-              Surtido completo de tiendas departamentales y supermercados en Tingo María
-            </p>
-          </div>
+
+          <Link
+            to="/negocios?categoria=supermercados"
+            className="text-xs sm:text-sm font-bold text-primary hover:text-primary-hover flex items-center gap-1 hover:underline"
+          >
+            <span>Ver todas las tiendas</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
-        <Link
-          to="/negocios?categoria=supermercados"
-          className="text-xs sm:text-sm font-bold text-primary hover:text-primary-hover flex items-center gap-1 hover:underline"
-        >
-          <span>Ver todas las tiendas</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      {/* Big Stores Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Big Stores Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {bigStores.slice(0, 4).map((store) => {
           const storeProducts = products.filter((p) => p.merchantId === store.id).slice(0, 3);
           return (
             <Link
               key={store.id}
-              to={`/comercio/${store.id}`}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-subtle hover:border-primary-300 hover:shadow-card overflow-hidden flex flex-col justify-between transition-all duration-200"
+              to={`/negocios/${store.id}`}
+              className="group bg-white rounded-2xl border border-gray-200/75 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-primary-300 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200"
             >
               {/* Store Banner & Logo */}
               <div>
@@ -146,6 +149,7 @@ export const OfficialStoresSection: React.FC = () => {
             </Link>
           );
         })}
+      </div>
       </div>
     </section>
   );

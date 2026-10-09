@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
@@ -31,7 +31,135 @@ import {
   Zap,
   Clock,
   ShoppingCart,
+  Palette,
 } from 'lucide-react';
+
+// Algoritmo para encontrar productos similares del mismo tipo pero con otros modelos o marcas
+function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Product[] {
+  if (!targetProduct || !allProducts || allProducts.length === 0) return [];
+
+  const candidates = allProducts.filter((p) => p.id !== targetProduct.id);
+
+  const cleanWords = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !['con', 'del', 'los', 'las', 'para', 'por', 'una', 'uno', 'sin', 'pack'].includes(w));
+
+  const targetTokens = cleanWords(targetProduct.name);
+  const targetNameNorm = targetProduct.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const isSmartwatch = /smartwatch|reloj|pulsera|band|fit\d/i.test(targetNameNorm);
+  const isLaptop = /laptop|notebook|computadora/i.test(targetNameNorm);
+  const isTV = /smart tv|televisor|\btv\b/i.test(targetNameNorm);
+  const isPhone = /smartphone|celular|telefono/i.test(targetNameNorm);
+  const isTuna = /atun|caballa|grated/i.test(targetNameNorm);
+  const isOil = /aceite/i.test(targetNameNorm);
+  const isMilk = /leche/i.test(targetNameNorm);
+  const isPeach = /durazno|fruta en almibar|conserva/i.test(targetNameNorm);
+
+  const scored = candidates.map((cand) => {
+    let score = 0;
+    const candNameNorm = cand.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const candTokens = cleanWords(cand.name);
+
+    if (isSmartwatch) {
+      if (/smartwatch|reloj|band|fit\d/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'tecnologia') {
+        score += 20;
+      } else {
+        score -= 500; // Nunca mezclar comida/abarrotes con tecnología
+      }
+    } else if (isLaptop) {
+      if (/laptop|notebook|computadora/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'tecnologia') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isTV) {
+      if (/smart tv|televisor|\btv\b/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'electrohogar' || cand.category === 'tecnologia') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isPhone) {
+      if (/smartphone|celular/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'tecnologia') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isTuna) {
+      if (/atun|caballa|grated|pescado/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'supermercados') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isOil) {
+      if (/aceite/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'supermercados') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isMilk) {
+      if (/leche/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'supermercados') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else if (isPeach) {
+      if (/durazno|fruta|almibar|conserva/i.test(candNameNorm)) {
+        score += 250;
+      } else if (cand.category === 'supermercados') {
+        score += 20;
+      } else {
+        score -= 500;
+      }
+    } else {
+      const matches = targetTokens.filter((tok) => candTokens.includes(tok));
+      score += matches.length * 40;
+      if (cand.category === targetProduct.category) score += 30;
+    }
+
+    // Requisito del usuario: otros modelos o marcas
+    if (cand.brand && targetProduct.brand && cand.brand.toLowerCase() !== targetProduct.brand.toLowerCase()) {
+      score += 35; // Bonificación de marca diferente
+    }
+    if (candNameNorm !== targetNameNorm) {
+      score += 20; // Modelo diferente
+    }
+
+    return { cand, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const filtered = scored.filter((s) => s.score > 0).map((s) => s.cand);
+  if (filtered.length >= 4) {
+    return filtered.slice(0, 4);
+  }
+
+  const fallback = candidates.filter(
+    (c) => c.category === targetProduct.category && !filtered.some((f) => f.id === c.id)
+  );
+
+  return [...filtered, ...fallback].slice(0, 4);
+}
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,15 +179,23 @@ export const ProductDetailPage: React.FC = () => {
 
   const isFavorite = product ? favoriteProductIds.includes(product.id) : false;
 
-  // Gallery state
-  const galleryImages = product?.images && product.images.length > 0
-    ? product.images
-    : [
-        product?.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&auto=format&fit=crop&q=80',
-      ];
+  // Galería de fotos del mismo modelo con diferentes colores
+  const galleryItems = useMemo(() => {
+    if (!product) return [];
+    if (product.images && product.images.length > 0) {
+      return product.images.map((url, idx) => {
+        const variant = product.variants && product.variants[idx];
+        return {
+          url,
+          label: variant ? variant.name.replace(/^Color:\s*/i, '') : `Color ${idx + 1}`,
+          variantId: variant?.id,
+        };
+      });
+    }
+
+    // Si no tiene múltiples imágenes, usar su imagen única (nunca ensaladas ni fotos ajenas)
+    return [{ url: product.imageUrl, label: 'Color principal', variantId: undefined }];
+  }, [product]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
@@ -68,6 +204,15 @@ export const ProductDetailPage: React.FC = () => {
   );
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+
+  // Reiniciar estado al cambiar de producto
+  useEffect(() => {
+    setActiveImageIndex(0);
+    setSelectedVariantId(
+      product?.variants && product.variants.length > 0 ? product.variants[0]?.id || '' : ''
+    );
+    setSelectedQuantity(1);
+  }, [product?.id]);
 
   // Review useful counters state
   const [reviewHelpful, setReviewHelpful] = useState<Record<string, number>>({
@@ -97,10 +242,10 @@ export const ProductDetailPage: React.FC = () => {
     ((originalPriceCents - product.priceCents) / originalPriceCents) * 100
   );
 
-  // Similar products in same category or merchant
-  const similarProducts = products
-    .filter((p) => p.id !== product.id && (p.category === product.category || p.merchantId === product.merchantId))
-    .slice(0, 4);
+  // Productos similares inteligentes (mismo tipo en otros modelos o marcas)
+  const similarProducts = useMemo(() => {
+    return findSimilarProducts(product, products);
+  }, [product, products]);
 
   const selectedVariantObj = product.variants?.find((v) => v.id === selectedVariantId);
 
@@ -225,42 +370,58 @@ export const ProductDetailPage: React.FC = () => {
         {/* Left Column: Gallery & Product Info */}
         <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-100 shadow-subtle p-4 sm:p-6 space-y-8">
           {/* Gallery Row: Vertical Thumbnails + Big Preview */}
-          <div className="flex flex-col-reverse sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
-            {/* Vertical Thumbnails List */}
-            <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-visible w-full sm:w-20 flex-shrink-0">
-              {galleryImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onMouseEnter={() => setActiveImageIndex(idx)}
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 transition-all p-0.5 bg-gray-50 flex-shrink-0 ${
-                    activeImageIndex === idx
-                      ? 'border-primary ring-2 ring-primary/20 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-400 opacity-80 hover:opacity-100'
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`Vista ${idx + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                  {idx === 1 && (
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <Play className="w-3.5 h-3.5 text-white fill-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
+          <div className="flex flex-col-reverse sm:flex-row gap-4 sm:gap-6 items-start">
+            {/* Vertical Thumbnails List: Mismo modelo en diferentes colores */}
+            <div className="flex flex-col gap-1.5 w-full sm:w-20 flex-shrink-0">
+              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider hidden sm:block">
+                Colores:
+              </span>
+              <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible w-full pb-1 sm:pb-0 scrollbar-none">
+                {galleryItems.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onMouseEnter={() => {
+                      setActiveImageIndex(idx);
+                      if (item.variantId) setSelectedVariantId(item.variantId);
+                    }}
+                    onClick={() => {
+                      setActiveImageIndex(idx);
+                      if (item.variantId) setSelectedVariantId(item.variantId);
+                    }}
+                    className={`group/thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all p-0.5 bg-gray-50 flex-shrink-0 cursor-pointer ${
+                      activeImageIndex === idx
+                        ? 'border-primary ring-2 ring-primary/25 shadow-md scale-102'
+                        : 'border-gray-200 hover:border-primary/50 opacity-80 hover:opacity-100'
+                    }`}
+                    title={item.label}
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.label}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/65 backdrop-blur-xs text-[9px] font-bold text-white text-center py-0.5 truncate px-0.5 leading-none">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Main Image Display */}
-            <div className="relative flex-1 aspect-square w-full max-w-[500px] mx-auto rounded-2xl overflow-hidden bg-white flex items-center justify-center border border-gray-100 group">
+            <div className="relative flex-1 aspect-square w-full rounded-2xl overflow-hidden bg-white flex items-center justify-center border border-gray-100 group">
               <img
-                src={galleryImages[activeImageIndex]}
+                src={galleryItems[activeImageIndex]?.url || product.imageUrl}
                 alt={product.name}
-                className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
               />
+
+              {/* Active Color Tag on Preview */}
+              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-pink-300" />
+                <span>Color: {galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
+              </div>
 
               {/* Free Shipping Badge */}
               <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
@@ -577,27 +738,55 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Variants Picker (if applicable) */}
+            {/* Variants Picker (Color / Modelo disponible con selector visual) */}
             {product.variants && product.variants.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-gray-100 text-xs">
-                <label className="font-bold text-ink block">
-                  Talla / Selección disponible:
-                </label>
+              <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-ink flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-primary" />
+                    <span>Color del modelo:</span>
+                  </label>
+                  <span className="font-extrabold text-primary">
+                    {selectedVariantObj?.name.replace(/^Color:\s*/i, '') || 'Seleccionar'}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {product.variants.map((v) => (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => setSelectedVariantId(v.id)}
-                      className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                        selectedVariantId === v.id
-                          ? 'bg-primary text-white shadow-sm ring-2 ring-primary/30'
-                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                      }`}
-                    >
-                      {v.name}
-                    </button>
-                  ))}
+                  {product.variants.map((v, vIdx) => {
+                    const isSelected = selectedVariantId === v.id;
+                    const colorName = v.name.replace(/^Color:\s*/i, '');
+
+                    const getSwatchDot = (name: string) => {
+                      const n = name.toLowerCase();
+                      if (n.includes('blanco')) return 'bg-white border border-gray-300';
+                      if (n.includes('negro') || n.includes('obsidiana') || n.includes('militar')) return 'bg-gray-900';
+                      if (n.includes('rosa')) return 'bg-pink-400';
+                      if (n.includes('plata') || n.includes('gris') || n.includes('grafito')) return 'bg-slate-400';
+                      if (n.includes('azul')) return 'bg-blue-600';
+                      if (n.includes('verde')) return 'bg-emerald-600';
+                      return 'bg-primary';
+                    };
+
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedVariantId(v.id);
+                          if (vIdx < galleryItems.length) {
+                            setActiveImageIndex(vIdx);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary text-white shadow-sm ring-2 ring-primary/30 scale-102'
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                      >
+                        <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-xs ${getSwatchDot(colorName)}`} />
+                        <span>{colorName}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -745,7 +934,7 @@ export const ProductDetailPage: React.FC = () => {
           <div>
             <h2 className="text-xl font-extrabold text-ink">Productos similares</h2>
             <p className="text-xs text-gray-500">
-              Quienes vieron este producto también compraron en Tingo María
+              Mismo tipo de producto en otros modelos y marcas oficiales en Tingo María
             </p>
           </div>
           <Link
@@ -758,44 +947,53 @@ export const ProductDetailPage: React.FC = () => {
 
         {/* 4 Cards Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {similarProducts.map((simProd) => (
-            <Link
-              key={simProd.id}
-              to={`/producto/${simProd.id}`}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-subtle overflow-hidden flex flex-col justify-between hover:shadow-md transition-all"
-            >
-              <div className="aspect-[4/3] w-full bg-gray-50 overflow-hidden relative">
-                <img
-                  src={simProd.imageUrl}
-                  alt={simProd.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Envío rápido
-                </span>
-              </div>
-
-              <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between space-y-2">
-                <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-1">
-                    {simProd.name}
-                  </h4>
-                  <p className="text-[11px] text-gray-400 font-medium line-clamp-1">
-                    {merchant.name}
-                  </p>
-                  <p className="text-sm sm:text-base font-extrabold text-ink mt-1">
-                    {formatCents(simProd.priceCents)}
-                  </p>
-                </div>
-
-                <div className="pt-1">
-                  <span className="text-[11px] text-emerald-600 font-bold block">
-                    Llega hoy en Tingo María
+          {similarProducts.map((simProd) => {
+            const simStore = merchants.find((m) => m.id === simProd.merchantId);
+            return (
+              <Link
+                key={simProd.id}
+                to={`/producto/${simProd.id}`}
+                className="group bg-white rounded-2xl border border-gray-100 shadow-subtle overflow-hidden flex flex-col justify-between hover:shadow-card hover:border-primary-300 transition-all text-left"
+              >
+                <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden relative">
+                  <img
+                    src={simProd.imageUrl}
+                    alt={simProd.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {simProd.brand && (
+                    <span className="absolute top-2 right-2 bg-ink/80 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                      {simProd.brand}
+                    </span>
+                  )}
+                  <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                    Envío rápido
                   </span>
                 </div>
-              </div>
-            </Link>
-          ))}
+
+                <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between space-y-2">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-primary truncate block mb-0.5">
+                      {simStore?.name || 'Tienda Oficial'}
+                    </span>
+                    <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2.25rem]">
+                      {simProd.name}
+                    </h4>
+                    <p className="text-sm sm:text-base font-black text-ink mt-1 tabular-nums">
+                      {formatCents(simProd.priceCents)}
+                    </p>
+                  </div>
+
+                  <div className="pt-1.5 border-t border-gray-100 flex items-center justify-between text-[10px]">
+                    <span className="text-emerald-600 font-bold">
+                      ✓ Stock disponible
+                    </span>
+                    <span className="text-gray-400 font-medium">Tingo María</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

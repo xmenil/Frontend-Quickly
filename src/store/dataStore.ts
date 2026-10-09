@@ -101,7 +101,7 @@ interface DataState {
   resetToSeed: () => void;
 }
 
-const STORAGE_KEY = 'quickly_datastore_v2';
+const STORAGE_KEY = 'quickly_datastore_v3';
 
 interface StoredDataPayload {
   merchants: Merchant[];
@@ -120,27 +120,38 @@ interface StoredDataPayload {
 }
 
 function getInitialStoredData(): StoredDataPayload {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('quickly_datastore_v2');
   if (raw) {
     const parsed = safeJsonParse<StoredDataPayload | null>(raw, null);
     if (parsed && parsed.merchants && parsed.products) {
       const existingMerchantIds = new Set(parsed.merchants.map((m) => m.id));
       const missingMerchants = INITIAL_MERCHANTS.filter((m) => !existingMerchantIds.has(m.id));
 
-      const existingProductIds = new Set(parsed.products.map((p) => p.id));
+      // Sincronizar imágenes, variantes y marcas mejoradas de semillas
+      const updatedProducts = parsed.products.map((p) => {
+        const seed = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
+        if (seed) {
+          return {
+            ...p,
+            images: seed.images || p.images,
+            variants: seed.variants || p.variants,
+            hasVariants: seed.hasVariants ?? p.hasVariants,
+            brand: seed.brand || p.brand,
+          };
+        }
+        return p;
+      });
+
+      const existingProductIds = new Set(updatedProducts.map((p) => p.id));
       const missingProducts = INITIAL_PRODUCTS.filter((p) => !existingProductIds.has(p.id));
 
-      if (missingMerchants.length > 0 || missingProducts.length > 0) {
-        const merged: StoredDataPayload = {
-          ...parsed,
-          merchants: [...parsed.merchants, ...missingMerchants],
-          products: [...parsed.products, ...missingProducts],
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        return merged;
-      }
-
-      return parsed;
+      const merged: StoredDataPayload = {
+        ...parsed,
+        merchants: [...parsed.merchants, ...missingMerchants],
+        products: [...updatedProducts, ...missingProducts],
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      return merged;
     }
   }
 

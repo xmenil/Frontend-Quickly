@@ -7,9 +7,9 @@ import { BrandLogo } from '../components/shared/BrandLogo';
 
 export const PublicLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50">
+    <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
-      <main className="flex-1 pb-20 md:pb-10">
+      <main className="flex-1 pb-16 md:pb-10 w-full">
         <Outlet />
       </main>
       <MobileNav />
