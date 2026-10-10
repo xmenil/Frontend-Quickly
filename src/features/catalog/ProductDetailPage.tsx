@@ -32,6 +32,8 @@ import {
   Clock,
   ShoppingCart,
   Palette,
+  BadgeCheck,
+  Building2,
 } from 'lucide-react';
 
 // Algoritmo para encontrar productos similares del mismo tipo pero con otros modelos o marcas
@@ -204,6 +206,7 @@ export const ProductDetailPage: React.FC = () => {
   );
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [addedSimilarId, setAddedSimilarId] = useState<string | null>(null);
 
   // Reiniciar estado al cambiar de producto
   useEffect(() => {
@@ -260,6 +263,21 @@ export const ProductDetailPage: React.FC = () => {
     });
     setShowAddedToast(true);
     setTimeout(() => setShowAddedToast(false), 3500);
+  };
+
+  const handleAddSimilarProduct = (e: React.MouseEvent, simProd: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem({
+      productId: simProd.id,
+      merchantId: simProd.merchantId,
+      quantity: 1,
+      unitPriceCents: simProd.priceCents,
+    });
+    setAddedSimilarId(simProd.id);
+    setTimeout(() => {
+      setAddedSimilarId((curr) => (curr === simProd.id ? null : curr));
+    }, 1500);
   };
 
   const handleBuyNow = () => {
@@ -977,50 +995,124 @@ export const ProductDetailPage: React.FC = () => {
           </Link>
         </div>
 
-        {/* 4 Cards Grid */}
+        {/* 4 Cards Grid con diseño unificado */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {similarProducts.map((simProd) => {
             const simStore = merchants.find((m) => m.id === simProd.merchantId);
+            const isJustAdded = addedSimilarId === simProd.id;
+            const discountPercent =
+              simProd.originalPriceCents && simProd.originalPriceCents > simProd.priceCents
+                ? Math.round(
+                    ((simProd.originalPriceCents - simProd.priceCents) / simProd.originalPriceCents) *
+                      100
+                  )
+                : null;
+
             return (
               <Link
                 key={simProd.id}
                 to={`/producto/${simProd.id}`}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-subtle overflow-hidden flex flex-col justify-between hover:shadow-card hover:border-primary-300 transition-all text-left"
+                className="group bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
               >
-                <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden relative">
+                {/* Product Image: De esquina a esquina */}
+                <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
                   <img
                     src={simProd.imageUrl}
                     alt={simProd.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
                   />
-                  {simProd.brand && (
-                    <span className="absolute top-2 right-2 bg-ink/80 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">
+
+                  {discountPercent ? (
+                    <span className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                      {discountPercent}% OFF
+                    </span>
+                  ) : simProd.brand ? (
+                    <span className="absolute top-2.5 right-2.5 bg-ink/85 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs">
                       {simProd.brand}
                     </span>
-                  )}
-                  <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                  ) : null}
+
+                  <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                     Envío rápido
                   </span>
                 </div>
 
-                <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between space-y-2">
+                {/* Content Body */}
+                <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
                   <div>
-                    <span className="text-[10px] font-extrabold text-primary truncate block mb-0.5">
-                      {simStore?.name || 'Tienda Oficial'}
-                    </span>
-                    <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2.25rem]">
+                    {/* Product Name */}
+                    <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
                       {simProd.name}
                     </h4>
-                    <p className="text-sm sm:text-base font-black text-ink mt-1 tabular-nums">
-                      {formatCents(simProd.priceCents)}
-                    </p>
+
+                    {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
+                    <div className="flex items-center justify-between gap-1.5 mt-2">
+                      {/* Perfil de la tienda */}
+                      <div
+                        className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
+                        title={`${simStore?.name || 'Tienda Oficial'} • Tienda verificada`}
+                      >
+                        {simStore?.logoUrl ? (
+                          <img
+                            src={simStore.logoUrl}
+                            alt={simStore.name}
+                            className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
+                        )}
+                        <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                          {(simStore?.name || 'Tienda Oficial')
+                            .replace(/Supermercado\s+/i, 'Super ')
+                            .replace(/\s+Tingo María$/i, '')}
+                        </span>
+                        <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
+                      </div>
+
+                      {/* Stock disponible */}
+                      <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0 animate-pulse" />
+                        <span>Stock disponible</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="pt-1.5 border-t border-gray-100 flex items-center justify-between text-[10px]">
-                    <span className="text-emerald-600 font-bold">
-                      ✓ Stock disponible
-                    </span>
-                    <span className="text-gray-400 font-medium">Tingo María</span>
+                  {/* Bottom Row */}
+                  <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
+                    <div className="min-w-0">
+                      <div className="h-3.5 flex items-center">
+                        {discountPercent && simProd.originalPriceCents ? (
+                          <span className="text-[10px] text-gray-400 line-through tabular-nums leading-none">
+                            {formatCents(simProd.originalPriceCents)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
+                        {formatCents(simProd.priceCents)}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleAddSimilarProduct(e, simProd)}
+                      title="Agregar al carrito"
+                      aria-label={`Agregar ${simProd.name} al carrito`}
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                        isJustAdded
+                          ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                          : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
+                      }`}
+                    >
+                      {isJustAdded ? (
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      ) : (
+                        <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </Link>

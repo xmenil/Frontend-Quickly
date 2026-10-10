@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Product, Merchant } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import { getCategoryFallbackSvg } from '../../lib/imageFallback';
-import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag, BadgeCheck, Building2 } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useDataStore } from '../../store/dataStore';
 
@@ -83,7 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       className="group relative flex flex-col bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-md hover:border-primary-200 transition-all duration-200 overflow-hidden cursor-pointer"
     >
       {/* Image Container with Fallback & Shimmer Loader */}
-      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
+      <div className="relative aspect-square w-full bg-gray-100 overflow-hidden border-b border-gray-100/70">
         {/* Shimmer skeleton while loading */}
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
@@ -152,19 +152,71 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Info Content */}
-      <div className="flex flex-col flex-1 p-3.5 sm:p-4 justify-between space-y-2">
+      <div className="flex flex-col flex-1 p-2.5 sm:p-3 justify-between space-y-2">
         <div>
-          {merchant && (
-            <p className="text-[11px] font-semibold text-primary mb-0.5 line-clamp-1">
-              {merchant.name}
-            </p>
-          )}
-          <h3 className="font-bold text-ink text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="font-bold text-ink text-xs sm:text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors min-h-[2rem]">
             {product.name}
           </h3>
-          <p className="text-xs text-ink-light mt-1 line-clamp-1 leading-relaxed">
-            {product.description}
-          </p>
+          {product.description && (
+            <p className="text-[11px] text-ink-light mt-0.5 line-clamp-1 leading-relaxed">
+              {product.description}
+            </p>
+          )}
+
+          {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
+          <div className="flex items-center justify-between gap-1.5 mt-2">
+            {merchant ? (
+              <div
+                className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
+                title={`${merchant.name} • Tienda verificada`}
+              >
+                {merchant.logoUrl ? (
+                  <img
+                    src={merchant.logoUrl}
+                    alt={merchant.name}
+                    className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
+                )}
+                <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                  {merchant.name
+                    .replace(/Supermercado\s+/i, 'Super ')
+                    .replace(/\s+Tingo María$/i, '')}
+                </span>
+                <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {/* Stock disponible */}
+            <div
+              className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap ${
+                isOutOfStock
+                  ? 'text-red-700 bg-red-50 border border-red-200/80'
+                  : isLowStock
+                  ? 'text-amber-800 bg-amber-50 border border-amber-200/80'
+                  : 'text-emerald-700 bg-emerald-50/90 border border-emerald-100/80'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full inline-block flex-shrink-0 ${
+                  isOutOfStock
+                    ? 'bg-red-500'
+                    : isLowStock
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-emerald-500 animate-pulse'
+                }`}
+              />
+              <span>
+                {isOutOfStock ? 'Agotado' : isLowStock ? `Últimos ${product.stock}` : 'Stock disponible'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Price and Add Button */}

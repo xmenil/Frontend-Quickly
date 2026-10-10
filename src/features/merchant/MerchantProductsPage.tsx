@@ -19,6 +19,8 @@ import {
   Eye,
   ShoppingCart,
   Store,
+  BadgeCheck,
+  Building2,
 } from 'lucide-react';
 
 export const MerchantProductsPage: React.FC = () => {
@@ -424,9 +426,9 @@ export const MerchantProductsPage: React.FC = () => {
                 Así aparecerá en el catálogo para los comensales tingaleses:
               </p>
 
-              {/* Exact Simulated ProductCard Mockup */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col max-w-xs mx-auto">
-                <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden relative">
+              {/* Exact Simulated ProductCard Mockup con diseño unificado */}
+              <div className="bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] overflow-hidden flex flex-col max-w-xs mx-auto text-left">
+                <div className="aspect-square w-full bg-gray-100 overflow-hidden relative border-b border-gray-100/70">
                   <img
                     src={
                       imageUrl ||
@@ -439,35 +441,42 @@ export const MerchantProductsPage: React.FC = () => {
                         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23F3F4F6"><rect width="300" height="200" fill="%23F3F4F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239CA3AF" font-family="sans-serif" font-size="14">Vista previa</text></svg>';
                     }}
                   />
-                  {parseInt(stock) <= 0 ? (
-                    <div className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                      Agotado
-                    </div>
-                  ) : parseInt(stock) <= 3 ? (
-                    <div className="absolute bottom-2 left-2 bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                      ¡Últimas {stock}!
-                    </div>
-                  ) : null}
+                  <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                    Envío rápido
+                  </span>
                 </div>
 
-                <div className="p-3 space-y-2">
+                <div className="p-2.5 sm:p-3 flex flex-col flex-1 justify-between space-y-2">
                   <div>
-                    <span className="text-[10px] font-bold text-primary block">
-                      {currentMerchant.name}
-                    </span>
-                    <h4 className="font-extrabold text-sm text-ink line-clamp-1 leading-snug">
+                    <h4 className="font-bold text-xs sm:text-sm text-ink line-clamp-1 leading-snug">
                       {name || 'Nombre de la especialidad'}
                     </h4>
-                    <p className="text-xs text-ink-light line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-ink-light line-clamp-1 mt-0.5 leading-relaxed">
                       {description || 'Descripción apetitosa de los ingredientes tingaleses...'}
                     </p>
+
+                    {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
+                    <div className="flex items-center justify-between gap-1.5 mt-2">
+                      <div className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full min-w-0 max-w-[58%]">
+                        <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                          {currentMerchant.name.replace(/\s+Tingo María$/i, '')}
+                        </span>
+                        <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
+                      </div>
+
+                      <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                        <span>Stock {stock ? `${stock} unid.` : 'disponible'}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
                     <span className="font-extrabold text-sm text-ink tabular-nums">
                       {formatCents(previewPriceCents)}
                     </span>
-                    <span className="text-[10px] font-bold text-white bg-primary px-2.5 py-1 rounded-lg">
+                    <span className="text-[10px] font-bold text-white bg-primary px-2.5 py-1 rounded-lg shadow-xs">
                       + Agregar al pedido
                     </span>
                   </div>

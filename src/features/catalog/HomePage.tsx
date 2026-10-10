@@ -32,6 +32,8 @@ import {
   Smartphone,
   Laptop,
   TrendingDown,
+  BadgeCheck,
+  Building2,
 } from 'lucide-react';
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
@@ -471,62 +473,105 @@ export const HomePage: React.FC = () => {
             </Link>
           </div>
 
-          {/* 4 Cards Grid con feedback táctil inmediato */}
+          {/* 4 Cards Grid con feedback táctil inmediato y diseño unificado */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {featuredCards.map((item) => (
-              <Link
-                key={item.id}
-                to={`/producto/${item.id}`}
-                className="group bg-white rounded-2xl border border-gray-200/75 shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col justify-between hover:shadow-card hover:border-primary-300 hover:-translate-y-1 transition-all text-left"
-              >
-                <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden relative">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                    Despacho veloz
-                  </span>
-                </div>
+            {featuredCards.map((item) => {
+              const itemProd = products.find((p) => p.id === item.id);
+              const itemStore = merchants.find(
+                (m) => m.id === itemProd?.merchantId || m.name.toLowerCase().includes(item.merchantName.toLowerCase())
+              );
+              const isJustAdded = addedFeaturedId === item.id;
 
-                <div className="p-3.5 flex flex-col flex-1 justify-between space-y-2">
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2">
-                      {item.name}
-                    </h4>
-                    <p className="text-[11px] text-primary font-semibold mt-0.5 flex items-center gap-1">
-                      <Store className="w-3 h-3 flex-shrink-0" />
-                      {item.merchantName}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                    <span className="text-xs sm:text-sm font-black text-ink tabular-nums">
-                      {formatCents(item.priceCents)}
+              return (
+                <Link
+                  key={item.id}
+                  to={`/producto/${item.id}`}
+                  className="group bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
+                >
+                  {/* Product Image: De esquina a esquina */}
+                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                      Envío rápido
                     </span>
-
-                    <button
-                      type="button"
-                      onClick={(e) => handleAddFeatured(e, item)}
-                      title="Agregar al pedido"
-                      aria-label={`Agregar ${item.name} al pedido`}
-                      className={`min-w-[36px] min-h-[36px] px-2 rounded-xl flex items-center justify-center text-xs font-bold transition-all shadow-subtle active:scale-95 touch-target ${
-                        addedFeaturedId === item.id
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'bg-primary hover:bg-primary-hover text-white'
-                      }`}
-                    >
-                      {addedFeaturedId === item.id ? (
-                        <Check className="w-4 h-4 stroke-[3]" />
-                      ) : (
-                        <ShoppingCart className="w-4 h-4" />
-                      )}
-                    </button>
                   </div>
-                </div>
-              </Link>
-            ))}
+
+                  {/* Content Body */}
+                  <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+                    <div>
+                      {/* Product Name */}
+                      <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
+                        {item.name}
+                      </h4>
+
+                      {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
+                      <div className="flex items-center justify-between gap-1.5 mt-2">
+                        {/* Perfil de la tienda */}
+                        <div
+                          className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
+                          title={`${item.merchantName} • Tienda verificada`}
+                        >
+                          {itemStore?.logoUrl ? (
+                            <img
+                              src={itemStore.logoUrl}
+                              alt={item.merchantName}
+                              className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
+                          )}
+                          <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                            {item.merchantName
+                              .replace(/Supermercado\s+/i, 'Super ')
+                              .replace(/\s+Tingo María$/i, '')}
+                          </span>
+                          <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
+                        </div>
+
+                        {/* Stock disponible */}
+                        <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0 animate-pulse" />
+                          <span>Stock disponible</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row */}
+                    <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
+                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
+                        {formatCents(item.priceCents)}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddFeatured(e, item)}
+                        title="Agregar al carrito"
+                        aria-label={`Agregar ${item.name} al carrito`}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                          isJustAdded
+                            ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                            : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
+                        }`}
+                      >
+                        {isJustAdded ? (
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        ) : (
+                          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
