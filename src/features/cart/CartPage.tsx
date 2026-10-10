@@ -103,34 +103,63 @@ export const CartPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link
-            to="/negocios"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary mb-1 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Seguir explorando locales</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Tu Carrito de Compras</h1>
-            <span className="text-xs font-bold bg-primary-soft text-primary px-3 py-1 rounded-full border border-primary/20">
-              {items.reduce((acc, it) => acc + it.quantity, 0)} {items.length === 1 ? 'ítem' : 'ítems'}
-            </span>
+    <div className="w-full pb-20">
+      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
+      <nav
+        aria-label="Barra de navegación de carrito"
+        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
+          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <Link
+              to="/negocios"
+              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
+              title="Seguir comprando"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Volver a la tienda</span>
+            </Link>
+
+            <span className="text-gray-300 font-light">|</span>
+
+            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
+              <span className="uppercase text-[11px] font-bold tracking-wider text-gray-500">
+                MI PEDIDO
+              </span>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <span className="text-ink font-semibold">
+                Carrito de compras ({items.reduce((acc, it) => acc + it.quantity, 0)} ítems)
+              </span>
+            </div>
+          </div>
+
+          {/* Lado derecho: Vaciar carrito solo en letras sin bordes */}
+          <div className="flex items-center gap-3 text-xs font-semibold ml-auto">
+            <button
+              type="button"
+              onClick={() => setShowClearDialog(true)}
+              className="text-red-500 hover:text-red-700 hover:underline inline-flex items-center gap-1 transition-colors cursor-pointer py-0.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Vaciar carrito</span>
+            </button>
           </div>
         </div>
+      </nav>
 
-        <button
-          type="button"
-          onClick={() => setShowClearDialog(true)}
-          className="min-h-[44px] inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-3.5 py-2 rounded-xl transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Vaciar carrito</span>
-        </button>
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Tu Carrito de Compras</h1>
+              <span className="text-xs font-bold bg-primary-soft text-primary px-3 py-1 rounded-full border border-primary/20">
+                {items.reduce((acc, it) => acc + it.quantity, 0)} {items.length === 1 ? 'ítem' : 'ítems'}
+              </span>
+            </div>
+          </div>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Items Grouped by Merchant */}
@@ -428,6 +457,7 @@ export const CartPage: React.FC = () => {
           </div>
         </div>
       </Dialog>
+    </div>
     </div>
   );
 };

@@ -304,7 +304,7 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 pb-28 sm:pb-8">
+    <div className="w-full pb-28 sm:pb-8">
       {/* Toast Notification */}
       {showAddedToast && (
         <div className="fixed top-20 right-4 z-50 bg-white border border-primary/20 shadow-floating rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -324,49 +324,81 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Breadcrumbs matching Capture 2 */}
-      <div className="flex flex-wrap items-center justify-between text-xs text-gray-500 gap-2 border-b border-gray-100 pb-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            to="/"
-            className="text-primary hover:underline font-bold flex items-center gap-1"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" /> Volver
-          </Link>
-          <span className="text-gray-300">|</span>
-          <Link to="/negocios" className="hover:text-ink">
-            {merchant.category.toUpperCase()}
-          </Link>
-          <span className="text-gray-300">&gt;</span>
-          <Link to={`/negocios/${merchant.id}`} className="hover:text-ink">
-            {merchant.name}
-          </Link>
-          <span className="text-gray-300">&gt;</span>
-          <span className="text-ink font-semibold truncate max-w-[200px] sm:max-w-none">
-            {product.name}
-          </span>
-        </div>
+      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
+      <nav
+        aria-label="Barra de navegación de producto"
+        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
+          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs limpios */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/');
+                }
+              }}
+              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
+              title="Volver a la página anterior"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Volver</span>
+            </button>
 
-        <div className="flex items-center gap-4 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="text-primary hover:text-primary-hover flex items-center gap-1 transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{copiedShare ? '¡Enlace copiado!' : 'Compartir'}</span>
-          </button>
-          <Link
-            to={`/negocios/${merchant.id}`}
-            className="text-gray-600 hover:text-primary transition-colors hidden sm:inline"
-          >
-            Ver más de esta tienda
-          </Link>
-        </div>
-      </div>
+            <span className="text-gray-300 font-light">|</span>
 
-      {/* Main Product Layout: 2 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
+              <Link
+                to={`/negocios?categoria=${merchant.category}`}
+                className="hover:text-primary hover:underline transition-colors uppercase text-[11px] font-bold tracking-wider text-gray-500"
+              >
+                {merchant.category}
+              </Link>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <Link
+                to={`/negocios/${merchant.id}`}
+                className="hover:text-primary hover:underline transition-colors font-medium text-gray-600 truncate max-w-[120px] sm:max-w-[200px]"
+                title={merchant.name}
+              >
+                {merchant.name}
+              </Link>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <span
+                className="text-ink font-semibold truncate max-w-[150px] sm:max-w-[280px] lg:max-w-[380px]"
+                title={product.name}
+              >
+                {product.name}
+              </span>
+            </div>
+          </div>
+
+          {/* Lado derecho: Compartir & Ver más de esta tienda (solo letras, sin bordes) */}
+          <div className="flex items-center gap-4 text-xs font-semibold ml-auto">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="text-primary hover:text-primary-hover hover:underline flex items-center gap-1 transition-colors cursor-pointer py-0.5"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{copiedShare ? '¡Enlace copiado!' : 'Compartir'}</span>
+            </button>
+            <Link
+              to={`/negocios/${merchant.id}`}
+              className="text-gray-600 hover:text-primary hover:underline transition-colors hidden sm:inline-flex items-center gap-1 py-0.5"
+            >
+              <span>Ver más de esta tienda</span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Contenedor principal de producto (Dentro de max-w-7xl) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+        {/* Main Product Layout: 2 Columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Column: Gallery & Product Info */}
         <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-100 shadow-subtle p-4 sm:p-6 space-y-8">
           {/* Gallery Row: Vertical Thumbnails + Big Preview */}
@@ -995,6 +1027,7 @@ export const ProductDetailPage: React.FC = () => {
             );
           })}
         </div>
+      </div>
       </div>
 
       {/* Mobile Sticky Add-to-Cart Bar */}

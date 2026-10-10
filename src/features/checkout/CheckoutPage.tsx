@@ -207,23 +207,55 @@ export const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Return link */}
-      <div>
-        <Link
-          to="/carrito"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Volver al carrito de compras</span>
-        </Link>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Finalizar Compra</h1>
-          <span className="text-xs font-semibold text-gray-500">
-            Entrega express en Tingo María
-          </span>
+    <div className="w-full pb-20">
+      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
+      <nav
+        aria-label="Barra de navegación de checkout"
+        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
+          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <Link
+              to="/carrito"
+              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
+              title="Volver al carrito"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Volver al carrito</span>
+            </Link>
+
+            <span className="text-gray-300 font-light">|</span>
+
+            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
+              <span className="uppercase text-[11px] font-bold tracking-wider text-gray-500">
+                PAGO
+              </span>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <span className="text-ink font-semibold">
+                Checkout seguro Quickly
+              </span>
+            </div>
+          </div>
+
+          {/* Lado derecho: Indicador seguro */}
+          <div className="flex items-center gap-3 text-xs font-semibold ml-auto text-emerald-600">
+            <span className="inline-flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> Compra 100% Protegida
+            </span>
+          </div>
         </div>
-      </div>
+      </nav>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Finalizar Compra</h1>
+            <span className="text-xs font-semibold text-gray-500">
+              Entrega express en Tingo María
+            </span>
+          </div>
+        </div>
 
       {/* Stepper with visual indicators */}
       <div className="bg-white rounded-3xl border border-gray-100 p-2 sm:p-3 shadow-sm">
@@ -956,6 +988,7 @@ export const CheckoutPage: React.FC = () => {
           onCancel={() => setShowNewAddressDialog(false)}
         />
       </Dialog>
+    </div>
     </div>
   );
 };

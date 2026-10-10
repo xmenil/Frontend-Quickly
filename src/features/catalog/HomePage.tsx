@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
@@ -22,7 +22,12 @@ import {
   Store,
   Sparkles,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import heroFamilyGroceries from '../../assets/img/image copy 2.png';
+import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
+import heroSmartphoneView from '../../assets/img/image copy 4.png';
 
 export const HomePage: React.FC = () => {
   const { merchants, products, purchases } = useDataStore();
@@ -32,6 +37,45 @@ export const HomePage: React.FC = () => {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+
+  // 3 Slides con fotos locales de Tingo María y textos según la notación de cada imagen
+  const heroSlides = [
+    {
+      id: 1,
+      image: heroFamilyGroceries,
+      badge: 'Supermercados & Bodegas en Tingo María',
+      title: 'Tus compras del hogar, frescas y completas',
+      description: 'Frutas, verduras frescas, abarrotes y productos de la selva alta directo a la puerta de tu hogar.',
+      ctaText: 'Ver supermercados',
+      ctaLink: '/negocios?categoria=supermercados',
+    },
+    {
+      id: 2,
+      image: heroMotorcycleDelivery,
+      badge: 'Envíos Express en Leoncio Prado',
+      title: 'Lo mejor de la selva en tu puerta en minutos',
+      description: 'Tacacho con cecina, juanes, farmacias y antojos con motorizados locales en Rupa Rupa y Castillo Grande.',
+      ctaText: 'Pedir comida caliente',
+      ctaLink: '/negocios?categoria=restaurantes',
+    },
+    {
+      id: 3,
+      image: heroSmartphoneView,
+      badge: 'Fácil, Rápido y Seguro',
+      title: 'Todo Tingo María al alcance de tu celular',
+      description: 'Pide desde donde estés con delivery centralizado, rastreo en vivo y pagos al instante con Yape, Plin o efectivo.',
+      ctaText: 'Explorar comercios',
+      ctaLink: '/negocios',
+    },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroSlides.length]);
 
   // Categorías locales de la selva
   const categories: {
@@ -126,34 +170,91 @@ export const HomePage: React.FC = () => {
             <QuickCategoryStrip />
           </div>
 
-          {/* Hero Banner: Amazon Selva Landscape (Full Width inside max-w-7xl) */}
-          <div className="relative rounded-2xl overflow-hidden shadow-subtle min-h-[220px] sm:min-h-[280px] flex flex-col justify-end p-6 sm:p-8 text-white select-none group w-full">
-            {/* Background Mountain/Jungle Photo */}
-            <img
-              src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=1400&auto=format&fit=crop&q=80"
-              alt="Selva de Tingo María y Bella Durmiente"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
-            />
-            {/* Gradient Overlay for high text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+          {/* Hero Banner: Carousel de 3 imágenes de Tingo María (altura amplia ~50vh, toque moradito claro medio) */}
+          <div className="relative rounded-3xl overflow-hidden shadow-card h-[380px] sm:h-[460px] lg:h-[500px] min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] flex flex-col justify-end p-6 sm:p-10 text-white select-none group w-full">
+            {/* Background Slides with crossfade transition */}
+            {heroSlides.map((slide, idx) => {
+              const isActive = idx === currentHeroSlide;
+              return (
+                <div
+                  key={slide.id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="w-full h-full object-cover object-center filter blur-[0.5px] scale-100 group-hover:scale-105 transition-transform duration-1000"
+                  />
+                </div>
+              );
+            })}
 
-            <div className="relative z-10 space-y-2 max-w-2xl">
-              <span className="inline-block px-3 py-1 rounded-full bg-primary/90 backdrop-blur-sm text-[11px] font-bold text-white shadow-subtle mb-1">
-                Delivery centralizado en Leoncio Prado
+            {/* Toque medio moradito claro: gradiente sutil y armónico de marca (medio no oscuro) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2c0517]/85 via-[#590a2d]/45 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1b030e]/85 via-[#450723]/30 to-transparent" />
+            <div className="absolute inset-0 bg-[#be185d]/10 mix-blend-color pointer-events-none" />
+
+            {/* Slide Content */}
+            <div className="relative z-10 space-y-3 sm:space-y-4 max-w-xl sm:max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/90 backdrop-blur-xs text-[11px] sm:text-xs font-bold text-white shadow-subtle">
+                <Sparkles className="w-3.5 h-3.5 text-pink-200" />
+                {heroSlides[currentHeroSlide].badge}
               </span>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm">
-                Lo mejor de Tingo María, en tu puerta
+
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white drop-shadow-md">
+                {heroSlides[currentHeroSlide].title}
               </h1>
-              <p className="text-xs sm:text-sm text-gray-100 font-medium leading-relaxed drop-shadow">
-                Tacacho, juanes, farmacias, bodegas y café de la selva alta con entrega rápida.
+
+              <p className="text-xs sm:text-sm lg:text-base text-gray-100 font-medium leading-relaxed drop-shadow max-w-xl">
+                {heroSlides[currentHeroSlide].description}
               </p>
 
-              {/* Carousel Pagination Dots */}
-              <div className="flex items-center gap-1.5 pt-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
-                <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-                <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
+              <div className="pt-2 flex items-center gap-3 flex-wrap">
+                <Link
+                  to={heroSlides[currentHeroSlide].ctaLink}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-pink-50 text-primary font-black text-xs sm:text-sm shadow-card hover:shadow-hover transition-all active:scale-95 cursor-pointer"
+                >
+                  <span>{heroSlides[currentHeroSlide].ctaText}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
+            </div>
+
+            {/* Prev & Next subtle buttons */}
+            <button
+              type="button"
+              onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+              aria-label="Slide anterior"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+              aria-label="Siguiente slide"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Carousel Pagination Dots */}
+            <div className="absolute bottom-5 right-5 sm:bottom-8 sm:right-8 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20">
+              {heroSlides.map((slide, idx) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => setCurrentHeroSlide(idx)}
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
+                    idx === currentHeroSlide
+                      ? 'w-7 h-2.5 bg-primary shadow-sm'
+                      : 'w-2.5 h-2.5 bg-white/60 hover:bg-white'
+                  }`}
+                  aria-label={`Ir al slide ${idx + 1}`}
+                />
+              ))}
             </div>
           </div>
 

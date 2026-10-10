@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { MerchantCard } from '../../components/shared/MerchantCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { MerchantCategory } from '../../domain/types';
-import { Search, Filter, RotateCcw, Store } from 'lucide-react';
+import { Search, Filter, RotateCcw, Store, ChevronLeft } from 'lucide-react';
 
 export const MerchantsPage: React.FC = () => {
   const { merchants, products } = useDataStore();
@@ -78,7 +78,49 @@ export const MerchantsPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20">
+    <div className="w-full pb-20">
+      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
+      <nav
+        aria-label="Barra de navegación de comercios"
+        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
+          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
+              title="Volver al inicio"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Volver</span>
+            </Link>
+
+            <span className="text-gray-300 font-light">|</span>
+
+            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
+              <span className="uppercase text-[11px] font-bold tracking-wider text-gray-500">
+                COMERCIOS
+              </span>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <span className="text-ink font-semibold">
+                {selectedCategory === 'all'
+                  ? 'Todos los locales'
+                  : categories.find((c) => c.id === selectedCategory)?.label || selectedCategory}
+              </span>
+            </div>
+          </div>
+
+          {/* Lado derecho: Contador de locales disponibles */}
+          <div className="flex items-center gap-3 text-xs font-semibold ml-auto text-gray-500">
+            <span className="text-gray-400">
+              <strong className="text-ink">{filteredMerchants.length}</strong> locales disponibles
+            </span>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Title & Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -183,6 +225,7 @@ export const MerchantsPage: React.FC = () => {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 };

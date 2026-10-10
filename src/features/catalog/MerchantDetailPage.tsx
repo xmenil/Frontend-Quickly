@@ -53,17 +53,51 @@ export const MerchantDetailPage: React.FC = () => {
       : merchantProducts.filter((p) => p.category === activeCategoryFilter);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-      {/* Back button */}
-      <div>
-        <Link
-          to="/negocios"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary transition-colors bg-white px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Volver a todos los comercios</span>
-        </Link>
-      </div>
+    <div className="w-full pb-20">
+      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
+      <nav
+        aria-label="Barra de navegación de tienda"
+        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
+          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs limpios */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <Link
+              to="/negocios"
+              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
+              title="Volver a todos los comercios"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Volver a comercios</span>
+            </Link>
+
+            <span className="text-gray-300 font-light">|</span>
+
+            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
+              <Link
+                to={`/negocios?categoria=${merchant.category}`}
+                className="hover:text-primary hover:underline transition-colors uppercase text-[11px] font-bold tracking-wider text-gray-500"
+              >
+                {merchant.category}
+              </Link>
+              <span className="text-gray-300 text-[10px]">&gt;</span>
+              <span className="text-ink font-semibold truncate max-w-[200px] sm:max-w-none">
+                {merchant.name}
+              </span>
+            </div>
+          </div>
+
+          {/* Lado derecho: Estado y categoría en texto limpio */}
+          <div className="flex items-center gap-3 text-xs font-semibold ml-auto text-gray-500">
+            <span className={`inline-flex items-center gap-1.5 ${merchant.isOpen ? 'text-emerald-600' : 'text-gray-400'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${merchant.isOpen ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+              {merchant.isOpen ? 'Abierto ahora' : 'Cerrado temporalmente'}
+            </span>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
       {/* Banner & Header Card */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -258,6 +292,7 @@ export const MerchantDetailPage: React.FC = () => {
         isOpen={Boolean(selectedProduct)}
         onClose={() => setSelectedProduct(null)}
       />
+    </div>
     </div>
   );
 };
