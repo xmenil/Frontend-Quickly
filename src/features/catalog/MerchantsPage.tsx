@@ -36,14 +36,23 @@ export const MerchantsPage: React.FC = () => {
         // Search query filter (matches merchant name or products sold by this merchant!)
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
+          const isOfferSearch =
+            q === 'oferta' || q === 'ofertas' || q === 'descuento' || q === 'combo' || q === 'promocion';
           const matchesName = m.name.toLowerCase().includes(q);
           const matchesDesc = m.description.toLowerCase().includes(q);
           const matchesCategory = m.category.toLowerCase().includes(q);
 
           // Check if any product belongs to this merchant matches
-          const matchesProduct = products.some(
-            (p) => p.merchantId === m.id && p.name.toLowerCase().includes(q)
-          );
+          const matchesProduct = products.some((p) => {
+            if (p.merchantId !== m.id) return false;
+            if (p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)) return true;
+            if (isOfferSearch && p.originalPriceCents && p.originalPriceCents > p.priceCents) return true;
+            return false;
+          });
+
+          if (isOfferSearch && (matchesProduct || m.deliveryFeeCents <= 300 || m.rating >= 4.7)) {
+            return true;
+          }
 
           if (!matchesName && !matchesDesc && !matchesCategory && !matchesProduct) {
             return false;

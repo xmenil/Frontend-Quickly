@@ -245,14 +245,18 @@ export const CategoriesDropdown: React.FC = () => {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
-        className="flex items-center gap-1 text-white hover:text-pink-100 font-medium transition-colors py-1 cursor-pointer focus:outline-none group"
+        className={`flex items-center gap-1 transition-all py-1 px-2.5 rounded-full cursor-pointer focus:outline-none group ${
+          isOpen
+            ? 'bg-white text-[#BE185D] font-extrabold shadow-sm ring-1 ring-white/50'
+            : 'text-white hover:text-white hover:bg-white/15 font-medium'
+        }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="text-xs sm:text-[13px] leading-tight font-medium">Categorías</span>
+        <span className="text-xs sm:text-[13px] leading-tight font-inherit">Categorías</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-white/80 group-hover:text-white transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-white' : ''
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[#BE185D]' : 'text-white/80 group-hover:text-white'
           }`}
         />
       </button>

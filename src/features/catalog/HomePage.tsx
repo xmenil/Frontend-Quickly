@@ -24,6 +24,14 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
+  UtensilsCrossed,
+  PlusCircle,
+  Shirt,
+  Sprout,
+  Zap,
+  Smartphone,
+  Laptop,
+  TrendingDown,
 } from 'lucide-react';
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
@@ -77,16 +85,107 @@ export const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  // Categorías locales de la selva
-  const categories: {
-    id: MerchantCategory;
-    name: string;
-  }[] = [
-    { id: 'restaurantes', name: 'Restaurantes' },
-    { id: 'farmacias', name: 'Farmacias y Boticas' },
-    { id: 'bodegas', name: 'Bodegas y Abarrotes' },
-    { id: 'emprendedores', name: 'Cacao & Café' },
-    { id: 'ropa', name: 'Textil Local' },
+  // 5 Categorías destacadas (como en la captura del usuario: Restaurantes, Farmacias, Bodegas, Ropa, Emprendedores)
+  const mainCategoryCards = [
+    {
+      id: 'restaurantes',
+      name: 'Restaurantes',
+      icon: <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=restaurantes',
+    },
+    {
+      id: 'farmacias',
+      name: 'Farmacias',
+      icon: <PlusCircle className="w-6 h-6 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=farmacias',
+    },
+    {
+      id: 'bodegas',
+      name: 'Bodegas',
+      icon: <Store className="w-6 h-6 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=bodegas',
+    },
+    {
+      id: 'ropa',
+      name: 'Ropa',
+      icon: <Shirt className="w-6 h-6 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=ropa',
+    },
+    {
+      id: 'emprendedores',
+      name: 'Emprendedores',
+      icon: <Sprout className="w-6 h-6 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=emprendedores',
+    },
+  ];
+
+  // Atajos rápidos para el recuadro derecho (reemplazando el carrito, con iconos bien claros)
+  const rightSidebarShortcuts = [
+    {
+      id: 'ofertas-relampago',
+      label: 'Ofertas relámpago',
+      subtitle: 'Hasta 40% OFF',
+      icon: <Zap className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios?q=oferta',
+    },
+    {
+      id: 'ofertas-del-dia',
+      label: 'Ofertas del día',
+      subtitle: 'Precios bomba 24h',
+      icon: (
+        <span className="w-4 h-4 rounded-full border-[1.5px] border-primary text-primary font-black text-[9px] flex items-center justify-center leading-none">
+          24
+        </span>
+      ),
+      link: '/negocios?q=descuento',
+    },
+    {
+      id: 'celulares',
+      label: 'Celulares',
+      subtitle: 'Smartphones y más',
+      icon: <Smartphone className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios?q=celulares',
+    },
+    {
+      id: 'notebooks',
+      label: 'Notebooks',
+      subtitle: 'Laptops y PC',
+      icon: <Laptop className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios?q=notebooks',
+    },
+    {
+      id: 'menos-100',
+      label: 'Menos de S/100',
+      subtitle: 'Súper ahorro',
+      icon: (
+        <div className="flex flex-col items-center justify-center text-primary leading-none">
+          <span className="font-extrabold text-[9px]">S/↓</span>
+          <TrendingDown className="w-2.5 h-2.5 stroke-[2.5]" />
+        </div>
+      ),
+      link: '/negocios?q=combo',
+    },
+    {
+      id: 'envios-express',
+      label: 'Envíos Express',
+      subtitle: '20 a 35 min',
+      icon: <Bike className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios',
+    },
+    {
+      id: 'moda-selva',
+      label: 'Moda Selva',
+      subtitle: 'Tendencias locales',
+      icon: <Shirt className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=ropa',
+    },
+    {
+      id: 'cacao-cafe',
+      label: 'Cacao & Café',
+      subtitle: 'Leoncio Prado',
+      icon: <Sparkles className="w-4 h-4 text-primary stroke-[2]" />,
+      link: '/negocios?categoria=emprendedores',
+    },
   ];
 
   // 4 Platos y productos bandera 100% de Tingo María
@@ -162,113 +261,172 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Top Section: Quick Category Strip & Hero Banner */}
-      <section className="w-full bg-white pb-8 pt-3 select-none">
+      {/* Top Section: Hero Carousel Banner & Quick Category Grid side-by-side */}
+      <section className="w-full bg-white pb-6 pt-3 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          {/* Quick Category Buttons Strip */}
-          <div className="bg-[#FAF5F8]/70 rounded-2xl border border-pink-100/70 px-3 sm:px-6 py-2.5">
-            <QuickCategoryStrip />
-          </div>
+          {/* Main Hero Grid Layout: Banner & 5 Category Cards on Left, Quick Shortcuts Card on Right (matching screenshot) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Left Column (col-span-8): Hero Banner on top, 5 Category Cards directly below */}
+            <div className="lg:col-span-8 xl:col-span-8 flex flex-col justify-between gap-3 sm:gap-3.5">
+              {/* Hero Banner Carousel */}
+              <div className="relative rounded-2xl overflow-hidden shadow-card h-[240px] sm:h-[260px] lg:h-[270px] flex flex-col justify-end p-5 sm:p-6 text-white select-none group w-full">
+                {/* Background Slides with crossfade transition */}
+                {heroSlides.map((slide, idx) => {
+                  const isActive = idx === currentHeroSlide;
+                  return (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                        isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className="w-full h-full object-cover object-center filter blur-[0.3px] scale-100 group-hover:scale-105 transition-transform duration-1000"
+                      />
+                    </div>
+                  );
+                })}
 
-          {/* Hero Banner: Carousel de 3 imágenes de Tingo María (altura amplia ~50vh, toque moradito claro medio) */}
-          <div className="relative rounded-3xl overflow-hidden shadow-card h-[380px] sm:h-[460px] lg:h-[500px] min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] flex flex-col justify-end p-6 sm:p-10 text-white select-none group w-full">
-            {/* Background Slides with crossfade transition */}
-            {heroSlides.map((slide, idx) => {
-              const isActive = idx === currentHeroSlide;
-              return (
-                <div
-                  key={slide.id}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="w-full h-full object-cover object-center filter blur-[0.5px] scale-100 group-hover:scale-105 transition-transform duration-1000"
-                  />
+                {/* Toque medio moradito claro: gradiente sutil y armónico de marca */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#2c0517]/85 via-[#590a2d]/45 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1b030e]/85 via-[#450723]/30 to-transparent" />
+                <div className="absolute inset-0 bg-[#be185d]/10 mix-blend-color pointer-events-none" />
+
+                {/* Slide Content */}
+                <div className="relative z-10 space-y-1.5 sm:space-y-2 max-w-lg">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/90 backdrop-blur-xs text-[10px] sm:text-[11px] font-bold text-white shadow-subtle">
+                    <Sparkles className="w-3 h-3 text-pink-200" />
+                    {heroSlides[currentHeroSlide].badge}
+                  </span>
+
+                  <h1 className="text-lg sm:text-2xl lg:text-[26px] font-black tracking-tight leading-tight text-white drop-shadow-md">
+                    {heroSlides[currentHeroSlide].title}
+                  </h1>
+
+                  <p className="text-xs sm:text-sm text-gray-100 font-medium leading-snug drop-shadow line-clamp-2 max-w-md">
+                    {heroSlides[currentHeroSlide].description}
+                  </p>
+
+                  <div className="pt-0.5 flex items-center gap-2">
+                    <Link
+                      to={heroSlides[currentHeroSlide].ctaLink}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-pink-50 text-primary font-black text-xs shadow-card hover:shadow-hover transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span>{heroSlides[currentHeroSlide].ctaText}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 </div>
-              );
-            })}
 
-            {/* Toque medio moradito claro: gradiente sutil y armónico de marca (medio no oscuro) */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#2c0517]/85 via-[#590a2d]/45 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1b030e]/85 via-[#450723]/30 to-transparent" />
-            <div className="absolute inset-0 bg-[#be185d]/10 mix-blend-color pointer-events-none" />
-
-            {/* Slide Content */}
-            <div className="relative z-10 space-y-3 sm:space-y-4 max-w-xl sm:max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/90 backdrop-blur-xs text-[11px] sm:text-xs font-bold text-white shadow-subtle">
-                <Sparkles className="w-3.5 h-3.5 text-pink-200" />
-                {heroSlides[currentHeroSlide].badge}
-              </span>
-
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white drop-shadow-md">
-                {heroSlides[currentHeroSlide].title}
-              </h1>
-
-              <p className="text-xs sm:text-sm lg:text-base text-gray-100 font-medium leading-relaxed drop-shadow max-w-xl">
-                {heroSlides[currentHeroSlide].description}
-              </p>
-
-              <div className="pt-2 flex items-center gap-3 flex-wrap">
-                <Link
-                  to={heroSlides[currentHeroSlide].ctaLink}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-pink-50 text-primary font-black text-xs sm:text-sm shadow-card hover:shadow-hover transition-all active:scale-95 cursor-pointer"
+                {/* Prev & Next subtle buttons */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/35 hover:bg-black/65 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+                  aria-label="Slide anterior"
                 >
-                  <span>{heroSlides[currentHeroSlide].ctaText}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/35 hover:bg-black/65 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+                  aria-label="Siguiente slide"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Carousel Pagination Dots */}
+                <div className="absolute bottom-3.5 right-3.5 sm:bottom-4 sm:right-4 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                  {heroSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      type="button"
+                      onClick={() => setCurrentHeroSlide(idx)}
+                      className={`transition-all duration-300 rounded-full cursor-pointer ${
+                        idx === currentHeroSlide
+                          ? 'w-4 h-1.5 bg-primary shadow-sm'
+                          : 'w-1.5 h-1.5 bg-white/60 hover:bg-white'
+                      }`}
+                      aria-label={`Ir al slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 5 Main Category Cards directly below the banner (matching Screenshot) */}
+              <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                {mainCategoryCards.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    to={cat.link}
+                    className="bg-[#FAF5F8] hover:bg-pink-100/70 border border-pink-100 hover:border-pink-300 rounded-2xl py-3 px-2 sm:py-3.5 sm:px-3 flex flex-col items-center justify-center gap-1.5 group transition-all duration-200 shadow-2xs hover:shadow-subtle hover:-translate-y-0.5 active:scale-95 text-center"
+                  >
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center text-primary group-hover:scale-110 shadow-2xs transition-transform">
+                      {cat.icon}
+                    </div>
+                    <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full">
+                      {cat.name}
+                    </span>
+                  </Link>
+                ))}
               </div>
             </div>
 
-            {/* Prev & Next subtle buttons */}
-            <button
-              type="button"
-              onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
-              aria-label="Slide anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
-              aria-label="Siguiente slide"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {/* Right Column (col-span-4): Replaces "Tu carrito" with Accesos Directos Card "bien claros" */}
+            <div className="lg:col-span-4 xl:col-span-4 bg-white rounded-2xl border border-gray-200/90 shadow-card p-4 sm:p-5 flex flex-col justify-between select-none">
+              {/* Card Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                  <h3 className="text-sm font-black text-ink">Accesos directos</h3>
+                </div>
+                <span className="text-[10px] bg-pink-50 text-primary border border-pink-200 font-bold px-2 py-0.5 rounded-full">
+                  Tingo María
+                </span>
+              </div>
 
-            {/* Carousel Pagination Dots */}
-            <div className="absolute bottom-5 right-5 sm:bottom-8 sm:right-8 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20">
-              {heroSlides.map((slide, idx) => (
-                <button
-                  key={slide.id}
-                  type="button"
-                  onClick={() => setCurrentHeroSlide(idx)}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    idx === currentHeroSlide
-                      ? 'w-7 h-2.5 bg-primary shadow-sm'
-                      : 'w-2.5 h-2.5 bg-white/60 hover:bg-white'
-                  }`}
-                  aria-label={`Ir al slide ${idx + 1}`}
-                />
-              ))}
+              {/* 8 Crisp Shortcut Tiles in 2 columns (Bien Claros) */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5 my-auto py-2.5">
+                {rightSidebarShortcuts.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.link)}
+                    className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50/80 hover:bg-pink-50/70 border border-gray-100 hover:border-pink-200 group transition-all text-left cursor-pointer active:scale-95 shadow-2xs hover:shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-primary group-hover:scale-105 shadow-2xs border border-pink-100 flex-shrink-0">
+                      {item.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate">
+                        {item.label}
+                      </div>
+                      <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium truncate">
+                        {item.subtitle}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Card Footer */}
+              <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-ink-light text-[11px] font-medium truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                  <span className="truncate">Despachos en 20-35 min</span>
+                </div>
+                <Link
+                  to="/negocios"
+                  className="text-primary hover:text-primary-hover font-bold text-[11px] flex items-center gap-0.5 hover:underline flex-shrink-0 ml-2"
+                >
+                  <span>Ver catálogo</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
-          </div>
-
-          {/* Categories Row: Botones limpios de texto */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/negocios?categoria=${cat.id}`}
-                className="py-2 px-4 sm:px-5 rounded-xl bg-white hover:bg-primary hover:text-white border border-gray-200 hover:border-primary text-ink text-xs sm:text-sm font-bold transition-all shadow-subtle active:scale-[0.98]"
-              >
-                {cat.name}
-              </Link>
-            ))}
           </div>
         </div>
       </section>

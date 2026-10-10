@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from './BrandLogo';
 import { CategoriesDropdown } from './CategoriesDropdown';
 import { ZoneSelector } from './ZoneSelector';
@@ -28,11 +28,34 @@ export const Navbar: React.FC = () => {
   const { getItemCount } = useCartStore();
   const { notifications } = useDataStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
   const [showCouponsModal, setShowCouponsModal] = useState(false);
   const [showPlayModal, setShowPlayModal] = useState(false);
+
+  // Active section detection so buttons paint when selected
+  const isOfertasActive =
+    location.pathname === '/negocios' &&
+    (location.search.includes('q=oferta') || location.search.includes('descuento'));
+  const isCuponesActive = showCouponsModal || location.pathname === '/cupones';
+  const isModaActive =
+    location.pathname === '/negocios' &&
+    (location.search.includes('categoria=ropa') || location.search.includes('moda'));
+  const isPlayActive = showPlayModal || location.pathname === '/play';
+  const isVenderActive = location.pathname.startsWith('/comercio');
+  const isAyudaActive = location.pathname === '/cliente/ayuda';
+
+  const isRegistroActive = location.pathname === '/registro';
+  const isLoginActive = location.pathname === '/login';
+  const isPedidosActive = location.pathname === '/cliente/pedidos';
+  const isPerfilActive = location.pathname === '/cliente/perfil';
+
+  const getNavBtnClass = (active: boolean) =>
+    active
+      ? 'bg-white text-[#BE185D] font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
+      : 'text-white hover:text-white hover:bg-white/15 px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer';
 
   const cartCount = getItemCount();
   const unreadNotifications = notifications.filter(
@@ -229,14 +252,14 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Sub-bar: Categorías, Ofertas, Cupones, Mercado Play, Ayuda & Auth */}
-          <div className="hidden md:flex items-center justify-between py-2 border-t border-white/10 text-xs text-white">
+          <div className="hidden md:flex items-center justify-between py-1.5 border-t border-white/10 text-xs text-white">
             {/* Left Nav Navigation */}
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <CategoriesDropdown />
 
               <Link
                 to="/negocios?q=oferta"
-                className="text-white hover:text-pink-100 font-normal transition-colors"
+                className={getNavBtnClass(isOfertasActive)}
               >
                 Ofertas
               </Link>
@@ -244,14 +267,14 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCouponsModal(true)}
-                className="text-white hover:text-pink-100 font-normal transition-colors cursor-pointer"
+                className={getNavBtnClass(isCuponesActive)}
               >
                 Cupones
               </button>
 
               <Link
                 to="/negocios?categoria=ropa"
-                className="text-white hover:text-pink-100 font-normal transition-colors"
+                className={getNavBtnClass(isModaActive)}
               >
                 Moda
               </Link>
@@ -260,40 +283,49 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPlayModal(true)}
-                className="text-white hover:text-pink-100 font-normal transition-colors flex items-center gap-1.5 cursor-pointer"
+                className={`${getNavBtnClass(isPlayActive)} flex items-center gap-1.5`}
               >
                 <span className="bg-[#00a650] text-white text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5 shadow-sm">
                   GRATIS
                 </span>
-                <span className="font-medium">Mercado Play</span>
+                <span>Mercado Play</span>
               </button>
 
               <Link
                 to="/comercio/tienda"
-                className="text-white hover:text-pink-100 font-normal transition-colors"
+                className={getNavBtnClass(isVenderActive)}
               >
                 Vender
               </Link>
 
               <Link
                 to="/cliente/ayuda"
-                className="text-white hover:text-pink-100 font-normal transition-colors"
+                className={getNavBtnClass(isAyudaActive)}
               >
                 Ayuda
               </Link>
             </div>
 
             {/* Right Side Auth / Account Links */}
-            <div className="flex items-center gap-4 text-xs font-normal">
+            <div className="flex items-center gap-2 text-xs">
               {!isAuthenticated || !currentUser ? (
                 <>
-                  <Link to="/registro" className="text-white hover:text-pink-100 transition-colors">
+                  <Link
+                    to="/registro"
+                    className={getNavBtnClass(isRegistroActive)}
+                  >
                     Crea tu cuenta
                   </Link>
-                  <Link to="/login" className="text-white hover:text-pink-100 transition-colors font-medium">
+                  <Link
+                    to="/login"
+                    className={getNavBtnClass(isLoginActive)}
+                  >
                     Ingresa
                   </Link>
-                  <Link to="/cliente/pedidos" className="text-white hover:text-pink-100 transition-colors">
+                  <Link
+                    to="/cliente/pedidos"
+                    className={getNavBtnClass(isPedidosActive)}
+                  >
                     Mis compras
                   </Link>
                 </>
@@ -301,11 +333,14 @@ export const Navbar: React.FC = () => {
                 <>
                   <Link
                     to="/cliente/pedidos"
-                    className="text-white hover:text-pink-100 transition-colors font-medium"
+                    className={getNavBtnClass(isPedidosActive)}
                   >
                     Mis compras
                   </Link>
-                  <Link to="/cliente/perfil" className="text-white hover:text-pink-100 transition-colors">
+                  <Link
+                    to="/cliente/perfil"
+                    className={getNavBtnClass(isPerfilActive)}
+                  >
                     Hola {currentUser.name.split(' ')[0]}
                   </Link>
                 </>
@@ -323,18 +358,36 @@ export const Navbar: React.FC = () => {
                 <ZoneSelector variant="compact" />
               </div>
 
-              <div className="flex items-center gap-3 text-[11px]">
-                <Link to="/negocios?q=oferta" className="hover:underline text-white">
+              <div className="flex items-center gap-2 text-[11px]">
+                <Link
+                  to="/negocios?q=oferta"
+                  className={
+                    isOfertasActive
+                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs'
+                      : 'hover:underline text-white'
+                  }
+                >
                   Ofertas
                 </Link>
                 <button
                   type="button"
                   onClick={() => setShowCouponsModal(true)}
-                  className="hover:underline text-white cursor-pointer"
+                  className={
+                    isCuponesActive
+                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs cursor-pointer'
+                      : 'hover:underline text-white cursor-pointer'
+                  }
                 >
                   Cupones
                 </button>
-                <Link to="/cliente/pedidos" className="hover:underline text-white">
+                <Link
+                  to="/cliente/pedidos"
+                  className={
+                    isPedidosActive
+                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs'
+                      : 'hover:underline text-white'
+                  }
+                >
                   Pedidos
                 </Link>
               </div>

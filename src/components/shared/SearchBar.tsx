@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, TrendingUp } from 'lucide-react';
+import { Search, X, Clock, Trash2 } from 'lucide-react';
 
 interface SearchBarProps {
   initialValue?: string;
@@ -10,74 +10,97 @@ interface SearchBarProps {
   onSearch?: (query: string) => void;
 }
 
-const PLACEHOLDERS = [
-  'Busca tacacho con cecina...',
-  'Busca café de Leoncio Prado...',
-  'Busca juanes o patarashca...',
-  'Busca chocolates o cacao...',
-  'Busca boticas o medicamentos...',
-  'Busca productos del mercado...',
+const DEFAULT_HISTORY = [
+  'samsung s23 ultra',
+  'xiaomi 15t pro',
+  'tacacho con cecina',
+  'café de tingo maría',
+  'juane de gallina',
+  'farmacias y boticas',
 ];
 
-const POPULAR_SEARCHES = [
-  'Tacacho con cecina',
-  'Juane de gallina',
-  'Café orgánico',
-  'Chocolate al 70%',
-  'Chupe de camarones',
-  'Paracetamol',
-];
+const STORAGE_KEY = 'quickly_search_history';
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   initialValue = '',
   variant = 'navbar-desktop',
-  placeholder,
+  placeholder = 'Buscar productos, marcas y más...',
   className = '',
   onSearch,
 }) => {
   const [query, setQuery] = useState(initialValue);
-  const [debouncedQuery, setDebouncedQuery] = useState(initialValue);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+    return DEFAULT_HISTORY;
+  });
+
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Rotating placeholder
-  useEffect(() => {
-    if (placeholder) return;
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [placeholder]);
-
-  // Debounce 300ms
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(query);
-      if (onSearch && query !== initialValue) {
-        onSearch(query);
-      }
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [query, onSearch, initialValue]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
+        setIsFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const saveToHistory = (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setHistory((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 8);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore
+      }
+      return updated;
+    });
+  };
+
+  const clearHistory = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHistory([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  };
+
+  const removeHistoryItem = (e: React.MouseEvent, itemToRemove: string) => {
+    e.stopPropagation();
+    setHistory((prev) => {
+      const updated = prev.filter((item) => item !== itemToRemove);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore
+      }
+      return updated;
+    });
+  };
+
   const executeSearch = (searchTerm: string) => {
     const trimmed = searchTerm.trim();
-    setShowDropdown(false);
+    setIsFocused(false);
     if (!trimmed) return;
+    saveToHistory(trimmed);
     if (onSearch) {
       onSearch(trimmed);
     }
@@ -89,19 +112,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     executeSearch(query);
   };
 
-  const handleSelectPopular = (term: string) => {
-    setQuery(term);
-    executeSearch(term);
-  };
-
   const handleClear = () => {
     setQuery('');
     if (onSearch) {
       onSearch('');
     }
+    inputRef.current?.focus();
   };
 
-  const activePlaceholder = placeholder || PLACEHOLDERS[placeholderIndex];
+  // Filter history if user is typing
+  const filteredHistory = query.trim()
+    ? history.filter((item) => item.toLowerCase().includes(query.toLowerCase().trim()))
+    : history;
+
+  const showDropdown = isFocused && (filteredHistory.length > 0 || query.trim().length > 0);
 
   return (
     <div
@@ -114,79 +138,108 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           : 'max-w-2xl mx-auto'
       } ${className}`}
     >
-      <form onSubmit={handleSubmit} className="relative flex items-center w-full">
+      <form
+        onSubmit={handleSubmit}
+        className={`relative flex items-center w-full bg-white transition-all duration-150 ${
+          showDropdown ? 'rounded-t-sm shadow-md' : 'rounded-sm shadow-xs'
+        } ${
+          isFocused
+            ? 'border-2 border-[#3483fa]'
+            : 'border border-gray-300 hover:border-gray-400'
+        }`}
+      >
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setShowDropdown(true)}
-          placeholder={activePlaceholder}
-          className={`w-full bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300 shadow-sm border border-transparent transition-all ${
-            variant === 'navbar-mobile'
-              ? 'py-2 pl-9 pr-8 text-xs rounded-lg'
-              : variant === 'standalone'
-              ? 'py-3.5 pl-11 pr-24 text-base rounded-2xl shadow-subtle border-gray-200 focus:border-primary'
-              : 'py-2 pl-3.5 pr-20 text-sm rounded-lg'
-          }`}
-          aria-label="Buscar productos, platos o comercios en Tingo María"
+          onFocus={() => setIsFocused(true)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none text-[13px] sm:text-sm py-2 px-3 sm:px-3.5"
+          aria-label="Buscar productos, marcas y más..."
         />
-
-        {/* Mobile Left Search Icon */}
-        {variant === 'navbar-mobile' && (
-          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 pointer-events-none" />
-        )}
 
         {/* Clear Button */}
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className={`text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full ${
-              variant === 'navbar-mobile'
-                ? 'absolute right-2'
-                : variant === 'standalone'
-                ? 'absolute right-14'
-                : 'absolute right-10'
-            }`}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 mr-1 rounded-full cursor-pointer"
             aria-label="Limpiar búsqueda"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         )}
 
-        {/* Desktop / Standalone Search Button */}
-        {variant !== 'navbar-mobile' && (
-          <button
-            type="submit"
-            aria-label="Buscar"
-            className={`absolute right-0 top-0 bottom-0 px-3.5 text-primary hover:text-primary-hover flex items-center justify-center transition-colors border-l border-gray-200 cursor-pointer ${
-              variant === 'standalone' ? 'rounded-r-2xl px-5 bg-primary text-white hover:bg-primary-hover border-none' : 'rounded-r-lg'
-            }`}
-          >
-            <Search className={`w-4 h-4 ${variant === 'standalone' ? 'text-white' : ''}`} />
-          </button>
-        )}
+        {/* Divider separator line before Search icon (as seen in Screenshot 1) */}
+        <div className="h-5 w-[1px] bg-gray-200 flex-shrink-0" />
+
+        {/* Magnifying Glass Search Button */}
+        <button
+          type="submit"
+          aria-label="Buscar"
+          className="px-3 sm:px-3.5 py-2 text-gray-500 hover:text-[#3483fa] flex items-center justify-center transition-colors cursor-pointer group"
+        >
+          <Search className="w-4 h-4 stroke-[1.75] group-hover:scale-105 transition-transform" />
+        </button>
       </form>
 
-      {/* Popular Suggestions Dropdown */}
-      {showDropdown && !query && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-floating border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 px-1 mb-2">
-            <TrendingUp className="w-3.5 h-3.5 text-primary" />
-            <span>Búsquedas populares en Tingo María</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {POPULAR_SEARCHES.map((term) => (
+      {/* Mercado Libre Search Dropdown with Recent Searches & Clock Icon */}
+      {showDropdown && (
+        <div className="absolute left-0 right-0 top-full bg-white rounded-b-sm shadow-xl border-x-2 border-b-2 border-[#3483fa] z-50 overflow-hidden divide-y divide-gray-100 animate-in fade-in-50 duration-100">
+          {filteredHistory.map((item) => (
+            <div
+              key={item}
+              onMouseDown={() => {
+                setQuery(item);
+                executeSearch(item);
+              }}
+              className="flex items-center justify-between px-3.5 py-2.5 hover:bg-gray-100/90 cursor-pointer text-gray-800 transition-colors group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Thin Gray Clock Icon matching Screenshot 1 */}
+                <Clock className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 stroke-[1.6]" />
+                <span className="text-sm font-semibold text-gray-800 group-hover:text-black truncate">
+                  {item}
+                </span>
+              </div>
               <button
-                key={term}
                 type="button"
-                onMouseDown={() => handleSelectPopular(term)}
-                className="text-xs bg-gray-50 hover:bg-pink-50 hover:text-primary hover:border-primary/30 border border-gray-200 px-2.5 py-1.5 rounded-lg text-ink font-medium transition-all"
+                onClick={(e) => removeHistoryItem(e, item)}
+                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1 transition-opacity text-xs"
+                title="Eliminar de historial"
               >
-                {term}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
-          </div>
+            </div>
+          ))}
+
+          {/* Typing active query direct search option */}
+          {query.trim() && (
+            <div
+              onMouseDown={() => executeSearch(query)}
+              className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-pink-50/60 cursor-pointer text-primary transition-colors font-medium text-xs sm:text-sm"
+            >
+              <Search className="w-4 h-4 text-primary flex-shrink-0" />
+              <span>
+                Buscar "<strong>{query.trim()}</strong>" en Tingo María
+              </span>
+            </div>
+          )}
+
+          {/* Bottom toolbar for clear history */}
+          {history.length > 0 && !query.trim() && (
+            <div className="px-3.5 py-1.5 bg-gray-50 flex items-center justify-end">
+              <button
+                type="button"
+                onMouseDown={clearHistory}
+                className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <Trash2 className="w-3 h-3" />
+                Limpiar historial
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

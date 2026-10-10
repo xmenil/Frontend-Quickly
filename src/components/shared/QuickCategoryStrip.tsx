@@ -21,7 +21,11 @@ interface QuickActionItem {
   badge?: string;
 }
 
-export const QuickCategoryStrip: React.FC = () => {
+interface QuickCategoryStripProps {
+  variant?: 'strip' | 'sidebar' | 'integrated';
+}
+
+export const QuickCategoryStrip: React.FC<QuickCategoryStripProps> = ({ variant = 'strip' }) => {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +109,85 @@ export const QuickCategoryStrip: React.FC = () => {
       action: () => navigate('/negocios?categoria=emprendedores'),
     },
   ];
+
+  if (variant === 'sidebar' || variant === 'integrated') {
+    const isIntegrated = variant === 'integrated';
+    return (
+      <div
+        className={`h-full flex flex-col justify-between select-none ${
+          isIntegrated
+            ? 'bg-[#FAF5F8]/75 p-3.5 sm:p-5'
+            : 'bg-[#FAF5F8]/90 rounded-3xl border border-pink-100/90 p-3.5 sm:p-4 shadow-subtle'
+        }`}
+      >
+        {/* Recuadro Header */}
+        <div className="flex items-center justify-between pb-2.5 border-b border-pink-100/80">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+            <span className="text-xs sm:text-sm font-black text-ink">Accesos directos</span>
+            <span className="text-[10px] bg-pink-100 text-primary font-bold px-2 py-0.5 rounded-full">
+              Tingo María
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/negocios')}
+            className="text-[11px] sm:text-xs text-primary hover:text-primary-hover font-bold hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Ver comercios</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* 10 Icons Complete Grid */}
+        <div className="grid grid-cols-5 gap-y-3 sm:gap-y-4 gap-x-1.5 sm:gap-x-3 my-auto py-2">
+          {quickItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.action}
+              className="flex flex-col items-center group cursor-pointer focus:outline-none transition-all active:scale-95 p-1 rounded-xl hover:bg-white/70"
+            >
+              {/* Circular / Rounded-2xl icon container */}
+              <div
+                className={`rounded-2xl border border-pink-200/90 bg-white group-hover:border-primary group-hover:bg-primary-50/70 shadow-xs group-hover:shadow-sm flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95 ${
+                  isIntegrated
+                    ? 'w-11 h-11 sm:w-13 sm:h-13 [&_svg]:w-5 sm:[&_svg]:w-6 [&_svg]:h-5 sm:[&_svg]:h-6'
+                    : 'w-10 h-10 sm:w-11 sm:h-11 [&_svg]:w-5 [&_svg]:h-5'
+                }`}
+              >
+                {item.icon}
+              </div>
+
+              {/* Full readable label */}
+              <span
+                className={`text-gray-700 font-semibold text-center leading-tight mt-1.5 group-hover:text-primary transition-colors ${
+                  isIntegrated
+                    ? 'text-[11px] sm:text-xs max-w-[95px] sm:max-w-[110px] line-clamp-2'
+                    : 'text-[10px] sm:text-[11px] max-w-[65px] line-clamp-1'
+                }`}
+              >
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Recuadro Footer strip */}
+        {isIntegrated && (
+          <div className="pt-2 border-t border-pink-100/70 flex items-center justify-between text-[11px] text-gray-500 font-medium">
+            <span className="flex items-center gap-1.5 text-ink-light truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+              <span>Envíos en 20-35 min en Rupa Rupa y Castillo Grande</span>
+            </span>
+            <span className="text-primary font-semibold hidden md:inline flex-shrink-0 ml-2">
+              Tarifa local desde S/ 4.00
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full py-2 select-none">
