@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { Button } from '../components/ui/Button';
 import { useAuthStore } from '../store/authStore';
 import { useDataStore } from '../store/dataStore';
 import {
@@ -17,7 +18,6 @@ import {
   Menu,
   X,
   LogOut,
-  ChevronRight,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -25,138 +25,176 @@ export const AdminLayout: React.FC = () => {
   const { currentUser, logout } = useAuthStore();
   const { users, tickets } = useDataStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
 
   const pendingApprovalsCount = users.filter((u) => u.status === 'pendiente_aprobacion').length;
   const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;
 
-  const navLinks = [
-    { to: '/admin/resumen', label: 'Panel Global', icon: <LayoutDashboard className="w-4 h-4" /> },
+  const navGroups = [
     {
-      to: '/admin/usuarios',
-      label: 'Usuarios y Solicitudes',
-      icon: <Users className="w-4 h-4" />,
-      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+      label: 'Operación',
+      links: [
+        { to: '/admin/resumen', label: 'Resumen', icon: LayoutDashboard, count: 0 },
+        { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag, count: 0 },
+        { to: '/admin/incidencias', label: 'Soporte e incidencias', icon: AlertTriangle, count: openTicketsCount },
+      ],
     },
-    { to: '/admin/comercios', label: 'Comercios de Tingo', icon: <Store className="w-4 h-4" /> },
-    { to: '/admin/repartidores', label: 'Flota de Repartidores', icon: <Bike className="w-4 h-4" /> },
-    { to: '/admin/pedidos', label: 'Monitor de Pedidos', icon: <ShoppingBag className="w-4 h-4" /> },
-    { to: '/admin/zonas', label: 'Zonas y Tarifas', icon: <MapPin className="w-4 h-4" /> },
     {
-      to: '/admin/incidencias',
-      label: 'Soporte e Incidencias',
-      icon: <AlertTriangle className="w-4 h-4" />,
-      badge: openTicketsCount > 0 ? openTicketsCount : undefined,
+      label: 'Gestión',
+      links: [
+        { to: '/admin/usuarios', label: 'Usuarios y solicitudes', icon: Users, count: pendingApprovalsCount },
+        { to: '/admin/comercios', label: 'Comercios', icon: Store, count: 0 },
+        { to: '/admin/repartidores', label: 'Repartidores', icon: Bike, count: 0 },
+        { to: '/admin/zonas', label: 'Zonas y tarifas', icon: MapPin, count: 0 },
+      ],
     },
-    { to: '/admin/reportes', label: 'Métricas de Plataforma', icon: <BarChart3 className="w-4 h-4" /> },
-    { to: '/admin/auditoria', label: 'Historial de Auditoría', icon: <FileText className="w-4 h-4" /> },
+    {
+      label: 'Análisis',
+      links: [
+        { to: '/admin/reportes', label: 'Reportes', icon: BarChart3, count: 0 },
+        { to: '/admin/auditoria', label: 'Historial de actividad', icon: FileText, count: 0 },
+      ],
+    },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-50/60 flex flex-col md:flex-row font-sans">
-      {/* Mobile Top Header */}
-      <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-subtle">
-        <BrandLogo size="sm" showSubtitle={false} />
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-white">
-            ADMIN
-          </span>
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="touch-target p-2 text-gray-600 rounded-xl hover:bg-gray-100"
-            aria-label="Menú administrador"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  const navigation = (mobile: boolean) => (
+    <nav aria-label={mobile ? 'Navegación móvil de administración' : 'Navegación de administración'} className="space-y-6">
+      {navGroups.map((group) => (
+        <div key={group.label}>
+          <p className="mb-2 px-3 text-xs font-semibold text-ink-muted">{group.label}</p>
+          <ul className="space-y-1">
+            {group.links.map((link) => (
+              <li key={link.to}>
+                <NavLink
+                  to={link.to}
+                  onClick={() => {
+                    if (mobile) {
+                      setMobileMenuOpen(false);
+                      requestAnimationFrame(() => mainRef.current?.focus());
+                    }
+                  }}
+                  className={({ isActive }) =>
+                    `flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 font-semibold text-primary'
+                        : 'font-medium text-ink-light hover:bg-surface-subtle hover:text-ink'
+                    }`
+                  }
+                >
+                  <link.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span className="flex-1">{link.label}</span>
+                  {link.count > 0 && (
+                    <span className="shrink-0 rounded-full bg-warning-soft px-2 py-1 text-xs font-semibold tabular-nums text-warning-strong">
+                      {link.count}<span className="sr-only"> en espera de atención</span>
+                    </span>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+
+  const account = (
+    <div className="space-y-3 border-t border-border p-4">
+      <div className="flex min-w-0 items-start gap-3 px-3">
+        <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-ink-muted" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold text-ink">{currentUser?.name || 'Administración'}</p>
+          <p className="text-xs text-ink-muted">Cuenta de administrador</p>
         </div>
       </div>
-
-      {/* Desktop Sidebar - clean white matching provider sidebar */}
-      <aside
-        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-200 md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <Button
+        type="button"
+        variant="ghost"
+        className="min-h-11 w-full justify-start gap-3 px-3 text-sm text-ink-light hover:bg-surface-subtle active:bg-surface-subtle"
+        onClick={() => {
+          logout();
+          navigate('/login');
+        }}
       >
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <BrandLogo size="sm" />
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <LogOut className="h-5 w-5" aria-hidden="true" />
+        Cerrar sesión
+      </Button>
+    </div>
+  );
 
-        <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all ${
-                  isActive
-                    ? 'bg-primary-50 text-primary font-bold shadow-none'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-ink font-medium'
-                }`
-              }
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-inherit">{link.icon}</span>
-                <span>{link.label}</span>
-              </div>
-              {link.badge && (
-                <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  {link.badge}
-                </span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
+  return (
+    <div className="min-h-screen bg-background font-sans text-ink md:flex">
+      <a
+        href="#admin-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4 focus:text-primary focus:shadow-subtle"
+      >
+        Ir al contenido
+      </a>
 
-        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
-          <Link
-            to="/"
-            className="flex items-center justify-between text-xs font-semibold text-gray-600 hover:text-primary p-2 rounded-xl hover:bg-gray-50"
-          >
-            <span>Ver vista cliente</span>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            className="flex items-center gap-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 p-2 rounded-xl"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar sesión</span>
-          </button>
+      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-border bg-surface md:flex">
+        <div className="border-b border-border px-6 py-4">
+          <BrandLogo size="sm" showSubtitle={false} className="min-h-11" />
         </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">{navigation(false)}</div>
+        {account}
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Bar for Desktop */}
-        <header className="hidden md:flex h-16 bg-white border-b border-gray-100 px-8 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary text-white shadow-sm">
-              ADMINISTRADOR
-            </span>
-            <span className="text-xs text-gray-400 font-medium">Panel de Control General</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              <span>{currentUser?.name || 'Administración'}</span>
+      <div className="min-w-0 flex-1">
+        <header className="border-b border-border bg-surface">
+          <div className="flex min-h-20 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div>
+              <p className="text-sm font-semibold text-ink">Administración</p>
+              <p className="text-xs text-ink-muted">Quickly - Tingo María</p>
             </div>
+            <Button
+              ref={menuButtonRef}
+              type="button"
+              variant="ghost"
+              className="min-h-11 gap-2 text-sm hover:bg-surface-subtle active:bg-surface-subtle md:hidden"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="admin-mobile-menu"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && mobileMenuOpen) closeMobileMenu();
+              }}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+              {mobileMenuOpen ? 'Cerrar menú' : 'Menú'}
+            </Button>
+            <span className="hidden items-center gap-2 text-sm text-ink-light md:flex">
+              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              Panel de administración
+            </span>
+          </div>
+          <div
+            id="admin-mobile-menu"
+            hidden={!mobileMenuOpen}
+            className="border-t border-border md:hidden"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                closeMobileMenu();
+              }
+            }}
+          >
+            <div className="p-4 sm:p-6">{navigation(true)}</div>
+            {account}
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12">
+        <main
+          id="admin-content"
+          ref={mainRef}
+          tabIndex={-1}
+          aria-label="Contenido de administración"
+          className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-24"
+        >
           <Outlet />
         </main>
       </div>

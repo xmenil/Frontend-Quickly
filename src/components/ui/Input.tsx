@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute left-3 flex items-center pointer-events-none text-ink-muted">
               {leftIcon}
             </div>
           )}
@@ -36,10 +36,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={Boolean(error)}
             aria-describedby={errorId || helperId}
             className={cn(
-              'w-full min-h-[44px] rounded-xl border bg-white px-3.5 py-2 text-base text-ink transition-colors',
-              'placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-              'disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed',
-              error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400',
+              'w-full min-h-11 rounded-xl border bg-surface px-3 py-2 text-base text-ink transition-colors',
+              'placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+              'disabled:bg-surface-subtle disabled:text-ink-muted disabled:cursor-not-allowed',
+              error ? 'border-destructive focus:ring-destructive' : 'border-field hover:border-ink-muted',
               leftIcon ? 'pl-11' : '',
               rightIcon ? 'pr-11' : '',
               className
@@ -47,19 +47,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3.5 flex items-center text-gray-400">
+            <div className="absolute right-3 flex items-center text-ink-muted">
               {rightIcon}
             </div>
           )}
         </div>
         {error && (
-          <p id={errorId} className="flex items-center gap-1.5 text-xs text-red-600 mt-0.5" role="alert">
+          <p id={errorId} className="flex items-center gap-1.5 text-xs text-destructive mt-0.5" role="alert">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{error}</span>
           </p>
         )}
         {helperText && !error && (
-          <p id={helperId} className="text-xs text-gray-500 mt-0.5">
+          <p id={helperId} className="text-xs text-ink-muted mt-0.5">
             {helperText}
           </p>
         )}

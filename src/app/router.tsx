@@ -51,8 +51,10 @@ import { CourierEarningsPage, CourierProfilePage } from '../features/courier/Cou
 // Admin
 import { AdminOverviewPage } from '../features/admin/AdminOverviewPage';
 import { AdminUsersPage } from '../features/admin/AdminUsersPage';
-import { AdminMerchantsPage, AdminCouriersPage } from '../features/admin/AdminMerchantsPage';
-import { AdminOrdersPage, AdminZonesPage } from '../features/admin/AdminOrdersPage';
+import { AdminMerchantsPage } from '../features/admin/AdminMerchantsPage';
+import { AdminCouriersPage } from '../features/admin/AdminCouriersPage';
+import { AdminOrdersPage } from '../features/admin/AdminOrdersPage';
+import { AdminZonesPage } from '../features/admin/AdminZonesPage';
 import { AdminTicketsPage } from '../features/admin/AdminTicketsPage';
 import { AdminReportsPage } from '../features/admin/AdminReportsPage';
 import { AdminAuditPage } from '../features/admin/AdminAuditPage';

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -21,25 +21,57 @@ export const Dialog: React.FC<DialogProps> = ({
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
+  const titleId = useId();
+  const descriptionId = useId();
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const panel = dialogRef.current;
+    const focusable = () => Array.from(panel?.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]'
+    ) || []).filter((element) => !element.closest('[hidden]'));
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
+      if (event.key === 'Tab') {
+        const elements = focusable();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (!first) {
+          event.preventDefault();
+          panel?.focus();
+        } else if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
-
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
+    const keepFocusInside = (event: FocusEvent) => {
+      if (panel && !panel.contains(event.target as Node)) (focusable()[0] || panel).focus();
     };
-  }, [isOpen, onClose]);
+
+    document.body.style.overflow = 'hidden';
+    (focusable()[0] || panel)?.focus();
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('focusin', keepFocusInside);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', keepFocusInside);
+      if (previousFocus?.isConnected) previousFocus.focus();
+      else document.querySelector<HTMLElement>('main[tabindex]')?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -59,12 +91,12 @@ export const Dialog: React.FC<DialogProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'dialog-title' : undefined}
-      aria-describedby={description ? 'dialog-description' : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={description ? descriptionId : undefined}
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-ink/60 transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -72,25 +104,27 @@ export const Dialog: React.FC<DialogProps> = ({
       {/* Dialog Content */}
       <div
         ref={dialogRef}
+        tabIndex={-1}
         className={cn(
-          'relative w-full rounded-2xl bg-white p-6 shadow-2xl transition-all duration-200 z-10 max-h-[90vh] flex flex-col',
+          'relative w-full rounded-2xl bg-surface p-6 shadow-xl transition-all duration-200 z-10 max-h-full flex flex-col',
           maxWidths[maxWidth]
         )}
       >
         <div className="flex items-start justify-between pb-3 border-b border-border mb-4">
           <div>
             {title && (
-              <h2 id="dialog-title" className="text-xl font-bold text-ink">
+              <h2 id={titleId} className="text-xl font-bold text-ink">
                 {title}
               </h2>
             )}
             {description && (
-              <p id="dialog-description" className="text-sm text-ink-muted mt-1">
+              <p id={descriptionId} className="text-sm text-ink-muted mt-1">
                 {description}
               </p>
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="touch-target -mr-2 -mt-2 rounded-xl text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors"
             aria-label="Cerrar modal"

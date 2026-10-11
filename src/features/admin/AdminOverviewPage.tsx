@@ -1,143 +1,165 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { formatCents } from '../../lib/currency';
-import { Link } from 'react-router-dom';
-import {
-  Users,
-  Store,
-  Bike,
-  ShoppingBag,
-  TrendingUp,
-  AlertTriangle,
-  ArrowRight,
-  ShieldCheck,
-} from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Users, Store, Bike, ShoppingBag, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const AdminOverviewPage: React.FC = () => {
   const { users, merchants, couriers, purchases, tickets } = useDataStore();
+  const navigate = useNavigate();
 
   const pendingApprovalsCount = users.filter((u) => u.status === 'pendiente_aprobacion').length;
   const activeOrdersCount = purchases.filter((p) =>
     ['pendiente', 'en_proceso', 'entrega_parcial'].includes(p.status)
   ).length;
-
   const totalGMVCents = purchases.reduce((acc, p) => acc + p.grandTotalCents, 0);
   const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;
 
+  const attentionItems = [
+    {
+      label: 'Pedidos en curso', count: activeOrdersCount, icon: ShoppingBag,
+      to: '/admin/pedidos', action: 'Ver pedidos',
+      description: activeOrdersCount > 0 ? 'Compras pendientes, en proceso o con entrega parcial.' : 'No hay compras en curso.',
+      tone: 'bg-info-soft text-info-strong',
+    },
+    {
+      label: 'Solicitudes pendientes', count: pendingApprovalsCount, icon: Users,
+      to: '/admin/usuarios', action: 'Ver solicitudes',
+      description: pendingApprovalsCount > 0 ? 'Cuentas que esperan aprobación.' : 'No hay cuentas pendientes de aprobación.',
+      tone: 'bg-warning-soft text-warning-strong',
+    },
+    {
+      label: 'Incidencias por atender', count: openTicketsCount, icon: AlertTriangle,
+      to: '/admin/incidencias', action: 'Ver incidencias',
+      description: openTicketsCount > 0 ? 'Casos abiertos o en revisión.' : 'No hay incidencias abiertas ni en revisión.',
+      tone: 'bg-warning-soft text-warning-strong',
+    },
+  ];
+
+  const operationItems = [
+    {
+      label: 'Comercios abiertos', count: merchants.filter((merchant) => merchant.isOpen).length,
+      total: merchants.length, icon: Store, to: '/admin/comercios', action: 'Ver comercios',
+      empty: 'Aún no hay comercios registrados.', description: 'Disponibilidad registrada en la plataforma.',
+    },
+    {
+      label: 'Repartidores disponibles', count: couriers.filter((courier) => courier.isAvailable).length,
+      total: couriers.length, icon: Bike, to: '/admin/repartidores', action: 'Ver repartidores',
+      empty: 'Aún no hay repartidores registrados.', description: 'Disponibilidad registrada por la flota.',
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Panel de Control Global</h1>
-        <p className="text-xs sm:text-sm text-gray-500">
-          Supervisión centralizada de la plataforma Quickly en Tingo María
-        </p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* GMV Volume */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-gray-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Volumen Transaccionado</span>
-            <div className="w-8 h-8 rounded-xl bg-primary-light text-primary flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-ink">{formatCents(totalGMVCents)}</p>
-          <span className="text-[11px] text-gray-500">{purchases.length} órdenes totales</span>
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-xl font-bold text-ink sm:text-2xl">Resumen de la operación</h1>
+          <p className="max-w-2xl text-xs text-ink-light">
+            Revisa los pendientes y el estado de Quickly en Tingo María.
+          </p>
         </div>
+        <Button type="button" variant="primary" size="sm" className="w-full shrink-0 gap-2 xl:w-auto" onClick={() => navigate('/admin/pedidos')}>
+          <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+          {activeOrdersCount > 0 ? 'Revisar pedidos en curso' : 'Ver pedidos'}
+        </Button>
+      </header>
 
-        {/* Active Orders */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-gray-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Pedidos en Curso</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <ShoppingBag className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-ink">{activeOrdersCount}</p>
-          <span className="text-[11px] text-blue-600 font-medium">En proceso de entrega</span>
+      <section aria-labelledby="admin-attention-heading" className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="admin-attention-heading" className="text-base font-semibold text-ink">Atención pendiente</h2>
+          <p className="text-xs text-ink-light">Accede a los pedidos, solicitudes y casos que debes revisar.</p>
         </div>
+        {activeOrdersCount === 0 && pendingApprovalsCount === 0 && openTicketsCount === 0 && (
+          <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p>No hay pedidos en curso, solicitudes pendientes ni incidencias por atender.</p>
+          </div>
+        )}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {attentionItems.map((item) => (
+            <Link key={item.to} to={item.to} className="group flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-subtle transition-colors hover:border-field ">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-ink">{item.label}</h3>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${item.count > 0 ? item.tone : 'bg-surface-subtle text-ink-muted'}`}>
+                  <item.icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="text-xl font-bold tabular-nums text-ink">{item.count}</p>
+                <p className="text-xs text-ink-light">{item.description}</p>
+              </div>
+              <span className="flex items-center justify-between gap-3 text-xs font-medium text-primary group-hover:text-primary-hover">
+                {item.action}<ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-        {/* Pending Approvals */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-gray-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Solicitudes Nuevas</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-ink">{pendingApprovalsCount}</p>
-          <span className="text-[11px] text-amber-600 font-medium">Por aprobar en panel</span>
+      <section aria-labelledby="admin-operation-heading" className="space-y-4">
+        <h2 id="admin-operation-heading" className="text-base font-semibold text-ink">Estado de la operación</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {operationItems.map((item) => (
+            <Link key={item.to} to={item.to} className="group flex min-w-0 items-start gap-4 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-field ">
+              <item.icon className="mt-1 h-5 w-5 shrink-0 text-ink-muted" aria-hidden="true" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <h3 className="text-sm font-semibold text-ink">{item.label}</h3>
+                <p className="text-xl font-bold tabular-nums text-ink">
+                  {item.count} <span className="text-sm font-medium text-ink-muted">de {item.total}</span>
+                </p>
+                <p className="text-xs text-ink-light">{item.total === 0 ? item.empty : item.description}</p>
+                <span className="inline-flex items-center gap-2 text-xs font-medium text-primary group-hover:text-primary-hover">
+                  {item.action}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
+      </section>
 
-        {/* Incidents / Tickets */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-gray-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Incidencias / Soporte</span>
-            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-ink">{openTicketsCount}</p>
-          <span className="text-[11px] text-red-600 font-medium">Tickets abiertos</span>
+      <section aria-labelledby="admin-totals-heading" className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="admin-totals-heading" className="text-base font-semibold text-ink">Cifras generales</h2>
+          <p className="text-xs text-ink-light">Totales de los registros disponibles, sin filtro de fecha.</p>
         </div>
-      </div>
-
-      {/* Network Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Merchants Card */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-              <Store className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-bold text-ink">{merchants.length} Comercios Afiliados</p>
-              <p className="text-xs text-gray-500">
-                {merchants.filter((m) => m.isOpen).length} abiertos ahora
-              </p>
-            </div>
-          </div>
-          <Link to="/admin/comercios" className="text-primary hover:text-primary-hover p-2">
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+        <div className="rounded-2xl border border-border bg-surface">
+          <table className="w-full table-fixed text-left text-sm">
+            <caption className="sr-only">Cifras generales de Quickly, sin filtro de fecha.</caption>
+            <thead className="bg-surface-subtle text-xs text-ink-light">
+              <tr>
+                <th scope="col" className="rounded-tl-2xl px-4 py-3 font-semibold">Indicador</th>
+                <th scope="col" className="rounded-tr-2xl px-4 py-3 text-right font-semibold lg:rounded-none">Total</th>
+                <th scope="col" className="hidden w-1/2 rounded-tr-2xl px-4 py-3 font-semibold lg:table-cell">Detalle</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              <tr>
+                <th scope="row" className="px-4 py-3 font-medium text-ink">Monto total registrado
+                  <p className="mt-1 text-xs font-normal text-ink-muted lg:hidden">Todas las compras, incluidas las canceladas.</p>
+                </th>
+                <td className="break-words px-4 py-3 text-right font-semibold tabular-nums text-ink">{formatCents(totalGMVCents)}</td>
+                <td className="hidden px-4 py-3 text-xs text-ink-muted lg:table-cell">Suma de todas las compras registradas, incluidas las canceladas.</td>
+              </tr>
+              <tr>
+                <th scope="row" className="px-4 py-3 font-medium text-ink">Compras registradas
+                  <p className="mt-1 text-xs font-normal text-ink-muted lg:hidden">Una compra puede incluir varios comercios.</p>
+                </th>
+                <td className="px-4 py-3 text-right font-semibold tabular-nums text-ink">{purchases.length}</td>
+                <td className="hidden px-4 py-3 text-xs text-ink-muted lg:table-cell">Una compra puede incluir pedidos de varios comercios.</td>
+              </tr>
+              <tr>
+                <th scope="row" className="px-4 py-3 font-medium text-ink">Cuentas registradas</th>
+                <td className="px-4 py-3 text-right font-semibold tabular-nums text-ink">{users.length}</td>
+                <td className="hidden px-4 py-1 lg:table-cell">
+                  <Link to="/admin/usuarios" className="inline-flex min-h-11 items-center gap-2 rounded-xl text-xs font-medium text-primary hover:text-primary-hover">Ver usuarios<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <Link to="/admin/usuarios" className="mx-4 mb-2 inline-flex min-h-11 items-center gap-2 rounded-xl text-xs font-medium text-primary hover:text-primary-hover lg:hidden">Ver usuarios<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
-
-        {/* Couriers Card */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center font-bold">
-              <Bike className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-bold text-ink">{couriers.length} Repartidores</p>
-              <p className="text-xs text-gray-500">
-                {couriers.filter((c) => c.isAvailable).length} disponibles en calle
-              </p>
-            </div>
-          </div>
-          <Link to="/admin/repartidores" className="text-primary hover:text-primary-hover p-2">
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
-
-        {/* Global Users Card */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-bold text-ink">{users.length} Cuentas Registradas</p>
-              <p className="text-xs text-gray-500">Clientes, tiendas y repartidores</p>
-            </div>
-          </div>
-          <Link to="/admin/usuarios" className="text-primary hover:text-primary-hover p-2">
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };
