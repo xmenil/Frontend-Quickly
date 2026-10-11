@@ -29,43 +29,58 @@ No usar nunca, salvo instrucción explícita del usuario:
 3. **Layouts de escritorio forzados:** Prohibido incrustar carritos rígidos fijos de 4 columnas al lado del banner principal en el home que rompan el diseño en pantallas medianas o móviles.
 4. **Steppers falsos o datos simulados congelados:** Nada de tarjetas que digan "Hoy, 10:24 am 2025" con fechas fijas si el usuario no tiene una orden real en curso.
 5. **Formateo de dinero manual:** Prohibido usar `toFixed(2)` o `toLocaleString()` a mano. Todo precio o total pasa obligatoriamente por el helper `formatCents(cents)`.
-6. **Colores hexadecimales sueltos en componentes:** No usar `#[0-9a-fA-F]{3,8}`, `text-[#...]` o `bg-[#...]`. Usar siempre los tokens del sistema (`primary`, `ink`, `selva`, `surface`).
-7. **Texto gris claro sin contraste:** Prohibido `text-gray-400` sobre fondos blancos o grises claros. Causa rechazo en usuarios bajo la luz solar y viola WCAG AA (requiere ≥ 4.5:1).
+6. **Colores hexadecimales sueltos en componentes:** No usar `#[0-9a-fA-F]{3,8}`, `text-[#...]` o `bg-[#...]`. Usar siempre los tokens del sistema (`primary`, `ink`, `surface`, `selva`, `warning`, `destructive`, `info`, `field`). Tampoco colores crudos de la paleta de Tailwind para estados (`emerald-600`, `amber-600`, `sky-600`).
+7. **Texto gris claro sin contraste:** Prohibido `text-gray-400` sobre fondos blancos o grises claros. Causa rechazo en usuarios bajo la luz solar y viola WCAG AA (requiere ≥ 4.5:1). El texto secundario usa `text-ink-light`; los placeholders y ayudas, `text-ink-muted`.
 8. **Botones táctiles menores a 44×44 px:** En vistas móviles, ninguna acción principal o de agregar puede medir menos del área táctil estándar.
 9. **Ocultar costos de entrega o tiempos:** La tarifa base y el tiempo de despacho deben ser visibles en el catálogo y cabecera de zona, no revelarse recién en el último paso del checkout.
 10. **Emojis como iconos de interfaz:** Usar exclusivamente la librería `lucide-react` con trazo consistente.
-11. **Acciones sin retroalimentación de estado:** Pulsar `+ Agregar al carrito` no puede quedar mudo; debe mostrar confirmación inmediata (botón verde temporal "¡Agregado!", badge dinámico).
+11. **Acciones sin retroalimentación de estado:** Pulsar `+ Agregar al carrito` no puede quedar mudo; debe mostrar confirmación inmediata (botón `bg-selva` temporal "¡Agregado!", badge dinámico).
 12. **Degradados excesivos o glassmorphism decorativo:** Evitar fondos borrosos que ralenticen teléfonos de gama baja en la selva.
+13. **Rellenos de estado con texto blanco fuera de los tokens:** `bg-emerald-600`, `bg-amber-600` y `bg-sky-600` con `text-white` dan 3.8:1, 3.2:1 y 4.1:1, por debajo del 4.5:1 exigido, y bajo el sol no se leen. Usar `bg-selva`, `bg-warning`, `bg-info` o `bg-destructive`.
+14. **Bordes de campo demasiado claros:** `border-border` o `border-gray-200` en inputs y selectores hace que el usuario no vea dónde escribir. Usar `border-field`.
 
 ---
 
 ## 3. Sistema de color y tokens
 
-Los tokens de color están centralizados en `tailwind.config.js` y `src/styles/index.css`.
+Los tokens viven en `src/styles/index.css` (variables `--color-*` en canales RGB) y se exponen como clases en `tailwind.config.js`. Los componentes usan solo esas clases: nunca hex sueltos ni colores crudos de la paleta de Tailwind para estados, porque `emerald-600`, `amber-600` y `sky-600` no cumplen contraste con texto blanco.
 
-### Paleta Principal
+### Marca y superficies
 
 - **Acento Primario (Berry Carmine):**
-  - `primary` (`#BE185D`): Color de marca y acción principal (botones primarios, carrito activo, enlaces clave).
-  - `primary-hover` (`#9D174D`): Estado hover/focus.
-  - `primary-light` / `primary-50` (`#FDF2F8`): Fondos suaves para categorías seleccionadas, badges sutiles y alertas informativas.
+  - `primary` (`#BE185D`): Color de marca y acción principal (botones primarios, carrito activo, enlaces clave). Contraste con blanco: 6.0:1.
+  - `primary-hover` (`#9D174D`): Estado hover y presionado (7.9:1).
+  - `primary-50` (`#FDF2F8`, alias `primary-light`): Fondos suaves para categorías seleccionadas, badges sutiles y alertas informativas. Texto `primary` encima: 5.5:1.
 - **Superficies y Fondos:**
   - `surface` (`#FFFFFF`): Fondo de tarjetas, modales y hojas inferiores.
-  - `background` (`#F9FAFB`): Fondo general de la aplicación (cálido, descansado).
+  - `background` (`#F9FAFB`): Fondo general de la aplicación (gris muy claro, descansado).
   - `surface-subtle` (`#F3F4F6`): Fondos de contenedores secundarios y selectores.
 - **Tipografía y Contraste:**
-  - `ink` (`#172033`): Texto principal de títulos, precios y etiquetas prioritarias (azul carbón de alto contraste).
-  - `ink-light` / `text-gray-600` (`#4B5563`): Descripciones y textos secundarios (garantiza > 5:1 de contraste sobre blanco).
-  - `border` (`#E5E7EB`): Líneas divisorias y contornos de tarjetas.
+  - `ink` (`#172033`): Texto principal de títulos, precios y etiquetas prioritarias (16:1 sobre blanco).
+  - `ink-light` (`#4B5563`): Descripciones y textos secundarios (7.6:1).
+  - `ink-muted` (`#6B7280`): Placeholders, ayudas y metadatos pequeños (4.8:1 sobre blanco). Nunca un gris más claro.
+- **Bordes:**
+  - `border` (`#E5E7EB`): Divisores y contornos de tarjetas. No se usa en campos de formulario.
+  - `field` (`#838D9D`): Borde de inputs y selectores (3.1:1 o más sobre cualquier superficie).
 
 ### Semántica de Estados de Delivery
 
-| Estado | Token / Clase | Relleno / Texto | Fondo Suave | Uso en Quickly |
+Cada estado tiene cuatro tonos: `DEFAULT` (relleno con texto blanco, y también texto sobre fondo blanco), `soft` (fondo suave), `border` (contorno suave) y `strong` (texto sobre el fondo suave).
+
+| Estado | Token | Relleno con texto blanco | Fondo suave con texto | Uso en Quickly |
 |---|---|---|---|---|
-| **Abierto / Entregado / Disponible** | `selva` | `text-emerald-700`, `bg-emerald-600` | `bg-emerald-50`, `border-emerald-200` | Comercio abierto ahora, pedido entregado con éxito, stock disponible. |
-| **En camino / Preparación / Atención** | `warning` / `amber` | `text-amber-800`, `bg-amber-600` | `bg-amber-50`, `border-amber-200` | Pedido en ruta con repartidor, en cocina, últimos productos. |
-| **Cerrado / Cancelado / Agotado** | `destructive` / `red` | `text-red-700`, `bg-red-600` | `bg-red-50`, `border-red-200` | Comercio cerrado, orden cancelada, sin stock. |
-| **En proceso / Informativo** | `sky` / `blue` | `text-sky-700`, `bg-sky-600` | `bg-sky-50`, `border-sky-200` | Pedido confirmado, seguimiento de ruta, zona de reparto. |
+| **Abierto / Entregado / Disponible** | `selva` | `bg-selva text-white` (5.5:1) | `bg-selva-soft text-selva-strong border-selva-border` (7.3:1) | Comercio abierto ahora, pedido entregado con éxito, stock disponible. |
+| **En camino / Preparación / Atención** | `warning` | `bg-warning text-white` (5.0:1) | `bg-warning-soft text-warning-strong border-warning-border` (6.8:1) | Pedido en ruta con repartidor, en cocina, últimos productos. |
+| **Cerrado / Cancelado / Agotado** | `destructive` | `bg-destructive text-white` (4.8:1) | `bg-destructive-soft text-destructive-strong border-destructive-border` (5.9:1) | Comercio cerrado, orden cancelada, sin stock. |
+| **En proceso / Informativo** | `info` | `bg-info text-white` (5.9:1) | `bg-info-soft text-info-strong border-info-border` (7.1:1) | Pedido confirmado, seguimiento de ruta, zona de reparto. |
+
+### Reglas de color
+
+- Un solo acento: `primary` se reserva para la acción principal, el carrito activo y los enlaces clave. Los colores de estado no se usan como decoración.
+- Los rellenos con texto blanco usan solo `bg-selva`, `bg-warning`, `bg-destructive` o `bg-info`. Nunca `bg-emerald-600`, `bg-amber-600` ni `bg-sky-600`.
+- Texto de estado sobre fondo blanco: `text-selva`, `text-warning`, `text-destructive` o `text-info` (todos con 4.8:1 o más). Sobre su fondo suave, el tono `strong`.
+- El color nunca es el único indicador de estado: acompañarlo con texto o icono (bajo el sol y con daltonismo el color solo no alcanza).
+- Contraste mínimo 4.5:1 para texto normal y 3:1 para bordes de campos, foco e iconos informativos.
 
 ---
 
@@ -96,6 +111,7 @@ Los tokens de color están centralizados en `tailwind.config.js` y `src/styles/i
   - `shadow-floating` / `shadow-xl`: Barra flotante de carrito inferior y barra de navegación móvil (`MobileNav`).
 - **Márgenes de seguridad móvil:**
   - Todo layout público debe incluir `pb-24 md:pb-12` en su `<main>` para que la barra de navegación móvil o la barra flotante de carrito no tape botones de compra o textos de pie.
+  - `MobileNav` y `FloatingCartBar` agregan `pb-safe` (definido en `index.css`) para no chocar con la barra de gestos de iOS.
 
 ---
 
@@ -108,7 +124,7 @@ Los tokens de color están centralizados en `tailwind.config.js` y `src/styles/i
 - Precio destacado con `formatCents(product.priceCents)`.
 - Botón de agregar al carrito con **altura mínima de 44 px** y feedback de estado:
   - Estado normal: `+ Agregar al carrito`.
-  - Al pulsar: cambia durante 1.5s a verde con icono `Check` ("¡Agregado!") antes de volver a su estado normal.
+  - Al pulsar: cambia durante 1.5s a `bg-selva text-white` con icono `Check` ("¡Agregado!") antes de volver a su estado normal.
 
 ### `MerchantCard`
 - Portada con aspect ratio `16/9`.
@@ -154,6 +170,7 @@ Toda lógica de entrega, costos y tiempos debe respetar las zonas reales de la c
 ## 8. Formularios y Validación (React Hook Form + Zod)
 
 - Cada campo tiene etiqueta `<label>` visible encima del input; el placeholder solo sirve como ejemplo.
+- Campos y selectores: `border border-field bg-surface rounded-xl`. El borde `border` es demasiado claro para un campo. El placeholder usa `text-ink-muted`; el tamaño de 16 px ya viene fijado en `index.css` (evita el zoom automático de iOS).
 - Validaciones en español peruano claro:
   - Teléfono: `"Ingresa un celular válido de 9 dígitos (ej. 962 123 456)"`.
   - Dirección: `"Indica calle o jirón y número (ej. Jr. Amazonas 123)"`.
@@ -167,9 +184,9 @@ Toda lógica de entrega, costos y tiempos debe respetar las zonas reales de la c
 
 ## 9. Accesibilidad y Responsive (Mínimos No Negociables)
 
-- **Touch targets:** Mínimo `44×44 px` para cualquier botón táctil en dispositivos móviles.
+- **Touch targets:** Mínimo `44×44 px` para cualquier botón táctil en dispositivos móviles. Usar `h-11` o la clase `touch-target` (definida en `index.css`).
 - **Contraste de color:** Ratio mínimo de `4.5:1` para texto normal contra el fondo.
-- **Navegación por teclado:** Foco visible claro (`:focus-visible` con `outline-2 outline-primary outline-offset-2`).
+- **Navegación por teclado:** Foco visible claro. `index.css` ya define `:focus-visible` de forma global (contorno de 2 px en `primary` con separación de 2 px); no usar `outline-none` sin un reemplazo equivalente.
 - **Scroll horizontal prohibido:** Ningún contenedor debe provocar desbordamiento o scroll horizontal en la pantalla del celular.
 - **Soporte de lectores de pantalla:** Botones que solo contienen iconos (favoritos, eliminar del carrito, buscar) deben tener siempre `aria-label` descriptivo.
 
@@ -184,6 +201,8 @@ Toda lógica de entrega, costos y tiempos debe respetar las zonas reales de la c
 - [ ] ¿La barra flotante de carrito se muestra correctamente cuando hay productos?
 - [ ] ¿El costo de envío y el tiempo estimado son visibles desde la navegación inicial?
 - [ ] ¿No hay degradados vacíos, emojis en lugar de iconos ni etiquetas en mayúsculas de IA?
-- [ ] ¿Los colores respetan los tokens del sistema (`primary`, `ink`, `selva`, etc.) sin hex sueltos?
-- [ ] ¿El texto secundario tiene suficiente contraste (evitando `text-gray-400` sobre fondos claros)?
+- [ ] ¿Los colores respetan los tokens (`primary`, `ink`, `selva`, `warning`, `destructive`, `info`, `field`) sin hex sueltos ni colores crudos de Tailwind (`emerald-600`, `amber-600`, `sky-600`)?
+- [ ] ¿Los rellenos de estado con texto blanco usan `bg-selva`, `bg-warning`, `bg-destructive` o `bg-info`?
+- [ ] ¿Los campos usan `border-field` y los placeholders `text-ink-muted`?
+- [ ] ¿El texto secundario tiene suficiente contraste (usando `text-ink-light`, nunca `text-gray-400` sobre fondos claros)?
 - [ ] ¿La vista se probó en pantalla móvil sin scroll horizontal?

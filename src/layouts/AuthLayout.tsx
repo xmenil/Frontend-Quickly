@@ -1,82 +1,64 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
-import { ArrowLeft, Sparkles, MapPin, Shield } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export const AuthLayout: React.FC = () => {
-  const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
-
   return (
-    <div className="min-h-screen bg-slate-50/70 relative flex flex-col justify-between py-6 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
-      {/* Ambient background decoration matching Amazonian & Berry palette */}
-      <div
-        className="fixed top-0 left-1/4 -translate-x-1/2 w-96 h-96 bg-primary-200/25 rounded-full blur-3xl pointer-events-none -z-10"
-        aria-hidden="true"
-      />
-      <div
-        className="fixed bottom-0 right-10 w-[30rem] h-[30rem] bg-emerald-100/30 rounded-full blur-3xl pointer-events-none -z-10"
-        aria-hidden="true"
-      />
-      <div
-        className="fixed top-1/2 right-1/4 w-80 h-80 bg-pink-100/30 rounded-full blur-3xl pointer-events-none -z-10"
-        aria-hidden="true"
-      />
+    <div className="min-h-screen bg-background flex flex-col justify-between text-ink antialiased">
+      {/* Top Header Bar - Matches Home Main Navbar (primary berry token) */}
+      <header className="w-full bg-primary border-b border-primary-hover sticky top-0 z-30 shadow-md select-none text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <BrandLogo size="md" variant="white" showSubtitle={false} />
+            <span className="hidden sm:inline-block h-4 w-px bg-white/30" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-pink-100 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+              <span>🚚 Tingo María • Selva Alta</span>
+            </span>
+          </div>
 
-      {/* Top Navigation Bar */}
-      <header className="w-full max-w-6xl mx-auto flex items-center justify-between mb-4 sm:mb-8 z-10">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-xs font-bold text-ink-light hover:text-primary transition-all bg-white/90 hover:bg-white backdrop-blur-md px-3.5 py-2 rounded-full border border-gray-200/80 shadow-subtle active:scale-95 touch-target"
-        >
-          <ArrowLeft className="w-4 h-4 text-primary" />
-          <span>Volver a la tienda</span>
-        </Link>
-
-        {/* Local presence badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-gray-200/70 text-xs font-semibold text-ink-light shadow-subtle">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <MapPin className="w-3.5 h-3.5 text-primary" />
-          <span>Tingo María • Rupa Rupa</span>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/20 transition-all px-3.5 py-1.5 rounded-full active:scale-95 shadow-subtle"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+              <span>Volver a la tienda</span>
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="w-full flex-1 flex flex-col justify-center items-center z-10 my-auto">
-        {isLoginPage ? (
-          <div className="w-full max-w-2xl mx-auto">
-            <Outlet />
-          </div>
-        ) : (
-          <div className="w-full sm:max-w-md mx-auto space-y-6">
-            <div className="text-center">
-              <BrandLogo size="lg" className="justify-center mb-2" />
-              <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                Tingo María, Rupa Rupa, provincia de Leoncio Prado
-              </p>
-            </div>
-            <div className="bg-white py-8 px-6 sm:px-10 shadow-card rounded-3xl border border-gray-100">
-              <Outlet />
-            </div>
-          </div>
-        )}
+      {/* Main Form Container */}
+      <main className="w-full flex-1 flex flex-col justify-center items-center py-8 sm:py-12 px-4 sm:px-6">
+        <div className="w-full max-w-[480px] mx-auto animate-in fade-in duration-200">
+          <Outlet />
+        </div>
       </main>
 
-      {/* Footer reassurance */}
-      <footer className="w-full max-w-6xl mx-auto mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between text-xs text-ink-light gap-2 z-10">
-        <div className="flex items-center gap-2 text-center sm:text-left">
-          <Shield className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-          <span className="font-medium">Quickly Delivery • Plataforma para el desarrollo de la Selva Alta</span>
-        </div>
-        <div className="flex items-center gap-3 text-gray-600 font-medium">
-          <span>Castillo Grande</span>
-          <span>•</span>
-          <span>Centro</span>
-          <span>•</span>
-          <span>UNAS</span>
-          <span>•</span>
-          <span>Afilador</span>
+      {/* Footer - Mercado Libre style reassurance */}
+      <footer className="w-full bg-surface border-t border-border py-6 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-light">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 font-medium">
+            <Link to="/cliente/ayuda" className="hover:text-primary transition-colors">
+              Cómo cuidamos tu privacidad
+            </Link>
+            <span>•</span>
+            <Link to="/cliente/ayuda" className="hover:text-primary transition-colors">
+              Términos y condiciones
+            </Link>
+            <span>•</span>
+            <Link to="/cliente/ayuda" className="hover:text-primary transition-colors flex items-center gap-1">
+              <HelpCircle className="w-3.5 h-3.5 text-primary" />
+              <span>Centro de ayuda</span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2 text-center text-[11px] text-ink-muted">
+            <ShieldCheck className="w-3.5 h-3.5 text-selva flex-shrink-0" />
+            <span>© 2026 Quickly Delivery • Tingo María, Leoncio Prado</span>
+          </div>
         </div>
       </footer>
 
@@ -84,4 +66,5 @@ export const AuthLayout: React.FC = () => {
     </div>
   );
 };
+
 

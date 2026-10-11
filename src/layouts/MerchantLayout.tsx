@@ -5,6 +5,7 @@ import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { useAuthStore } from '../store/authStore';
 import { useDataStore } from '../store/dataStore';
 import {
+  LayoutDashboard,
   Store,
   Package,
   ShoppingBag,
@@ -12,15 +13,15 @@ import {
   Settings,
   Menu,
   X,
-  Power,
   ChevronRight,
   LogOut,
   Bell,
+  ExternalLink,
 } from 'lucide-react';
 
 export const MerchantLayout: React.FC = () => {
   const { currentUser, logout } = useAuthStore();
-  const { merchants, updateMerchantProfile, purchases } = useDataStore();
+  const { merchants, purchases } = useDataStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -35,40 +36,33 @@ export const MerchantLayout: React.FC = () => {
     return mo && ['pendiente', 'confirmado', 'en_preparacion'].includes(mo.status) ? acc + 1 : acc;
   }, 0);
 
-  const toggleStoreStatus = () => {
-    updateMerchantProfile(currentMerchant.id, {
-      isOpen: !currentMerchant.isOpen,
-    });
-  };
-
   const navLinks = [
-    { to: '/comercio/tienda', label: 'Inicio', icon: <Store className="w-4 h-4" /> },
+    { to: '/comercio/tienda', label: 'Panel principal', icon: <LayoutDashboard className="w-4 h-4" /> },
     { to: '/comercio/perfil-tienda', label: 'Mi tienda', icon: <Store className="w-4 h-4" /> },
-    { to: '/comercio/productos', label: 'Productos', icon: <Package className="w-4 h-4" /> },
+    { to: '/comercio/productos', label: 'Productos en carta', icon: <Package className="w-4 h-4" /> },
     {
       to: '/comercio/pedidos',
-      label: 'Pedidos',
+      label: 'Comandas y pedidos',
       icon: <ShoppingBag className="w-4 h-4" />,
       badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
     },
-    { to: '/comercio/pedidos', label: 'Seguimiento', icon: <Power className="w-4 h-4" /> },
-    { to: '/comercio/reportes', label: 'Reportes', icon: <BarChart3 className="w-4 h-4" /> },
+    { to: '/comercio/reportes', label: 'Reportes de ventas', icon: <BarChart3 className="w-4 h-4" /> },
     { to: '/comercio/configuracion', label: 'Configuración', icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/60 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row font-sans">
       {/* Mobile Top Header */}
-      <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-subtle">
+      <div className="md:hidden sticky top-0 z-30 bg-surface border-b border-border px-4 py-3 flex items-center justify-between shadow-subtle">
         <BrandLogo size="sm" showSubtitle={false} />
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary text-white">
-            PROVEEDOR
+        <div className="flex items-center gap-2.5">
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-surface-subtle text-ink-light border border-border">
+            Comercio
           </span>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="touch-target p-2 text-gray-600 rounded-xl hover:bg-gray-100"
+            className="touch-target p-2 text-ink-light rounded-xl hover:bg-surface-subtle"
             aria-label="Abrir menú de comercio"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -76,37 +70,38 @@ export const MerchantLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Sidebar - clean white with soft berry active tint */}
+      {/* Desktop Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-100 flex flex-col transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border flex flex-col transition-transform duration-200 md:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand & Store Header */}
-        <div className="p-4 border-b border-gray-100 flex flex-col gap-2">
+        <div className="p-4 border-b border-border flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <BrandLogo size="sm" />
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden text-gray-400 hover:text-gray-600"
+              className="md:hidden text-ink-muted hover:text-ink p-1"
+              aria-label="Cerrar menú"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Navigation Links - active is soft pink background with berry icon & text */}
+        {/* Navigation Links */}
         <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
           {navLinks.map((link) => (
             <NavLink
-              key={link.label}
+              key={link.to}
               to={link.to}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all ${
                   isActive
                     ? 'bg-primary-50 text-primary font-bold'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-ink font-medium'
+                    : 'text-ink-light hover:bg-surface-subtle hover:text-ink font-medium'
                 }`
               }
             >
@@ -115,7 +110,7 @@ export const MerchantLayout: React.FC = () => {
                 <span>{link.label}</span>
               </div>
               {link.badge && (
-                <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold tabular-nums">
                   {link.badge}
                 </span>
               )}
@@ -124,13 +119,16 @@ export const MerchantLayout: React.FC = () => {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
+        <div className="p-4 border-t border-border flex flex-col gap-2">
           <Link
-            to="/"
-            className="flex items-center justify-between text-xs font-semibold text-gray-600 hover:text-primary p-2 rounded-xl hover:bg-gray-50"
+            to={`/negocios/${currentMerchant.id}`}
+            className="flex items-center justify-between text-xs font-semibold text-ink-light hover:text-primary p-2 rounded-xl hover:bg-surface-subtle transition-colors"
           >
-            <span>Ver tienda como cliente</span>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <span className="flex items-center gap-2">
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Ver tienda como cliente</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-ink-muted" />
           </Link>
 
           <button
@@ -139,7 +137,7 @@ export const MerchantLayout: React.FC = () => {
               logout();
               navigate('/login');
             }}
-            className="flex items-center gap-2 text-xs font-semibold text-red-600 hover:bg-red-50 p-2 rounded-xl"
+            className="flex items-center gap-2 text-xs font-semibold text-destructive hover:bg-destructive-soft p-2 rounded-xl transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Cerrar sesión</span>
@@ -149,39 +147,49 @@ export const MerchantLayout: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Bar for Desktop matching reference image */}
-        <header className="hidden md:flex h-16 bg-white border-b border-gray-100 px-8 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary text-white shadow-sm">
-              PROVEEDOR
-            </span>
+        {/* Top Header Bar for Desktop */}
+        <header className="hidden md:flex h-16 bg-surface border-b border-border px-8 items-center justify-between">
+          <div className="flex items-center gap-2.5 text-xs">
+            <span className="font-semibold text-ink">Panel del Comercio</span>
+            <span className="text-ink-muted">•</span>
+            <span className="text-ink-light">Tingo María</span>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Notification bell with badge 2 */}
+            {/* Notification bell */}
             <button
               type="button"
-              className="relative p-2 text-gray-500 hover:text-primary transition-colors"
-              aria-label="Notificaciones"
+              className="relative p-2 text-ink-light hover:text-primary transition-colors touch-target rounded-xl hover:bg-surface-subtle"
+              aria-label="Notificaciones de pedidos"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
+              {pendingOrdersCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center tabular-nums">
+                  {pendingOrdersCount}
+                </span>
+              )}
             </button>
 
             {/* Merchant User Avatar and Name */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-gray-100">
+            <Link
+              to="/comercio/perfil-tienda"
+              className="flex items-center gap-2.5 pl-3 border-l border-border hover:opacity-85 transition-opacity"
+              title="Ir al perfil de mi tienda"
+            >
               <img
                 src={currentMerchant.logoUrl}
                 alt={currentMerchant.name}
-                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                className="w-8 h-8 rounded-full object-cover border border-border"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="%23FDF2F8"><rect width="32" height="32" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="12">Q</text></svg>';
+                }}
               />
               <div className="text-left leading-tight">
                 <p className="text-xs font-bold text-ink">{currentMerchant.name}</p>
-                <p className="text-[10px] text-gray-400 capitalize">{currentMerchant.category}</p>
+                <p className="text-[10px] text-ink-muted capitalize">{currentMerchant.category}</p>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 

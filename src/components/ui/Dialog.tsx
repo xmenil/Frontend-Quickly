@@ -8,7 +8,7 @@ export interface DialogProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
 }
 
 export const Dialog: React.FC<DialogProps> = ({
@@ -49,6 +49,9 @@ export const Dialog: React.FC<DialogProps> = ({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
   };
 
   return (
@@ -74,7 +77,7 @@ export const Dialog: React.FC<DialogProps> = ({
           maxWidths[maxWidth]
         )}
       >
-        <div className="flex items-start justify-between pb-3 border-b border-gray-100 mb-4">
+        <div className="flex items-start justify-between pb-3 border-b border-border mb-4">
           <div>
             {title && (
               <h2 id="dialog-title" className="text-xl font-bold text-ink">
@@ -82,14 +85,14 @@ export const Dialog: React.FC<DialogProps> = ({
               </h2>
             )}
             {description && (
-              <p id="dialog-description" className="text-sm text-gray-500 mt-1">
+              <p id="dialog-description" className="text-sm text-ink-muted mt-1">
                 {description}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="touch-target -mr-2 -mt-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="touch-target -mr-2 -mt-2 rounded-xl text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors"
             aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />

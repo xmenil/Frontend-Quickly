@@ -27,6 +27,8 @@ import {
   Phone,
   Timer,
   CheckCircle2,
+  ExternalLink,
+  Edit3,
 } from 'lucide-react';
 
 export const MerchantDashboardPage: React.FC = () => {
@@ -107,6 +109,16 @@ export const MerchantDashboardPage: React.FC = () => {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
   const [pauseDuration, setPauseDuration] = useState<'30' | '60' | 'rest_of_day'>('30');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [ordersTab, setOrdersTab] = useState<'activas' | 'historial'>('activas');
+
+  // Filter in-kitchen/active orders
+  const inKitchenOrders = useMemo(
+    () =>
+      merchantSuborders.filter((o) =>
+        ['pendiente', 'confirmado', 'en_preparacion', 'listo_recoger'].includes(o.status)
+      ),
+    [merchantSuborders]
+  );
 
   // Timer simulation for pending order confirmation (3:45 minutes countdown)
   const [countdownSeconds, setCountdownSeconds] = useState(225); // 3m 45s
@@ -151,6 +163,11 @@ export const MerchantDashboardPage: React.FC = () => {
     showFeedback('Pedido confirmado y enviado a comanda de cocina.');
   };
 
+  const handleMarkReady = (orderId: string) => {
+    updateMerchantOrderStatus(orderId, 'listo_recoger', currentMerchant.name, 'comercio');
+    showFeedback('Comanda lista para entrega al repartidor.');
+  };
+
   const handleRejectOrder = (orderId: string) => {
     updateMerchantOrderStatus(
       orderId,
@@ -171,22 +188,22 @@ export const MerchantDashboardPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pendiente':
-        return { label: 'Nuevo Pendiente', class: 'bg-amber-50 text-amber-800 border-amber-200' };
+        return { label: 'Nuevo Pendiente', class: 'bg-warning-soft text-warning-strong border-warning-border' };
       case 'confirmado':
-        return { label: 'Confirmado', class: 'bg-sky-50 text-sky-800 border-sky-200' };
+        return { label: 'Confirmado', class: 'bg-info-soft text-info-strong border-info-border' };
       case 'en_preparacion':
-        return { label: 'En cocina', class: 'bg-amber-100/70 text-amber-900 border-amber-300' };
+        return { label: 'En cocina', class: 'bg-warning-soft text-warning-strong border-warning-border' };
       case 'listo_recoger':
-        return { label: 'Listo para recojo', class: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+        return { label: 'Listo para recojo', class: 'bg-selva-soft text-selva-strong border-selva-border' };
       case 'en_camino':
-        return { label: 'En camino (Moto)', class: 'bg-sky-50 text-sky-800 border-sky-200' };
+        return { label: 'En camino (Moto)', class: 'bg-info-soft text-info-strong border-info-border' };
       case 'entregado':
-        return { label: 'Entregado', class: 'bg-emerald-100 text-emerald-900 border-emerald-300' };
+        return { label: 'Entregado', class: 'bg-selva-soft text-selva-strong border-selva-border' };
       case 'cancelado':
       case 'rechazado':
-        return { label: 'Cancelado', class: 'bg-rose-50 text-rose-800 border-rose-200' };
+        return { label: 'Cancelado', class: 'bg-destructive-soft text-destructive-strong border-destructive-border' };
       default:
-        return { label: status, class: 'bg-gray-100 text-gray-700 border-gray-200' };
+        return { label: status, class: 'bg-surface-subtle text-ink-light border-border' };
     }
   };
 
@@ -201,63 +218,96 @@ export const MerchantDashboardPage: React.FC = () => {
       {/* Toast Feedback */}
       {actionFeedback && (
         <div className="fixed top-20 right-4 sm:right-8 z-50 p-4 bg-ink text-white rounded-2xl shadow-xl flex items-center gap-2.5 animate-fadeIn">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <CheckCircle2 className="w-5 h-5 text-selva flex-shrink-0" />
           <span className="text-xs sm:text-sm font-semibold">{actionFeedback}</span>
         </div>
       )}
 
-      {/* Top Banner with Open/Closed Store Switch (F-1) */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-gray-100 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-slate-900 text-amber-300 border-2 border-amber-400 flex items-center justify-center font-bold text-xl flex-shrink-0 shadow-sm">
-            {currentMerchant.name.slice(0, 2).toUpperCase()}
+      {/* Top Banner with Store Identity and Open/Closed Switch */}
+      <div className="bg-surface p-5 sm:p-6 rounded-3xl border border-border shadow-subtle flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-surface-subtle border border-border flex-shrink-0 shadow-sm">
+            <img
+              src={currentMerchant.logoUrl}
+              alt={currentMerchant.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="%23FDF2F8"><rect width="72" height="72" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="24">Q</text></svg>';
+              }}
+            />
           </div>
-          <div>
+
+          <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-extrabold text-ink leading-tight">
                 {currentMerchant.name}
               </h1>
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full border ${
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border ${
                   currentMerchant.isOpen
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                    ? 'bg-selva-soft text-selva-strong border-selva-border'
+                    : 'bg-destructive-soft text-destructive-strong border-destructive-border'
                 }`}
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    currentMerchant.isOpen ? 'bg-emerald-600 animate-pulse' : 'bg-rose-500'
+                    currentMerchant.isOpen ? 'bg-selva animate-pulse' : 'bg-destructive'
                   }`}
                 />
-                <span>{currentMerchant.isOpen ? 'Abierto ahora' : 'Pausado / Cerrado'}</span>
+                <span>{currentMerchant.isOpen ? 'Abierto ahora' : 'Recepción en pausa'}</span>
               </span>
             </div>
-            <p className="text-xs text-ink-light flex items-center gap-2 mt-1">
-              <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span>{currentMerchant.address}</span>
-              <span className="text-gray-300">•</span>
-              <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-              <span>Horario hoy: {currentMerchant.schedule}</span>
+
+            <p className="text-xs text-ink-light flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span>{currentMerchant.address}</span>
+              </span>
+              <span className="text-border">•</span>
+              <span className="flex items-center gap-1 text-ink-muted">
+                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Horario: {currentMerchant.schedule}</span>
+              </span>
             </p>
+
+            {/* Quick profile actions */}
+            <div className="flex items-center gap-3 pt-0.5 text-xs">
+              <Link
+                to="/comercio/perfil-tienda"
+                className="font-semibold text-primary hover:underline flex items-center gap-1"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editar datos de mi local</span>
+              </Link>
+              <span className="text-border">•</span>
+              <Link
+                to={`/negocios/${currentMerchant.id}`}
+                className="font-semibold text-ink-light hover:text-primary flex items-center gap-1 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Ver tienda como cliente</span>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* F-1 Toggle Switch */}
-        <div className="flex items-center gap-3.5 bg-gray-50 p-2.5 sm:p-3 rounded-2xl border border-gray-200 self-start md:self-center">
-          <div className="text-right">
+        {/* Reception Toggle Switch */}
+        <div className="flex items-center justify-between sm:justify-end gap-3.5 bg-surface-subtle p-3 rounded-2xl border border-border self-stretch lg:self-center">
+          <div className="text-left sm:text-right">
             <span className="text-xs font-bold text-ink block">
               {currentMerchant.isOpen ? 'Recepción de pedidos' : 'Recepción pausada'}
             </span>
-            <span className="text-[11px] text-gray-500">
-              {currentMerchant.isOpen ? 'Aceptando clientes' : 'Catálogo solo visible'}
+            <span className="text-[11px] text-ink-muted">
+              {currentMerchant.isOpen ? 'Aceptando comandas en Tingo María' : 'Catálogo en modo solo vista'}
             </span>
           </div>
 
           <button
             type="button"
             onClick={handleToggleOpen}
-            className={`touch-target relative inline-flex h-9 w-16 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-              currentMerchant.isOpen ? 'bg-emerald-600' : 'bg-gray-300'
+            className={`touch-target relative inline-flex h-9 w-16 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+              currentMerchant.isOpen ? 'bg-selva' : 'bg-gray-300'
             }`}
             aria-label="Alternar estado de apertura del comercio"
           >
@@ -270,114 +320,154 @@ export const MerchantDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Real KPIs Cards with Trends */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Ventas del mes */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-subtle flex items-center justify-between">
+      {/* Real Operational KPIs Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Card 1: Ventas completadas */}
+        <div className="bg-surface p-5 rounded-2xl border border-border shadow-subtle flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-ink-light">Ventas del mes</span>
+            <span className="text-xs font-semibold text-ink-light">Ventas completadas</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {formatCents(totalMonthRevenueCents || 248000)}
+              {formatCents(totalMonthRevenueCents || 5900)}
             </p>
-            <span className="inline-flex items-center text-[11px] font-bold text-emerald-700">
-              ↑ 12% <span className="text-gray-500 font-normal ml-1">vs. mes anterior</span>
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <span className="font-bold text-selva">↑ 12%</span>
+              <span className="text-ink-muted">vs. mes anterior</span>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center flex-shrink-0 shadow-sm">
             <Coins className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Card 2: Pedidos recibidos */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-subtle flex items-center justify-between">
+        {/* Card 2: Comandas y pedidos */}
+        <div className="bg-surface p-5 rounded-2xl border border-border shadow-subtle flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-ink-light">Pedidos recibidos</span>
+            <span className="text-xs font-semibold text-ink-light">Comandas registradas</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {merchantSuborders.length || 48}
+              {merchantSuborders.length}{' '}
+              <span className="text-xs font-medium text-ink-muted">
+                {merchantSuborders.length === 1 ? 'pedido' : 'pedidos'}
+              </span>
             </p>
-            <span className="inline-flex items-center text-[11px] font-bold text-emerald-700">
-              ↑ 8% <span className="text-gray-500 font-normal ml-1">vs. mes anterior</span>
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              {pendingOrders.length + activeOrders.length > 0 ? (
+                <span className="font-bold text-warning">
+                  {pendingOrders.length + activeOrders.length} comanda(s) en curso
+                </span>
+              ) : (
+                <span className="font-semibold text-selva">
+                  ✓ Al día en cocina
+                </span>
+              )}
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-surface-subtle text-ink border border-border flex items-center justify-center flex-shrink-0">
             <ShoppingCart className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Card 3: Productos en stock */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-subtle flex items-center justify-between">
+        {/* Card 3: Platos en carta */}
+        <div className="bg-surface p-5 rounded-2xl border border-border shadow-subtle flex items-center justify-between sm:col-span-2 lg:col-span-1">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-ink-light">Productos activos</span>
+            <span className="text-xs font-semibold text-ink-light">Disponibilidad de carta</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {activeStockCount}
+              {activeStockCount}{' '}
+              <span className="text-xs font-medium text-ink-muted">
+                de {merchantProducts.length} platos activos
+              </span>
             </p>
-            <span className="inline-flex items-center text-[11px] font-bold text-emerald-700">
-              ↑ 5% <span className="text-gray-500 font-normal ml-1">vs. mes anterior</span>
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              {merchantProducts.length - activeStockCount > 0 ? (
+                <span className="text-ink-muted">
+                  {merchantProducts.length - activeStockCount} producto(s) en pausa/agotado
+                </span>
+              ) : (
+                <span className="font-semibold text-selva">
+                  100% de platos disponibles
+                </span>
+              )}
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-surface-subtle text-ink border border-border flex items-center justify-center flex-shrink-0">
             <Package className="w-6 h-6" />
           </div>
         </div>
       </div>
 
-      {/* F-2: Pedidos entrantes en tiempo real con timer regresivo y acción rápida */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-subtle p-5 sm:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-base sm:text-lg font-bold text-ink">Pedidos Entrantes</h2>
-            {pendingOrders.length > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-900 bg-amber-100 px-3 py-0.5 rounded-full border border-amber-300 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-amber-600" />
-                <span>{pendingOrders.length} por confirmar</span>
-              </span>
-            ) : (
-              <span className="text-xs text-gray-500 font-medium">Al día</span>
-            )}
+      {/* Comandas y Pedidos del Comercio */}
+      <div className="bg-surface rounded-3xl border border-border shadow-subtle p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-base sm:text-lg font-bold text-ink">Comandas y Pedidos</h2>
+            {/* Tabs for active vs history */}
+            <div className="flex items-center gap-1 bg-surface-subtle p-1 rounded-xl border border-border text-xs">
+              <button
+                type="button"
+                onClick={() => setOrdersTab('activas')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  ordersTab === 'activas'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-light hover:text-ink'
+                }`}
+              >
+                <span>En cocina ({inKitchenOrders.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrdersTab('historial')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  ordersTab === 'historial'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-light hover:text-ink'
+                }`}
+              >
+                <span>Historial de hoy ({completedOrders.length})</span>
+              </button>
+            </div>
           </div>
 
           <Link
             to="/comercio/pedidos"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 self-start sm:self-center"
           >
             <span>Ver todas las comandas</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Pending Orders Alerts / Actions Cards (F-2) */}
-        {pendingOrders.length > 0 && (
+        {/* Pending Orders Alerts / Actions Cards (if pending) */}
+        {ordersTab === 'activas' && pendingOrders.length > 0 && (
           <div className="space-y-3">
             {pendingOrders.map((order) => (
               <div
                 key={order.id}
-                className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn"
+                className="bg-warning-soft border border-warning-border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn"
               >
                 <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="font-extrabold text-base text-ink">{order.purchaseCode}</span>
-                    <span className="text-xs font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-amber-200">
+                    <span className="text-xs font-bold text-ink-light bg-surface px-2.5 py-0.5 rounded-full border border-border">
                       Cliente: {order.customerName}
                     </span>
-                    {/* Countdown Timer (F-2) */}
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full">
-                      <Timer className="w-3.5 h-3.5 text-amber-800" />
+                    {/* Countdown Timer */}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warning-strong bg-warning-soft px-2.5 py-0.5 rounded-full border border-warning-border">
+                      <Timer className="w-3.5 h-3.5" />
                       <span>Confirmar en: {formatCountdown(countdownSeconds)}</span>
                     </span>
                   </div>
 
-                  <div className="text-xs text-gray-700 space-y-1">
+                  <div className="text-xs text-ink-light space-y-1">
                     <div className="font-semibold text-ink">
                       {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(' • ')}
                     </div>
-                    <p className="text-gray-500">
+                    <p className="text-ink-muted">
                       Entrega en: {order.addressSnapshot.street} #{order.addressSnapshot.number} (
                       {order.addressSnapshot.reference})
                     </p>
                   </div>
 
                   <div className="text-xs font-extrabold text-ink tabular-nums">
-                    Total subpedido: {formatCents(order.totalCents)} • Pago:{' '}
+                    Total: {formatCents(order.totalCents)} • Pago:{' '}
                     {order.paymentMethod === 'yape_plin'
                       ? 'Yape/Plin'
                       : order.paymentMethod === 'efectivo'
@@ -386,14 +476,14 @@ export const MerchantDashboardPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Accept / Reject Buttons (F-2) */}
+                {/* Accept / Reject Buttons */}
                 <div className="flex items-center gap-2.5 self-end md:self-center flex-shrink-0">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handleRejectOrder(order.id)}
-                    className="min-h-[44px] px-4 text-xs font-bold border-red-200 text-red-700 hover:bg-red-50"
+                    className="min-h-[44px] touch-target px-4 text-xs font-bold border-destructive-border text-destructive hover:bg-destructive-soft"
                   >
                     <X className="w-4 h-4 mr-1" />
                     <span>Rechazar</span>
@@ -403,7 +493,7 @@ export const MerchantDashboardPage: React.FC = () => {
                     variant="selva"
                     size="sm"
                     onClick={() => handleAcceptOrder(order.id)}
-                    className="min-h-[44px] px-5 text-xs font-bold shadow-subtle"
+                    className="min-h-[44px] touch-target px-5 text-xs font-bold shadow-subtle"
                   >
                     <Check className="w-4 h-4 mr-1 stroke-[3]" />
                     <span>Aceptar y Preparar</span>
@@ -414,63 +504,156 @@ export const MerchantDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Regular Orders Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-gray-500 font-semibold border-b border-gray-100 pb-2">
-                <th className="py-2.5 font-bold">N° Pedido</th>
-                <th className="py-2.5 font-bold">Cliente</th>
-                <th className="py-2.5 font-bold">Productos</th>
-                <th className="py-2.5 font-bold">Total</th>
-                <th className="py-2.5 font-bold">Estado</th>
-                <th className="py-2.5 font-bold text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {merchantSuborders.slice(0, 5).map((order) => {
-                const badge = getStatusBadge(order.status);
-                return (
-                  <tr key={order.id} className="hover:bg-gray-50/70 transition-colors">
-                    <td className="py-3 font-extrabold text-ink">{order.purchaseCode}</td>
-                    <td className="py-3 text-gray-700 font-medium">{order.customerName}</td>
-                    <td className="py-3 text-gray-500 truncate max-w-xs">
-                      {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ')}
-                    </td>
-                    <td className="py-3 font-extrabold text-ink tabular-nums">
-                      {formatCents(order.totalCents)}
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badge.class}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <Link to="/comercio/pedidos">
-                        <button
-                          type="button"
-                          className="touch-target px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 hover:text-primary hover:border-primary text-xs font-bold transition-colors min-h-[36px]"
-                        >
-                          Ver comanda
-                        </button>
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {/* Tab content: Activas */}
+        {ordersTab === 'activas' && (
+          <>
+            {inKitchenOrders.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-surface-subtle/50 rounded-2xl border border-dashed border-border space-y-2">
+                <div className="w-12 h-12 rounded-full bg-selva-soft text-selva flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-sm text-ink">Todo al día en cocina</h3>
+                <p className="text-xs text-ink-muted max-w-sm mx-auto">
+                  No hay pedidos pendientes en preparación. Los nuevos pedidos de clientes en Tingo María ingresarán aquí con notificación.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-ink-muted font-semibold border-b border-border pb-2">
+                      <th className="py-2.5 font-bold">N° Pedido</th>
+                      <th className="py-2.5 font-bold">Cliente</th>
+                      <th className="py-2.5 font-bold">Comanda</th>
+                      <th className="py-2.5 font-bold">Total</th>
+                      <th className="py-2.5 font-bold">Estado</th>
+                      <th className="py-2.5 font-bold text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {inKitchenOrders.map((order) => {
+                      const badge = getStatusBadge(order.status);
+                      return (
+                        <tr key={order.id} className="hover:bg-surface-subtle/70 transition-colors">
+                          <td className="py-3.5 font-extrabold text-ink">{order.purchaseCode}</td>
+                          <td className="py-3.5 text-ink-light font-medium">{order.customerName}</td>
+                          <td className="py-3.5 text-ink-muted truncate max-w-xs">
+                            {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ')}
+                          </td>
+                          <td className="py-3.5 font-extrabold text-ink tabular-nums">
+                            {formatCents(order.totalCents)}
+                          </td>
+                          <td className="py-3.5">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badge.class}`}
+                            >
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td className="py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {['confirmado', 'en_preparacion'].includes(order.status) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkReady(order.id)}
+                                  className="min-h-[44px] touch-target px-3 py-1.5 rounded-xl bg-selva text-white hover:bg-selva-strong text-xs font-bold transition-colors shadow-sm"
+                                >
+                                  Listo para entrega
+                                </button>
+                              )}
+                              <Link to="/comercio/pedidos">
+                                <button
+                                  type="button"
+                                  className="min-h-[44px] touch-target px-3 py-1.5 rounded-xl border border-border text-ink-light hover:text-primary hover:border-primary text-xs font-bold transition-colors"
+                                >
+                                  Ver comanda
+                                </button>
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Tab content: Historial */}
+        {ordersTab === 'historial' && (
+          <>
+            {completedOrders.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-surface-subtle/50 rounded-2xl border border-dashed border-border space-y-2">
+                <div className="w-12 h-12 rounded-full bg-surface-subtle text-ink-muted flex items-center justify-center mx-auto">
+                  <Package className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-sm text-ink">Sin pedidos entregados</h3>
+                <p className="text-xs text-ink-muted max-w-sm mx-auto">
+                  Las órdenes que hayan sido completadas y entregadas hoy se mostrarán en esta lista para tu balance.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-ink-muted font-semibold border-b border-border pb-2">
+                      <th className="py-2.5 font-bold">N° Pedido</th>
+                      <th className="py-2.5 font-bold">Cliente</th>
+                      <th className="py-2.5 font-bold">Productos</th>
+                      <th className="py-2.5 font-bold">Total</th>
+                      <th className="py-2.5 font-bold">Estado</th>
+                      <th className="py-2.5 font-bold text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {completedOrders.slice(0, 5).map((order) => {
+                      const badge = getStatusBadge(order.status);
+                      return (
+                        <tr key={order.id} className="hover:bg-surface-subtle/70 transition-colors">
+                          <td className="py-3.5 font-extrabold text-ink">{order.purchaseCode}</td>
+                          <td className="py-3.5 text-ink-light font-medium">{order.customerName}</td>
+                          <td className="py-3.5 text-ink-muted truncate max-w-xs">
+                            {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ')}
+                          </td>
+                          <td className="py-3.5 font-extrabold text-ink tabular-nums">
+                            {formatCents(order.totalCents)}
+                          </td>
+                          <td className="py-3.5">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badge.class}`}
+                            >
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td className="py-3.5 text-right">
+                            <Link to="/comercio/pedidos">
+                              <button
+                                type="button"
+                                className="min-h-[44px] touch-target px-3 py-1.5 rounded-xl border border-border text-ink-light hover:text-primary hover:border-primary text-xs font-bold transition-colors"
+                              >
+                                Ver detalle
+                              </button>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Real Products Section from the Store */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-ink">Platos y Productos en Carta</h2>
-            <p className="text-xs text-ink-light">Gestiona la disponibilidad rápida de tus especialidades</p>
+            <p className="text-xs text-ink-light">Gestiona la disponibilidad rápida de tus especialidades amazónicas</p>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -481,8 +664,8 @@ export const MerchantDashboardPage: React.FC = () => {
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             <Link to="/comercio/productos">
-              <Button variant="primary" size="sm" className="text-xs font-bold gap-1 min-h-[40px]">
-                <Plus className="w-3.5 h-3.5" /> Agregar producto
+              <Button variant="primary" size="sm" className="text-xs font-bold gap-1 min-h-[44px] touch-target">
+                <Plus className="w-4 h-4" /> Agregar producto
               </Button>
             </Link>
           </div>
@@ -493,22 +676,26 @@ export const MerchantDashboardPage: React.FC = () => {
           {displayProducts.map((p) => (
             <div
               key={p.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-subtle overflow-hidden flex flex-col justify-between"
+              className="bg-surface rounded-2xl border border-border shadow-subtle overflow-hidden flex flex-col justify-between"
             >
-              <div className="aspect-[4/3] w-full bg-gray-100 overflow-hidden relative">
+              <div className="aspect-[4/3] w-full bg-surface-subtle overflow-hidden relative">
                 <img
                   src={p.imageUrl}
                   alt={p.name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" fill="%23FDF2F8"><rect width="300" height="225" fill="%23FDF2F8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="16">Plato Amazónico</text></svg>';
+                  }}
                 />
                 {!p.isAvailable && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-bold">
-                    Agotado
+                  <div className="absolute inset-0 bg-ink/70 flex items-center justify-center text-white text-xs font-bold backdrop-blur-[1px]">
+                    Agotado hoy
                   </div>
                 )}
               </div>
 
-              <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+              <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
                 <div>
                   <h4 className="font-bold text-xs sm:text-sm text-ink line-clamp-1">{p.name}</h4>
                   <p className="text-xs font-extrabold text-ink mt-0.5 tabular-nums">
@@ -516,17 +703,17 @@ export const MerchantDashboardPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
                   <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       p.isAvailable
-                        ? 'text-emerald-800 bg-emerald-50 border border-emerald-200'
-                        : 'text-rose-800 bg-rose-50 border border-rose-200'
+                        ? 'text-selva-strong bg-selva-soft border-selva-border'
+                        : 'text-destructive-strong bg-destructive-soft border-destructive-border'
                     }`}
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        p.isAvailable ? 'bg-emerald-600' : 'bg-rose-500'
+                        p.isAvailable ? 'bg-selva' : 'bg-destructive'
                       }`}
                     />
                     <span>{p.isAvailable ? 'Disponible' : 'Agotado'}</span>
@@ -535,10 +722,10 @@ export const MerchantDashboardPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => toggleProductAvailability(p.id)}
-                    className="text-[11px] font-bold text-gray-500 hover:text-primary transition-colors touch-target px-1"
-                    title="Alternar disponibilidad"
+                    className="touch-target min-h-[38px] px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-border text-ink-light hover:text-primary hover:border-primary transition-colors"
+                    title="Alternar disponibilidad de plato"
                   >
-                    Cambiar
+                    {p.isAvailable ? 'Agotar' : 'Activar'}
                   </button>
                 </div>
               </div>
@@ -550,22 +737,22 @@ export const MerchantDashboardPage: React.FC = () => {
       {/* Bottom Grid: Seguimiento en Vivo & Configuración */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Dynamic Stepper Tracking based on actual active order */}
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-100 shadow-subtle p-5 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+        <div className="lg:col-span-8 bg-surface rounded-3xl border border-border shadow-subtle p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-border">
             <h3 className="text-sm font-bold text-ink">
               Seguimiento de comanda reciente{' '}
               <span className="text-primary font-extrabold">
                 {activeFollowOrder ? activeFollowOrder.purchaseCode : '#QK-914238'}
               </span>
             </h3>
-            <span className="text-xs text-gray-500 font-medium">
+            <span className="text-xs text-ink-muted font-medium">
               Cliente: {activeFollowOrder ? activeFollowOrder.customerName : 'Nilver Valdivia'}
             </span>
           </div>
 
           <div className="py-3">
             <div className="relative flex items-center justify-between max-w-xl mx-auto">
-              <div className="absolute left-6 right-6 top-3 h-0.5 bg-gray-200 -z-0" />
+              <div className="absolute left-6 right-6 top-3 h-0.5 bg-border -z-0" />
               <div
                 className={`absolute left-6 top-3 h-0.5 bg-primary -z-0 transition-all duration-500 ${
                   activeFollowOrder?.status === 'entregado'
@@ -595,7 +782,7 @@ export const MerchantDashboardPage: React.FC = () => {
                     activeFollowOrder?.status === 'en_camino' ||
                     activeFollowOrder?.status === 'entregado'
                       ? 'bg-primary text-white'
-                      : 'bg-gray-200 text-gray-400'
+                      : 'bg-surface-subtle text-ink-muted border border-border'
                   }`}
                 >
                   <ChefHat className="w-3.5 h-3.5" />
@@ -610,7 +797,7 @@ export const MerchantDashboardPage: React.FC = () => {
                     activeFollowOrder?.status === 'en_camino' ||
                     activeFollowOrder?.status === 'entregado'
                       ? 'bg-primary text-white ring-4 ring-primary/20'
-                      : 'bg-gray-200 text-gray-400'
+                      : 'bg-surface-subtle text-ink-muted border border-border'
                   }`}
                 >
                   <Bike className="w-3.5 h-3.5" />
@@ -623,20 +810,20 @@ export const MerchantDashboardPage: React.FC = () => {
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-sm ${
                     activeFollowOrder?.status === 'entregado'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-400'
+                      ? 'bg-selva text-white'
+                      : 'bg-surface-subtle text-ink-muted border border-border'
                   }`}
                 >
                   <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </div>
-                <span className="text-[11px] font-medium text-gray-500">Entregado</span>
+                <span className="text-[11px] font-medium text-ink-muted">Entregado</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Quick settings shortcut */}
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-gray-100 shadow-subtle p-5 flex flex-col justify-between space-y-3">
+        <div className="lg:col-span-4 bg-surface rounded-3xl border border-border shadow-subtle p-5 sm:p-6 flex flex-col justify-between space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-ink font-bold text-sm">
               <Settings className="w-4 h-4 text-primary" />
@@ -652,7 +839,7 @@ export const MerchantDashboardPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              className="w-full text-xs font-bold border-primary text-primary min-h-[44px]"
+              className="w-full text-xs font-bold border-border text-ink hover:text-primary hover:border-primary min-h-[44px] touch-target"
             >
               Configurar tienda
             </Button>
@@ -672,7 +859,7 @@ export const MerchantDashboardPage: React.FC = () => {
           <div className="space-y-2">
             <label className="text-xs font-bold text-ink block">Selecciona duración de la pausa:</label>
             <div className="space-y-2">
-              <label className="p-3 rounded-xl border border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+              <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
                 <span className="text-xs font-bold text-ink">Pausar 30 minutos (Cocina saturada)</span>
                 <input
                   type="radio"
@@ -683,7 +870,7 @@ export const MerchantDashboardPage: React.FC = () => {
                   className="w-4 h-4 text-primary"
                 />
               </label>
-              <label className="p-3 rounded-xl border border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+              <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
                 <span className="text-xs font-bold text-ink">Pausar 1 hora</span>
                 <input
                   type="radio"
@@ -694,7 +881,7 @@ export const MerchantDashboardPage: React.FC = () => {
                   className="w-4 h-4 text-primary"
                 />
               </label>
-              <label className="p-3 rounded-xl border border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+              <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
                 <span className="text-xs font-bold text-ink">Cerrar por hoy (Hasta mañana)</span>
                 <input
                   type="radio"
@@ -708,7 +895,7 @@ export const MerchantDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex justify-end gap-3 pt-3 border-t border-border">
             <Button
               type="button"
               variant="outline"

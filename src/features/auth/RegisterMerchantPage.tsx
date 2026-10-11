@@ -25,10 +25,13 @@ export const RegisterMerchantPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-surface rounded-2xl border border-border shadow-subtle p-6 sm:p-8 space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-ink">Afiliar mi Negocio</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <span className="inline-block px-3 py-1 rounded-full bg-primary-50 text-primary border border-primary-light text-[10px] font-bold tracking-wider uppercase mb-2.5">
+          Comercios y Emprendimientos
+        </span>
+        <h1 className="text-2xl font-extrabold text-ink tracking-tight">Afiliar mi Negocio</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Únete a la red comercial de Quickly en Tingo María y recibe pedidos en línea
         </p>
       </div>

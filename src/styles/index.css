@@ -2,63 +2,137 @@
 @tailwind components;
 @tailwind utilities;
 
+/* QUICKLY DELIVERY — tokens y base global
+   Los colores se definen aquí como canales RGB ("R G B") para que Tailwind pueda
+   aplicar opacidad (bg-primary/10). tailwind.config.js los expone con el mismo nombre.
+   Regla de la skill quickly-ui: ningún componente usa hex sueltos, solo estos tokens. */
+
 @layer base {
   :root {
-    --primary: #BE185D;
-    --primary-hover: #9D174D;
-    --primary-soft: #FDF2F8;
-    --surface: #FFFFFF;
-    --text: #172033;
-    --border: #E5E7EB;
+    /* Marca: Berry Carmine */
+    --color-primary: 190 24 93;            /* #BE185D acción principal, carrito activo, enlaces (6.0:1 sobre blanco) */
+    --color-primary-hover: 157 23 77;      /* #9D174D hover y presionado (7.9:1) */
+    --color-primary-50: 253 242 248;       /* #FDF2F8 fondo suave: categoría elegida, badge sutil, alerta informativa */
+
+    /* Superficies */
+    --color-background: 249 250 251;       /* #F9FAFB fondo general */
+    --color-surface: 255 255 255;          /* #FFFFFF tarjetas, modales, hojas inferiores */
+    --color-surface-subtle: 243 244 246;   /* #F3F4F6 contenedores secundarios y selectores */
+
+    /* Texto */
+    --color-ink: 23 32 51;                 /* #172033 títulos, precios, etiquetas (16:1 sobre blanco) */
+    --color-ink-light: 75 85 99;           /* #4B5563 descripciones y texto secundario (7.6:1) */
+    --color-ink-muted: 107 114 128;        /* #6B7280 placeholders y ayudas (4.8:1 sobre blanco). Nunca gris más claro. */
+
+    /* Bordes */
+    --color-border: 229 231 235;           /* #E5E7EB divisores y contorno de tarjetas */
+    --color-field: 131 141 157;            /* #838D9D borde de inputs y selectores (3.1:1 o más sobre toda superficie) */
+
+    /* Estados de delivery.
+       DEFAULT = relleno con texto blanco (5:1 o más) y también texto sobre blanco.
+       soft = fondo suave · border = contorno suave · strong = texto sobre el fondo suave. */
+    --color-selva: 4 120 87;               /* #047857 abierto, entregado, disponible */
+    --color-selva-soft: 236 253 245;       /* #ECFDF5 */
+    --color-selva-border: 167 243 208;     /* #A7F3D0 */
+    --color-selva-strong: 6 95 70;         /* #065F46 */
+
+    --color-warning: 180 83 9;             /* #B45309 en camino, en preparación, últimos productos */
+    --color-warning-soft: 255 251 235;     /* #FFFBEB */
+    --color-warning-border: 253 230 138;   /* #FDE68A */
+    --color-warning-strong: 146 64 14;     /* #92400E */
+
+    --color-destructive: 220 38 38;        /* #DC2626 cerrado, cancelado, agotado */
+    --color-destructive-soft: 254 242 242; /* #FEF2F2 */
+    --color-destructive-border: 254 202 202; /* #FECACA */
+    --color-destructive-strong: 185 28 28; /* #B91C1C */
+
+    --color-info: 3 105 161;               /* #0369A1 confirmado, seguimiento, zona de reparto */
+    --color-info-soft: 240 249 255;        /* #F0F9FF */
+    --color-info-border: 186 230 253;      /* #BAE6FD */
+    --color-info-strong: 7 89 133;         /* #075985 */
+  }
+
+  html {
+    font-family: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    color: #172033;
-    background-color: #F9FAFB;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    -webkit-tap-highlight-color: transparent;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-ink));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;
+    line-height: 1.5;
   }
 
-  /* Accessible focus indicators */
+  /* 16 px en campos: evita el zoom automático de iOS al enfocar un input */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  ::placeholder {
+    color: rgb(var(--color-ink-muted));
+    opacity: 1;
+  }
+
+  /* Foco visible para teclado y lectores de pantalla */
   :focus-visible {
-    outline: 2px solid #BE185D;
+    outline: 2px solid rgb(var(--color-primary));
     outline-offset: 2px;
   }
-}
 
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Respeta a quien desactiva animaciones en su sistema */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  /* Barra de scroll moderna y discreta */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-ink-muted) / 0.25);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-ink-muted) / 0.45);
   }
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+@layer components {
+  /* Área táctil mínima de 44×44 px para botones en móvil */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
-/* Touch target minimum utility */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+@layer utilities {
+  /* Ocultar barra de scroll nativa preservando scroll táctil y horizontal fluido */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE y Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Espacio inferior para la barra de gestos de iOS (MobileNav y FloatingCartBar) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
+

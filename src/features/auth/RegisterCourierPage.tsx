@@ -20,10 +20,13 @@ export const RegisterCourierPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-surface rounded-2xl border border-border shadow-subtle p-6 sm:p-8 space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-ink">Ser Repartidor Quickly</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <span className="inline-block px-3 py-1 rounded-full bg-selva-soft text-selva-strong border border-selva-border text-[10px] font-bold tracking-wider uppercase mb-2.5">
+          Repartidores Tingaleses
+        </span>
+        <h1 className="text-2xl font-extrabold text-ink tracking-tight">Ser Repartidor Quickly</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Genera ingresos repartiendo pedidos en Tingo María con tus propios horarios
         </p>
       </div>

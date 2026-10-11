@@ -1,402 +1,282 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../domain/types';
-import { BrandLogo } from '../../components/shared/BrandLogo';
 import { Dialog } from '../../components/ui/Dialog';
-import { Button } from '../../components/ui/Button';
 import {
-  UserCheck,
-  Store,
-  Bike,
-  ShieldCheck,
   Mail,
   Phone,
   Lock,
   Eye,
   EyeOff,
-  Sparkles,
   AlertCircle,
   ArrowRight,
-  Check,
+  Shield,
   Clock,
   ShieldAlert,
-  HelpCircle,
-  MapPin,
-  Banknote,
-  UtensilsCrossed,
-  Shield,
-  ShoppingBag,
+  Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 
-interface RoleOption {
-  id: UserRole;
-  label: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  defaultPath: string;
-  demoUser: {
-    name: string;
-    identifier: string;
-    detail: string;
-    initials: string;
-  };
-  registerText?: string;
-  registerLink?: string;
-  submitLabel: string;
+interface DemoAccount {
+  role: UserRole;
+  title: string;
+  sublabel: string;
+  identifier: string;
+  passwordDefault: string;
+  targetPath: string;
 }
 
-const ROLES: Record<UserRole, RoleOption> = {
-  cliente: {
-    id: 'cliente',
-    label: 'Cliente',
-    subtitle: 'Comida, botica y compras',
-    icon: UserCheck,
-    defaultPath: '/',
-    demoUser: {
-      name: 'Nilver Valdivia',
-      identifier: 'cliente@quickly.pe',
-      detail: 'Cliente frecuente • Zona Centro',
-      initials: 'NV',
-    },
-    registerText: '¿Primera vez en Quickly? Crea tu cuenta gratis',
-    registerLink: '/registro',
-    submitLabel: 'Ingresar como Cliente',
+const DEMO_ACCOUNTS: DemoAccount[] = [
+  {
+    role: 'cliente',
+    title: 'Cliente',
+    sublabel: 'Consumidor',
+    identifier: 'cliente@quickly.pe',
+    passwordDefault: '123456',
+    targetPath: '/',
   },
-  comercio: {
-    id: 'comercio',
-    label: 'Comercio',
-    subtitle: 'Restaurantes y tiendas',
-    icon: Store,
-    defaultPath: '/comercio/tienda',
-    demoUser: {
-      name: 'Marco Antonio',
-      identifier: 'comercio@quickly.pe',
-      detail: 'La Selva Gourmet • Menú amazónico',
-      initials: 'SG',
-    },
-    registerText: '¿Tienes un negocio en Tingo María? Afiliar mi negocio',
-    registerLink: '/registro/comercio',
-    submitLabel: 'Ingresar al Panel de Comercio',
+  {
+    role: 'comercio',
+    title: 'Comercio',
+    sublabel: 'Restaurante / Botica',
+    identifier: 'comercio@quickly.pe',
+    passwordDefault: '123456',
+    targetPath: '/comercio/tienda',
   },
-  repartidor: {
-    id: 'repartidor',
-    label: 'Repartidor',
-    subtitle: 'Despachos en moto o bici',
-    icon: Bike,
-    defaultPath: '/repartidor/solicitudes',
-    demoUser: {
-      name: 'Carlos Ramos',
-      identifier: 'repartidor@quickly.pe',
-      detail: 'Repartidor activo • Moto 125cc',
-      initials: 'CR',
-    },
-    registerText: '¿Tienes moto o bici? Postula como repartidor',
-    registerLink: '/registro/repartidor',
-    submitLabel: 'Ingresar como Repartidor',
+  {
+    role: 'repartidor',
+    title: 'Repartidor',
+    sublabel: 'Moto en Tingo María',
+    identifier: 'repartidor@quickly.pe',
+    passwordDefault: '123456',
+    targetPath: '/repartidor/solicitudes',
   },
-  admin: {
-    id: 'admin',
-    label: 'Admin',
-    subtitle: 'Control y supervisión',
-    icon: ShieldCheck,
-    defaultPath: '/admin/resumen',
-    demoUser: {
-      name: 'Administradora Quickly',
-      identifier: 'admin@quickly.pe',
-      detail: 'Operaciones central Tingo María',
-      initials: 'AQ',
-    },
-    registerText: 'Acceso reservado para el equipo administrativo de Quickly.',
-    registerLink: undefined,
-    submitLabel: 'Ingresar como Administrador',
+  {
+    role: 'admin',
+    title: 'Admin',
+    sublabel: 'Gestión central',
+    identifier: 'admin@quickly.pe',
+    passwordDefault: '123456',
+    targetPath: '/admin/resumen',
   },
-};
+];
 
 export const LoginPage: React.FC = () => {
-  const { login, loginGoogle, loginDemo, activeRole: storeActiveRole } = useAuthStore();
+  const { login, loginGoogle, loginDemo } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as any)?.from || '/';
   const redirectMessage = (location.state as any)?.message;
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>(storeActiveRole || 'cliente');
+  // Clean initial state (Heuristic #5: Error Prevention & Jakob's Law)
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [showDemoSection, setShowDemoSection] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
 
-  // Contextual account status modal (A-2)
-  const [accountModal, setAccountModal] = useState<{
+  // Status modal for pending/suspended accounts
+  const [statusModal, setStatusModal] = useState<{
     type: 'pendiente' | 'suspendido';
     title: string;
     message: string;
   } | null>(null);
 
-  // Onboarding modal (A-3)
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // Auto-detect Peruvian mobile number (tolerant: spaces, dashes, +51)
+  const cleanDigits = identifier.replace(/\D/g, '');
+  const isPhone = cleanDigits.length === 9 && cleanDigits.startsWith('9');
 
-  const currentRole = ROLES[selectedRole];
-
-  useEffect(() => {
-    setIdentifier(currentRole.demoUser.identifier);
+  const handleQuickDemoLogin = (acc: DemoAccount) => {
+    setIdentifier(acc.identifier);
+    setPassword(acc.passwordDefault);
     setError(null);
-  }, [selectedRole]);
+    setIsLoading(true);
+    setLoadingMessage(`Ingresando como ${acc.title}...`);
 
-  const isPhone = /^\+?[\d\s-]{8,15}$/.test(identifier.trim());
+    setTimeout(() => {
+      loginDemo(acc.role);
+      setIsLoading(false);
+      setLoadingMessage(null);
+      const destination = acc.role === 'cliente' ? (from !== '/login' ? from : '/') : acc.targetPath;
+      navigate(destination, { replace: true });
+    }, 350);
+  };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim()) {
-      setError('Por favor ingresa tu correo electrónico o teléfono celular.');
+      setError('Ingresa tu celular o correo electrónico.');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Ingresa tu contraseña.');
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setLoadingMessage('Verificando acceso...');
+    setLoadingMessage('Verificando credenciales...');
 
     setTimeout(() => {
-      const result = login(identifier, selectedRole);
+      // Determine probable role if using known demo email or default to cliente
+      const matchedDemo = DEMO_ACCOUNTS.find(
+        (a) => a.identifier.toLowerCase() === identifier.trim().toLowerCase()
+      );
+      const roleHint = matchedDemo ? matchedDemo.role : 'cliente';
+
+      const result = login(identifier, roleHint);
       setIsLoading(false);
       setLoadingMessage(null);
 
       if (result.success) {
-        const targetPath =
-          selectedRole === 'cliente'
+        const destination =
+          result.user?.role === 'cliente'
             ? from !== '/login' ? from : '/'
-            : currentRole.defaultPath;
+            : DEMO_ACCOUNTS.find((a) => a.role === result.user?.role)?.targetPath || '/';
 
-        navigate(targetPath, { replace: true });
+        navigate(destination, { replace: true });
       } else {
         if (result.message?.includes('pendiente')) {
-          setAccountModal({
+          setStatusModal({
             type: 'pendiente',
-            title: 'Cuenta en proceso de revisión',
-            message: `Tu registro como ${currentRole.label} ha sido recibido y se encuentra pendiente de aprobación por el equipo de Quickly en Tingo María.`,
+            title: 'Cuenta en revisión',
+            message:
+              'Tu registro se encuentra en proceso de validación por el equipo de Quickly en Tingo María.',
           });
         } else if (result.message?.includes('suspendid')) {
-          setAccountModal({
+          setStatusModal({
             type: 'suspendido',
-            title: 'Cuenta suspendida temporalmente',
-            message: `Tu cuenta de ${currentRole.label} se encuentra inactiva por administración. Comunícate con la central de Quickly para reactivarla.`,
+            title: 'Cuenta suspendida',
+            message:
+              'Esta cuenta se encuentra inactiva temporalmente. Comunícate con soporte de Quickly.',
           });
         } else {
-          setError(result.message || 'Credenciales no válidas. Por favor verifica los datos ingresados.');
+          setError(result.message || 'Credenciales no válidas. Revisa los datos ingresados.');
         }
       }
     }, 400);
   };
 
-  const handleInstantDemoLogin = () => {
-    setIsLoading(true);
-    setLoadingMessage(`Iniciando sesión como ${currentRole.demoUser.name}...`);
-    setError(null);
-
-    setTimeout(() => {
-      loginDemo(selectedRole);
-      setIsLoading(false);
-      setLoadingMessage(null);
-
-      const targetPath =
-        selectedRole === 'cliente'
-          ? from !== '/login' ? from : '/'
-          : currentRole.defaultPath;
-
-      navigate(targetPath, { replace: true });
-    }, 350);
-  };
-
-  const handleAutofill = () => {
-    setIdentifier(currentRole.demoUser.identifier);
-    setPassword('123456');
-    setError(null);
-  };
-
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    setLoadingMessage('Conectando con tu cuenta de Google...');
+    setLoadingMessage('Conectando con Google...');
     setTimeout(() => {
       loginGoogle();
       setIsLoading(false);
       setLoadingMessage(null);
       navigate(from !== '/login' ? from : '/', { replace: true });
-    }, 400);
+    }, 350);
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-5 animate-in fade-in duration-200">
+    <div className="space-y-4">
+      {/* Optional Notification banner if redirected from protected route */}
       {redirectMessage && (
-        <div className="p-3.5 rounded-2xl bg-primary-50 border border-primary-200 text-xs text-primary font-semibold flex items-center gap-2.5 shadow-subtle">
-          <Sparkles className="w-4 h-4 flex-shrink-0 text-primary" />
+        <div className="p-3.5 rounded-2xl bg-primary-50 border border-primary/20 text-xs text-primary font-semibold flex items-center gap-2.5 shadow-subtle animate-in fade-in">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-primary" />
           <span>{redirectMessage}</span>
         </div>
       )}
 
-      {/* Main Friendly Card */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-6 sm:p-8 space-y-6">
-        
-        {/* Brand and Welcoming Header */}
-        <div className="text-center space-y-2">
-          <BrandLogo size="lg" className="justify-center mb-1" />
-          <h1 className="text-xl sm:text-2xl font-extrabold text-ink tracking-tight">
+      {/* Main Login Card */}
+      <div className="bg-surface rounded-2xl border border-border shadow-subtle p-6 sm:p-8 space-y-6">
+        {/* Header - Gestalt Focal Point */}
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-[26px] font-bold text-ink tracking-tight">
             Iniciar sesión
           </h1>
-          <p className="text-xs sm:text-sm text-ink-light max-w-sm mx-auto">
-            Elige tu perfil para continuar en Quickly Tingo María
+          <p className="text-xs sm:text-sm text-ink-light">
+            Ingresa a tu cuenta para pedir o gestionar entregas en Tingo María
           </p>
-
-          {/* Quick Onboarding Trigger Pill (A-3) */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setShowOnboarding(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover hover:underline transition-all py-1 px-3 rounded-full bg-primary-50 border border-primary-200/80 shadow-subtle touch-target"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>¿Cómo funciona Quickly en Tingo María? Conoce las 3 claves</span>
-            </button>
-          </div>
         </div>
 
-        {/* 1. ROOMY & FRIENDLY 4-ROLE SELECTOR */}
-        <div className="space-y-2">
-          <label className="block text-xs font-bold text-ink">
-            ¿Cómo deseas ingresar hoy?
-          </label>
-          <div
-            role="tablist"
-            aria-label="Perfil de usuario"
-            className="grid grid-cols-2 gap-2"
-          >
-            {(Object.keys(ROLES) as UserRole[]).map((roleKey) => {
-              const roleItem = ROLES[roleKey];
-              const isSelected = selectedRole === roleKey;
-              const IconComp = roleItem.icon;
+        {/* 1-Tap Google Login First (Jakob's Law for Mobile Deliveries) */}
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+          className="w-full min-h-[46px] h-12 py-2.5 px-4 rounded-xl bg-surface border border-field hover:bg-surface-subtle text-ink text-xs sm:text-sm font-semibold shadow-subtle transition-all active:scale-[0.99] flex items-center justify-center gap-3 touch-target"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+            />
+          </svg>
+          <span>Continuar con Google</span>
+        </button>
 
-              return (
-                <button
-                  key={roleKey}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  onClick={() => setSelectedRole(roleKey)}
-                  className={`min-h-[56px] p-3 rounded-2xl border text-left transition-all flex items-center gap-3 select-none active:scale-[0.98] touch-target ${
-                    isSelected
-                      ? 'bg-primary-50/70 border-primary text-ink shadow-subtle ring-2 ring-primary/20'
-                      : 'bg-white hover:bg-gray-50 border-gray-200 text-ink-light'
-                  }`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <IconComp className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-ink'}`}>
-                        {roleItem.label}
-                      </span>
-                      {isSelected && (
-                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 stroke-[3]" />
-                      )}
-                    </div>
-                    <span className="text-[11px] text-gray-600 block truncate">
-                      {roleItem.subtitle}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        {/* Divider */}
+        <div className="flex items-center gap-3 select-none my-1" aria-hidden="true">
+          <div className="flex-1 border-t border-border" />
+          <span className="text-xs text-ink-muted font-medium shrink-0">
+            o con tu celular o correo
+          </span>
+          <div className="flex-1 border-t border-border" />
         </div>
 
-        {/* 2. SUBTLE & FRIENDLY DEMO HELPER PILL */}
-        <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-white border border-gray-200 text-primary font-black flex items-center justify-center text-xs flex-shrink-0 shadow-subtle">
-              {currentRole.demoUser.initials}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-ink truncate">
-                  {currentRole.demoUser.name}
-                </span>
-                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                  Demo
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleAutofill}
-                className="text-[11px] text-gray-600 hover:text-primary font-medium transition-colors text-left truncate block mt-0.5"
-              >
-                Autocompletar formulario
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleInstantDemoLogin}
-            disabled={isLoading}
-            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-60 flex-shrink-0 flex items-center gap-1.5 touch-target"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Entrar en 1 clic</span>
-          </button>
-        </div>
-
-        {/* Error banner if present */}
+        {/* Error Alert */}
         {error && (
           <div
             role="alert"
-            className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2.5 animate-in fade-in"
+            className="p-3.5 rounded-xl bg-destructive-soft border border-destructive-border text-xs text-destructive-strong font-semibold flex items-center gap-2.5 animate-in fade-in"
           >
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-destructive" />
             <span className="flex-1">{error}</span>
           </div>
         )}
 
-        {/* 3. CLEAN CREDENTIALS FORM */}
-        <form onSubmit={handleLoginSubmit} className="space-y-4">
-          
-          {/* Identifier Input */}
+        {/* Credentials Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* User / Phone / Email Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="login_identifier" className="block text-xs font-bold text-ink">
-                Correo o teléfono celular
+                Celular o correo electrónico
               </label>
               {isPhone && (
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-emerald-700" />
-                  Celular tingalés
+                <span className="text-[11px] font-medium text-selva flex items-center gap-1">
+                  🇵🇪 Celular detectado
                 </span>
               )}
             </div>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
-                {isPhone ? <Phone className="w-4 h-4 text-emerald-700" /> : <Mail className="w-4 h-4 text-gray-500" />}
+              <div className="absolute left-3.5 flex items-center pointer-events-none text-ink-muted">
+                {isPhone ? <Phone className="w-4 h-4 text-selva" /> : <Mail className="w-4 h-4 text-ink-muted" />}
               </div>
               <input
                 id="login_identifier"
-                type="text"
-                inputMode={isPhone ? 'tel' : 'email'}
+                type={isPhone ? 'tel' : 'text'}
+                inputMode={/^\d+$/.test(cleanDigits) && cleanDigits.length > 2 ? 'tel' : 'email'}
                 autoComplete="username"
                 value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="ejemplo@correo.com o 962 123 456"
+                onChange={(e) => {
+                  setIdentifier(e.target.value);
+                  if (error) setError(null);
+                }}
+                placeholder="Ej. 962 123 456 o cliente@quickly.pe"
                 required
-                className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
+                className={`w-full min-h-[46px] h-11 pl-10 pr-4 py-2.5 rounded-xl border text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle ${
+                  error ? 'border-destructive bg-destructive-soft/10' : 'border-field bg-surface'
+                }`}
               />
             </div>
           </div>
@@ -409,13 +289,13 @@ export const LoginPage: React.FC = () => {
               </label>
               <Link
                 to="/recuperar-acceso"
-                className="text-xs font-bold text-primary hover:underline"
+                className="text-xs font-semibold text-primary hover:text-primary-hover hover:underline transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-500">
+              <div className="absolute left-3.5 flex items-center pointer-events-none text-ink-muted">
                 <Lock className="w-4 h-4" />
               </div>
               <input
@@ -423,44 +303,50 @@ export const LoginPage: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="••••••••"
                 required
-                className="w-full min-h-[44px] pl-10 pr-11 py-2.5 rounded-xl border border-gray-300 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle"
+                className={`w-full min-h-[46px] h-11 pl-10 pr-12 py-2.5 rounded-xl border text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-subtle tracking-wider ${
+                  error ? 'border-destructive bg-destructive-soft/10' : 'border-field bg-surface'
+                }`}
               />
+              {/* 44x44 px touch target for mobile thumb (Fitts's Law) */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                className="absolute right-3.5 text-gray-400 hover:text-ink transition-colors p-1"
+                className="absolute right-1 w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center text-ink-muted hover:text-ink transition-colors rounded-lg touch-target"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          {/* Remember me option */}
+          {/* Remember Me Checkbox */}
           <div className="flex items-center gap-2 pt-0.5">
             <input
               id="remember_me"
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+              className="w-4 h-4 rounded border-field text-primary focus:ring-primary accent-primary cursor-pointer"
             />
             <label
               htmlFor="remember_me"
               className="text-xs text-ink-light font-medium select-none cursor-pointer"
             >
-              Recordar mi cuenta en este equipo
+              Recordar sesión en este equipo
             </label>
           </div>
 
-          {/* Submit Button */}
+          {/* Primary Action Button (Single solid prominent button) */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full min-h-[48px] py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 touch-target"
+            className="w-full min-h-[48px] h-12 py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-subtle transition-all active:scale-[0.99] disabled:opacity-70 flex items-center justify-center gap-2 touch-target"
           >
             {isLoading ? (
               <>
@@ -468,218 +354,128 @@ export const LoginPage: React.FC = () => {
                 <span>{loadingMessage || 'Ingresando...'}</span>
               </>
             ) : (
-              <>
-                <span>{currentRole.submitLabel}</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
+              <span>Iniciar sesión</span>
             )}
           </button>
         </form>
 
-        {/* Google sign-in (only for cliente) */}
-        {selectedRole === 'cliente' && (
-          <div className="space-y-3 pt-1">
-            <div className="relative flex items-center justify-center">
-              <div className="border-t border-gray-200 w-full" />
-              <span className="bg-white px-3 text-xs text-gray-600 font-medium">
-                o continuar con
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-ink text-xs sm:text-sm font-bold shadow-subtle transition-all active:scale-[0.98] flex items-center justify-center gap-3 touch-target"
-            >
-              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              <span>Continuar con Google</span>
-            </button>
-          </div>
-        )}
-
-        {/* Contextual Register Link */}
-        <div className="pt-2 text-center text-xs">
-          {currentRole.registerLink ? (
-            <p className="text-ink-light">
-              <Link
-                to={currentRole.registerLink}
-                state={{ from }}
-                className="font-bold text-primary hover:underline"
-              >
-                {currentRole.registerText}
-              </Link>
-            </p>
-          ) : (
-            <p className="text-gray-600 text-xs">
-              {currentRole.registerText}
-            </p>
-          )}
-        </div>
-
-        {/* Guest access option */}
-        <div className="pt-2 border-t border-gray-100 text-center">
+        {/* Create Account Link (Jakob's Law: placed naturally at the end of auth options) */}
+        <div className="pt-2 text-center text-xs sm:text-sm text-ink-light border-t border-border">
+          ¿Aún no tienes una cuenta en Quickly?{' '}
           <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary transition-colors touch-target py-1"
+            to="/registro"
+            state={{ from }}
+            className="font-bold text-primary hover:text-primary-hover hover:underline ml-1 inline-block py-1"
           >
-            <span>Explorar tiendas y menú como invitado</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            Crear cuenta gratis
           </Link>
         </div>
 
+        {/* Demo Accounts Utility (Secondary discrete drawer, doesn't confuse real buyers) */}
+        <div className="pt-2 border-t border-border/60">
+          <button
+            type="button"
+            onClick={() => setShowDemoSection(!showDemoSection)}
+            className="w-full flex items-center justify-between text-xs text-ink-muted hover:text-ink py-1 px-1 transition-colors select-none"
+          >
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>Accesos rápidos de prueba (Demo local)</span>
+            </span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                showDemoSection ? 'rotate-180 text-primary' : ''
+              }`}
+            />
+          </button>
+
+          {showDemoSection && (
+            <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+              <p className="text-[11px] text-ink-muted">
+                Haz clic en cualquier rol para ingresar automáticamente sin escribir contraseña:
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.role}
+                    type="button"
+                    onClick={() => handleQuickDemoLogin(acc)}
+                    className="py-2 px-2.5 rounded-xl border border-border hover:border-primary/50 bg-surface-subtle hover:bg-primary-50 text-center transition-all select-none active:scale-95 touch-target min-h-[44px]"
+                  >
+                    <span className="block text-xs font-bold text-ink">
+                      {acc.title}
+                    </span>
+                    <span className="block text-[10px] text-ink-muted truncate">
+                      {acc.sublabel}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* MODAL CONTEXTUAL DE ESTADO DE CUENTA (A-2) */}
+      {/* Support & Security Links */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-2 text-xs text-ink-light">
+        <Link
+          to="/cliente/ayuda"
+          className="inline-flex items-center gap-1.5 hover:text-ink transition-colors py-1"
+        >
+          <Shield className="w-3.5 h-3.5 text-ink-muted" />
+          <span>Seguridad y privacidad</span>
+        </Link>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 font-semibold text-ink-light hover:text-primary transition-colors py-1"
+        >
+          <span>Explorar catálogo como invitado</span>
+          <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+
+      {/* Account Status Modal (Pending / Suspended) */}
       <Dialog
-        isOpen={Boolean(accountModal)}
-        onClose={() => setAccountModal(null)}
-        title={accountModal?.title}
-        maxWidth="md"
+        isOpen={Boolean(statusModal)}
+        onClose={() => setStatusModal(null)}
+        title={statusModal?.title}
+        maxWidth="sm"
       >
-        {accountModal && (
-          <div className="space-y-4 pt-2">
+        {statusModal && (
+          <div className="space-y-4 pt-1">
             <div
               className={`p-4 rounded-2xl flex items-start gap-3 border ${
-                accountModal.type === 'pendiente'
-                  ? 'bg-amber-50 border-amber-200 text-amber-900'
-                  : 'bg-red-50 border-red-200 text-red-900'
+                statusModal.type === 'pendiente'
+                  ? 'bg-warning-soft border-warning-border text-warning-strong'
+                  : 'bg-destructive-soft border-destructive-border text-destructive-strong'
               }`}
             >
-              {accountModal.type === 'pendiente' ? (
-                <Clock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              {statusModal.type === 'pendiente' ? (
+                <Clock className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               ) : (
-                <ShieldAlert className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <ShieldAlert className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               )}
               <div className="space-y-1 text-xs leading-relaxed">
-                <p className="font-semibold text-sm">
-                  {accountModal.type === 'pendiente'
-                    ? 'Validación en curso por el equipo Quickly'
-                    : 'Acceso pausado por administración'}
+                <p className="font-bold text-sm">
+                  {statusModal.type === 'pendiente' ? 'Validación pendiente' : 'Acceso restringido'}
                 </p>
-                <p>{accountModal.message}</p>
+                <p>{statusModal.message}</p>
               </div>
             </div>
 
-            <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-ink-light space-y-2">
-              <p className="font-bold text-ink flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span>¿Cómo proceder en esta demostración?</span>
-              </p>
-              {accountModal.type === 'pendiente' ? (
-                <p>
-                  Puedes ingresar como <strong>Administrador</strong> para aprobar esta cuenta desde la gestión de usuarios, o restaurar las credenciales demo activas con 1 clic.
-                </p>
-              ) : (
-                <p>
-                  Si crees que esto es un error, puedes contactar a la central telefónica de Quickly Tingo María al <strong>062-562112</strong> o ingresar con un perfil demo activo.
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full"
-                onClick={() => {
-                  setAccountModal(null);
-                  handleAutofill();
-                }}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal(null)}
+                className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-border text-xs font-bold text-ink transition-colors touch-target min-h-[44px]"
               >
-                Cargar Demo Activo de {currentRole.label}
-              </Button>
-              {accountModal.type === 'pendiente' && (
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="w-full"
-                  onClick={() => {
-                    setAccountModal(null);
-                    navigate('/admin/usuarios');
-                  }}
-                >
-                  Ir al Panel Admin
-                </Button>
-              )}
+                Entendido
+              </button>
             </div>
           </div>
         )}
-      </Dialog>
-
-      {/* MODAL DE BIENVENIDA & ONBOARDING (A-3) */}
-      <Dialog
-        isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-        title="Bienvenido a Quickly Delivery"
-        description="Delivery centralizado de la Selva Alta en Tingo María"
-        maxWidth="lg"
-      >
-        <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Clave 1 */}
-            <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-100 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                <UtensilsCrossed className="w-4 h-4" />
-              </div>
-              <h3 className="text-xs font-bold text-ink">1. Gastronomía & Comercios</h3>
-              <p className="text-[11px] text-gray-600 leading-relaxed">
-                Tacacho con cecina, juane, boticas y abarrotes de los negocios de Tingo María.
-              </p>
-            </div>
-
-            {/* Clave 2 */}
-            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
-                <Bike className="w-4 h-4" />
-              </div>
-              <h3 className="text-xs font-bold text-ink">2. Envíos en 20-35 min</h3>
-              <p className="text-[11px] text-gray-600 leading-relaxed">
-                Despachos en moto y bici por Centro, UNAS, Castillo Grande, Rupa Rupa y Afilador.
-              </p>
-            </div>
-
-            {/* Clave 3 */}
-            <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-sm">
-                <Banknote className="w-4 h-4" />
-              </div>
-              <h3 className="text-xs font-bold text-ink">3. Pagos transparentes</h3>
-              <p className="text-[11px] text-gray-600 leading-relaxed">
-                Yape, Plin y efectivo contra entrega con cálculo automático de vuelto.
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <Button
-              variant="primary"
-              size="md"
-              className="w-full sm:w-auto"
-              onClick={() => setShowOnboarding(false)}
-            >
-              ¡Entendido! Continuar
-            </Button>
-          </div>
-        </div>
       </Dialog>
     </div>
   );
 };
+

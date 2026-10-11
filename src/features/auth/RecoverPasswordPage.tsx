@@ -14,16 +14,16 @@ export const RecoverPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-surface rounded-2xl border border-border shadow-subtle p-6 sm:p-8 space-y-6">
       <div className="flex items-center justify-between pb-1">
         <Link
           to="/login"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary transition-colors touch-target py-1"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-light hover:text-primary transition-colors touch-target py-1"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-primary" />
           <span>Volver al inicio de sesión</span>
         </Link>
-        <span className="text-[11px] font-semibold text-primary bg-primary-50 px-2 py-0.5 rounded-full border border-primary-200">
+        <span className="text-[11px] font-semibold text-primary bg-primary-50 px-2 py-0.5 rounded-full border border-primary-light">
           Soporte Quickly
         </span>
       </div>

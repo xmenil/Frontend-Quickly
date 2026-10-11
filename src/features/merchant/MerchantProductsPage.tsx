@@ -14,14 +14,40 @@ import {
   Package,
   AlertCircle,
   Sparkles,
-  Check,
   AlertTriangle,
   Eye,
-  ShoppingCart,
-  Store,
   BadgeCheck,
   Building2,
+  Image as ImageIcon,
 } from 'lucide-react';
+
+// Regional food photography presets for Tingo María
+const REGIONAL_PRODUCT_PRESETS = [
+  {
+    name: 'Tacacho con Cecina',
+    url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    name: 'Juane Tradicional',
+    url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    name: 'Chaufa Regional',
+    url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    name: 'Patarashca de Doncella',
+    url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    name: 'Bebida de Camu Camu',
+    url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    name: 'Café & Cacao Artesanal',
+    url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
+  },
+];
 
 export const MerchantProductsPage: React.FC = () => {
   const { currentUser } = useAuthStore();
@@ -47,13 +73,14 @@ export const MerchantProductsPage: React.FC = () => {
   // Modal create/edit product state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
 
   // Form states
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [priceSoles, setPriceSoles] = useState('25.00');
-  const [stock, setStock] = useState('20');
-  const [imageUrl, setImageUrl] = useState('');
+  const [priceSoles, setPriceSoles] = useState('22.00');
+  const [stock, setStock] = useState('15');
+  const [imageUrl, setImageUrl] = useState(REGIONAL_PRODUCT_PRESETS[0].url);
   const [hasVariants, setHasVariants] = useState(false);
   const [variantsList, setVariantsList] = useState<ProductVariant[]>([]);
 
@@ -63,9 +90,8 @@ export const MerchantProductsPage: React.FC = () => {
     setDescription('');
     setPriceSoles('22.00');
     setStock('15');
-    setImageUrl(
-      'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'
-    );
+    setImageUrl(REGIONAL_PRODUCT_PRESETS[0].url);
+    setShowCustomUrlInput(false);
     setHasVariants(false);
     setVariantsList([]);
     setIsModalOpen(true);
@@ -78,6 +104,7 @@ export const MerchantProductsPage: React.FC = () => {
     setPriceSoles((p.priceCents / 100).toFixed(2));
     setStock(p.stock.toString());
     setImageUrl(p.imageUrl);
+    setShowCustomUrlInput(false);
     setHasVariants(Boolean(p.hasVariants));
     setVariantsList(p.variants || []);
     setIsModalOpen(true);
@@ -86,7 +113,7 @@ export const MerchantProductsPage: React.FC = () => {
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
     const priceCents = solesToCents(parseFloat(priceSoles) || 0);
-    const stockNum = parseInt(stock) || 0;
+    const stockNum = parseInt(stock, 10) || 0;
 
     if (editingProductId) {
       updateProduct(editingProductId, {
@@ -135,17 +162,17 @@ export const MerchantProductsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20 sm:pb-8">
-      {/* Header */}
+      {/* BLOQUE 1: Cabecera, Buscador y Filtros Semánticos */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Catálogo de Productos</h1>
             <span className="text-xs font-bold text-primary bg-primary-50 px-2.5 py-0.5 rounded-full border border-primary-100">
               {currentMerchant.name}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-ink-light mt-1">
-            Gestiona disponibilidad, stock y precios de tus platos o artículos en Tingo María
+            Gestiona disponibilidad en cocina, stock y precios de tus especialidades en Tingo María
           </p>
         </div>
 
@@ -154,33 +181,35 @@ export const MerchantProductsPage: React.FC = () => {
           variant="primary"
           size="md"
           onClick={handleOpenNew}
-          className="min-h-[44px] px-5 font-bold shadow-subtle self-start sm:self-auto"
+          className="min-h-[44px] touch-target px-5 font-bold shadow-subtle self-start sm:self-auto flex items-center gap-1.5"
         >
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-4 h-4" />
           <span>Agregar Producto</span>
         </Button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-subtle flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-surface p-4 rounded-2xl border border-border shadow-subtle flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre de plato o artículo..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-9 pr-4 text-xs sm:text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary min-h-[42px]"
+            placeholder="Buscar por nombre de plato o producto..."
+            className="w-full bg-surface border border-field rounded-xl py-2.5 pl-9 pr-4 text-xs sm:text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[44px] transition-colors"
           />
-          <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex gap-1.5 p-1 bg-gray-100 rounded-xl text-xs font-bold w-full md:w-auto overflow-x-auto no-scrollbar">
+        {/* Filter Chips with system tokens */}
+        <div className="flex gap-1.5 p-1 bg-surface-subtle border border-border rounded-xl text-xs font-bold w-full md:w-auto overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setFilterState('all')}
             className={`min-h-[38px] px-3.5 py-1.5 rounded-lg transition-all touch-target select-none ${
-              filterState === 'all' ? 'bg-white text-ink shadow-sm font-extrabold' : 'text-ink-light hover:text-ink'
+              filterState === 'all'
+                ? 'bg-surface text-ink shadow-sm font-extrabold'
+                : 'text-ink-light hover:text-ink'
             }`}
           >
             Todos ({merchantProducts.length})
@@ -190,7 +219,7 @@ export const MerchantProductsPage: React.FC = () => {
             onClick={() => setFilterState('active')}
             className={`min-h-[38px] px-3.5 py-1.5 rounded-lg transition-all touch-target select-none ${
               filterState === 'active'
-                ? 'bg-white text-emerald-800 shadow-sm font-extrabold'
+                ? 'bg-surface text-selva-strong border border-selva-border shadow-sm font-extrabold'
                 : 'text-ink-light hover:text-ink'
             }`}
           >
@@ -201,7 +230,7 @@ export const MerchantProductsPage: React.FC = () => {
             onClick={() => setFilterState('low_stock')}
             className={`min-h-[38px] px-3.5 py-1.5 rounded-lg transition-all touch-target select-none ${
               filterState === 'low_stock'
-                ? 'bg-white text-amber-800 shadow-sm font-extrabold'
+                ? 'bg-surface text-warning-strong border border-warning-border shadow-sm font-extrabold'
                 : 'text-ink-light hover:text-ink'
             }`}
           >
@@ -212,7 +241,7 @@ export const MerchantProductsPage: React.FC = () => {
             onClick={() => setFilterState('out_of_stock')}
             className={`min-h-[38px] px-3.5 py-1.5 rounded-lg transition-all touch-target select-none ${
               filterState === 'out_of_stock'
-                ? 'bg-white text-rose-800 shadow-sm font-extrabold'
+                ? 'bg-surface text-destructive-strong border border-destructive-border shadow-sm font-extrabold'
                 : 'text-ink-light hover:text-ink'
             }`}
           >
@@ -221,16 +250,20 @@ export const MerchantProductsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Products List (F-4) */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-subtle overflow-hidden">
+      {/* BLOQUE 2: Lista Operativa de Productos con Botones Táctiles de 44px */}
+      <div className="bg-surface rounded-3xl border border-border shadow-subtle overflow-hidden">
         {filteredProducts.length === 0 ? (
-          <div className="p-10 text-center space-y-2">
-            <Package className="w-10 h-10 text-gray-400 mx-auto" />
+          <div className="p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-surface-subtle text-ink-muted flex items-center justify-center mx-auto">
+              <Package className="w-6 h-6" />
+            </div>
             <h3 className="font-bold text-ink text-base">No se encontraron productos</h3>
-            <p className="text-xs text-ink-light">Prueba cambiando los filtros o agrega una nueva especialidad.</p>
+            <p className="text-xs text-ink-muted max-w-sm mx-auto">
+              Prueba cambiando los filtros de búsqueda o agrega una nueva especialidad para tus clientes.
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {filteredProducts.map((p) => {
               const isOutOfStock = p.stock <= 0 || !p.isAvailable;
               const isLowStock = p.isAvailable && p.stock > 0 && p.stock <= 3;
@@ -238,20 +271,20 @@ export const MerchantProductsPage: React.FC = () => {
               return (
                 <div
                   key={p.id}
-                  className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50/70 transition-colors"
+                  className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-surface-subtle/60 transition-colors"
                 >
                   {/* Left Product Data */}
                   <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                    <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
+                    <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden bg-surface-subtle flex-shrink-0 border border-border">
                       <img
                         src={p.imageUrl}
                         alt={p.name}
-                        className={`w-full h-full object-cover ${
-                          isOutOfStock ? 'grayscale opacity-60' : ''
+                        className={`w-full h-full object-cover transition-transform duration-300 ${
+                          isOutOfStock ? 'grayscale opacity-60' : 'hover:scale-105'
                         }`}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23F3F4F6"><rect width="100" height="100" fill="%23F3F4F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239CA3AF" font-family="sans-serif" font-size="12">Plato</text></svg>';
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23FDF2F8"><rect width="100" height="100" fill="%23FDF2F8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-size="12">Plato</text></svg>';
                         }}
                       />
                     </div>
@@ -262,25 +295,25 @@ export const MerchantProductsPage: React.FC = () => {
                           {p.name}
                         </h3>
 
-                        {/* Stock Badges (F-4) */}
+                        {/* Stock Badges with system tokens */}
                         {isOutOfStock ? (
-                          <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 text-rose-600" />
-                            Agotado
+                          <span className="text-[10px] bg-destructive-soft text-destructive-strong border border-destructive-border font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-destructive" />
+                            Agotado hoy
                           </span>
                         ) : isLowStock ? (
-                          <span className="text-[10px] bg-amber-50 text-amber-900 border border-amber-300 font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
-                            <AlertTriangle className="w-3 h-3 text-amber-700" />
+                          <span className="text-[10px] bg-warning-soft text-warning-strong border border-warning-border font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                            <AlertTriangle className="w-3 h-3 text-warning" />
                             ¡Últimas {p.stock} unidades!
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] bg-selva-soft text-selva-strong border border-selva-border font-bold px-2.5 py-0.5 rounded-full">
                             Stock: {p.stock}
                           </span>
                         )}
 
                         {p.hasVariants && (
-                          <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 font-bold px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] bg-primary-50 text-primary border border-primary-100 font-bold px-2 py-0.5 rounded-full">
                             Con variantes
                           </span>
                         )}
@@ -288,26 +321,26 @@ export const MerchantProductsPage: React.FC = () => {
 
                       <p className="text-xs text-ink-light line-clamp-1">{p.description}</p>
 
-                      <div className="flex items-center gap-3 text-xs pt-0.5">
+                      <div className="flex items-center gap-2.5 text-xs pt-0.5">
                         <span className="font-extrabold text-ink tabular-nums">
                           {formatCents(p.priceCents)}
                         </span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-500 capitalize">{p.category}</span>
+                        <span className="text-border">•</span>
+                        <span className="text-ink-muted capitalize">{p.category}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Actions: F-4 Inline Availability Switch & Edit */}
-                  <div className="flex items-center gap-3 self-end md:self-center flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-100 w-full md:w-auto justify-between md:justify-end">
-                    {/* Inline Toggle Button (F-4) */}
+                  {/* Right Actions: Inline Availability Switch & Edit */}
+                  <div className="flex items-center gap-3 self-end md:self-center flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border w-full md:w-auto justify-between md:justify-end">
+                    {/* Inline Toggle Button (44px touch target) */}
                     <button
                       type="button"
                       onClick={() => toggleProductAvailability(p.id)}
                       className={`touch-target inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all min-h-[44px] ${
                         p.isAvailable
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                          : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                          ? 'bg-selva-soft text-selva-strong border-selva-border hover:bg-selva-soft/80'
+                          : 'bg-destructive-soft text-destructive-strong border-destructive-border hover:bg-destructive-soft/80'
                       }`}
                       title="Alternar disponible / agotado"
                     >
@@ -320,7 +353,7 @@ export const MerchantProductsPage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenEdit(p)}
-                      className="min-h-[44px] px-4 font-bold text-xs"
+                      className="min-h-[44px] touch-target px-4 font-bold text-xs border-border text-ink-light hover:text-primary hover:border-primary"
                     >
                       <Edit2 className="w-3.5 h-3.5 mr-1.5" />
                       <span>Editar</span>
@@ -333,162 +366,213 @@ export const MerchantProductsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Product Form Modal with Real-Time Customer Card Preview (F-4) */}
+      {/* BLOQUE 3: Modal de Creación/Edición con Presets y Previsualización en Vivo */}
       <Dialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingProductId ? 'Editar Especialidad' : 'Nueva Especialidad o Producto'}
-        description="Configura los detalles y previsualiza cómo lo verán tus clientes en Tingo María"
-        maxWidth="lg"
+        description="Configura los detalles y previsualiza en tiempo real cómo lo verán tus clientes en Tingo María"
+        maxWidth="4xl"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-          {/* Form Inputs (7 cols on lg) */}
-          <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-4">
-            <Input
-              label="Nombre del Plato o Artículo"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Ej: Tacacho con Cecina y Chorizo Ahumado"
-            />
-
-            <div>
-              <label className="text-xs font-bold text-ink block mb-1">Descripción detallada</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                required
-                placeholder="Ingredientes amazónicos, guarnición o preparación..."
-                className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSaveProduct} className="flex flex-col">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-1 pb-3">
+            {/* Form Inputs (7 cols on lg) */}
+            <div className="lg:col-span-7 space-y-4">
               <Input
-                label="Precio en Soles (PEN)"
-                type="number"
-                step="0.50"
-                min="1"
-                value={priceSoles}
-                onChange={(e) => setPriceSoles(e.target.value)}
+                label="Nombre del Plato o Artículo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
-                helperText="Monto final al cliente"
+                placeholder="Ej: Tacacho con Cecina y Chorizo Amazónico"
               />
-              <Input
-                label="Stock Disponible"
-                type="number"
-                min="0"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                required
-                helperText="0 = Agotado automático"
-              />
-            </div>
 
-            <Input
-              label="Enlace de Fotografía (URL)"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              required
-              placeholder="https://images.unsplash.com/..."
-            />
-
-            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={() => setIsModalOpen(false)}
-                className="min-h-[44px]"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                className="min-h-[44px] px-5 font-bold shadow-subtle"
-              >
-                {editingProductId ? 'Actualizar Producto' : 'Guardar Especialidad'}
-              </Button>
-            </div>
-          </form>
-
-          {/* F-4: Live Real-Time Customer Card Preview (5 cols on lg) */}
-          <div className="lg:col-span-5 bg-gray-50/80 p-4 rounded-3xl border border-gray-200 flex flex-col justify-between space-y-3">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 mb-2">
-                <Eye className="w-4 h-4 text-primary" />
-                <span>Vista Previa en App del Cliente</span>
+              <div>
+                <label className="text-xs font-bold text-ink block mb-1.5">Descripción detallada</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  required
+                  placeholder="Ingredientes selváticos, guarnición o preparación artesanal..."
+                  className="w-full text-xs sm:text-sm p-3 rounded-xl border border-field bg-surface text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-y min-h-[72px]"
+                />
               </div>
-              <p className="text-[11px] text-gray-500 mb-3">
-                Así aparecerá en el catálogo para los comensales tingaleses:
-              </p>
 
-              {/* Exact Simulated ProductCard Mockup con diseño unificado */}
-              <div className="bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] overflow-hidden flex flex-col max-w-xs mx-auto text-left">
-                <div className="aspect-square w-full bg-gray-100 overflow-hidden relative border-b border-gray-100/70">
-                  <img
-                    src={
-                      imageUrl ||
-                      'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'
-                    }
-                    alt={name || 'Plato demo'}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23F3F4F6"><rect width="300" height="200" fill="%23F3F4F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239CA3AF" font-family="sans-serif" font-size="14">Vista previa</text></svg>';
-                    }}
-                  />
-                  <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                    Envío rápido
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Precio en Soles (PEN)"
+                  type="number"
+                  step="0.50"
+                  min="0.50"
+                  value={priceSoles}
+                  onChange={(e) => setPriceSoles(e.target.value)}
+                  required
+                  inputMode="decimal"
+                  helperText="Monto final al comensal"
+                />
+                <Input
+                  label="Stock Disponible"
+                  type="number"
+                  min="0"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  required
+                  inputMode="numeric"
+                  helperText="0 = Agotado automático"
+                />
+              </div>
+
+              {/* Regional Photo Presets Selector */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-ink flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span>Fotografía del plato:</span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                    className="font-semibold text-primary hover:underline text-[11px] touch-target"
+                  >
+                    {showCustomUrlInput ? 'Ver fotos sugeridas' : 'Ingresar URL manual'}
+                  </button>
                 </div>
 
-                <div className="p-2.5 sm:p-3 flex flex-col flex-1 justify-between space-y-2">
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-ink line-clamp-1 leading-snug">
-                      {name || 'Nombre de la especialidad'}
-                    </h4>
-                    <p className="text-[11px] text-ink-light line-clamp-1 mt-0.5 leading-relaxed">
-                      {description || 'Descripción apetitosa de los ingredientes tingaleses...'}
-                    </p>
-
-                    {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
-                    <div className="flex items-center justify-between gap-1.5 mt-2">
-                      <div className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full min-w-0 max-w-[58%]">
-                        <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                        <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                          {currentMerchant.name.replace(/\s+Tingo María$/i, '')}
+                {/* Photo Preset Chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {REGIONAL_PRODUCT_PRESETS.map((preset) => {
+                    const isSelected = imageUrl === preset.url;
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => setImageUrl(preset.url)}
+                        title={preset.name}
+                        className={`min-h-[44px] p-2 rounded-xl border text-left transition-all flex items-center gap-2 group ${
+                          isSelected
+                            ? 'border-primary bg-primary-soft/60 font-bold text-primary ring-1 ring-primary shadow-xs'
+                            : 'border-border bg-surface text-ink-light hover:bg-surface-subtle hover:border-ink-muted/30'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-border"
+                        />
+                        <span className="text-[11px] sm:text-xs truncate font-medium flex-1">
+                          {preset.name}
                         </span>
-                        <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
-                      </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                      <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                        <span>Stock {stock ? `${stock} unid.` : 'disponible'}</span>
+                {showCustomUrlInput && (
+                  <div className="pt-2 animate-fadeIn">
+                    <Input
+                      label="URL Personalizada de Imagen"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      required
+                      placeholder="https://images.unsplash.com/..."
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Real-Time Customer Card Preview (5 cols on lg) */}
+            <div className="lg:col-span-5 bg-surface-subtle p-4 sm:p-5 rounded-2xl border border-border flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-ink mb-1">
+                  <Eye className="w-4 h-4 text-primary" />
+                  <span>Vista Previa en App del Cliente</span>
+                </div>
+                <p className="text-[11px] text-ink-muted mb-3">
+                  Así aparecerá en el catálogo para los vecinos de Tingo María:
+                </p>
+
+                {/* Exact Simulated ProductCard Mockup */}
+                <div className="bg-surface rounded-2xl border border-border shadow-subtle overflow-hidden flex flex-col max-w-[280px] sm:max-w-xs mx-auto text-left">
+                  <div className="aspect-[4/3] w-full bg-surface-subtle overflow-hidden relative border-b border-border">
+                    <img
+                      src={imageUrl || REGIONAL_PRODUCT_PRESETS[0].url}
+                      alt={name || 'Plato demo'}
+                      className="w-full h-full object-cover transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23FDF2F8"><rect width="300" height="200" fill="%23FDF2F8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-size="14">Vista previa</text></svg>';
+                      }}
+                    />
+                    <span className="absolute top-2.5 left-2.5 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-xs">
+                      Envío rápido
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 flex flex-col flex-1 justify-between space-y-2.5">
+                    <div>
+                      <h4 className="font-bold text-xs sm:text-sm text-ink line-clamp-1 leading-snug">
+                        {name || 'Nombre de la especialidad'}
+                      </h4>
+                      <p className="text-[11px] text-ink-light line-clamp-2 mt-0.5 leading-relaxed">
+                        {description || 'Descripción apetitosa de los ingredientes tingaleses...'}
+                      </p>
+
+                      <div className="flex items-center justify-between gap-1.5 mt-2.5">
+                        <div className="inline-flex items-center gap-1 text-[9px] text-ink-light bg-surface border border-border px-1.5 py-0.5 rounded-full min-w-0 max-w-[58%]">
+                          <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
+                          <span className="font-extrabold text-[9.5px] text-ink truncate leading-none">
+                            {currentMerchant.name.replace(/\s+Tingo María$/i, '')}
+                          </span>
+                          <BadgeCheck className="w-3 h-3 text-primary flex-shrink-0" />
+                        </div>
+
+                        <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-selva-strong bg-selva-soft border border-selva-border px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-selva inline-block animate-pulse" />
+                          <span>Stock {stock ? `${stock} unid.` : 'disponible'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                    <span className="font-extrabold text-sm text-ink tabular-nums">
-                      {formatCents(previewPriceCents)}
-                    </span>
-                    <span className="text-[10px] font-bold text-white bg-primary px-2.5 py-1 rounded-lg shadow-xs">
-                      + Agregar al pedido
-                    </span>
+                    <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                      <span className="font-extrabold text-sm text-ink tabular-nums">
+                        {formatCents(previewPriceCents)}
+                      </span>
+                      <span className="text-[10px] font-bold text-white bg-primary px-2.5 py-1.5 rounded-lg shadow-xs whitespace-nowrap flex-shrink-0">
+                        + Agregar
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <p className="text-[11px] text-gray-400 text-center">
-              Actualizado dinámicamente según escribes.
-            </p>
+              <p className="text-[11px] text-ink-muted text-center pt-1">
+                Actualizado dinámicamente mientras editas.
+              </p>
+            </div>
           </div>
-        </div>
+
+          {/* Dedicated Modal Footer spanning full width */}
+          <div className="sticky bottom-0 bg-white/95 backdrop-blur-xs pt-3 pb-1 border-t border-border flex items-center justify-end gap-3 z-10 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => setIsModalOpen(false)}
+              className="min-h-[44px] touch-target px-4 text-xs font-semibold"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              className="min-h-[44px] touch-target px-5 font-bold shadow-subtle text-xs"
+            >
+              {editingProductId ? 'Actualizar Producto' : 'Guardar Especialidad'}
+            </Button>
+          </div>
+        </form>
       </Dialog>
     </div>
   );

@@ -1,60 +1,55 @@
 /** @type {import('tailwindcss').Config} */
+
+// Los valores reales viven en src/styles/index.css como variables --color-*.
+// Aquí solo se les da nombre para usarlos como clases: bg-primary, text-ink, border-selva-border, etc.
+const token = (name) => `rgb(var(--color-${name}) / <alpha-value>)`;
+
+const estado = (name) => ({
+  DEFAULT: token(name),
+  soft: token(`${name}-soft`),
+  border: token(`${name}-border`),
+  strong: token(`${name}-strong`),
+});
+
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#BE185D', // Vibrant Berry Carmine / Magenta from reference
-          hover: '#9D174D',
-          active: '#831843',
-          light: '#FFF1F6',
-          50: '#FDF2F8',
-          100: '#FCE7F3',
-          200: '#FBCFE8',
-          300: '#F472B6',
-          400: '#E11D48',
-          500: '#EC4899',
-          600: '#DB2777',
-          700: '#BE185D',
-          800: '#9D174D',
-          900: '#831843',
-          950: '#500724',
+          DEFAULT: token('primary'),
+          hover: token('primary-hover'),
+          light: token('primary-50'),
+          50: token('primary-50'),
         },
+        background: token('background'),
         surface: {
-          DEFAULT: '#FFFFFF',
-          subtle: '#F9FAFB',
-          muted: '#F3F4F6',
+          DEFAULT: token('surface'),
+          subtle: token('surface-subtle'),
         },
         ink: {
-          DEFAULT: '#172033',
-          light: '#4B5563',
-          muted: '#9CA3AF',
+          DEFAULT: token('ink'),
+          light: token('ink-light'),
+          muted: token('ink-muted'),
         },
-        selva: {
-          50: '#ECFDF5',
-          500: '#10B981',
-          600: '#059669',
-          700: '#047857',
-        }
+        border: token('border'),
+        field: token('field'),
+        selva: estado('selva'),
+        warning: estado('warning'),
+        destructive: estado('destructive'),
+        info: estado('info'),
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+      borderColor: {
+        DEFAULT: token('border'),
       },
       boxShadow: {
-        subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-        card: '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04)',
-        hover: '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
-        floating: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        subtle: '0 1px 2px rgb(23 32 51 / 0.06), 0 1px 3px rgb(23 32 51 / 0.08)',
+        floating: '0 10px 25px -5px rgb(23 32 51 / 0.18), 0 8px 10px -6px rgb(23 32 51 / 0.12)',
       },
-      borderRadius: {
-        xl: '1rem',
-        '2xl': '1.25rem',
-      }
+      fontFamily: {
+        sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
     },
   },
   plugins: [],
-}
+};
