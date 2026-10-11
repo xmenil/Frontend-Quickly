@@ -72,6 +72,7 @@ interface DataState {
   // Merchant Operations
   createProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (productId: string, updates: Partial<Product>) => void;
+  deleteProduct: (productId: string) => void;
   toggleProductAvailability: (productId: string) => void;
   updateMerchantProfile: (merchantId: string, updates: Partial<Merchant>) => void;
 
@@ -101,7 +102,7 @@ interface DataState {
   resetToSeed: () => void;
 }
 
-const STORAGE_KEY = 'quickly_datastore_v3';
+const STORAGE_KEY = 'quickly_datastore_v4';
 
 interface StoredDataPayload {
   merchants: Merchant[];
@@ -120,19 +121,23 @@ interface StoredDataPayload {
 }
 
 function getInitialStoredData(): StoredDataPayload {
-  const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('quickly_datastore_v2');
+  const raw =
+    localStorage.getItem(STORAGE_KEY) ||
+    localStorage.getItem('quickly_datastore_v3') ||
+    localStorage.getItem('quickly_datastore_v2');
   if (raw) {
     const parsed = safeJsonParse<StoredDataPayload | null>(raw, null);
     if (parsed && parsed.merchants && parsed.products) {
       const existingMerchantIds = new Set(parsed.merchants.map((m) => m.id));
       const missingMerchants = INITIAL_MERCHANTS.filter((m) => !existingMerchantIds.has(m.id));
 
-      // Sincronizar imágenes, variantes y marcas mejoradas de semillas
+      // Sincronizar imágenes, variantes, marcas y subcategorías mejoradas de semillas
       const updatedProducts = parsed.products.map((p) => {
         const seed = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
         if (seed) {
           return {
             ...p,
+            subCategory: seed.subCategory || p.subCategory,
             images: seed.images || p.images,
             variants: seed.variants || p.variants,
             hasVariants: seed.hasVariants ?? p.hasVariants,
@@ -592,6 +597,15 @@ export const useDataStore = create<DataState>((set, get) => ({
     const updated = get().products.map((p) =>
       p.id === productId ? { ...p, ...updates } : p
     );
+    set((state) => {
+      const nextState = { ...state, products: updated };
+      saveToLocalStorage(nextState);
+      return nextState;
+    });
+  },
+
+  deleteProduct: (productId: string) => {
+    const updated = get().products.filter((p) => p.id !== productId);
     set((state) => {
       const nextState = { ...state, products: updated };
       saveToLocalStorage(nextState);

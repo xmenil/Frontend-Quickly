@@ -106,9 +106,9 @@ export const MerchantSettingsPage: React.FC = () => {
 
   const currentMerchant = useMemo(() => {
     return (
-      merchants.find(
-        (m) => m.ownerUserId === currentUser?.id || m.id === currentUser?.merchantId
-      ) || merchants[0]
+      (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
+      merchants.find((m) => m.ownerUserId === currentUser?.id) ||
+      merchants[0]
     );
   }, [merchants, currentUser]);
 

@@ -44,9 +44,9 @@ export const MerchantDashboardPage: React.FC = () => {
 
   const currentMerchant = useMemo(() => {
     return (
-      merchants.find(
-        (m) => m.ownerUserId === currentUser?.id || m.id === currentUser?.merchantId
-      ) || merchants[0]
+      (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
+      merchants.find((m) => m.ownerUserId === currentUser?.id) ||
+      merchants[0]
     );
   }, [merchants, currentUser]);
 
@@ -366,14 +366,14 @@ export const MerchantDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Platos en carta */}
+        {/* Card 3: Productos en catálogo */}
         <div className="bg-surface p-5 rounded-2xl border border-border shadow-subtle flex items-center justify-between sm:col-span-2 lg:col-span-1">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-ink-light">Disponibilidad de carta</span>
+            <span className="text-xs font-semibold text-ink-light">Disponibilidad de productos</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
               {activeStockCount}{' '}
               <span className="text-xs font-medium text-ink-muted">
-                de {merchantProducts.length} platos activos
+                de {merchantProducts.length} productos activos
               </span>
             </p>
             <div className="flex items-center gap-1.5 text-[11px]">
@@ -652,8 +652,8 @@ export const MerchantDashboardPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-ink">Platos y Productos en Carta</h2>
-            <p className="text-xs text-ink-light">Gestiona la disponibilidad rápida de tus especialidades amazónicas</p>
+            <h2 className="text-base sm:text-lg font-bold text-ink">Productos del Catálogo</h2>
+            <p className="text-xs text-ink-light">Gestiona la disponibilidad rápida de tus productos y stock</p>
           </div>
           <div className="flex items-center gap-3">
             <Link

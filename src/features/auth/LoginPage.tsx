@@ -38,11 +38,19 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   },
   {
     role: 'comercio',
-    title: 'Comercio',
-    sublabel: 'Restaurante / Botica',
+    title: 'El Balcón',
+    sublabel: 'Importaciones El Balcón',
+    identifier: 'elbalcon@quickly.pe',
+    passwordDefault: '123456',
+    targetPath: '/comercio/productos',
+  },
+  {
+    role: 'comercio',
+    title: 'La Selva',
+    sublabel: 'Restaurante Gourmet',
     identifier: 'comercio@quickly.pe',
     passwordDefault: '123456',
-    targetPath: '/comercio/tienda',
+    targetPath: '/comercio/productos',
   },
   {
     role: 'repartidor',
@@ -63,7 +71,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 ];
 
 export const LoginPage: React.FC = () => {
-  const { login, loginGoogle, loginDemo } = useAuthStore();
+  const { login, loginGoogle } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -100,7 +108,7 @@ export const LoginPage: React.FC = () => {
     setLoadingMessage(`Ingresando como ${acc.title}...`);
 
     setTimeout(() => {
-      loginDemo(acc.role);
+      login(acc.identifier, acc.role);
       setIsLoading(false);
       setLoadingMessage(null);
       const destination = acc.role === 'cliente' ? (from !== '/login' ? from : '/') : acc.targetPath;
@@ -397,7 +405,7 @@ export const LoginPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {DEMO_ACCOUNTS.map((acc) => (
                   <button
-                    key={acc.role}
+                    key={acc.identifier}
                     type="button"
                     onClick={() => handleQuickDemoLogin(acc)}
                     className="py-2 px-2.5 rounded-xl border border-border hover:border-primary/50 bg-surface-subtle hover:bg-primary-50 text-center transition-all select-none active:scale-95 touch-target min-h-[44px]"

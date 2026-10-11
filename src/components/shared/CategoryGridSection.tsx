@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, MoreHorizontal, LayoutGrid } from 'lucide-react';
+import { ChevronRight, ChevronLeft, MoreHorizontal, LayoutGrid, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CategoryCardItem {
   id: string;
@@ -172,6 +172,7 @@ const CATEGORIES_PAGE_2: CategoryCardItem[] = [
 
 export const CategoryGridSection: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<1 | 2>(1);
+  const [showAllMobile, setShowAllMobile] = useState(false);
   const navigate = useNavigate();
 
   const currentItems = currentPage === 1 ? CATEGORIES_PAGE_1 : CATEGORIES_PAGE_2;
@@ -247,13 +248,15 @@ export const CategoryGridSection: React.FC = () => {
           </div>
         </div>
 
-        {/* 4x3 Categories Grid */}
+        {/* 4x3 Categories Grid - Mobile shows only 4 unless expanded */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5 animate-in fade-in duration-200">
-          {currentItems.map((item) => (
+          {currentItems.map((item, index) => (
             <div
               key={item.id}
               onClick={() => handleCardClick(item)}
-              className="group bg-white rounded-xl border border-pink-100/80 hover:border-primary-300 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-card p-3 flex items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+              className={`group bg-white rounded-xl border border-pink-100/80 hover:border-primary-300 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-card p-3 items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${
+                index >= 4 && !showAllMobile ? 'hidden sm:flex' : 'flex'
+              }`}
             >
               {/* Product / Category Thumbnail Box */}
               <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-gray-50/80 group-hover:bg-primary-50/50 flex items-center justify-center p-2 flex-shrink-0 border border-gray-100/60 group-hover:border-primary-100 transition-colors">
@@ -281,12 +284,39 @@ export const CategoryGridSection: React.FC = () => {
           ))}
         </div>
 
+        {/* Control móvil: mostrar solo 4 o ver todas para no abrumar la pantalla */}
+        <div className="sm:hidden pt-1 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAllMobile((prev) => !prev)}
+            className="w-full py-2.5 px-4 rounded-xl bg-white border border-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-subtle hover:bg-primary-50 active:scale-[0.99] transition-all"
+          >
+            <span>
+              {showAllMobile
+                ? 'Mostrar solo 4 categorías'
+                : `Ver todas las categorías (${currentItems.length})`}
+            </span>
+            {showAllMobile ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+
+          <Link
+            to="/negocios"
+            className="w-full py-1.5 text-center text-[11px] font-semibold text-gray-500 hover:text-primary transition-colors"
+          >
+            Ir a catálogo completo de comercios →
+          </Link>
+        </div>
+
         {/* Floating Right Navigation Arrow Button matching Screenshot '>' */}
         <button
           type="button"
           onClick={togglePage}
           aria-label={currentPage === 1 ? 'Ver página siguiente' : 'Ver página anterior'}
-          className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-floating border border-gray-100 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all z-20 hover:scale-108 active:scale-95"
+          className="hidden sm:flex absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-floating border border-gray-100 items-center justify-center text-primary hover:bg-primary hover:text-white transition-all z-20 hover:scale-108 active:scale-95"
         >
           {currentPage === 1 ? (
             <ChevronRight className="w-5 h-5 stroke-[2.5]" />

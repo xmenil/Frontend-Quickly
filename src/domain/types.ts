@@ -79,6 +79,7 @@ export interface Product {
   name: string;
   description: string;
   category: MerchantCategory;
+  subCategory?: string;
   priceCents: number;
   stock: number;
   imageUrl: string;

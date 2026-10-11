@@ -13,6 +13,7 @@ interface AuthState {
   registerCustomer: (data: { name: string; email: string; phone: string }) => { success: boolean; user: User };
   logout: () => void;
   switchRole: (role: UserRole) => void;
+  switchMerchant: (merchantId: string) => void;
   updateProfile: (updates: Partial<User>) => void;
 }
 
@@ -156,6 +157,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } else {
       set({ activeRole: role });
     }
+  },
+
+  switchMerchant: (merchantId: string) => {
+    const current = get().currentUser;
+    const ownerUser = INITIAL_USERS.find(
+      (u) => u.merchantId === merchantId || u.id === `u_${merchantId.replace('m_', '')}`
+    );
+    let updated: User;
+    if (ownerUser) {
+      updated = {
+        ...ownerUser,
+        merchantId,
+      };
+    } else {
+      updated = {
+        id: current?.id || `u_merchant_${merchantId}`,
+        name: current?.name || 'Administrador de Tienda',
+        email: current?.email || `${merchantId}@quickly.pe`,
+        phone: current?.phone || '962 123 456',
+        role: 'comercio',
+        status: 'activo',
+        merchantId,
+        createdAt: current?.createdAt || new Date().toISOString(),
+      };
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    set({
+      currentUser: updated,
+      activeRole: 'comercio',
+      isAuthenticated: true,
+    });
   },
 
   updateProfile: (updates: Partial<User>) => {

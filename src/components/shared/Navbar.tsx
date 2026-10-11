@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from './BrandLogo';
 import { CategoriesDropdown } from './CategoriesDropdown';
@@ -21,6 +21,12 @@ import {
   MapPin,
   User,
   LogOut,
+  Menu,
+  X,
+  Tag,
+  Sparkles,
+  HelpCircle,
+  Film,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -32,8 +38,39 @@ export const Navbar: React.FC = () => {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [showCouponsModal, setShowCouponsModal] = useState(false);
   const [showPlayModal, setShowPlayModal] = useState(false);
+
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close floating popovers when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotificationsMenu(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  // Close menus on route navigation
+  useEffect(() => {
+    setShowNotificationsMenu(false);
+    setShowProfileMenu(false);
+    setShowMobileDrawer(false);
+  }, [location.pathname, location.search]);
 
   // Active section detection so buttons paint when selected
   const isOfertasActive =
@@ -67,9 +104,18 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-30 bg-[#BE185D] border-b border-[#9D174D] shadow-md select-none text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-3 sm:gap-6 pt-1">
-            {/* Brand Logo & Zone Selector */}
-            <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-6 pt-1">
+            {/* Hamburger Button (Mobile) & Brand Logo & Zone Selector */}
+            <div className="flex items-center gap-2 sm:gap-5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowMobileDrawer(true)}
+                className="md:hidden p-1.5 -ml-1 text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                aria-label="Abrir menú de navegación"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+
               <BrandLogo size="md" variant="white" />
 
               {/* Zone Selector (Extracted Component) */}
@@ -133,12 +179,15 @@ export const Navbar: React.FC = () => {
                 )}
               </Link>
 
-              {/* Notifications Bell */}
-              <div className="relative">
+              {/* Notifications Bell with Outside Click Protection */}
+              <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
-                  onClick={() => setShowNotificationsMenu(!showNotificationsMenu)}
-                  className="relative p-2 rounded-lg text-white hover:bg-white/10 transition-colors"
+                  onClick={() => {
+                    setShowNotificationsMenu((prev) => !prev);
+                    setShowProfileMenu(false);
+                  }}
+                  className="relative p-2 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
                   aria-label={`Notificaciones (${unreadNotifications.length} sin leer)`}
                 >
                   <Bell className="w-5 h-5" />
@@ -178,13 +227,16 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
 
-              {/* User Profile Dropdown */}
+              {/* User Profile Dropdown with Outside Click Protection */}
               {isAuthenticated && currentUser && (
-                <div className="relative">
+                <div className="relative" ref={profileRef}>
                   <button
                     type="button"
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-lg hover:bg-white/10 transition-colors"
+                    onClick={() => {
+                      setShowProfileMenu((prev) => !prev);
+                      setShowNotificationsMenu(false);
+                    }}
+                    className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <div className="w-7 h-7 rounded-full bg-white text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                       {currentUser.name.substring(0, 2)}
@@ -238,7 +290,7 @@ export const Navbar: React.FC = () => {
                             setShowProfileMenu(false);
                             navigate('/login');
                           }}
-                          className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50"
+                          className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
                           Cerrar Sesión Demo
@@ -352,49 +404,264 @@ export const Navbar: React.FC = () => {
           <div className="sm:hidden pb-2.5 pt-1 space-y-2">
             <SearchBar variant="navbar-mobile" />
 
-            <div className="flex items-center justify-between text-xs text-white font-medium px-1">
-              <div className="flex items-center gap-2">
-                <CategoriesDropdown />
-                <ZoneSelector variant="compact" />
-              </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs text-white font-medium px-1 py-0.5 whitespace-nowrap">
+              <CategoriesDropdown />
+              <ZoneSelector variant="compact" />
 
-              <div className="flex items-center gap-2 text-[11px]">
-                <Link
-                  to="/negocios?q=oferta"
-                  className={
-                    isOfertasActive
-                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs'
-                      : 'hover:underline text-white'
-                  }
-                >
-                  Ofertas
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setShowCouponsModal(true)}
-                  className={
-                    isCuponesActive
-                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs cursor-pointer'
-                      : 'hover:underline text-white cursor-pointer'
-                  }
-                >
-                  Cupones
-                </button>
-                <Link
-                  to="/cliente/pedidos"
-                  className={
-                    isPedidosActive
-                      ? 'bg-white text-[#BE185D] px-2.5 py-0.5 rounded-full font-black shadow-xs'
-                      : 'hover:underline text-white'
-                  }
-                >
-                  Pedidos
-                </Link>
-              </div>
+              <Link
+                to="/negocios?q=oferta"
+                className={
+                  isOfertasActive
+                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0'
+                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0'
+                }
+              >
+                Ofertas
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowCouponsModal(true)}
+                className={
+                  isCuponesActive
+                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0 cursor-pointer'
+                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0 cursor-pointer'
+                }
+              >
+                Cupones
+              </button>
+              <Link
+                to="/cliente/pedidos"
+                className={
+                  isPedidosActive
+                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0'
+                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0'
+                }
+              >
+                Pedidos
+              </Link>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Drawer (Menú Hamburguesa) */}
+      {showMobileDrawer && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop oscurecedor */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+            onClick={() => setShowMobileDrawer(false)}
+          />
+
+          {/* Drawer panel */}
+          <div className="fixed inset-y-0 left-0 max-w-[85%] w-80 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="bg-[#BE185D] text-white p-4 flex items-center justify-between shadow-xs">
+              <BrandLogo size="sm" variant="white" />
+              <button
+                type="button"
+                onClick={() => setShowMobileDrawer(false)}
+                className="p-1.5 rounded-lg text-white hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Cerrar menú"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Perfil del Usuario o Botones de Login */}
+            <div className="p-4 bg-pink-50/50 border-b border-pink-100">
+              {isAuthenticated && currentUser ? (
+                <div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-bold">Bienvenido(a)</p>
+                  <p className="font-extrabold text-ink text-sm truncate">{currentUser.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{currentUser.email}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <RoleBadge role={activeRole} />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600 font-semibold">Inicia sesión para pedir y rastrear</p>
+                  <div className="flex gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex-1 py-2 text-center text-xs font-black bg-[#BE185D] text-white rounded-xl shadow-xs hover:bg-[#9D174D] transition-colors"
+                    >
+                      Ingresar
+                    </Link>
+                    <Link
+                      to="/registro"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex-1 py-2 text-center text-xs font-bold border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Crear cuenta
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Lista de Enlaces de Navegación */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-semibold">
+              <Link
+                to="/negocios"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+              >
+                <Store className="w-4 h-4 text-[#BE185D]" />
+                <span>Comercios & Tiendas</span>
+              </Link>
+
+              <Link
+                to="/negocios?q=oferta"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+              >
+                <Tag className="w-4 h-4 text-amber-500" />
+                <span>Ofertas del Día</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileDrawer(false);
+                  setShowCouponsModal(true);
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 text-left transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <span>Cupones de Descuento</span>
+              </button>
+
+              <Link
+                to="/negocios?categoria=ropa"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+              >
+                <ShoppingBag className="w-4 h-4 text-pink-500" />
+                <span>Moda & Confección</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileDrawer(false);
+                  setShowPlayModal(true);
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 text-left transition-colors cursor-pointer"
+              >
+                <Film className="w-4 h-4 text-emerald-600" />
+                <div className="flex items-center gap-2">
+                  <span>Mercado Play</span>
+                  <span className="bg-[#00a650] text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
+                    GRATIS
+                  </span>
+                </div>
+              </button>
+
+              <div className="pt-2 my-2 border-t border-gray-100" />
+
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/cliente/pedidos"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-gray-400" />
+                    <span>Mis Pedidos</span>
+                  </Link>
+                  <Link
+                    to="/cliente/direcciones"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                  >
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span>Mis Direcciones</span>
+                  </Link>
+                  <Link
+                    to="/cliente/perfil"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-gray-400" />
+                    <span>Mi Perfil</span>
+                  </Link>
+                </>
+              )}
+
+              {/* Acceso a Paneles según Rol */}
+              {activeRole === 'comercio' && (
+                <Link
+                  to="/comercio/tienda"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                >
+                  <Store className="w-4 h-4 text-[#BE185D]" />
+                  <span>Panel Proveedor</span>
+                </Link>
+              )}
+              {activeRole === 'repartidor' && (
+                <Link
+                  to="/repartidor/solicitudes"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                >
+                  <Bike className="w-4 h-4 text-[#BE185D]" />
+                  <span>Panel Repartidor</span>
+                </Link>
+              )}
+              {activeRole === 'admin' && (
+                <Link
+                  to="/admin/resumen"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                >
+                  <ShieldCheck className="w-4 h-4 text-[#BE185D]" />
+                  <span>Panel Admin</span>
+                </Link>
+              )}
+
+              <div className="pt-2 my-2 border-t border-gray-100" />
+
+              <Link
+                to="/comercio/tienda"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
+              >
+                <Store className="w-4 h-4 text-gray-400" />
+                <span>Vender en Quickly</span>
+              </Link>
+              <Link
+                to="/cliente/ayuda"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 text-gray-400" />
+                <span>Ayuda & Soporte</span>
+              </Link>
+            </div>
+
+            {isAuthenticated && (
+              <div className="p-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setShowMobileDrawer(false);
+                    navigate('/login');
+                  }}
+                  className="flex items-center gap-2 w-full p-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Extracted Modals */}
       <CouponsModal isOpen={showCouponsModal} onClose={() => setShowCouponsModal(false)} />

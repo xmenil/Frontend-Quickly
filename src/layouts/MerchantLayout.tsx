@@ -17,17 +17,20 @@ import {
   LogOut,
   Bell,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 
 export const MerchantLayout: React.FC = () => {
-  const { currentUser, logout } = useAuthStore();
+  const { currentUser, logout, switchMerchant } = useAuthStore();
   const { merchants, purchases } = useDataStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Find merchant belonging to current user (default fallback to La Selva Gourmet)
+  // Find merchant belonging to current user (prioritize explicit active merchantId)
   const currentMerchant =
-    merchants.find((m) => m.ownerUserId === currentUser?.id || m.id === currentUser?.merchantId) ||
+    (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
+    merchants.find((m) => m.ownerUserId === currentUser?.id) ||
     merchants[0];
 
   // Calculate pending orders count for merchant
@@ -39,7 +42,7 @@ export const MerchantLayout: React.FC = () => {
   const navLinks = [
     { to: '/comercio/tienda', label: 'Panel principal', icon: <LayoutDashboard className="w-4 h-4" /> },
     { to: '/comercio/perfil-tienda', label: 'Mi tienda', icon: <Store className="w-4 h-4" /> },
-    { to: '/comercio/productos', label: 'Productos en carta', icon: <Package className="w-4 h-4" /> },
+    { to: '/comercio/productos', label: 'Productos', icon: <Package className="w-4 h-4" /> },
     {
       to: '/comercio/pedidos',
       label: 'Comandas y pedidos',
@@ -51,9 +54,17 @@ export const MerchantLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row font-sans">
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30 transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Mobile Top Header */}
-      <div className="md:hidden sticky top-0 z-30 bg-surface border-b border-border px-4 py-3 flex items-center justify-between shadow-subtle">
+      <div className="md:hidden sticky top-0 z-30 bg-surface border-b border-border px-4 py-3 flex items-center justify-between shadow-subtle flex-shrink-0">
         <BrandLogo size="sm" showSubtitle={false} />
         <div className="flex items-center gap-2.5">
           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-surface-subtle text-ink-light border border-border">
@@ -70,24 +81,22 @@ export const MerchantLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar (Estática y fija en la izquierda) */}
       <aside
-        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border flex flex-col transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 h-full md:h-screen bg-surface border-r border-border flex flex-col flex-shrink-0 transition-transform duration-200 md:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand & Store Header */}
-        <div className="p-4 border-b border-border flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <BrandLogo size="sm" />
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden text-ink-muted hover:text-ink p-1"
-              aria-label="Cerrar menú"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+        {/* Brand Header */}
+        <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
+          <BrandLogo size="sm" />
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden text-ink-muted hover:text-ink p-1"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Navigation Links */}
@@ -146,9 +155,9 @@ export const MerchantLayout: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">
         {/* Top Header Bar for Desktop */}
-        <header className="hidden md:flex h-16 bg-surface border-b border-border px-8 items-center justify-between">
+        <header className="hidden md:flex h-16 bg-surface border-b border-border px-8 items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
             <span className="font-semibold text-ink">Panel del Comercio</span>
             <span className="text-ink-muted">•</span>
@@ -170,30 +179,79 @@ export const MerchantLayout: React.FC = () => {
               )}
             </button>
 
-            {/* Merchant User Avatar and Name */}
-            <Link
-              to="/comercio/perfil-tienda"
-              className="flex items-center gap-2.5 pl-3 border-l border-border hover:opacity-85 transition-opacity"
-              title="Ir al perfil de mi tienda"
-            >
-              <img
-                src={currentMerchant.logoUrl}
-                alt={currentMerchant.name}
-                className="w-8 h-8 rounded-full object-cover border border-border"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="%23FDF2F8"><rect width="32" height="32" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="12">Q</text></svg>';
-                }}
-              />
-              <div className="text-left leading-tight">
-                <p className="text-xs font-bold text-ink">{currentMerchant.name}</p>
-                <p className="text-[10px] text-ink-muted capitalize">{currentMerchant.category}</p>
-              </div>
-            </Link>
+            {/* Selector interactivo de Tienda Administrada */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setStoreMenuOpen(!storeMenuOpen)}
+                className="flex items-center gap-2.5 pl-3 border-l border-border hover:bg-surface-subtle p-1.5 rounded-xl transition-all text-left cursor-pointer"
+                title="Cambiar de tienda"
+              >
+                <img
+                  src={currentMerchant.logoUrl}
+                  alt={currentMerchant.name}
+                  className="w-8 h-8 rounded-full object-cover border border-border"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="%23FDF2F8"><rect width="32" height="32" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="12">Q</text></svg>';
+                  }}
+                />
+                <div className="text-left leading-tight">
+                  <p className="text-xs font-bold text-ink flex items-center gap-1">
+                    <span>{currentMerchant.name}</span>
+                    <ChevronDown className="w-3 h-3 text-ink-muted" />
+                  </p>
+                  <p className="text-[10px] text-primary font-semibold capitalize">{currentMerchant.category}</p>
+                </div>
+              </button>
+
+              {storeMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setStoreMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-surface rounded-2xl border border-border shadow-2xl p-1.5 z-50 animate-fadeIn text-xs max-h-80 overflow-y-auto">
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold text-ink-muted uppercase tracking-wider border-b border-border mb-1 flex items-center justify-between sticky top-0 bg-surface z-10">
+                      <span>Cambiar Tienda Demo</span>
+                      <span className="text-[9px] font-semibold text-primary">{merchants.length} tiendas</span>
+                    </div>
+                    {merchants.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          switchMerchant(m.id);
+                          setStoreMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all ${
+                          currentMerchant.id === m.id
+                            ? 'bg-primary-50 text-primary font-bold'
+                            : 'hover:bg-surface-subtle text-ink'
+                        }`}
+                      >
+                        <img
+                          src={m.logoUrl}
+                          alt={m.name}
+                          className="w-7 h-7 rounded-lg object-cover border border-border flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold truncate">{m.name}</p>
+                          <p className="text-[10px] text-ink-muted capitalize truncate">{m.category}</p>
+                        </div>
+                        {currentMerchant.id === m.id && (
+                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12 scroll-smooth">
           <Outlet />
         </main>
       </div>
