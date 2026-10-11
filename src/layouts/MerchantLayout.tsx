@@ -54,7 +54,7 @@ export const MerchantLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row font-sans">
+    <div className="h-screen h-dvh overflow-hidden bg-background flex flex-col md:flex-row font-sans">
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -155,7 +155,7 @@ export const MerchantLayout: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full md:h-screen overflow-hidden">
         {/* Top Header Bar for Desktop */}
         <header className="hidden md:flex h-16 bg-surface border-b border-border px-8 items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
