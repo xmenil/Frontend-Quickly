@@ -1,13 +1,20 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useLocation, ScrollRestoration } from 'react-router-dom';
 import { Navbar } from '../components/shared/Navbar';
 import { MobileNav } from '../components/shared/MobileNav';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { BrandLogo } from '../components/shared/BrandLogo';
 
 export const PublicLayout: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <ScrollRestoration />
       <Navbar />
       <main className="flex-1 pb-16 md:pb-10 w-full">
         <Outlet />
