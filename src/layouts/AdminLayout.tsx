@@ -129,7 +129,7 @@ export const AdminLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background font-sans text-ink md:flex">
+    <div className="h-screen h-dvh overflow-hidden bg-background font-sans text-ink flex flex-col md:flex-row">
       <a
         href="#admin-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4 focus:text-primary focus:shadow-subtle"
@@ -137,7 +137,48 @@ export const AdminLayout: React.FC = () => {
         Ir al contenido
       </a>
 
-      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-border bg-surface md:flex">
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <aside
+        id="admin-mobile-menu"
+        className={`fixed md:hidden inset-y-0 left-0 z-50 w-72 h-full bg-surface border-r border-border flex flex-col transition-transform duration-200 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        aria-label="Menú móvil de administración"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeMobileMenu();
+          }
+        }}
+      >
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <BrandLogo size="sm" showSubtitle={false} className="min-h-11" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={closeMobileMenu}
+            aria-label="Cerrar menú móvil"
+            className="p-2 text-ink-muted hover:text-ink"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">{navigation(true)}</div>
+        {account}
+      </aside>
+
+      {/* Desktop Sidebar (Fijo a la izquierda) */}
+      <aside className="hidden md:flex md:static h-full md:h-screen w-72 shrink-0 flex-col border-r border-border bg-surface">
         <div className="border-b border-border px-6 py-4">
           <BrandLogo size="sm" showSubtitle={false} className="min-h-11" />
         </div>
@@ -145,9 +186,10 @@ export const AdminLayout: React.FC = () => {
         {account}
       </aside>
 
-      <div className="min-w-0 flex-1">
-        <header className="border-b border-border bg-surface">
-          <div className="flex min-h-20 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      {/* Área principal con header estático y contenido con scroll */}
+      <div className="flex-1 flex flex-col min-w-0 h-full md:h-screen overflow-hidden">
+        <header className="shrink-0 z-20 border-b border-border bg-surface shadow-xs">
+          <div className="flex min-h-16 md:min-h-20 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div>
               <p className="text-sm font-semibold text-ink">Administración</p>
               <p className="text-xs text-ink-muted">Quickly - Tingo María</p>
@@ -160,9 +202,6 @@ export const AdminLayout: React.FC = () => {
               aria-expanded={mobileMenuOpen}
               aria-controls="admin-mobile-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape' && mobileMenuOpen) closeMobileMenu();
-              }}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               {mobileMenuOpen ? 'Cerrar menú' : 'Menú'}
@@ -172,20 +211,6 @@ export const AdminLayout: React.FC = () => {
               Panel de administración
             </span>
           </div>
-          <div
-            id="admin-mobile-menu"
-            hidden={!mobileMenuOpen}
-            className="border-t border-border md:hidden"
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                event.preventDefault();
-                closeMobileMenu();
-              }
-            }}
-          >
-            <div className="p-4 sm:p-6">{navigation(true)}</div>
-            {account}
-          </div>
         </header>
 
         <main
@@ -193,9 +218,11 @@ export const AdminLayout: React.FC = () => {
           ref={mainRef}
           tabIndex={-1}
           aria-label="Contenido de administración"
-          className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-24"
+          className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-24 scroll-smooth"
         >
-          <Outlet />
+          <div className="mx-auto w-full max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
 

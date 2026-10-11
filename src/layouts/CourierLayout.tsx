@@ -60,9 +60,9 @@ export const CourierLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background font-sans text-ink">
+    <div className="h-screen h-dvh overflow-hidden flex flex-col bg-background font-sans text-ink">
       <a href="#courier-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4 focus:text-primary">Ir al contenido</a>
-      <header className="border-b border-border bg-surface">
+      <header className="shrink-0 z-20 border-b border-border bg-surface shadow-xs">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <BrandLogo size="sm" showSubtitle={false} className="min-h-11" />
           <p className="hidden text-sm font-medium text-ink-light md:block">Panel de repartidor</p>
@@ -81,12 +81,14 @@ export const CourierLayout: React.FC = () => {
             {currentCourier && <p className={currentCourier.isAvailable ? 'font-medium text-selva' : 'font-medium text-ink-muted'}>{currentCourier.isAvailable ? 'Disponible' : 'En pausa'}</p>}
           </div>
         </div>
+        {navigation(false)}
       </header>
-      {navigation(false)}
-      <main id="courier-content" tabIndex={-1} className="mx-auto w-full max-w-7xl p-4 pb-32 sm:p-6 sm:pb-32 md:pb-12 lg:p-8 lg:pb-12">
-        {availabilityMessage && <p role="status" className="mb-4 rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{availabilityMessage}</p>}
-        {availabilityError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{availabilityError}</p></div>}
-        {currentCourier ? <Outlet /> : <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />}
+      <main id="courier-content" tabIndex={-1} className="flex-1 overflow-y-auto scroll-smooth p-4 pb-32 sm:p-6 sm:pb-32 md:pb-12 lg:p-8 lg:pb-12">
+        <div className="mx-auto w-full max-w-7xl">
+          {availabilityMessage && <p role="status" className="mb-4 rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{availabilityMessage}</p>}
+          {availabilityError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{availabilityError}</p></div>}
+          {currentCourier ? <Outlet /> : <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />}
+        </div>
       </main>
       {navigation(true)}
       <DemoSwitcher />
