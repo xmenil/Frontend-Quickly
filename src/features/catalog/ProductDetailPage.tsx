@@ -509,14 +509,15 @@ export const ProductDetailPage: React.FC = () => {
   const [copiedShare, setCopiedShare] = useState(false);
   const [addedSimilarId, setAddedSimilarId] = useState<string | null>(null);
 
-  // Reiniciar estado al cambiar de producto
+  // Reiniciar estado y desplazarse al inicio al cambiar de producto
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setActiveImageIndex(0);
     setSelectedVariantId(
       product?.variants && product.variants.length > 0 ? product.variants[0]?.id || '' : ''
     );
     setSelectedQuantity(1);
-  }, [product?.id]);
+  }, [id, product?.id]);
 
   // Review useful counters state
   const [reviewHelpful, setReviewHelpful] = useState<Record<string, number>>({
@@ -1301,7 +1302,10 @@ export const ProductDetailPage: React.FC = () => {
                 <Link
                   key={simProd.id}
                   to={`/producto/${simProd.id}`}
-                  className="group bg-white rounded-2xl border border-gray-200/90 hover:border-gray-300 shadow-subtle hover:shadow-card p-3 sm:p-3.5 flex flex-col justify-between transition-all duration-200 text-left relative"
+                  onClick={() => {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                  }}
+                  className="group bg-white rounded-2xl border border-gray-200/90 hover:border-gray-300 shadow-subtle hover:shadow-card p-3 sm:p-3.5 flex flex-col justify-between transition-all duration-200 text-left relative cursor-pointer"
                 >
                   <div>
                     {/* Centered Product Image */}
