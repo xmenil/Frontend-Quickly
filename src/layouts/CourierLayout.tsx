@@ -1,95 +1,94 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useAuthStore } from '../store/authStore';
 import { useDataStore } from '../store/dataStore';
-import { ClipboardList, Navigation, History, DollarSign, User, MapPin } from 'lucide-react';
+import { ClipboardList, Navigation, History, DollarSign, User, MapPin, Power, AlertCircle } from 'lucide-react';
 
 export const CourierLayout: React.FC = () => {
   const { currentUser } = useAuthStore();
   const { couriers, toggleCourierAvailability } = useDataStore();
-
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
+  const [availabilityError, setAvailabilityError] = useState('');
   const currentCourier =
     couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
     couriers[0];
 
   const handleToggleOnline = () => {
-    toggleCourierAvailability(currentCourier.id);
+    if (!currentCourier) return;
+    setAvailabilityMessage('');
+    setAvailabilityError('');
+    try {
+      toggleCourierAvailability(currentCourier.id);
+      const updated = useDataStore.getState().couriers.find((courier) => courier.id === currentCourier.id);
+      if (!updated || updated.isAvailable === currentCourier.isAvailable) {
+        setAvailabilityError('No se pudo cambiar tu disponibilidad. Inténtalo nuevamente.');
+        return;
+      }
+      setAvailabilityMessage(updated.isAvailable ? 'Disponibilidad activada.' : 'Disponibilidad pausada.');
+    } catch {
+      setAvailabilityError('No se pudo cambiar tu disponibilidad. Revisa tu estado antes de volver a intentarlo.');
+    }
   };
 
   const navItems = [
-    { to: '/repartidor/solicitudes', label: 'Solicitudes', icon: <ClipboardList className="w-5 h-5" /> },
-    { to: '/repartidor/entrega-activa', label: 'En Ruta', icon: <Navigation className="w-5 h-5" /> },
-    { to: '/repartidor/historial', label: 'Historial', icon: <History className="w-5 h-5" /> },
-    { to: '/repartidor/ingresos', label: 'Ganancias', icon: <DollarSign className="w-5 h-5" /> },
-    { to: '/repartidor/perfil', label: 'Perfil', icon: <User className="w-5 h-5" /> },
+    { to: '/repartidor/solicitudes', label: 'Solicitudes', icon: ClipboardList },
+    { to: '/repartidor/entrega-activa', label: 'Entrega', icon: Navigation },
+    { to: '/repartidor/historial', label: 'Historial', icon: History },
+    { to: '/repartidor/ingresos', label: 'Ganancias', icon: DollarSign },
+    { to: '/repartidor/perfil', label: 'Perfil', icon: User },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-50/70 text-ink flex flex-col max-w-md mx-auto shadow-sm border-x border-gray-100 relative font-sans">
-      {/* Top Mobile Bar - G-1 Availability Status & Zone */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between shadow-subtle">
-        <div className="flex items-center gap-2">
-          <BrandLogo size="sm" showSubtitle={false} />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-primary bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100 w-fit">
-              Repartidor
-            </span>
-            <span className="text-[10px] text-gray-500 font-semibold flex items-center gap-0.5 mt-0.5">
-              <MapPin className="w-2.5 h-2.5 text-primary" />
-              <span>{currentCourier.currentZone || 'Centro de Tingo María'}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* G-1 Online / Offline Toggle with Green Pulsing Dot */}
-        <button
-          type="button"
-          onClick={handleToggleOnline}
-          className={`touch-target px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all min-h-[44px] ${
-            currentCourier.isAvailable
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-sm'
-              : 'bg-gray-100 text-gray-700 border border-gray-200'
-          }`}
-          aria-label={currentCourier.isAvailable ? 'Poner fuera de servicio' : 'Poner en línea'}
-        >
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              currentCourier.isAvailable ? 'bg-emerald-600 animate-pulse ring-2 ring-emerald-200' : 'bg-gray-400'
-            }`}
-          />
-          <span>{currentCourier.isAvailable ? 'En línea' : 'En pausa'}</span>
-        </button>
-      </header>
-
-      {/* Main Content (Mobile Optimized) */}
-      <main className="flex-1 p-4 pb-24 overflow-y-auto">
-        <Outlet />
-      </main>
-
-      {/* Bottom Sticky Mobile Navigation - Accessible contrast */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-30 bg-white border-t border-gray-200 shadow-lg">
-        <div className="grid grid-cols-5 h-16">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `touch-target flex flex-col items-center justify-center gap-0.5 text-[11px] transition-colors select-none ${
-                  isActive
-                    ? 'text-primary font-extrabold bg-primary-50/60'
-                    : 'text-gray-600 hover:text-ink font-semibold'
-                }`
-              }
-            >
-              {item.icon}
+  const navigation = (mobile: boolean) => (
+    <nav aria-label={mobile ? 'Navegación móvil del repartidor' : 'Navegación del repartidor'}
+      className={mobile ? 'fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface pb-safe shadow-floating md:hidden' : 'hidden border-b border-border bg-surface md:block'}>
+      <ul className={mobile ? 'grid grid-cols-5' : 'mx-auto flex max-w-7xl gap-2 px-6 py-2 lg:px-8'}>
+        {navItems.map((item) => (
+          <li key={item.to} className="min-w-0">
+            <NavLink to={item.to} className={({ isActive }) =>
+              `flex min-h-16 min-w-11 items-center justify-center gap-2 px-1 py-2 transition-colors ${mobile ? 'flex-col text-xs' : 'min-h-11 rounded-xl px-4 text-sm'} ${isActive ? 'bg-primary-50 font-semibold text-primary' : 'font-medium text-ink-light hover:bg-surface-subtle hover:text-ink'}`}>
+              <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
               <span>{item.label}</span>
             </NavLink>
-          ))}
-        </div>
-      </nav>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 
+  return (
+    <div className="min-h-screen bg-background font-sans text-ink">
+      <a href="#courier-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4 focus:text-primary">Ir al contenido</a>
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <BrandLogo size="sm" showSubtitle={false} className="min-h-11" />
+          <p className="hidden text-sm font-medium text-ink-light md:block">Panel de repartidor</p>
+          {currentCourier && (
+            <Button type="button" variant={currentCourier.isAvailable ? 'outline' : 'primary'} size="sm"
+              className="gap-2" aria-label={currentCourier.isAvailable ? 'Pausar disponibilidad' : 'Activar disponibilidad'} onClick={handleToggleOnline}>
+              <Power className="h-4 w-4" aria-hidden="true" />
+              {currentCourier.isAvailable ? 'Pausar' : 'Activar'}
+            </Button>
+          )}
+          <div className="flex w-full flex-wrap items-start justify-between gap-2 text-xs">
+            <p className="flex min-w-0 items-start gap-2 text-ink-light">
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="break-words">{currentCourier?.currentZone || 'Sin zona registrada'}</span>
+            </p>
+            {currentCourier && <p className={currentCourier.isAvailable ? 'font-medium text-selva' : 'font-medium text-ink-muted'}>{currentCourier.isAvailable ? 'Disponible' : 'En pausa'}</p>}
+          </div>
+        </div>
+      </header>
+      {navigation(false)}
+      <main id="courier-content" tabIndex={-1} className="mx-auto w-full max-w-7xl p-4 pb-32 sm:p-6 sm:pb-32 md:pb-12 lg:p-8 lg:pb-12">
+        {availabilityMessage && <p role="status" className="mb-4 rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{availabilityMessage}</p>}
+        {availabilityError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{availabilityError}</p></div>}
+        {currentCourier ? <Outlet /> : <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />}
+      </main>
+      {navigation(true)}
       <DemoSwitcher />
     </div>
   );

@@ -28,6 +28,7 @@ import {
 } from '../mocks/initialData';
 import { canTransitionOrder, derivePurchaseStatus, calculateOrderRefund } from '../domain/orderRules';
 import { safeJsonParse } from '../lib/utils';
+import { mergeCourierActivity } from '../mocks/courierActivityData';
 
 interface DataState {
   merchants: Merchant[];
@@ -105,6 +106,7 @@ interface DataState {
 const STORAGE_KEY = 'quickly_datastore_v4';
 
 interface StoredDataPayload {
+  courierActivitySeedVersion?: number;
   merchants: Merchant[];
   products: Product[];
   couriers: Courier[];
@@ -152,6 +154,8 @@ function getInitialStoredData(): StoredDataPayload {
 
       const merged: StoredDataPayload = {
         ...parsed,
+        ...(parsed.courierActivitySeedVersion === 1 ? {} : mergeCourierActivity(parsed.purchases || [], parsed.couriers || INITIAL_COURIERS)),
+        courierActivitySeedVersion: 1,
         merchants: [...parsed.merchants, ...missingMerchants],
         products: [...updatedProducts, ...missingProducts],
       };
@@ -161,12 +165,12 @@ function getInitialStoredData(): StoredDataPayload {
   }
 
   return {
+    ...mergeCourierActivity(INITIAL_PURCHASES, INITIAL_COURIERS),
+    courierActivitySeedVersion: 1,
     merchants: INITIAL_MERCHANTS,
     products: INITIAL_PRODUCTS,
-    couriers: INITIAL_COURIERS,
     users: INITIAL_USERS,
     zones: INITIAL_ZONES,
-    purchases: INITIAL_PURCHASES,
     addresses: INITIAL_ADDRESSES,
     favoriteMerchantIds: ['m_selva_gourmet', 'm_cacao_cafe'],
     favoriteProductIds: ['p_tacacho_cecina'],
@@ -181,6 +185,7 @@ const initialPayload = getInitialStoredData();
 
 function saveToLocalStorage(state: DataState) {
   const payload: StoredDataPayload = {
+    courierActivitySeedVersion: 1,
     merchants: state.merchants,
     products: state.products,
     couriers: state.couriers,
@@ -906,12 +911,12 @@ export const useDataStore = create<DataState>((set, get) => ({
   resetToSeed: () => {
     localStorage.removeItem(STORAGE_KEY);
     const freshPayload: StoredDataPayload = {
+      ...mergeCourierActivity(INITIAL_PURCHASES, INITIAL_COURIERS),
+      courierActivitySeedVersion: 1,
       merchants: INITIAL_MERCHANTS,
       products: INITIAL_PRODUCTS,
-      couriers: INITIAL_COURIERS,
       users: INITIAL_USERS,
       zones: INITIAL_ZONES,
-      purchases: INITIAL_PURCHASES,
       addresses: INITIAL_ADDRESSES,
       favoriteMerchantIds: ['m_selva_gourmet', 'm_cacao_cafe'],
       favoriteProductIds: ['p_tacacho_cecina'],

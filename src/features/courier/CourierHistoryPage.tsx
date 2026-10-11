@@ -1,167 +1,104 @@
 import React, { useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatDateTime } from '../../lib/date';
 import { formatCents } from '../../lib/currency';
-import { SchematicMap } from '../../components/shared/SchematicMap';
-import {
-  CheckCircle2,
-  Store,
-  MapPin,
-  ChevronDown,
-  ChevronUp,
-  Navigation,
-  Clock,
-  Bike,
-} from 'lucide-react';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { CheckCircle2, ChevronDown } from 'lucide-react';
 
 export const CourierHistoryPage: React.FC = () => {
   const { purchases, couriers } = useDataStore();
   const { currentUser } = useAuthStore();
-
-  const currentCourier = useMemo(() => {
-    return (
-      couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
-      couriers[0]
-    );
-  }, [couriers, currentUser]);
-
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentCourier = useMemo(() =>
+    couriers.find((courier) => courier.ownerUserId === currentUser?.id || courier.id === currentUser?.courierId) || couriers[0],
+    [couriers, currentUser]);
   const deliveredOrders = useMemo(() => {
-    return purchases
-      .flatMap((p) =>
-        p.merchantOrders
-          .filter((mo) => mo.courierId === currentCourier.id && mo.status === 'entregado')
-          .map((mo) => ({
-            ...mo,
-            purchaseCode: p.code,
-            customerName: p.customerName,
-            customerAddress: p.addressSnapshot,
-          }))
-      )
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [purchases, currentCourier.id]);
+    if (!currentCourier) return [];
+    return purchases.flatMap((purchase) =>
+      purchase.merchantOrders
+        .filter((order) => order.courierId === currentCourier.id && order.status === 'entregado')
+        .map((order) => ({ ...order, purchaseCode: purchase.code, customerName: purchase.customerName, customerAddress: purchase.addressSnapshot }))
+    ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [purchases, currentCourier]);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const completionNotice = typeof location.state?.deliveryNotice === 'string' ? location.state.deliveryNotice : '';
 
-  // Expandable schematic map for each delivery (G-5)
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
-    deliveredOrders[0]?.id || null
-  );
+  if (!currentCourier) return <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />;
 
   return (
-    <div className="space-y-4 pb-20 sm:pb-8">
-      <div>
-        <h1 className="text-xl font-extrabold text-ink">Historial de Entregas</h1>
-        <p className="text-xs text-ink-light">
-          Carreras completadas con éxito en Tingo María ({deliveredOrders.length} viajes)
-        </p>
-      </div>
-
-      {deliveredOrders.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-3 shadow-subtle my-4">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
-            <CheckCircle2 className="w-7 h-7" />
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-xl font-bold text-ink sm:text-2xl">Historial de entregas</h1>
+        <p className="text-sm text-ink-light">Consulta tus entregas completadas y la tarifa registrada de cada pedido.</p>
+      </header>
+      {completionNotice && <p role="status" className="flex items-start gap-2 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />{completionNotice}</p>}
+      <section aria-labelledby="courier-history-heading" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="courier-history-heading" className="text-base font-semibold text-ink">Entregas completadas</h2>
+          <p className="text-sm tabular-nums text-ink-muted">{deliveredOrders.length} {deliveredOrders.length === 1 ? 'entrega' : 'entregas'}</p>
+        </div>
+        {deliveredOrders.length === 0 ? (
+          <EmptyState icon={<CheckCircle2 className="h-8 w-8" aria-hidden="true" />} title="Aún no has completado entregas"
+            description="Tus entregas aparecerán aquí cuando las confirmes como completadas." actionText="Ver solicitudes" onAction={() => navigate('/repartidor/solicitudes')} />
+        ) : (
+          <div className="rounded-2xl border border-border bg-surface shadow-subtle">
+            <table className="block w-full text-left text-sm lg:table lg:table-fixed">
+              <caption className="sr-only">Entregas completadas: pedido, cliente, fecha, tarifa y detalle.</caption>
+              <thead className="sr-only bg-surface-subtle text-xs text-ink-light lg:not-sr-only lg:table-header-group">
+                <tr>
+                  <th scope="col" className="w-1/4 rounded-tl-2xl px-4 py-3 font-semibold">Pedido y comercio</th>
+                  <th scope="col" className="px-3 py-3 font-semibold">Cliente</th>
+                  <th scope="col" className="px-3 py-3 font-semibold">Fecha registrada</th>
+                  <th scope="col" className="px-3 py-3 text-right font-semibold">Tarifa registrada</th>
+                  <th scope="col" className="rounded-tr-2xl px-4 py-3 text-right font-semibold">Detalle</th>
+                </tr>
+              </thead>
+              <tbody className="block lg:table-row-group">
+                {deliveredOrders.map((order) => {
+                  const expanded = expandedOrderId === order.id;
+                  return (
+                    <React.Fragment key={order.id}>
+                      <tr className="block border-t border-border p-4 lg:table-row lg:p-0">
+                        <th scope="row" className="block pb-3 font-normal lg:table-cell lg:px-4 lg:py-3 lg:align-middle">
+                          <h3 className="break-words text-sm font-bold text-ink">{order.purchaseCode}</h3>
+                          <p className="my-2 break-words text-xs text-ink-light">{order.merchantName}</p>
+                          <Badge variant="success">Entregado</Badge>
+                        </th>
+                        <td className="block py-2 lg:table-cell lg:px-3 lg:py-3 lg:align-middle"><p className="mb-1 text-xs text-ink-muted lg:hidden">Cliente</p><p className="break-words text-sm text-ink-light">{order.customerName}</p></td>
+                        <td className="flex items-start justify-between gap-3 py-2 text-xs text-ink-muted lg:table-cell lg:px-3 lg:py-3 lg:align-middle"><span className="lg:hidden">Fecha registrada</span><time dateTime={order.updatedAt} className="text-right tabular-nums lg:text-left">{formatDateTime(order.updatedAt)}</time></td>
+                        <td className="flex items-center justify-between gap-3 py-2 lg:table-cell lg:px-3 lg:py-3 lg:text-right lg:align-middle"><span className="text-xs text-ink-muted lg:hidden">Tarifa registrada</span><span className="font-semibold tabular-nums text-ink">{formatCents(order.deliveryFeeCents)}</span></td>
+                        <td className="block pt-3 lg:table-cell lg:px-4 lg:py-3 lg:text-right lg:align-middle">
+                          <Button type="button" variant="outline" size="sm" className="w-full gap-2 lg:w-auto"
+                            aria-expanded={expanded} aria-controls={`courier-history-detail-${order.id}`}
+                            aria-label={`${expanded ? 'Ocultar' : 'Ver'} detalle de ${order.purchaseCode} de ${order.merchantName}`}
+                            onClick={() => setExpandedOrderId(expanded ? null : order.id)}>
+                            {expanded ? 'Ocultar' : 'Ver detalle'}<ChevronDown className={`h-4 w-4 shrink-0 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+                          </Button>
+                        </td>
+                      </tr>
+                      <tr id={`courier-history-detail-${order.id}`} hidden={!expanded} className={expanded ? 'block bg-surface-subtle lg:table-row' : 'hidden'}>
+                        <td colSpan={5} className="block p-4 lg:table-cell">
+                          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+                            <div className="space-y-1"><dt className="font-semibold text-ink">Recojo en el comercio</dt><dd className="break-words text-ink-light">{order.merchantAddress}</dd></div>
+                            <div className="space-y-1"><dt className="font-semibold text-ink">Entrega al cliente</dt><dd className="break-words text-ink-light">{order.customerAddress.street} #{order.customerAddress.number}</dd><dd className="break-words text-xs text-ink-muted">Referencia: {order.customerAddress.reference || 'Sin referencia registrada'}</dd></div>
+                            <div className="space-y-1 sm:col-span-2"><dt className="font-semibold text-ink">Contenido del pedido</dt><dd className="break-words text-ink-light">{order.items.map((item) => `${item.quantity} × ${item.productName}`).join(' · ')}</dd></div>
+                          </dl>
+                          <p className="mt-4 text-xs text-ink-muted">La tarifa corresponde al registro de la entrega; no confirma una liquidación.</p>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <h2 className="font-extrabold text-ink text-sm sm:text-base">Sin entregas finalizadas</h2>
-          <p className="text-xs text-ink-light max-w-xs mx-auto">
-            Cuando completes una carrera en moto por las calles de Tingo María, quedará registrada
-            aquí con su mapa de ruta y ganancia.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3.5">
-          {deliveredOrders.map((order) => {
-            const isExpanded = expandedOrderId === order.id;
-
-            return (
-              <div
-                key={order.id}
-                className="bg-white border border-gray-100 rounded-3xl p-4 sm:p-5 space-y-3 shadow-subtle hover:border-gray-200 transition-all overflow-hidden"
-              >
-                {/* Header row */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-ink text-sm sm:text-base">
-                      {order.purchaseCode}
-                    </span>
-                    <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-extrabold">
-                      Entregado
-                    </span>
-                  </div>
-
-                  <span className="text-emerald-700 font-black text-sm sm:text-base tabular-nums">
-                    +{formatCents(order.deliveryFeeCents)}
-                  </span>
-                </div>
-
-                {/* Merchant & Customer Addresses */}
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-start gap-2 text-ink">
-                    <Store className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold">{order.merchantName}</span>
-                      <p className="text-gray-500 text-[11px] truncate">{order.merchantAddress}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-ink">
-                    <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold">Cliente: {order.customerName}</span>
-                      <p className="text-gray-500 text-[11px] truncate">
-                        {order.customerAddress.street} #{order.customerAddress.number}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* G-5: Schematic Map of Completed Route */}
-                {isExpanded && (
-                  <div className="pt-2 border-t border-gray-100 space-y-2 animate-fadeIn">
-                    <div className="flex items-center justify-between text-[11px] text-gray-500 font-semibold px-1">
-                      <span className="flex items-center gap-1">
-                        <Navigation className="w-3 h-3 text-sky-600" />
-                        <span>Trayecto recorrido en Tingo María</span>
-                      </span>
-                      <span className="text-emerald-700 font-bold">100% completado</span>
-                    </div>
-
-                    <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
-                      <SchematicMap
-                        orderStatus="entregado"
-                        merchantName={order.merchantName}
-                        merchantAddress={order.merchantAddress}
-                        customerAddress={`${order.customerAddress.street} #${order.customerAddress.number}`}
-                        courierName={currentCourier.name}
-                        courierPhone={currentCourier.phone}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer and Map Toggle Button */}
-                <div className="pt-2 border-t border-gray-50 flex items-center justify-between text-[11px] text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDateTime(order.updatedAt)}</span>
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                    className="touch-target inline-flex items-center gap-1 font-bold text-primary hover:underline px-2 py-1"
-                  >
-                    <span>{isExpanded ? 'Ocultar mapa de ruta' : 'Ver ruta completada'}</span>
-                    {isExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 };

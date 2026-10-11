@@ -46,7 +46,8 @@ import { MerchantSettingsPage } from '../features/merchant/MerchantSettingsPage'
 import { CourierRequestsPage } from '../features/courier/CourierRequestsPage';
 import { CourierActiveDeliveryPage } from '../features/courier/CourierActiveDeliveryPage';
 import { CourierHistoryPage } from '../features/courier/CourierHistoryPage';
-import { CourierEarningsPage, CourierProfilePage } from '../features/courier/CourierEarningsPage';
+import { CourierEarningsPage } from '../features/courier/CourierEarningsPage';
+import { CourierProfilePage } from '../features/courier/CourierProfilePage';
 
 // Admin
 import { AdminOverviewPage } from '../features/admin/AdminOverviewPage';

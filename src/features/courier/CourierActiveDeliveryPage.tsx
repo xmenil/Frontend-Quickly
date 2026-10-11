@@ -2,347 +2,152 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useAuthStore } from '../../store/authStore';
-import { SchematicMap } from '../../components/shared/SchematicMap';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
+import { Select } from '../../components/ui/Select';
+import { Badge } from '../../components/ui/Badge';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCents } from '../../lib/currency';
-import {
-  Bike,
-  Store,
-  MapPin,
-  Phone,
-  CheckCircle2,
-  AlertTriangle,
-  Package,
-  Banknote,
-  ShieldCheck,
-  Check,
-  CloudRain,
-  ExternalLink,
-  Navigation,
-} from 'lucide-react';
+import { Bike, MapPin, Phone, CheckCircle2, AlertCircle, Package, ChevronDown } from 'lucide-react';
 
 export const CourierActiveDeliveryPage: React.FC = () => {
   const { purchases, couriers, courierAdvanceDelivery, courierReportIncident } = useDataStore();
   const { currentUser } = useAuthStore();
   const navigate = useNavigate();
-
-  const currentCourier =
-    couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
-    couriers[0];
-
-  // Active suborder assigned to this courier (status in listo_recoger or en_camino)
-  const activeOrderData = purchases.flatMap((p) =>
-    p.merchantOrders
-      .filter(
-        (mo) =>
-          mo.courierId === currentCourier.id &&
-          ['listo_recoger', 'en_camino'].includes(mo.status)
-      )
-      .map((mo) => ({
-        ...mo,
-        purchaseCode: p.code,
-        customerName: p.customerName,
-        customerPhone: p.customerPhone,
-        addressSnapshot: p.addressSnapshot,
-        paymentMethod: p.paymentMethod,
-        cashPaid: p.cashAmountPaidCents,
-        changeDue: p.changeDueCents,
+  const currentCourier = couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) || couriers[0];
+  const activeOrderData = purchases.flatMap((purchase) =>
+    purchase.merchantOrders
+      .filter((order) => Boolean(currentCourier) && order.courierId === currentCourier?.id && ['listo_recoger', 'en_camino'].includes(order.status))
+      .map((order) => ({
+        ...order, purchaseCode: purchase.code, customerName: purchase.customerName,
+        customerPhone: purchase.customerPhone, addressSnapshot: purchase.addressSnapshot,
+        paymentMethod: purchase.paymentMethod, changeDue: purchase.changeDueCents,
       }))
   )[0];
-
-  // Incident Modal State
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [incidentReason, setIncidentReason] = useState('Lluvia intensa en Tingo María');
   const [incidentNote, setIncidentNote] = useState('');
   const [incidentSent, setIncidentSent] = useState(false);
+  const [incidentError, setIncidentError] = useState('');
+  const [confirmDelivery, setConfirmDelivery] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
 
-  if (!activeOrderData) {
-    return (
-      <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-400 space-y-4 shadow-subtle my-4">
-        <div className="w-16 h-16 rounded-3xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
-          <Bike className="w-8 h-8" />
-        </div>
-        <div className="space-y-1">
-          <h2 className="text-ink font-extrabold text-lg">No tienes entregas activas en ruta</h2>
-          <p className="text-xs text-ink-light max-w-xs mx-auto">
-            Revisa las solicitudes de los comercios para comenzar una nueva carrera en Tingo María.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="primary"
-          size="md"
-          onClick={() => navigate('/repartidor/solicitudes')}
-          className="min-h-[48px] px-6 font-bold shadow-subtle"
-        >
-          Ver Solicitudes Disponibles
-        </Button>
-      </div>
-    );
-  }
+  if (!currentCourier) return <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />;
+  if (!activeOrderData) return <EmptyState icon={<Bike className="h-8 w-8" aria-hidden="true" />} title="No tienes una entrega activa" description="Revisa las solicitudes para comenzar una nueva entrega." actionText="Ver solicitudes" onAction={() => navigate('/repartidor/solicitudes')} />;
 
-  const isAtStoreStage = activeOrderData.status === 'listo_recoger';
-  const isInTransitStage = activeOrderData.status === 'en_camino';
+  const atStore = activeOrderData.status === 'listo_recoger';
+  const contactName = atStore ? activeOrderData.merchantName : activeOrderData.customerName;
+  const contactPhone = atStore ? activeOrderData.merchantPhone : activeOrderData.customerPhone;
+  const destination = atStore ? activeOrderData.merchantAddress : `${activeOrderData.addressSnapshot.street} #${activeOrderData.addressSnapshot.number}`;
+  const paymentLabels = { pagado: 'Pagado', pendiente: 'Pendiente', fallido: 'Fallido', reembolso_pendiente: 'Reembolso pendiente', reembolsado: 'Reembolsado' };
 
-  const handleConfirmPickup = () => {
-    courierAdvanceDelivery(
-      activeOrderData.id,
-      currentCourier.id,
-      'pickup',
-      'Pedido retirado de la tienda'
-    );
+  const advanceDelivery = (step: 'pickup' | 'delivered') => {
+    setActionError('');
+    setNotice('');
+    try {
+      const result = courierAdvanceDelivery(activeOrderData.id, currentCourier.id, step,
+        step === 'pickup' ? 'Pedido retirado de la tienda' :
+          activeOrderData.paymentMethod === 'efectivo' ? `Cobro en efectivo realizado: ${formatCents(activeOrderData.totalCents)}` : 'Entrega prepagada completada');
+      if (!result.success) {
+        setActionError(result.message || 'No se pudo confirmar este paso. Revisa el pedido e inténtalo nuevamente.');
+        return;
+      }
+      if (step === 'pickup') setNotice('Recojo confirmado. Continúa con la entrega al cliente.');
+      else navigate('/repartidor/historial', { state: { deliveryNotice: `Entrega ${activeOrderData.purchaseCode} confirmada.` } });
+    } catch {
+      setActionError('No se pudo completar la acción. Revisa el estado del pedido antes de volver a intentarlo.');
+    }
   };
 
-  const handleConfirmDelivered = () => {
-    courierAdvanceDelivery(
-      activeOrderData.id,
-      currentCourier.id,
-      'delivered',
-      activeOrderData.paymentMethod === 'efectivo'
-        ? `Cobro en efectivo realizado: ${formatCents(activeOrderData.totalCents)}`
-        : 'Entrega prepagada completada'
-    );
-    navigate('/repartidor/historial');
-  };
-
-  const handleSubmitIncident = (e: React.FormEvent) => {
-    e.preventDefault();
-    courierReportIncident(
-      activeOrderData.id,
-      currentCourier.id,
-      incidentReason,
-      incidentNote.trim() || 'Reportado en trayecto de entrega'
-    );
-    setIncidentSent(true);
-    setTimeout(() => {
-      setIncidentSent(false);
-      setShowIncidentModal(false);
-    }, 2000);
+  const handleSubmitIncident = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIncidentError('');
+    try {
+      const previousIds = new Set(useDataStore.getState().tickets.map((ticket) => ticket.id));
+      courierReportIncident(activeOrderData.id, currentCourier.id, incidentReason, incidentNote.trim() || 'Reportado en trayecto de entrega');
+      const saved = useDataStore.getState().tickets.some((ticket) => !previousIds.has(ticket.id) && ticket.orderId === activeOrderData.purchaseCode && ticket.userRole === 'repartidor');
+      if (!saved) {
+        setIncidentError('No se pudo enviar la incidencia. Conservamos tu comentario para que puedas intentarlo nuevamente.');
+        return;
+      }
+      setIncidentSent(true);
+    } catch {
+      setIncidentError('No se pudo enviar la incidencia. Revisa el caso antes de volver a intentarlo.');
+    }
   };
 
   return (
-    <div className="space-y-4 pb-20 sm:pb-8">
-      {/* Active Trip Header Badge */}
-      <div className="bg-ink text-white p-4 rounded-3xl shadow-sm flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center font-black">
-            <Bike className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-400">Entrega en curso:</span>
-              <span className="text-xs font-extrabold text-amber-300">{activeOrderData.purchaseCode}</span>
-            </div>
-            <div className="text-sm font-black text-white">
-              {isAtStoreStage ? 'Paso 1: Retirar en Tienda' : 'Paso 2: En Ruta al Cliente'}
-            </div>
-          </div>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold text-ink sm:text-2xl">Entrega activa</h1>
+          <p className="text-sm font-bold text-ink">{activeOrderData.purchaseCode}</p>
+          <Badge variant="info">{atStore ? 'Paso 1: recojo' : 'Paso 2: entrega'}</Badge>
         </div>
+        <div className="text-right"><p className="text-xs text-ink-muted">Tarifa de entrega</p><p className="text-lg font-bold tabular-nums text-ink">{formatCents(activeOrderData.deliveryFeeCents)}</p></div>
+      </header>
+      {notice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">{notice}</p>}
+      {actionError && !confirmDelivery && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong">{actionError}</p>}
 
-        <div className="text-right">
-          <span className="text-[10px] text-gray-400 uppercase font-bold block">Tu Ganancia</span>
-          <span className="text-base font-black text-emerald-400 tabular-nums">
-            +{formatCents(activeOrderData.deliveryFeeCents)}
-          </span>
-        </div>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+        <section aria-labelledby="courier-next-step" className="space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-subtle sm:p-6">
+          <div className="space-y-2">
+            <h2 id="courier-next-step" className="text-base font-semibold text-ink">{atStore ? 'Recoger en el comercio' : 'Entregar al cliente'}</h2>
+            <p className="break-words text-lg font-semibold text-ink">{destination}</p>
+            <p className="break-words text-sm text-ink-light">{contactName}</p>
+          </div>
+          {!atStore && <div className="flex items-start gap-2 rounded-xl border border-warning-border bg-warning-soft p-3 text-sm text-warning-strong"><MapPin className="h-5 w-5 shrink-0" aria-hidden="true" /><p className="min-w-0 break-words">Referencia: {activeOrderData.addressSnapshot.reference || 'Sin referencia registrada'}</p></div>}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <div className="min-w-0 space-y-1"><p className="text-xs text-ink-muted">{atStore ? 'Contacto del comercio' : 'Contacto del cliente'}</p><p className="text-sm tabular-nums text-ink">{contactPhone || 'Sin celular registrado'}</p></div>
+            {contactPhone && <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary-50"><Phone className="h-4 w-4" aria-hidden="true" />Llamar</a>}
+          </div>
+          <div className={`space-y-2 rounded-xl border p-3 text-sm ${activeOrderData.paymentMethod === 'efectivo' ? 'border-warning-border bg-warning-soft text-warning-strong' : 'border-info-border bg-info-soft text-info-strong'}`}>
+            <p className="font-semibold">{activeOrderData.paymentMethod === 'efectivo' ? 'Cobro en efectivo' : 'Pago digital'}</p>
+            <p className="flex flex-wrap justify-between gap-2">Total de este pedido <span className="font-semibold tabular-nums">{formatCents(activeOrderData.totalCents)}</span></p>
+            <p className="text-xs">Estado de pago: {paymentLabels[activeOrderData.paymentStatus]}</p>
+            {activeOrderData.paymentMethod === 'efectivo' && Boolean(activeOrderData.changeDue) && <p className="text-xs">Vuelto registrado para la compra: <span className="font-semibold tabular-nums">{formatCents(activeOrderData.changeDue || 0)}</span></p>}
+            <p className="text-xs">{activeOrderData.paymentMethod === 'efectivo' ? 'Verifica el cobro antes de confirmar la entrega.' : 'Verifica el estado de pago antes de entregar.'}</p>
+          </div>
+          <Button type="button" variant="primary" className="min-h-14 w-full gap-2 text-base" onClick={() => { if (atStore) advanceDelivery('pickup'); else { setActionError(''); setConfirmDelivery(true); } }}><Package className="h-5 w-5" aria-hidden="true" />{atStore ? 'Confirmar recojo' : 'Confirmar entrega'}</Button>
+          <Button type="button" variant="outline" className="w-full gap-2 text-sm" onClick={() => { setIncidentSent(false); setIncidentError(''); setShowIncidentModal(true); }}><AlertCircle className="h-4 w-4" aria-hidden="true" />Reportar incidencia</Button>
+        </section>
+
+        <section aria-labelledby="courier-order-details" className="space-y-4 rounded-2xl border border-border bg-surface p-4 sm:p-6">
+          <h2 id="courier-order-details" className="text-base font-semibold text-ink">Detalle del pedido</h2>
+          <ul className="divide-y divide-border text-sm">{activeOrderData.items.map((item, index) => <li key={index} className="flex items-start gap-3 py-3"><span className="shrink-0 font-semibold tabular-nums text-ink">{item.quantity} ×</span><span className="min-w-0 break-words text-ink-light">{item.productName}</span></li>)}</ul>
+          <details className="border-t border-border pt-3">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-xl text-sm font-medium text-primary">Ver recorrido de referencia<ChevronDown className="h-4 w-4" aria-hidden="true" /></summary>
+            <p className="mt-2 text-xs text-ink-muted">Esquema de recojo y entrega. No representa una ubicación GPS ni una distancia calculada.</p>
+            <ol className="mt-4 space-y-4 border-l border-border pl-4 text-sm">
+              <li className="space-y-1"><p className="font-semibold text-ink">1. {activeOrderData.merchantName}</p><p className="break-words text-ink-light">{activeOrderData.merchantAddress}</p></li>
+              <li className="space-y-1"><p className="font-semibold text-ink">2. {activeOrderData.customerName}</p><p className="break-words text-ink-light">{activeOrderData.addressSnapshot.street} #{activeOrderData.addressSnapshot.number}</p></li>
+            </ol>
+          </details>
+        </section>
       </div>
 
-      {/* Schematic Map Route Visualization */}
-      <div className="rounded-3xl overflow-hidden border border-gray-200 shadow-subtle">
-        <SchematicMap
-          orderStatus={activeOrderData.status}
-          merchantName={activeOrderData.merchantName}
-          merchantAddress={activeOrderData.merchantAddress}
-          customerAddress={`${activeOrderData.addressSnapshot.street} #${activeOrderData.addressSnapshot.number}`}
-          courierName={currentCourier.name}
-          courierPhone={currentCourier.phone}
-        />
-      </div>
-
-      {/* G-2: Destination Address with BIG FONT for motorcycle drivers */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-subtle space-y-4">
-        {/* Next Target Destination Banner */}
-        <div className="space-y-1">
-          <span className="text-[11px] font-extrabold text-primary uppercase tracking-wider block">
-            {isAtStoreStage ? '1. Punto de Retiro en Comercio' : '2. Dirección de Entrega Final'}
-          </span>
-
-          {/* G-2: Large Address Heading */}
-          <h2 className="text-xl sm:text-2xl font-black text-ink leading-tight">
-            {isAtStoreStage
-              ? activeOrderData.merchantName
-              : `${activeOrderData.addressSnapshot.street} #${activeOrderData.addressSnapshot.number}`}
-          </h2>
-
-          {/* Local Reference in highlighted card */}
-          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs sm:text-sm text-amber-950 font-semibold flex items-start gap-2 mt-2">
-            <MapPin className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-amber-900 block">Referencia en Tingo María:</span>
-              <p className="mt-0.5">
-                {isAtStoreStage
-                  ? activeOrderData.merchantAddress
-                  : activeOrderData.addressSnapshot.reference}
-              </p>
-            </div>
-          </div>
+      <Dialog isOpen={confirmDelivery} onClose={() => setConfirmDelivery(false)} title="Confirmar entrega" description="Confirma cuando el cliente haya recibido el pedido y hayas verificado el pago." maxWidth="sm">
+        <div className="space-y-4">
+          <p className="break-words text-sm text-ink-light">{activeOrderData.customerName} · {activeOrderData.purchaseCode}</p>
+          {actionError && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong">{actionError}</p>}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setConfirmDelivery(false)}>Cancelar</Button><Button type="button" onClick={() => advanceDelivery('delivered')}>Finalizar entrega</Button></div>
         </div>
+      </Dialog>
 
-        {/* Client / Store Contact Card with 1-Tap Direct Call Button (G-2) */}
-        <div className="bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100 flex items-center justify-between gap-3">
-          <div className="space-y-0.5 min-w-0">
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
-              {isAtStoreStage ? 'Contacto del Local' : 'Contacto del Cliente'}
-            </span>
-            <p className="font-extrabold text-sm text-ink truncate">
-              {isAtStoreStage ? activeOrderData.merchantName : activeOrderData.customerName}
-            </p>
-            <p className="text-xs text-gray-600 font-semibold">
-              {isAtStoreStage ? activeOrderData.merchantPhone : activeOrderData.customerPhone}
-            </p>
-          </div>
-
-          {/* 1-Tap Call Button */}
-          <a
-            href={`tel:${(isAtStoreStage ? activeOrderData.merchantPhone : activeOrderData.customerPhone).replace(/\s+/g, '')}`}
-            className="touch-target inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-subtle min-h-[48px] flex-shrink-0"
-          >
-            <Phone className="w-4 h-4" />
-            <span>Llamar</span>
-          </a>
-        </div>
-
-        {/* Payment and Change Alert */}
-        {activeOrderData.paymentMethod === 'efectivo' ? (
-          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs sm:text-sm">
-            <div className="flex items-center gap-2.5">
-              <Banknote className="w-5 h-5 text-amber-700 flex-shrink-0" />
-              <div>
-                <span className="font-extrabold text-amber-950 block">Cobrar en Efectivo</span>
-                <span className="text-amber-800 font-semibold">
-                  Monto total: {formatCents(activeOrderData.totalCents)}
-                </span>
-              </div>
-            </div>
-            {activeOrderData.changeDue ? (
-              <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-xl">
-                Dar vuelto: {formatCents(activeOrderData.changeDue)}
-              </span>
-            ) : null}
-          </div>
-        ) : (
-          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm text-emerald-900 font-bold">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>¡Pedido prepagado con Yape / Plin! No cobrar dinero al cliente.</span>
-          </div>
-        )}
-
-        {/* Package snapshot summary */}
-        <div className="text-xs text-gray-600 pt-2 border-t border-gray-100 space-y-1">
-          <span className="font-bold text-ink block">Contenido del paquete:</span>
-          <p>{activeOrderData.items.map((i) => `${i.quantity}x ${i.productName}`).join(' • ')}</p>
-        </div>
-      </div>
-
-      {/* G-2: BIG ACTION BUTTONS (h-14 / 56px minimum) for motorcycle use */}
-      <div className="space-y-3 pt-2">
-        {isAtStoreStage && (
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleConfirmPickup}
-            className="w-full min-h-[56px] h-14 rounded-2xl text-base sm:text-lg font-black shadow-lg flex items-center justify-center gap-2 tracking-wide"
-          >
-            <Package className="w-6 h-6" />
-            <span>Recogí el Pedido en Tienda</span>
-          </Button>
-        )}
-
-        {isInTransitStage && (
-          <Button
-            type="button"
-            variant="selva"
-            onClick={handleConfirmDelivered}
-            className="w-full min-h-[56px] h-14 rounded-2xl text-base sm:text-lg font-black shadow-lg flex items-center justify-center gap-2 tracking-wide"
-          >
-            <Check className="w-6 h-6 stroke-[3]" />
-            <span>Confirmar Entrega al Cliente</span>
-          </Button>
-        )}
-
-        {/* Incident Button (52px minimum) */}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowIncidentModal(true)}
-          className="w-full min-h-[50px] h-13 rounded-2xl text-xs sm:text-sm font-bold text-red-700 border-2 border-red-200 hover:bg-red-50 flex items-center justify-center gap-2"
-        >
-          <AlertTriangle className="w-4 h-4 text-red-600" />
-          <span>Reportar Incidente / Lluvia / Demora</span>
-        </Button>
-      </div>
-
-      {/* Incident Modal */}
-      <Dialog
-        isOpen={showIncidentModal}
-        onClose={() => setShowIncidentModal(false)}
-        title="Reportar Incidente en Ruta"
-        description="Notifica a la central de Quickly sobre contratiempos viales en Tingo María"
-        maxWidth="sm"
-      >
-        {incidentSent ? (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <span>Incidente reportado a la administración. Tiempo ajustado en el mapa.</span>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmitIncident} className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-ink block">Tipo de Inconveniente</label>
-              <select
-                value={incidentReason}
-                onChange={(e) => setIncidentReason(e.target.value)}
-                className="w-full text-xs sm:text-sm p-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
-              >
-                <option value="Lluvia intensa en Tingo María">Lluvia intensa / Crecida de río</option>
-                <option value="Tráfico en Puente Corpac">Tráfico detenido en Puente Corpac</option>
-                <option value="Cliente no contesta llamadas">Cliente no responde al celular</option>
-                <option value="Dirección o referencia difícil">No se ubica la dirección</option>
-                <option value="Avería mecánica en moto">Problema mecánico en la moto</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-ink block">Comentario Adicional (Opcional)</label>
-              <textarea
-                value={incidentNote}
-                onChange={(e) => setIncidentNote(e.target.value)}
-                placeholder="Detalla qué necesitas para que soporte te brinde asistencia..."
-                rows={3}
-                className="w-full text-xs p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={() => setShowIncidentModal(false)}
-                className="min-h-[44px]"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="danger"
-                size="md"
-                className="min-h-[44px] font-bold"
-              >
-                Enviar Reporte
-              </Button>
-            </div>
+      <Dialog isOpen={showIncidentModal} onClose={() => setShowIncidentModal(false)} title="Reportar incidencia" description="Registra el inconveniente para que soporte pueda revisarlo." maxWidth="md">
+        {incidentSent ? <div className="space-y-4"><p role="status" className="flex items-start gap-2 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />Incidencia enviada a soporte.</p><Button type="button" variant="outline" onClick={() => { setShowIncidentModal(false); setIncidentNote(''); }}>Cerrar</Button></div> : (
+          <form onSubmit={handleSubmitIncident} className="space-y-4">
+            <Select id="courier-incident-reason" label="Tipo de inconveniente" value={incidentReason} onChange={(event) => setIncidentReason(event.target.value)}>
+              <option value="Lluvia intensa en Tingo María">Lluvia intensa o crecida de río</option>
+              <option value="Tráfico en Puente Corpac">Tráfico detenido en Puente Corpac</option>
+              <option value="Cliente no contesta llamadas">Cliente no responde al celular</option>
+              <option value="Dirección o referencia difícil">No se ubica la dirección</option>
+              <option value="Avería mecánica en moto">Problema mecánico en la moto</option>
+            </Select>
+            <div className="space-y-2"><label htmlFor="courier-incident-note" className="block text-sm font-semibold text-ink">Comentario adicional (opcional)</label><textarea id="courier-incident-note" value={incidentNote} onChange={(event) => setIncidentNote(event.target.value)} rows={3} placeholder="Explica qué ocurrió y qué ayuda necesitas" className="w-full rounded-xl border border-field bg-surface p-3 text-base text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+            {incidentError && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong">{incidentError}</p>}
+            <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={() => setShowIncidentModal(false)}>Cancelar</Button><Button type="submit">Enviar incidencia</Button></div>
           </form>
         )}
       </Dialog>
