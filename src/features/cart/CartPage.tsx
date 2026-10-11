@@ -24,8 +24,6 @@ import {
   Pill,
   ShoppingBasket,
   Check,
-  CheckSquare,
-  Square,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -76,6 +74,14 @@ export const CartPage: React.FC = () => {
     [items]
   );
   const allSelected = items.length > 0 && selectedItems.length === items.length;
+
+  const activeSelectedMerchantId = useMemo(() => {
+    return selectedItems[0]?.merchantId || null;
+  }, [selectedItems]);
+
+  const activeSelectedMerchant = useMemo(() => {
+    return merchants.find((m) => m.id === activeSelectedMerchantId);
+  }, [merchants, activeSelectedMerchantId]);
 
   // Cart calculations only for the selected items
   const cartCalculations = useMemo(
@@ -215,52 +221,67 @@ export const CartPage: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Selecciona con la casilla los productos que deseas pagar en este pedido.
+              Toca la tarjeta del producto que deseas pagar en este pedido. Si son de la misma tienda, puedes pagarlos todos juntos.
             </p>
           </div>
         </div>
 
-        {/* Barra superior de Selección Global (Master Selection Bar) */}
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => selectAllItems(!allSelected)}
-            className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-ink hover:text-primary transition-colors cursor-pointer"
-          >
-            <div
-              className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                allSelected
-                  ? 'bg-primary border-primary text-white shadow-xs'
-                  : selectedItems.length > 0
-                  ? 'bg-primary/20 border-primary text-primary'
-                  : 'border-gray-300 bg-white hover:border-primary'
-              }`}
-            >
-              {allSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-              {selectedItems.length > 0 && !allSelected && (
-                <Minus className="w-3 h-3 stroke-[3]" />
+        {/* Barra superior inteligente de Selección / Pedido por Tienda */}
+        {allMerchantGroups.length > 1 ? (
+          <div className="bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-white rounded-2xl border border-amber-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-950">
+            <div className="flex items-start sm:items-center gap-2.5">
+              <Store className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <p className="leading-relaxed">
+                <strong>1 pedido por comercio:</strong> Toca cualquier tarjeta para pagar ese producto. Si tienes productos de otra tienda, se guardarán en tu carrito para tu siguiente pedido.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 self-end sm:self-auto flex-shrink-0">
+              {selectedItems.length > 0 && activeSelectedMerchant && (
+                <span className="text-gray-700 bg-white/90 px-3 py-1 rounded-xl border border-amber-200 font-bold">
+                  Comercio activo: <strong className="text-primary">{activeSelectedMerchant.name}</strong> ({selectedItemCount})
+                </span>
+              )}
+              {selectedItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => selectAllItems(false)}
+                  className="text-gray-500 hover:text-primary hover:underline font-semibold cursor-pointer"
+                >
+                  Deseleccionar todo
+                </button>
               )}
             </div>
-            <span>
-              Seleccionar todos los productos ({totalItemCount})
-            </span>
-          </button>
-
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            <span className="text-gray-600 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-100">
-              <strong className="text-primary font-bold">{selectedItemCount}</strong> de {totalItemCount} seleccionados para pagar
-            </span>
-            {selectedItems.length > 0 && (
-              <button
-                type="button"
-                onClick={() => selectAllItems(false)}
-                className="text-gray-400 hover:text-primary hover:underline transition-colors cursor-pointer"
-              >
-                Deseleccionar todos
-              </button>
-            )}
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 font-semibold text-gray-700">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Toca la tarjeta de un producto para incluirlo o guardarlo para después.</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-100 font-bold">
+                <strong className="text-primary">{selectedItemCount}</strong> de {totalItemCount} productos listos para pagar
+              </span>
+              {selectedItems.length < totalItemCount ? (
+                <button
+                  type="button"
+                  onClick={() => selectAllItems(true)}
+                  className="text-primary hover:underline font-bold cursor-pointer"
+                >
+                  Seleccionar todos
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => selectAllItems(false)}
+                  className="text-gray-400 hover:text-red-500 hover:underline font-semibold cursor-pointer"
+                >
+                  Deseleccionar todos
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Items Grouped by Merchant */}
@@ -272,11 +293,12 @@ export const CartPage: React.FC = () => {
               const merchantSelectedItems = group.items.filter(
                 (it) => it.selected !== false
               );
+              const isMerchantSelected =
+                activeSelectedMerchantId === group.merchant.id &&
+                merchantSelectedItems.length > 0;
               const isMerchantFullySelected =
                 group.items.length > 0 &&
                 merchantSelectedItems.length === group.items.length;
-              const isMerchantPartiallySelected =
-                merchantSelectedItems.length > 0 && !isMerchantFullySelected;
 
               // Calculate store subtotal for selected items
               const merchantSelectedSubtotalCents = merchantSelectedItems.reduce(
@@ -291,59 +313,42 @@ export const CartPage: React.FC = () => {
               return (
                 <div
                   key={group.merchant.id}
-                  className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden transition-all"
+                  className={`bg-white rounded-3xl border shadow-sm overflow-hidden transition-all duration-200 ${
+                    isMerchantSelected
+                      ? 'border-primary/40 ring-1 ring-primary/10 shadow-md'
+                      : 'border-gray-200/80'
+                  }`}
                 >
-                  {/* Merchant Subheader with Store Checkbox */}
-                  <div className="p-4 sm:p-5 bg-gray-50/80 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      {/* Checkbox de tienda para marcar/desmarcar todos sus productos */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          selectMerchantItems(
-                            group.merchant.id,
-                            !isMerchantFullySelected
-                          )
-                        }
-                        className="p-1 rounded-lg hover:bg-gray-200/60 transition-colors flex-shrink-0 cursor-pointer"
-                        title={
-                          isMerchantFullySelected
-                            ? `Desmarcar todos los productos de ${group.merchant.name}`
-                            : `Seleccionar todos los productos de ${group.merchant.name}`
-                        }
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                            isMerchantFullySelected
-                              ? 'bg-primary border-primary text-white shadow-xs'
-                              : isMerchantPartiallySelected
-                              ? 'bg-primary/20 border-primary text-primary'
-                              : 'border-gray-300 bg-white hover:border-primary'
-                          }`}
-                        >
-                          {isMerchantFullySelected && (
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          )}
-                          {isMerchantPartiallySelected && (
-                            <Minus className="w-3 h-3 stroke-[3]" />
-                          )}
-                        </div>
-                      </button>
-
+                  {/* Merchant Subheader */}
+                  <div
+                    className={`p-4 sm:p-5 border-b transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isMerchantSelected
+                        ? 'bg-pink-50/40 border-pink-100'
+                        : 'bg-gray-50/80 border-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={group.merchant.logoUrl}
                         alt={group.merchant.name}
-                        className="w-11 h-11 rounded-2xl object-cover border border-gray-200 flex-shrink-0"
+                        className="w-11 h-11 rounded-2xl object-cover border border-gray-200 flex-shrink-0 shadow-2xs"
                       />
-                      <div>
-                        <Link
-                          to={`/negocios/${group.merchant.id}`}
-                          className="font-extrabold text-base text-ink hover:text-primary transition-colors flex items-center gap-1.5"
-                        >
-                          <Store className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span>{group.merchant.name}</span>
-                        </Link>
-                        <div className="flex items-center gap-2 text-xs text-gray-600 mt-0.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to={`/negocios/${group.merchant.id}`}
+                            className="font-extrabold text-base text-ink hover:text-primary transition-colors flex items-center gap-1.5"
+                          >
+                            <Store className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span>{group.merchant.name}</span>
+                          </Link>
+                          {isMerchantSelected && (
+                            <span className="text-[11px] font-bold bg-primary text-white px-2.5 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
+                              <Check className="w-3 h-3 stroke-[3]" /> Tienda activa
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-600 mt-0.5 flex-wrap">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5 text-gray-500" />
                             <span>~{group.merchant.prepTimeMinutes || 25} min</span>
@@ -359,7 +364,38 @@ export const CartPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-center">
+                    <div className="flex items-center gap-2.5 self-start sm:self-center flex-shrink-0 flex-wrap">
+                      {/* Button to toggle all products of this merchant */}
+                      {isMerchantSelected ? (
+                        group.items.length > 1 && (
+                          isMerchantFullySelected ? (
+                            <button
+                              type="button"
+                              onClick={() => selectMerchantItems(group.merchant.id, false)}
+                              className="text-xs font-semibold text-gray-400 hover:text-red-600 hover:underline cursor-pointer"
+                            >
+                              Deseleccionar tienda
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => selectMerchantItems(group.merchant.id, true)}
+                              className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                            >
+                              Pagar todos los ({group.items.length}) de esta tienda
+                            </button>
+                          )
+                        )
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => selectMerchantItems(group.merchant.id, true)}
+                          className="text-xs font-bold text-gray-700 hover:text-primary bg-white hover:bg-gray-100 border border-gray-200 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
+                        >
+                          Pagar productos de este local
+                        </button>
+                      )}
+
                       {isStoreClosed ? (
                         <>
                           <span className="text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full flex items-center gap-1.5">
@@ -381,17 +417,17 @@ export const CartPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {isStoreClosed && isMerchantPartiallySelected && (
+                  {isStoreClosed && isMerchantSelected && (
                     <div className="px-5 py-3 bg-amber-50 border-b border-amber-200/60 text-xs text-amber-900 flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
                       <p>
-                        <strong>{group.merchant.name}</strong> está cerrado en este horario. Desmárcalo para poder tramitar la orden de inmediato con los negocios abiertos.
+                        <strong>{group.merchant.name}</strong> está cerrado en este horario. Toca un producto de otra tienda abierta para realizar tu pedido ahora.
                       </p>
                     </div>
                   )}
 
                   {/* Items in this merchant order */}
-                  <div className="divide-y divide-gray-100 p-4 sm:p-5 space-y-4">
+                  <div className="p-4 sm:p-5 space-y-3">
                     {group.items.map((item) => {
                       const product = products.find((p) => p.id === item.productId);
                       const itemUnitPrice =
@@ -405,127 +441,132 @@ export const CartPage: React.FC = () => {
                       return (
                         <div
                           key={item.id}
-                          className={`pt-4 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-200 ${
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleSelectItem(item.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              toggleSelectItem(item.id);
+                            }
+                          }}
+                          className={`rounded-2xl p-4 transition-all duration-200 cursor-pointer ${
                             isItemSelected
-                              ? 'opacity-100'
-                              : 'opacity-65 bg-gray-50/60 rounded-2xl p-2.5 -mx-1 border border-dashed border-gray-200'
+                              ? 'border-2 border-primary bg-gradient-to-r from-pink-50/35 via-white to-white ring-1 ring-primary/20 shadow-xs'
+                              : 'border border-gray-200 bg-white opacity-65 hover:opacity-100 hover:border-gray-300 shadow-2xs'
                           }`}
+                          title={
+                            isItemSelected
+                              ? 'Toca la tarjeta para desmarcar este producto'
+                              : 'Toca la tarjeta para seleccionar y pagar este producto'
+                          }
                         >
-                          <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                            {/* Checkbox individual del producto */}
-                            <button
-                              type="button"
-                              onClick={() => toggleSelectItem(item.id)}
-                              className="p-1 rounded-lg hover:bg-gray-200/60 transition-colors flex-shrink-0 cursor-pointer"
-                              title={
-                                isItemSelected
-                                  ? 'Desmarcar para este pedido'
-                                  : 'Seleccionar para comprar'
-                              }
-                            >
-                              <div
-                                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                                  isItemSelected
-                                    ? 'bg-primary border-primary text-white shadow-xs'
-                                    : 'border-gray-300 bg-white hover:border-primary'
-                                }`}
-                              >
-                                {isItemSelected && (
-                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                )}
-                              </div>
-                            </button>
-
-                            {product && (
-                              <img
-                                src={product.imageUrl}
-                                alt={product.name}
-                                className="w-16 h-16 rounded-2xl object-cover bg-gray-100 flex-shrink-0 border border-gray-100"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h2 className="font-bold text-ink text-sm sm:text-base truncate">
-                                  {product ? product.name : 'Producto'}
-                                </h2>
-                                {!isItemSelected && (
-                                  <span className="text-[10px] font-bold text-gray-500 bg-gray-200/80 px-2 py-0.5 rounded-full">
-                                    Guardado para después
-                                  </span>
-                                )}
-                              </div>
-
-                              {item.selectedVariantName && (
-                                <p className="text-xs text-primary font-semibold mt-0.5">
-                                  Opción: {item.selectedVariantName}
-                                </p>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                              {product && (
+                                <img
+                                  src={product.imageUrl}
+                                  alt={product.name}
+                                  className="w-16 h-16 rounded-2xl object-cover bg-gray-100 flex-shrink-0 border border-gray-100 shadow-2xs"
+                                />
                               )}
-                              {item.note && (
-                                <p className="text-xs text-gray-600 italic mt-0.5 truncate">
-                                  Nota: "{item.note}"
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-600 font-semibold mt-1 tabular-nums">
-                                {formatCents(itemUnitPrice)} c/u
-                              </p>
-
-                              {isOutOfStock && (
-                                <div className="inline-flex items-center gap-1 text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md font-bold mt-1 border border-amber-200">
-                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>
-                                    Stock limitado en tienda ({product?.stock} unid.)
-                                  </span>
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <h2 className="font-bold text-ink text-sm sm:text-base truncate">
+                                    {product ? product.name : 'Producto'}
+                                  </h2>
+                                  {isItemSelected ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary text-white shadow-2xs">
+                                      <Check className="w-3 h-3 stroke-[3]" />
+                                      <span>Seleccionado para pagar</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-500 border border-gray-200/60">
+                                      <span>Toca la tarjeta para pagar</span>
+                                    </span>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          </div>
 
-                          {/* Quantity and Line Total */}
-                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3.5">
-                            {/* Stepper with minimum 44px hit targets */}
-                            <div className="flex items-center border border-gray-200 rounded-2xl p-1 bg-gray-50/80 shadow-inner">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
-                                }
-                                className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-gray-700 hover:text-ink hover:bg-white transition-colors cursor-pointer"
-                                aria-label="Disminuir cantidad"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <span className="min-w-[32px] text-center font-black text-sm text-ink tabular-nums">
-                                {item.quantity}
-                              </span>
-                              <button
-                                type="button"
-                                disabled={
-                                  product ? item.quantity >= product.stock : false
-                                }
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
-                                }
-                                className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-gray-700 hover:text-ink hover:bg-white disabled:opacity-40 transition-colors cursor-pointer"
-                                aria-label="Aumentar cantidad"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
+                                {item.selectedVariantName && (
+                                  <p className="text-xs text-primary font-semibold">
+                                    Opción: {item.selectedVariantName}
+                                  </p>
+                                )}
+                                {item.note && (
+                                  <p className="text-xs text-gray-600 italic truncate">
+                                    Nota: "{item.note}"
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-600 font-semibold tabular-nums">
+                                  {formatCents(itemUnitPrice)} c/u
+                                </p>
+
+                                {isOutOfStock && (
+                                  <div className="inline-flex items-center gap-1 text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md font-bold border border-amber-200">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>
+                                      Stock limitado en tienda ({product?.stock} unid.)
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
-                            <div className="text-right min-w-[80px]">
-                              <span className="font-black text-base text-ink tabular-nums block">
-                                {formatCents(itemSubtotal)}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => removeItem(item.id)}
-                              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
-                              aria-label="Eliminar producto"
+                            {/* Quantity and Line Total */}
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              {/* Stepper with minimum 44px hit targets */}
+                              <div className="flex items-center border border-gray-200 rounded-2xl p-1 bg-gray-50/80 shadow-inner">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(item.id, item.quantity - 1);
+                                  }}
+                                  className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-gray-700 hover:text-ink hover:bg-white transition-colors cursor-pointer"
+                                  aria-label="Disminuir cantidad"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </button>
+                                <span className="min-w-[32px] text-center font-black text-sm text-ink tabular-nums">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={
+                                    product ? item.quantity >= product.stock : false
+                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(item.id, item.quantity + 1);
+                                  }}
+                                  className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-gray-700 hover:text-ink hover:bg-white disabled:opacity-40 transition-colors cursor-pointer"
+                                  aria-label="Aumentar cantidad"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="text-right min-w-[80px]">
+                                <span className="font-black text-base text-ink tabular-nums block">
+                                  {formatCents(itemSubtotal)}
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeItem(item.id);
+                                }}
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                                aria-label="Eliminar producto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -560,13 +601,13 @@ export const CartPage: React.FC = () => {
               <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p>
-                  No has seleccionado ningún producto. Marca la casilla de los artículos que deseas pagar hoy.
+                  No has seleccionado ningún producto. Toca la tarjeta del producto que deseas pagar para continuar.
                 </p>
               </div>
             ) : (
-              <div className="p-3 bg-pink-50/70 border border-primary-200 rounded-2xl text-[11px] text-primary flex items-center gap-2 font-semibold">
+              <div className="p-3 bg-pink-50/70 border border-primary/20 rounded-2xl text-[11px] text-primary flex items-center gap-2 font-semibold">
                 <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>Solo pagarás los productos marcados con ✓</span>
+                <span>Solo pagarás los productos seleccionados de esta tienda</span>
               </div>
             )}
 
@@ -579,7 +620,7 @@ export const CartPage: React.FC = () => {
               className="w-full shadow-lg min-h-[50px] font-black text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {selectedItems.length === 0 ? (
-                <span>Selecciona al menos 1 producto</span>
+                <span>Toca un producto para pagar</span>
               ) : (
                 <>
                   <span>

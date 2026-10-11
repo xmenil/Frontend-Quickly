@@ -12,6 +12,7 @@ interface CartState {
   getItemCount: () => number;
   toggleSelectItem: (id: string) => void;
   setItemSelected: (id: string, selected: boolean) => void;
+  selectOnlyItem: (id: string) => void;
   selectAllItems: (selected: boolean) => void;
   selectMerchantItems: (merchantId: string, selected: boolean) => void;
   getSelectedItems: () => CartItem[];
@@ -22,11 +23,19 @@ const STORAGE_KEY = 'quickly_cart_v1';
 function getStoredCart(): CartItem[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   const items = safeJsonParse<CartItem[]>(raw, []);
-  // Ensure existing stored items have selected defaulted to true if undefined
-  return items.map((it) => ({
-    ...it,
-    selected: it.selected !== undefined ? it.selected : true,
-  }));
+  if (items.length === 0) return [];
+
+  // Enforce single-store selection rule: only 1 merchant can have selected items
+  const firstSelected = items.find((it) => it.selected !== false);
+  const activeMerchantId = firstSelected ? firstSelected.merchantId : items[0].merchantId;
+
+  return items.map((it) => {
+    const isSelected = it.selected !== undefined ? it.selected : true;
+    return {
+      ...it,
+      selected: it.merchantId === activeMerchantId ? isSelected : false,
+    };
+  });
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -34,7 +43,6 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   addItem: (item) => {
     const current = get().items;
-    // Check if duplicate item exists (same productId and same variant and same note)
     const existingIndex = current.findIndex(
       (it) =>
         it.productId === item.productId &&
@@ -44,19 +52,31 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     let updated: CartItem[];
     if (existingIndex > -1) {
-      updated = [...current];
-      updated[existingIndex] = {
-        ...updated[existingIndex],
-        quantity: updated[existingIndex].quantity + item.quantity,
-        selected: true, // Auto-select when adding or increasing
-      };
+      const targetMerchantId = current[existingIndex].merchantId;
+      updated = current.map((it, idx) => {
+        if (idx === existingIndex) {
+          return {
+            ...it,
+            quantity: it.quantity + item.quantity,
+            selected: true,
+          };
+        }
+        if (it.merchantId !== targetMerchantId) {
+          return { ...it, selected: false };
+        }
+        return it;
+      });
     } else {
       const newItem: CartItem = {
         ...item,
         id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        selected: item.selected !== undefined ? item.selected : true,
+        selected: true,
       };
-      updated = [...current, newItem];
+      // When adding a new item, ensure other merchants are unselected
+      updated = current.map((it) =>
+        it.merchantId !== item.merchantId ? { ...it, selected: false } : it
+      );
+      updated.push(newItem);
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -99,41 +119,98 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   toggleSelectItem: (id: string) => {
-    const updated = get().items.map((it) => {
-      if (it.id === id) {
-        const isCurrentSelected = it.selected !== false;
-        return { ...it, selected: !isCurrentSelected };
-      }
-      return it;
-    });
+    const current = get().items;
+    const targetItem = current.find((it) => it.id === id);
+    if (!targetItem) return;
+
+    const willBeSelected = targetItem.selected === false;
+
+    let updated: CartItem[];
+    if (willBeSelected) {
+      // Activating this item: deselect any items from other merchants!
+      updated = current.map((it) => {
+        if (it.id === id) {
+          return { ...it, selected: true };
+        }
+        if (it.merchantId !== targetItem.merchantId) {
+          return { ...it, selected: false };
+        }
+        return it;
+      });
+    } else {
+      updated = current.map((it) =>
+        it.id === id ? { ...it, selected: false } : it
+      );
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    set({ items: updated });
+  },
+
+  selectOnlyItem: (id: string) => {
+    const updated = get().items.map((it) => ({
+      ...it,
+      selected: it.id === id,
+    }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ items: updated });
   },
 
   setItemSelected: (id: string, selected: boolean) => {
-    const updated = get().items.map((it) =>
-      it.id === id ? { ...it, selected } : it
-    );
+    const current = get().items;
+    const targetItem = current.find((it) => it.id === id);
+    if (!targetItem) return;
+
+    let updated: CartItem[];
+    if (selected) {
+      updated = current.map((it) => {
+        if (it.id === id) return { ...it, selected: true };
+        if (it.merchantId !== targetItem.merchantId) return { ...it, selected: false };
+        return it;
+      });
+    } else {
+      updated = current.map((it) => (it.id === id ? { ...it, selected: false } : it));
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ items: updated });
   },
 
   selectAllItems: (selected: boolean) => {
-    const updated = get().items.map((it) => ({
+    if (!selected) {
+      const updated = get().items.map((it) => ({ ...it, selected: false }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      set({ items: updated });
+      return;
+    }
+
+    // When selecting all: select all items of the currently active merchant (or first merchant)
+    const current = get().items;
+    const activeMerchantId =
+      current.find((it) => it.selected !== false)?.merchantId ||
+      current[0]?.merchantId;
+
+    const updated = current.map((it) => ({
       ...it,
-      selected,
+      selected: activeMerchantId ? it.merchantId === activeMerchantId : false,
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ items: updated });
   },
 
   selectMerchantItems: (merchantId: string, selected: boolean) => {
-    const updated = get().items.map((it) => {
-      if (it.merchantId === merchantId) {
-        return { ...it, selected };
-      }
-      return it;
-    });
+    let updated: CartItem[];
+    if (selected) {
+      // Select all items of this merchant, and deselect all items of other merchants
+      updated = get().items.map((it) => ({
+        ...it,
+        selected: it.merchantId === merchantId,
+      }));
+    } else {
+      // Deselect all items of this merchant
+      updated = get().items.map((it) =>
+        it.merchantId === merchantId ? { ...it, selected: false } : it
+      );
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ items: updated });
   },
@@ -147,11 +224,18 @@ export const useCartStore = create<CartState>((set, get) => ({
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEY) {
-      const items = safeJsonParse<CartItem[]>(e.newValue, []).map((it) => ({
+      const items = safeJsonParse<CartItem[]>(e.newValue, []);
+      if (items.length === 0) {
+        useCartStore.setState({ items: [] });
+        return;
+      }
+      const firstSelected = items.find((it) => it.selected !== false);
+      const activeMerchantId = firstSelected ? firstSelected.merchantId : items[0].merchantId;
+      const sanitized = items.map((it) => ({
         ...it,
-        selected: it.selected !== undefined ? it.selected : true,
+        selected: it.merchantId === activeMerchantId ? it.selected !== false : false,
       }));
-      useCartStore.setState({ items });
+      useCartStore.setState({ items: sanitized });
     }
   });
 }
