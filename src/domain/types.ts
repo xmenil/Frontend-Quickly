@@ -128,6 +128,7 @@ export interface CartItem {
   variantPriceDifferenceCents?: number;
   note?: string;
   unitPriceCents: number;
+  selected?: boolean; // Whether the item is selected for purchase/checkout
 }
 
 export type OrderStatus =

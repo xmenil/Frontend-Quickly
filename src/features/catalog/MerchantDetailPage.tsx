@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { ProductCard } from '../../components/shared/ProductCard';
-import { ProductDetailModal } from './ProductDetailModal';
-import { Product } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
   Star,
   Clock,
   Bike,
   MapPin,
-  Phone,
   Heart,
   ChevronLeft,
   AlertTriangle,
@@ -21,7 +18,6 @@ export const MerchantDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { merchants, products, favoriteMerchantIds, toggleFavoriteMerchant } = useDataStore();
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
 
   const merchant = merchants.find((m) => m.id === id);
@@ -119,7 +115,7 @@ export const MerchantDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => toggleFavoriteMerchant(merchant.id)}
-            className="absolute top-4 right-4 touch-target w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-primary transition-colors"
+            className="absolute top-4 right-4 touch-target w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-primary transition-colors cursor-pointer"
             aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
           >
             <Heart
@@ -237,7 +233,7 @@ export const MerchantDetailPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
           <h2 className="text-xl font-extrabold text-ink">
-            Carta y Catálogo ({merchantProducts.length} productos)
+            Carta y Catálogo ({merchantProducts.length} {merchantProducts.length === 1 ? 'producto' : 'productos'})
           </h2>
 
           {/* Sub-filter chips if applicable */}
@@ -246,7 +242,7 @@ export const MerchantDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveCategoryFilter('all')}
-                className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   activeCategoryFilter === 'all'
                     ? 'bg-primary text-white shadow-sm'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -259,7 +255,7 @@ export const MerchantDetailPage: React.FC = () => {
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategoryFilter(cat)}
-                  className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl capitalize transition-all ${
+                  className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl capitalize transition-all cursor-pointer ${
                     activeCategoryFilter === cat
                       ? 'bg-primary text-white shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -273,25 +269,35 @@ export const MerchantDetailPage: React.FC = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              merchant={merchant}
-              onOpenDetail={(prod) => setSelectedProduct(prod)}
-            />
-          ))}
-        </div>
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-full bg-pink-50 flex items-center justify-center text-primary">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-ink">No hay productos en esta categoría</h3>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto">
+              Prueba seleccionando "Todos" para ver todos los artículos disponibles en {merchant.name}.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveCategoryFilter('all')}
+              className="mt-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors cursor-pointer"
+            >
+              Ver todos los productos
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                merchant={merchant}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        merchant={merchant}
-        isOpen={Boolean(selectedProduct)}
-        onClose={() => setSelectedProduct(null)}
-      />
     </div>
     </div>
   );

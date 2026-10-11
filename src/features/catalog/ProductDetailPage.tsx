@@ -36,7 +36,7 @@ import {
   Building2,
 } from 'lucide-react';
 
-// Algoritmo para encontrar productos similares del mismo tipo pero con otros modelos o marcas
+// Algoritmo para encontrar productos similares del mismo tipo exacto (smartphones, shampoos, zapatillas, etc.)
 function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Product[] {
   if (!targetProduct || !allProducts || allProducts.length === 0) return [];
 
@@ -54,83 +54,88 @@ function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Pr
   const targetTokens = cleanWords(targetProduct.name);
   const targetNameNorm = targetProduct.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  const isPhone = /smartphone|celular|telefono|xiaomi|redmi|poco|iphone|galaxy/i.test(targetNameNorm);
+  const isShampoo = /shampoo|champu|medicasp|sedal|pantene|head & shoulders|capilar|acondicionador/i.test(targetNameNorm);
+  const isShoes = /zapatilla|calzado|vans|nike|tenis|zapato|bota/i.test(targetNameNorm);
   const isSmartwatch = /smartwatch|reloj|pulsera|band|fit\d/i.test(targetNameNorm);
   const isLaptop = /laptop|notebook|computadora/i.test(targetNameNorm);
   const isTV = /smart tv|televisor|\btv\b/i.test(targetNameNorm);
-  const isPhone = /smartphone|celular|telefono/i.test(targetNameNorm);
-  const isTuna = /atun|caballa|grated/i.test(targetNameNorm);
+  const isTuna = /atun|caballa|grated|pescado|conserva/i.test(targetNameNorm);
   const isOil = /aceite/i.test(targetNameNorm);
   const isMilk = /leche/i.test(targetNameNorm);
-  const isPeach = /durazno|fruta en almibar|conserva/i.test(targetNameNorm);
+  const isFood = /cecina|tacacho|juane|patarashca|chaufa|arroz|chicharron/i.test(targetNameNorm);
 
   const scored = candidates.map((cand) => {
     let score = 0;
     const candNameNorm = cand.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const candTokens = cleanWords(cand.name);
 
-    if (isSmartwatch) {
-      if (/smartwatch|reloj|band|fit\d/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'tecnologia') {
-        score += 20;
+    if (isPhone) {
+      if (/smartphone|celular|redmi|poco|iphone|galaxy|dimensity|snapdragon|leica/i.test(candNameNorm)) {
+        score += 500;
+        if (cand.brand && targetProduct.brand && cand.brand.toLowerCase() !== targetProduct.brand.toLowerCase()) {
+          score += 40; // Diferentes marcas (Xiaomi vs iPhone vs Samsung)
+        }
       } else {
-        score -= 500; // Nunca mezclar comida/abarrotes con tecnología
+        score -= 1000;
+      }
+    } else if (isShampoo) {
+      if (/shampoo|champu|anticaspa|medicasp|sedal|pantene|head & shoulders/i.test(candNameNorm)) {
+        score += 500;
+      } else {
+        score -= 1000;
+      }
+    } else if (isShoes) {
+      if (/zapatilla|calzado|vans|nike|tenis|zapato/i.test(candNameNorm)) {
+        score += 500;
+      } else {
+        score -= 1000;
+      }
+    } else if (isSmartwatch) {
+      if (/smartwatch|reloj|band|fit\d/i.test(candNameNorm)) {
+        score += 500;
+      } else {
+        score -= 1000;
       }
     } else if (isLaptop) {
       if (/laptop|notebook|computadora/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'tecnologia') {
-        score += 20;
+        score += 500;
       } else {
-        score -= 500;
+        score -= 1000;
       }
     } else if (isTV) {
       if (/smart tv|televisor|\btv\b/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'electrohogar' || cand.category === 'tecnologia') {
-        score += 20;
+        score += 500;
       } else {
-        score -= 500;
-      }
-    } else if (isPhone) {
-      if (/smartphone|celular/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'tecnologia') {
-        score += 20;
-      } else {
-        score -= 500;
+        score -= 1000;
       }
     } else if (isTuna) {
-      if (/atun|caballa|grated|pescado/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'supermercados') {
-        score += 20;
+      if (/atun|caballa|grated|pescado|conserva/i.test(candNameNorm)) {
+        score += 500;
+      } else if (cand.category === 'supermercados' || cand.category === 'bodegas') {
+        score += 30;
       } else {
-        score -= 500;
+        score -= 1000;
       }
     } else if (isOil) {
       if (/aceite/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'supermercados') {
-        score += 20;
+        score += 500;
       } else {
-        score -= 500;
+        score -= 1000;
       }
     } else if (isMilk) {
       if (/leche/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'supermercados') {
-        score += 20;
+        score += 500;
       } else {
-        score -= 500;
+        score -= 1000;
       }
-    } else if (isPeach) {
-      if (/durazno|fruta|almibar|conserva/i.test(candNameNorm)) {
-        score += 250;
-      } else if (cand.category === 'supermercados') {
-        score += 20;
+    } else if (isFood) {
+      if (/cecina|tacacho|juane|patarashca|chaufa|arroz|chicharron/i.test(candNameNorm)) {
+        score += 500;
+      } else if (cand.category === 'restaurantes') {
+        score += 100;
       } else {
-        score -= 500;
+        score -= 1000;
       }
     } else {
       const matches = targetTokens.filter((tok) => candTokens.includes(tok));
@@ -138,12 +143,11 @@ function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Pr
       if (cand.category === targetProduct.category) score += 30;
     }
 
-    // Requisito del usuario: otros modelos o marcas
     if (cand.brand && targetProduct.brand && cand.brand.toLowerCase() !== targetProduct.brand.toLowerCase()) {
-      score += 35; // Bonificación de marca diferente
+      score += 25;
     }
     if (candNameNorm !== targetNameNorm) {
-      score += 20; // Modelo diferente
+      score += 20;
     }
 
     return { cand, score };
@@ -153,14 +157,311 @@ function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Pr
 
   const filtered = scored.filter((s) => s.score > 0).map((s) => s.cand);
   if (filtered.length >= 4) {
-    return filtered.slice(0, 4);
+    return filtered.slice(0, 6);
   }
 
   const fallback = candidates.filter(
     (c) => c.category === targetProduct.category && !filtered.some((f) => f.id === c.id)
   );
 
-  return [...filtered, ...fallback].slice(0, 4);
+  return [...filtered, ...fallback].slice(0, 6);
+}
+
+// Fotos de opiniones y compradores contextuales según el tipo de producto
+function getCategoryReviewPhotos(product: Product): { url: string; alt: string; rating: number }[] {
+  if (product.images && product.images.length >= 4) {
+    return product.images.slice(0, 4).map((url, i) => ({
+      url,
+      alt: `Foto de cliente ${i + 1}`,
+      rating: 5,
+    }));
+  }
+
+  const name = product.name.toLowerCase();
+  const cat = product.category;
+
+  // 1. Smartphones / Celulares / Tecnología
+  if (
+    /smartphone|celular|telefono|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name) ||
+    (cat === 'emprendedores' && /celular|phone|pro/i.test(name))
+  ) {
+    return [
+      {
+        url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&auto=format&fit=crop&q=80',
+        alt: 'Cliente probando celular en mano',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&auto=format&fit=crop&q=80',
+        alt: 'Pantalla AMOLED del smartphone encendida',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=400&auto=format&fit=crop&q=80',
+        alt: 'Módulo de cámaras traseras en alta definición',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=400&auto=format&fit=crop&q=80',
+        alt: 'Equipo en su caja original con cargador y accesorios',
+        rating: 5,
+      },
+    ];
+  }
+
+  // 2. Shampoos / Cuidado Personal / Farmacia
+  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders|capilar/i.test(name) || cat === 'farmacias') {
+    return [
+      {
+        url: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=400&auto=format&fit=crop&q=80',
+        alt: 'Cliente mostrando frasco de shampoo recibido',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop&q=80',
+        alt: 'Producto sellado en baño',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=400&auto=format&fit=crop&q=80',
+        alt: 'Textura y consistencia del shampoo',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&auto=format&fit=crop&q=80',
+        alt: 'Frasco sellado con tapa protegida',
+        rating: 5,
+      },
+    ];
+  }
+
+  // 3. Abarrotes / Atún / Conservas / Supermercado
+  if (/atun|filete|grated|conserva|aceite|leche|arroz|azucar/i.test(name) || cat === 'supermercados' || cat === 'bodegas') {
+    return [
+      {
+        url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
+        alt: 'Plato preparado con el producto fresco',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
+        alt: 'Ensalada servida con atún en mesa',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400&auto=format&fit=crop&q=80',
+        alt: 'Ingredientes y preparación en cocina',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80',
+        alt: 'Presentación final servida en casa',
+        rating: 5,
+      },
+    ];
+  }
+
+  // 4. Zapatillas / Moda / Ropa
+  if (/zapatilla|calzado|vans|nike|polo|camisa|vestido|pantalon|ropa/i.test(name) || cat === 'ropa') {
+    return [
+      {
+        url: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&auto=format&fit=crop&q=80',
+        alt: 'Calzado puesto probando talla',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&auto=format&fit=crop&q=80',
+        alt: 'Detalle de costuras y suela',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&auto=format&fit=crop&q=80',
+        alt: 'Calzado en suelo vista superior',
+        rating: 5,
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&auto=format&fit=crop&q=80',
+        alt: 'Combinación con outfit diario',
+        rating: 5,
+      },
+    ];
+  }
+
+  // 5. Restaurantes / Gastronomía Amazónica
+  return [
+    {
+      url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop&q=80',
+      alt: 'Plato caliente servido al llegar el delivery',
+      rating: 5,
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
+      alt: 'Porción completa con guarnición y ají',
+      rating: 5,
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&auto=format&fit=crop&q=80',
+      alt: 'Carne ahumada y cecina en punto exacto',
+      rating: 5,
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=80',
+      alt: 'Refresco natural helado',
+      rating: 5,
+    },
+  ];
+}
+
+// Resumen inteligente generado por IA según el tipo de producto
+function getCategoryAiSummary(product: Product): string {
+  const name = product.name.toLowerCase();
+  if (/smartphone|celular|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name)) {
+    return 'Los compradores destacan la fluidez del procesador, la alta nitidez de la pantalla y la duración de la batería para todo el día. Las cámaras toman fotos con excelente detalle y el equipo llega sellado en su caja con garantía oficial en Tingo María.';
+  }
+  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders/i.test(name)) {
+    return 'Los clientes destacan el aroma agradable y duradero, la sensación de limpieza profunda desde la primera lavada y la suavidad en el cuero cabelludo. Excelente presentación sellada sin derrames.';
+  }
+  if (/atun|filete|grated|conserva/i.test(name)) {
+    return 'Los compradores resaltan la frescura del pescado, la calidad del aceite vegetal y el tamaño de la porción. Muy práctico para preparar ensaladas y platos rápidos en familia en Leoncio Prado.';
+  }
+  if (product.category === 'ropa' || /zapatilla|calzado/i.test(name)) {
+    return 'Las zapatillas destacan por su excelente comodidad y calidad. El diseño es atractivo y los materiales son de buena calidad, cumpliendo con las expectativas visuales y de uso. Además, las tallas son precisas, asegurando un ajuste perfecto.';
+  }
+  return 'Los clientes destacan la frescura de los ingredientes, excelente sazón y rápida entrega en Tingo María. El empaque llega en óptimas condiciones térmicas y la porción cumple con las expectativas descritas.';
+}
+
+interface SampleReview {
+  id: string;
+  author: string;
+  date: string;
+  rating: number;
+  variantText: string;
+  comment: string;
+  imageUrl?: string;
+  location: string;
+}
+
+function getCategorySampleReviews(product: Product): SampleReview[] {
+  const name = product.name.toLowerCase();
+  const cat = product.category;
+
+  if (/smartphone|celular|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name)) {
+    return [
+      {
+        id: 'r1',
+        author: 'Carlos M.',
+        date: 'Hace 2 semanas',
+        rating: 5,
+        variantText: 'Color: Negro Titanio · Capacidad: 256GB · Compra verificada',
+        comment: 'Excelente rendimiento, la batería dura más de un día completo y la pantalla a 120Hz es súper fluida. En Tingo María me llegó en 30 minutos.',
+        location: 'Cliente en Castillo Grande',
+      },
+      {
+        id: 'r2',
+        author: 'Valeria R.',
+        date: 'Hace 1 mes',
+        rating: 5,
+        variantText: 'Color: Titanio Natural · Capacidad: 512GB · Compra verificada',
+        comment: 'Las fotos de noche son espectaculares y carga en menos de 25 minutos con su cargador rápido. Viene completamente nuevo y sellado con garantía.',
+        imageUrl: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&auto=format&fit=crop&q=80',
+        location: 'Cliente en Centro de Tingo María',
+      },
+    ];
+  }
+
+  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders/i.test(name) || cat === 'farmacias') {
+    return [
+      {
+        id: 'r1',
+        author: 'Marita G.',
+        date: 'Hace 2 semanas',
+        rating: 5,
+        variantText: 'Presentación: 375ml · Compra verificada',
+        comment: 'Deja el cabello súper limpio y con un aroma fresco que dura todo el día. Muy efectivo contra la resequedad.',
+        location: 'Cliente en Rupa Rupa',
+      },
+      {
+        id: 'r2',
+        author: 'Renato S.',
+        date: 'Hace 3 semanas',
+        rating: 5,
+        variantText: 'Presentación: 375ml · Compra verificada',
+        comment: 'Llegó sellado con precinto de seguridad para evitar derrames en el delivery. 100% recomendado.',
+        imageUrl: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=300&auto=format&fit=crop&q=80',
+        location: 'Cliente en Castillo Grande',
+      },
+    ];
+  }
+
+  if (/atun|filete|grated|conserva|aceite|leche/i.test(name) || cat === 'supermercados' || cat === 'bodegas') {
+    return [
+      {
+        id: 'r1',
+        author: 'Rosa P.',
+        date: 'Hace 1 semana',
+        rating: 5,
+        variantText: 'Presentación: Lata 170g · Compra verificada',
+        comment: 'Lomos enteros de atún en aceite vegetal de gran calidad y con fecha de vencimiento lejana. Muy rendidor para ensaladas.',
+        location: 'Cliente en Centro de Tingo María',
+      },
+      {
+        id: 'r2',
+        author: 'Jorge T.',
+        date: 'Hace 2 semanas',
+        rating: 5,
+        variantText: 'Presentación: Pack ahorro · Compra verificada',
+        comment: 'Excelente sabor y frescura, llegó rápido y bien protegido junto con las compras del supermercado.',
+        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80',
+        location: 'Cliente en Las Palmas',
+      },
+    ];
+  }
+
+  if (cat === 'ropa' || /zapatilla|calzado|vans|nike/i.test(name)) {
+    return [
+      {
+        id: 'r1',
+        author: 'Edwin B.',
+        date: 'Hace 2 semanas',
+        rating: 5,
+        variantText: 'Color: Negro · Talla: 41 EU · Compra verificada',
+        comment: 'Soy talla 41 y me quedó como un guante. La suela vulcanizada no resbala con la lluvia de la selva y la lona es resistente.',
+        location: 'Cliente en Tingo María',
+      },
+      {
+        id: 'r2',
+        author: 'Andrea L.',
+        date: 'Hace 1 mes',
+        rating: 5,
+        variantText: 'Color: Negro · Talla: 42 EU · Compra verificada',
+        comment: 'Es encantadora esta zapatilla muy cómoda, la compré en mi talla habitual y el acabado es de primera calidad.',
+        imageUrl: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=300&auto=format&fit=crop&q=80',
+        location: 'Cliente en Castillo Grande',
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'r1',
+      author: 'Milagros Q.',
+      date: 'Hace 1 semana',
+      rating: 5,
+      variantText: 'Porción: Personal · Compra verificada',
+      comment: 'La cecina deliciosa con el auténtico ahumado tradicional tingalés. El tacacho en su punto y el ají de cocona buenísimo.',
+      location: 'Cliente en Rupa Rupa',
+    },
+    {
+      id: 'r2',
+      author: 'Fernando M.',
+      date: 'Hace 2 semanas',
+      rating: 5,
+      variantText: 'Porción: Familiar · Compra verificada',
+      comment: 'Llegó calientito en envase térmico en menos de 25 minutos. El sabor es insuperable, volveré a pedir.',
+      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&auto=format&fit=crop&q=80',
+      location: 'Cliente en Centro de Tingo María',
+    },
+  ];
 }
 
 export const ProductDetailPage: React.FC = () => {
@@ -249,6 +550,21 @@ export const ProductDetailPage: React.FC = () => {
   const similarProducts = useMemo(() => {
     return findSimilarProducts(product, products);
   }, [product, products]);
+
+  // Fotos de reviews contextuales según el producto (celulares, shampoo, etc.)
+  const reviewPhotos = useMemo(() => {
+    return getCategoryReviewPhotos(product);
+  }, [product]);
+
+  // Resumen de opiniones IA contextual
+  const aiSummary = useMemo(() => {
+    return getCategoryAiSummary(product);
+  }, [product]);
+
+  // Reseñas de clientes contextuales al tipo de producto
+  const sampleReviews = useMemo(() => {
+    return getCategorySampleReviews(product);
+  }, [product]);
 
   const selectedVariantObj = product.variants?.find((v) => v.id === selectedVariantId);
 
@@ -595,23 +911,18 @@ export const ProductDetailPage: React.FC = () => {
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-ink">Opiniones con fotos</h3>
               <div className="grid grid-cols-4 gap-2.5">
-                {[
-                  'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=300&auto=format&fit=crop&q=80',
-                  'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&auto=format&fit=crop&q=80',
-                  'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=300&auto=format&fit=crop&q=80',
-                  'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=300&auto=format&fit=crop&q=80',
-                ].map((imgUrl, idx) => (
+                {reviewPhotos.map((photo, idx) => (
                   <div
                     key={idx}
                     className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-100 group cursor-pointer"
                   >
                     <img
-                      src={imgUrl}
-                      alt={`Foto de comprador ${idx + 1}`}
+                      src={photo.url}
+                      alt={photo.alt}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                     <div className="absolute bottom-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5">
-                      <span>5</span>
+                      <span>{photo.rating}</span>
                       <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                     </div>
                   </div>
@@ -626,86 +937,58 @@ export const ProductDetailPage: React.FC = () => {
                 <span>Resumen de opiniones generado por IA</span>
               </div>
               <p className="text-xs text-ink/80 leading-relaxed font-medium">
-                {product.category === 'ropa'
-                  ? 'Las zapatillas destacan por su excelente comodidad y calidad. El diseño es atractivo y los materiales son de buena calidad, cumpliendo con las expectativas visuales y de uso. Además, las tallas son precisas, asegurando un ajuste perfecto si se conoce el tamaño del pie.'
-                  : `Los clientes destacan la frescura, excelente sabor y rápida entrega en Tingo María. El empaque llega en óptimas condiciones térmicas y la porción cumple con las expectativas descritas.`}
+                {aiSummary}
               </p>
             </div>
 
             {/* Review Cards List */}
             <div className="space-y-4 pt-2">
-              {/* Review 1 */}
-              <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                    ))}
+              {sampleReviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-2 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {[...Array(rev.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-gray-400 text-[11px]">{rev.date}</span>
                   </div>
-                  <span className="text-gray-400 text-[11px]">Hace 2 semanas</span>
-                </div>
-                <p className="text-gray-400 font-medium text-[11px]">
-                  Color: Negro · Talla: 42 EU · Compra verificada
-                </p>
-                <p className="text-ink leading-relaxed font-medium">
-                  Soy talla 42 y me ajusta mucho, debí comprar 43. Igual me encantaron por el acabado y la suela vulcanizada que no resbala.
-                </p>
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleVoteUseful('r1')}
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
-                      votedReviews.r1
-                        ? 'bg-primary-50 text-primary border-primary-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <ThumbsUp className="w-3 h-3" />
-                    <span>Útil {reviewHelpful.r1}</span>
-                  </button>
-                  <span className="text-[10px] text-gray-400">Cliente en Tingo María</span>
-                </div>
-              </div>
-
-              {/* Review 2 */}
-              <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                    ))}
+                  <p className="text-gray-400 font-medium text-[11px]">
+                    {rev.variantText}
+                  </p>
+                  <p className="text-ink leading-relaxed font-medium">
+                    {rev.comment}
+                  </p>
+                  {rev.imageUrl && (
+                    <div className="w-20 h-20 rounded-xl overflow-hidden border border-gray-200 mt-1">
+                      <img
+                        src={rev.imageUrl}
+                        alt="Foto cliente"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleVoteUseful(rev.id)}
+                      className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                        votedReviews[rev.id]
+                          ? 'bg-primary-50 text-primary border-primary-200'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>Útil {reviewHelpful[rev.id] || 4}</span>
+                    </button>
+                    <span className="text-[10px] text-gray-400">{rev.location}</span>
                   </div>
-                  <span className="text-gray-400 text-[11px]">Hace 1 mes</span>
                 </div>
-                <p className="text-gray-400 font-medium text-[11px]">
-                  Color: Negro · Talla: 42 EU · Compra verificada
-                </p>
-                <p className="text-ink leading-relaxed font-medium">
-                  Es encantadora estás zapatilla muy cómoda, la compré en mi talla habitual 9 (42.0) y quedó como un guante perfecto. Recomendado 100%.
-                </p>
-                <div className="w-20 h-20 rounded-xl overflow-hidden border border-gray-200 mt-1">
-                  <img
-                    src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=200&auto=format&fit=crop&q=80"
-                    alt="Foto cliente"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleVoteUseful('r2')}
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
-                      votedReviews.r2
-                        ? 'bg-primary-50 text-primary border-primary-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <ThumbsUp className="w-3 h-3" />
-                    <span>Útil {reviewHelpful.r2}</span>
-                  </button>
-                  <span className="text-[10px] text-gray-400">Cliente en Castillo Grande</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -978,146 +1261,111 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Similar Products Section matching user requirement */}
-      <div className="pt-8 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-extrabold text-ink">Productos similares</h2>
-            <p className="text-xs text-gray-500">
-              Mismo tipo de producto en otros modelos y marcas oficiales en Tingo María
-            </p>
+      {/* Productos relacionados matching Mercado Libre in Captura 4 */}
+      <div className="pt-8 space-y-4 relative">
+        <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-ink tracking-tight">
+              Productos relacionados
+            </h2>
+            <span className="text-[10px] text-gray-400 font-bold border border-gray-200 px-1.5 py-0.2 rounded">
+              Ad
+            </span>
           </div>
           <Link
             to="/negocios"
             className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
           >
-            Ver más del catálogo <ArrowRight className="w-3.5 h-3.5" />
+            Ver más opciones <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* 4 Cards Grid con diseño unificado */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {similarProducts.map((simProd) => {
-            const simStore = merchants.find((m) => m.id === simProd.merchantId);
-            const isJustAdded = addedSimilarId === simProd.id;
-            const discountPercent =
-              simProd.originalPriceCents && simProd.originalPriceCents > simProd.priceCents
-                ? Math.round(
-                    ((simProd.originalPriceCents - simProd.priceCents) / simProd.originalPriceCents) *
-                      100
-                  )
-                : null;
+        {/* Mercado Libre Style Cards Grid with Next Arrow */}
+        <div className="relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            {similarProducts.map((simProd) => {
+              const simStore = merchants.find((m) => m.id === simProd.merchantId);
+              const discountPercent =
+                simProd.originalPriceCents && simProd.originalPriceCents > simProd.priceCents
+                  ? Math.round(
+                      ((simProd.originalPriceCents - simProd.priceCents) /
+                        simProd.originalPriceCents) *
+                        100
+                    )
+                  : 19;
+              const originalPrice =
+                simProd.originalPriceCents || Math.round(simProd.priceCents * 1.22);
+              const cuotaPrice = Math.round(simProd.priceCents / 6);
 
-            return (
-              <Link
-                key={simProd.id}
-                to={`/producto/${simProd.id}`}
-                className="group bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
-              >
-                {/* Product Image: De esquina a esquina */}
-                <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                  <img
-                    src={simProd.imageUrl}
-                    alt={simProd.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-
-                  {discountPercent ? (
-                    <span className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
-                      {discountPercent}% OFF
-                    </span>
-                  ) : simProd.brand ? (
-                    <span className="absolute top-2.5 right-2.5 bg-ink/85 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs">
-                      {simProd.brand}
-                    </span>
-                  ) : null}
-
-                  <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                    Envío rápido
-                  </span>
-                </div>
-
-                {/* Content Body */}
-                <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+              return (
+                <Link
+                  key={simProd.id}
+                  to={`/producto/${simProd.id}`}
+                  className="group bg-white rounded-2xl border border-gray-200/90 hover:border-gray-300 shadow-subtle hover:shadow-card p-3 sm:p-3.5 flex flex-col justify-between transition-all duration-200 text-left relative"
+                >
                   <div>
-                    {/* Product Name */}
-                    <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
+                    {/* Centered Product Image */}
+                    <div className="aspect-square w-full rounded-xl bg-white overflow-hidden flex items-center justify-center p-2 mb-2 relative">
+                      <img
+                        src={simProd.imageUrl}
+                        alt={simProd.name}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      {simStore && (
+                        <span className="absolute top-1 left-1 text-[9px] font-bold text-gray-500 bg-gray-100/90 px-1.5 py-0.5 rounded-full truncate max-w-[120px]">
+                          {simStore.name.replace(/Supermercado\s+/i, 'Super ').replace(/\s+Tingo María$/i, '')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Product Title (2-3 lines clean text) */}
+                    <h4 className="text-xs sm:text-[13px] text-gray-800 font-normal leading-snug line-clamp-2 min-h-[2.4rem] group-hover:text-primary transition-colors">
                       {simProd.name}
                     </h4>
 
-                    {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
-                    <div className="flex items-center justify-between gap-1.5 mt-2">
-                      {/* Perfil de la tienda */}
-                      <div
-                        className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
-                        title={`${simStore?.name || 'Tienda Oficial'} • Tienda verificada`}
-                      >
-                        {simStore?.logoUrl ? (
-                          <img
-                            src={simStore.logoUrl}
-                            alt={simStore.name}
-                            className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                        )}
-                        <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                          {(simStore?.name || 'Tienda Oficial')
-                            .replace(/Supermercado\s+/i, 'Super ')
-                            .replace(/\s+Tingo María$/i, '')}
-                        </span>
-                        <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
-                      </div>
-
-                      {/* Stock disponible */}
-                      <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0 animate-pulse" />
-                        <span>Stock disponible</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Row */}
-                  <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
-                    <div className="min-w-0">
-                      <div className="h-3.5 flex items-center">
-                        {discountPercent && simProd.originalPriceCents ? (
-                          <span className="text-[10px] text-gray-400 line-through tabular-nums leading-none">
-                            {formatCents(simProd.originalPriceCents)}
-                          </span>
-                        ) : null}
-                      </div>
-                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
-                        {formatCents(simProd.priceCents)}
+                    {/* Pricing matching Captura 4 */}
+                    <div className="mt-2 space-y-0.5">
+                      <span className="text-[11px] text-gray-400 line-through tabular-nums block">
+                        {formatCents(originalPrice)}
                       </span>
-                    </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-base sm:text-lg font-bold text-ink tabular-nums">
+                          {formatCents(simProd.priceCents)}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded">
+                          {discountPercent}% OFF
+                        </span>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleAddSimilarProduct(e, simProd)}
-                      title="Agregar al carrito"
-                      aria-label={`Agregar ${simProd.name} al carrito`}
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
-                        isJustAdded
-                          ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
-                          : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
-                      }`}
-                    >
-                      {isJustAdded ? (
-                        <Check className="w-4 h-4 stroke-[3]" />
-                      ) : (
-                        <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      )}
-                    </button>
+                      {/* Cuotas sin interés */}
+                      <p className="text-[11px] text-emerald-700 font-medium leading-tight pt-0.5">
+                        6 cuotas de {formatCents(cuotaPrice)} sin interés
+                      </p>
+
+                      {/* Envío gratis */}
+                      <p className="text-[11px] text-emerald-700 font-bold pt-0.5">
+                        Envío gratis
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Floating Right Next Chevron Button matching Captura 4 */}
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.querySelector('.grid-cols-2');
+              if (el) el.scrollBy({ left: 240, behavior: 'smooth' });
+            }}
+            aria-label="Ver más productos relacionados"
+            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-floating border border-gray-200 items-center justify-center text-primary hover:bg-primary hover:text-white transition-all z-10 hover:scale-108 active:scale-95"
+          >
+            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+          </button>
         </div>
       </div>
       </div>

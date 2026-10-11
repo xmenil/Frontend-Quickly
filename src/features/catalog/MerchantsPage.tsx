@@ -3,7 +3,6 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
 import { MerchantCard } from '../../components/shared/MerchantCard';
-import { ProductDetailModal } from './ProductDetailModal';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { MerchantCategory, Product } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
@@ -20,6 +19,7 @@ import {
   Flame,
   Tag,
   ArrowRight,
+  Eye,
 } from 'lucide-react';
 
 export const MerchantsPage: React.FC = () => {
@@ -40,7 +40,6 @@ export const MerchantsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'products' | 'merchants'>(
     queryParam.trim() ? 'products' : 'merchants'
   );
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [addedToast, setAddedToast] = useState<string | null>(null);
 
   // Sync state when URL params change
@@ -61,12 +60,6 @@ export const MerchantsPage: React.FC = () => {
   const merchantMap = useMemo(() => {
     return new Map(merchants.map((m) => [m.id, m]));
   }, [merchants]);
-
-  // Selected product's merchant for modal
-  const selectedProductMerchant = useMemo(() => {
-    if (!selectedProduct) return undefined;
-    return merchantMap.get(selectedProduct.merchantId);
-  }, [selectedProduct, merchantMap]);
 
   // 1. FILTER AND SORT PRODUCTS (Across ALL stores mixed, preferably best sellers first)
   const filteredProducts = useMemo(() => {
@@ -198,7 +191,7 @@ export const MerchantsPage: React.FC = () => {
   const handleQuickAddProduct = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
     if (product.hasVariants && product.variants && product.variants.length > 0) {
-      setSelectedProduct(product);
+      navigate(`/producto/${product.id}`);
       return;
     }
 
@@ -513,7 +506,7 @@ export const MerchantsPage: React.FC = () => {
                     return (
                       <div
                         key={product.id}
-                        onClick={() => setSelectedProduct(product)}
+                        onClick={() => navigate(`/producto/${product.id}`)}
                         className="group bg-white rounded-2xl border border-gray-200/80 hover:border-primary-300 shadow-subtle hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer"
                       >
                         {/* Image Container with Badges */}
@@ -610,13 +603,27 @@ export const MerchantsPage: React.FC = () => {
                             {/* Action Button */}
                             <button
                               type="button"
-                              onClick={(e) => handleQuickAddProduct(e, product)}
+                              onClick={(e) => {
+                                if (product.hasVariants) {
+                                  e.stopPropagation();
+                                  navigate(`/producto/${product.id}`);
+                                } else {
+                                  handleQuickAddProduct(e, product);
+                                }
+                              }}
                               className="w-full mt-1 py-2 px-3 rounded-xl bg-pink-50 hover:bg-primary text-primary hover:text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
                             >
-                              <Plus className="w-4 h-4 stroke-[2.5]" />
-                              <span>
-                                {product.hasVariants ? 'Ver opciones' : 'Agregar al carrito'}
-                              </span>
+                              {product.hasVariants ? (
+                                <>
+                                  <Eye className="w-4 h-4 stroke-[2.5]" />
+                                  <span>Ver modelos y detalles</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                                  <span>Agregar al carrito</span>
+                                </>
+                              )}
                             </button>
                           </div>
                         </div>
@@ -652,14 +659,6 @@ export const MerchantsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        merchant={selectedProductMerchant}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
     </div>
   );
 };

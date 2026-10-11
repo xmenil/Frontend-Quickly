@@ -18,7 +18,10 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
   const isFavorite = favoriteMerchantIds.includes(merchant.id);
 
   return (
-    <div className="relative group bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-md hover:border-primary-200 transition-all duration-200 overflow-hidden flex flex-col">
+    <Link
+      to={`/negocios/${merchant.id}`}
+      className="relative group bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-card hover:border-primary-300 hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col cursor-pointer block select-none"
+    >
       {/* Banner Container */}
       <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
         {/* Shimmer skeleton */}
@@ -101,12 +104,9 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
       <div className="p-4 flex flex-col flex-1 justify-between space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2 mb-1">
-            <Link
-              to={`/negocios/${merchant.id}`}
-              className="font-bold text-ink text-base group-hover:text-primary transition-colors line-clamp-1"
-            >
+            <h3 className="font-bold text-ink text-base group-hover:text-primary transition-colors line-clamp-1">
               {merchant.name}
-            </Link>
+            </h3>
           </div>
 
           <p className="text-xs text-ink-light line-clamp-2 leading-relaxed">
@@ -126,6 +126,6 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };

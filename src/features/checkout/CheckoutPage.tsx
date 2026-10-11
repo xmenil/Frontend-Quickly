@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
-  const { items, clearCart } = useCartStore();
+  const { items, removeItems } = useCartStore();
   const { merchants, products, addresses, zones, createPurchase } = useDataStore();
   const { currentUser, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -78,9 +78,11 @@ export const CheckoutPage: React.FC = () => {
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
   const selectedZone = zones.find((z) => z.id === selectedAddress?.zoneId);
 
-  const cartCalculations = calculateCart(items, merchants, selectedZone);
+  // Calculate cart ONLY for selected items
+  const selectedItems = items.filter((it) => it.selected !== false);
+  const cartCalculations = calculateCart(selectedItems, merchants, selectedZone);
 
-  if (items.length === 0) {
+  if (selectedItems.length === 0) {
     navigate('/carrito');
     return null;
   }
@@ -196,7 +198,8 @@ export const CheckoutPage: React.FC = () => {
       setIsSubmitting(false);
 
       if (result.success) {
-        clearCart();
+        // Retirar del carrito solo los productos adquiridos; los no seleccionados permanecen
+        removeItems(selectedItems.map((it) => it.id));
         navigate(`/cliente/pedidos/${purchaseId}`, {
           state: { isNewOrder: true },
         });
