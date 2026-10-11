@@ -12,6 +12,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, helperText, children, id, ...props }, ref) => {
     const selectId = id || (label ? `select_${label.toLowerCase().replace(/\s+/g, '_')}` : undefined);
     const errorId = error && selectId ? `${selectId}-error` : undefined;
+    const helperId = helperText && selectId ? `${selectId}-helper` : undefined;
 
     return (
       <div className="w-full flex flex-col gap-1.5 text-left">
@@ -26,6 +27,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             aria-invalid={Boolean(error)}
+            aria-describedby={errorId || helperId}
             className={cn(
               'w-full min-h-11 appearance-none rounded-xl border bg-surface px-3 py-2 pr-10 text-base text-ink transition-colors',
               'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
@@ -47,7 +49,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <span>{error}</span>
           </p>
         )}
-        {helperText && !error && <p className="text-xs text-ink-muted mt-0.5">{helperText}</p>}
+        {helperText && !error && <p id={helperId} className="text-xs text-ink-muted mt-0.5">{helperText}</p>}
       </div>
     );
   }

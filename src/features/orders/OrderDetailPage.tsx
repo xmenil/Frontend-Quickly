@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
@@ -36,6 +36,7 @@ export const OrderDetailPage: React.FC = () => {
   const { addItem } = useCartStore();
   const { currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const purchase = purchases.find((p) => p.id === id);
 
@@ -124,6 +125,13 @@ export const OrderDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-24 sm:pb-12">
+      {location.state?.isNewOrder === true && (
+        <section role="status" className="space-y-2 rounded-2xl border border-selva-border bg-selva-soft p-4 text-selva-strong">
+          <h2 className="text-base font-semibold">Pedido registrado</h2>
+          <p className="text-sm">{purchase.status === 'pendiente' ? 'El comercio revisará tu pedido. Puedes consultar sus cambios de estado aquí.' : 'Puedes consultar el estado y los datos de tu pedido aquí.'}</p>
+          {purchase.paymentStatus === 'pendiente' && <p className="text-xs">{purchase.paymentMethod === 'efectivo' ? 'El pago se realizará contra entrega.' : 'El pago digital sigue pendiente de verificación.'}</p>}
+        </section>
+      )}
       {/* Top Breadcrumb & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -232,7 +240,7 @@ export const OrderDetailPage: React.FC = () => {
                   : 'Tarjeta de Crédito / Débito'}
               </span>
             </div>
-            <PaymentStatusBadge status={purchase.paymentStatus} />
+            <PaymentStatusBadge status={purchase.paymentStatus} method={purchase.paymentMethod} />
           </div>
 
           <div className="flex justify-between items-baseline pt-1">

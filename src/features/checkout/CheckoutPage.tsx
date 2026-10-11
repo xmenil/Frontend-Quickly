@@ -1,126 +1,229 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
 import { useDataStore } from '../../store/dataStore';
 import { useAuthStore } from '../../store/authStore';
-import { calculateCart, validateCashPayment } from '../../domain/pricingRules';
+import { validateCashPayment } from '../../domain/pricingRules';
 import { generateOrderNumber } from '../../lib/utils';
-import { formatCents, solesToCents, centsToSoles } from '../../lib/currency';
+import { formatCents, centsToSoles } from '../../lib/currency';
 import { PriceSummary } from '../../components/shared/PriceSummary';
 import { AddressForm } from '../../components/shared/AddressForm';
 import { Dialog } from '../../components/ui/Dialog';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Badge } from '../../components/ui/Badge';
 import { PaymentMethod, Purchase, MerchantOrder, TrackingEvent } from '../../domain/types';
 import {
   MapPin,
   CreditCard,
   Banknote,
   Smartphone,
-  ShieldCheck,
   AlertCircle,
   Plus,
-  CheckCircle2,
   ChevronLeft,
   Store,
-  Bike,
   Check,
-  QrCode,
-  Clock,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
+
+import { checkoutSnapshot, validateCheckoutContext, parseCashCents } from './checkoutFlow';
 
 export const CheckoutPage: React.FC = () => {
   const { items, removeItems } = useCartStore();
-  const { merchants, products, addresses, zones, createPurchase } = useDataStore();
+  const { merchants, products, addresses, zones, createPurchase, ensureExampleAddresses } = useDataStore();
   const { currentUser, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const userAddresses = addresses.filter((address) => address.userId === currentUser?.id);
+  const [selectedAddressId, setSelectedAddressId] = useState(userAddresses.find((address) => address.isDefault && zones.some((zone) => zone.id === address.zoneId && zone.isAvailable))?.id || userAddresses.find((address) => zones.some((zone) => zone.id === address.zoneId && zone.isAvailable))?.id || '');
+  const [showNewAddressDialog, setShowNewAddressDialog] = useState(false);
+  const [addressNotice, setAddressNotice] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [cashAmountGivenSoles, setCashAmountGivenSoles] = useState('');
+  const [cashTouched, setCashTouched] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recordedPurchaseId, setRecordedPurchaseId] = useState<string | null>(null);
+  const checkoutLocked = isSubmitting || Boolean(recordedPurchaseId);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const previousStepRef = useRef<1 | 2 | 3>(1);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [acceptedAddressKey, setAcceptedAddressKey] = useState('');
+  const [reviewedPaymentKey, setReviewedPaymentKey] = useState('');
+  const [digitalAcknowledgementKey, setDigitalAcknowledgementKey] = useState('');
+  const submissionRef = useRef(false);
+  const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auth gatekeeper
+  const context = { userId: currentUser?.id || '', addressId: selectedAddressId, items, addresses, zones, merchants, products };
+  const snapshot = checkoutSnapshot(context);
+  const { selectedAddress, selectedZone, selectedItems, calculations: cartCalculations, key: contextKey } = snapshot;
+  const contextError = validateCheckoutContext(context);
+  const parsedCashCents = parseCashCents(cashAmountGivenSoles);
+  const cashGivenCents = parsedCashCents || 0;
+  const cashValidation = validateCashPayment(cashGivenCents, cartCalculations.grandTotalCents);
+  const digitalKey = JSON.stringify([contextKey, paymentMethod]);
+  const digitalAcknowledged = digitalAcknowledgementKey === digitalKey;
+  const paymentReady = Boolean(paymentMethod) && (paymentMethod === 'efectivo'
+    ? parsedCashCents !== null && cashValidation.isValid
+    : digitalAcknowledged);
+  const paymentKey = JSON.stringify([contextKey, paymentMethod, paymentMethod === 'efectivo' ? cashGivenCents : digitalAcknowledged]);
+  const addressCompleted = acceptedAddressKey === contextKey && !contextError;
+  const paymentCompleted = addressCompleted && paymentReady && reviewedPaymentKey === paymentKey;
+  const previousContextKey = useRef(contextKey);
+
+  useEffect(() => {
+    if (isAuthenticated && currentUser) ensureExampleAddresses(currentUser);
+  }, [isAuthenticated, currentUser, ensureExampleAddresses]);
+
+  useEffect(() => {
+    if (selectedAddressId || submissionRef.current) return;
+    const available = userAddresses.filter((address) => zones.some((zone) => zone.id === address.zoneId && zone.isAvailable));
+    const preferred = available.find((address) => address.isDefault) || available[0];
+    if (preferred) setSelectedAddressId(preferred.id);
+  }, [userAddresses, zones, selectedAddressId]);
+
   useEffect(() => {
     if (!isAuthenticated || !currentUser) {
-      navigate('/login', {
-        state: {
-          from: '/checkout',
-          message: 'Inicia sesión para finalizar tu pedido de forma rápida y segura en Tingo María',
-        },
-        replace: true,
-      });
+      navigate('/login', { state: { from: '/checkout', message: 'Inicia sesión para finalizar tu pedido.' }, replace: true });
+    } else if (!selectedItems.length && !submissionRef.current) {
+      navigate('/carrito', { replace: true });
     }
-  }, [isAuthenticated, currentUser, navigate]);
+  }, [isAuthenticated, currentUser, selectedItems.length, navigate, isSubmitting]);
 
-  // Steps: 1: Dirección -> 2: Pago -> 3: Revisión
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  useEffect(() => {
+    if (submissionRef.current) return;
+    if (previousContextKey.current !== contextKey) {
+      if (acceptedAddressKey) {
+        setOrderError('Los datos del pedido cambiaron. Revisa la dirección, el total y el pago antes de continuar.');
+        setCurrentStep(1);
+      }
+      setAcceptedAddressKey('');
+      setReviewedPaymentKey('');
+      setDigitalAcknowledgementKey('');
+      previousContextKey.current = contextKey;
+    }
+  }, [contextKey, acceptedAddressKey, isSubmitting]);
 
-  // Step 1: Selected address
-  const userAddresses = addresses.filter((a) => a.userId === currentUser?.id);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>(
-    userAddresses.find((a) => a.isDefault)?.id || userAddresses[0]?.id || ''
-  );
-  const [showNewAddressDialog, setShowNewAddressDialog] = useState(false);
+  useEffect(() => {
+    setReviewedPaymentKey('');
+  }, [contextKey, paymentMethod, cashAmountGivenSoles, digitalAcknowledgementKey]);
 
-  // Step 2: Payment method & parameters
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('yape_plin');
-  const [cashAmountGivenSoles, setCashAmountGivenSoles] = useState<string>('50');
-  const [simulateCardFailure, setSimulateCardFailure] = useState(false);
-  const [showDevOptions, setShowDevOptions] = useState(false);
+  useEffect(() => {
+    if (submissionRef.current) return;
+    if (currentStep > 1 && !addressCompleted) setCurrentStep(1);
+    else if (currentStep === 3 && !paymentCompleted) setCurrentStep(2);
+  }, [currentStep, addressCompleted, paymentCompleted, isSubmitting]);
 
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderError, setOrderError] = useState<string | null>(null);
+  useEffect(() => {
+    if (previousStepRef.current !== currentStep) {
+      stepHeadingRef.current?.focus();
+      previousStepRef.current = currentStep;
+    }
+  }, [currentStep]);
 
-  if (!isAuthenticated || !currentUser) {
-    return null;
-  }
+  useEffect(() => () => {
+    if (submitTimerRef.current !== null) clearTimeout(submitTimerRef.current);
+  }, []);
 
-  const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
-  const selectedZone = zones.find((z) => z.id === selectedAddress?.zoneId);
-
-  // Calculate cart ONLY for selected items
-  const selectedItems = items.filter((it) => it.selected !== false);
-  const cartCalculations = calculateCart(selectedItems, merchants, selectedZone);
-
-  if (selectedItems.length === 0) {
-    navigate('/carrito');
-    return null;
-  }
-
-  // Cash payment validation
-  const cashGivenCents = solesToCents(parseFloat(cashAmountGivenSoles) || 0);
-  const cashValidation = validateCashPayment(cashGivenCents, cartCalculations.grandTotalCents);
-
-  // Quick cash buttons helper
-  const grandTotalSoles = centsToSoles(cartCalculations.grandTotalCents);
-  const handleSetExactCash = () => {
-    setCashAmountGivenSoles(grandTotalSoles.toFixed(2));
+  const liveContext = () => {
+    const data = useDataStore.getState();
+    return { userId: useAuthStore.getState().currentUser?.id || '', addressId: selectedAddressId,
+      items: useCartStore.getState().items, addresses: data.addresses, zones: data.zones, merchants: data.merchants, products: data.products };
   };
 
-  const handleConfirmOrder = () => {
-    if (!selectedAddress) {
-      setOrderError('Por favor selecciona una dirección de entrega válida en Tingo María.');
+  const goToStep = (step: 1 | 2 | 3) => {
+    if (submissionRef.current) return;
+    if (step === 1 || step === 2 && addressCompleted || step === 3 && paymentCompleted) {
+      setOrderError(null);
+      setCurrentStep(step);
+    }
+  };
+
+  const chooseAddress = (id: string) => {
+    if (submissionRef.current) return;
+    setSelectedAddressId(id);
+    setAcceptedAddressKey('');
+    setReviewedPaymentKey('');
+    setDigitalAcknowledgementKey('');
+    setOrderError(null);
+    setAddressNotice('');
+    setCurrentStep(1);
+  };
+
+  const continueToPayment = () => {
+    if (submissionRef.current) return;
+    const fresh = liveContext();
+    const error = validateCheckoutContext(fresh);
+    if (error) { setOrderError(error); return; }
+    setOrderError(null);
+    setAcceptedAddressKey(checkoutSnapshot(fresh).key);
+    setCurrentStep(2);
+  };
+
+  const selectPaymentMethod = (method: PaymentMethod) => {
+    if (submissionRef.current || method === paymentMethod) return;
+    setPaymentMethod(method);
+    setCashTouched(false);
+    setDigitalAcknowledgementKey('');
+    setReviewedPaymentKey('');
+    setOrderError(null);
+  };
+
+  const continueToReview = () => {
+    if (submissionRef.current) return;
+    const fresh = liveContext();
+    const error = validateCheckoutContext(fresh);
+    if (error || checkoutSnapshot(fresh).key !== acceptedAddressKey) {
+      setOrderError(error || 'Revisa la dirección y el total antes de continuar.');
       setCurrentStep(1);
       return;
     }
+    if (!paymentReady) {
+      setOrderError(!paymentMethod ? 'Selecciona un método de pago.' :
+        paymentMethod === 'efectivo' ? 'Ingresa un monto válido y suficiente para pagar el pedido.' :
+        'Revisa las condiciones del método de pago antes de continuar.');
+      return;
+    }
+    setOrderError(null);
+    setReviewedPaymentKey(paymentKey);
+    setCurrentStep(3);
+  };
 
-    if (paymentMethod === 'efectivo' && !cashValidation.isValid) {
-      setOrderError(cashValidation.errorMessage || 'El monto de efectivo no es suficiente.');
+  const grandTotalSoles = centsToSoles(cartCalculations.grandTotalCents);
+  const setCashAmount = (value: string) => {
+    setCashTouched(true);
+    setCashAmountGivenSoles(value);
+    setOrderError(null);
+  };
+  const handleSetExactCash = () => setCashAmount(String(grandTotalSoles));
+  const cashInputError = cashTouched
+    ? parsedCashCents === null ? 'Ingresa un monto válido en soles, con hasta dos decimales.'
+      : !cashValidation.isValid ? `El monto debe cubrir el total de ${formatCents(cartCalculations.grandTotalCents)}.` : undefined
+    : undefined;
+  const cashBills = [2000, 5000, 10000, 20000].filter((amount) => amount > cartCalculations.grandTotalCents);
+  const paymentOptions: { method: PaymentMethod; label: string; description: string; icon: typeof Banknote }[] = [
+    { method: 'yape_plin', label: 'Yape / Plin', description: 'Billetera digital; el pago requiere verificación.', icon: Smartphone },
+    { method: 'efectivo', label: 'Efectivo contra entrega', description: 'Indica con cuánto pagarás al recibir el pedido.', icon: Banknote },
+    { method: 'tarjeta', label: 'Tarjeta de débito o crédito', description: 'El pago requiere confirmación del servicio de cobro.', icon: CreditCard },
+  ];
+
+
+  const handleConfirmOrder = () => {
+    if (submissionRef.current) return;
+    const fresh = liveContext();
+    const error = validateCheckoutContext(fresh);
+    if (error || checkoutSnapshot(fresh).key !== acceptedAddressKey) {
+      setOrderError(error || 'Los datos del pedido cambiaron. Revisa la dirección y el total.');
+      setCurrentStep(1);
+      return;
+    }
+    if (currentStep !== 3 || !paymentCompleted || !paymentMethod || !selectedAddress) {
+      setOrderError('Completa el paso de pago antes de confirmar el pedido.');
       setCurrentStep(2);
       return;
     }
-
-    // Check simulated card failure
-    if (paymentMethod === 'tarjeta' && simulateCardFailure) {
-      setOrderError(
-        'Simulación de pago con tarjeta rechazada por el emisor (fondos insuficientes o denegada). Puedes cambiar de método o desactivar la opción de prueba.'
-      );
-      return;
-    }
-
+    submissionRef.current = true;
     setIsSubmitting(true);
     setOrderError(null);
-
     // Build suborders for each merchant
     const merchantOrders: MerchantOrder[] = cartCalculations.groups.map((grp, idx) => {
       const orderLines = grp.items.map((it) => {
@@ -161,7 +264,7 @@ export const CheckoutPage: React.FC = () => {
         subtotalCents: grp.subtotalCents,
         deliveryFeeCents: grp.deliveryFeeCents,
         totalCents: grp.totalCents,
-        paymentStatus: paymentMethod === 'efectivo' ? 'pendiente' : 'pagado',
+        paymentStatus: 'pendiente',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         timeline: initialTimeline,
@@ -181,7 +284,7 @@ export const CheckoutPage: React.FC = () => {
       customerPhone: selectedAddress.phone,
       addressSnapshot: selectedAddress,
       paymentMethod,
-      paymentStatus: paymentMethod === 'efectivo' ? 'pendiente' : 'pagado',
+      paymentStatus: 'pendiente',
       subtotalCents: cartCalculations.itemsSubtotalCents,
       totalDeliveryFeeCents: cartCalculations.totalDeliveryFeeCents,
       grandTotalCents: cartCalculations.grandTotalCents,
@@ -190,808 +293,295 @@ export const CheckoutPage: React.FC = () => {
       status: 'pendiente',
       cashAmountPaidCents: paymentMethod === 'efectivo' ? cashGivenCents : undefined,
       changeDueCents: paymentMethod === 'efectivo' ? cashValidation.changeDueCents : undefined,
-      cardLastFour: paymentMethod === 'tarjeta' ? '4242' : undefined,
     };
 
-    setTimeout(() => {
-      const result = createPurchase(newPurchase);
-      setIsSubmitting(false);
-
-      if (result.success) {
-        // Retirar del carrito solo los productos adquiridos; los no seleccionados permanecen
-        removeItems(selectedItems.map((it) => it.id));
-        navigate(`/cliente/pedidos/${purchaseId}`, {
-          state: { isNewOrder: true },
-        });
-      } else {
-        setOrderError(result.message || 'Error al procesar el pedido.');
+    submitTimerRef.current = setTimeout(() => {
+      let created = false;
+      try {
+        const fresh = liveContext();
+        const error = validateCheckoutContext(fresh);
+        if (!useAuthStore.getState().isAuthenticated || !useAuthStore.getState().currentUser) {
+          setOrderError('Tu sesión cambió. Inicia sesión antes de confirmar el pedido.');
+          return;
+        }
+        if (error || checkoutSnapshot(fresh).key !== contextKey) {
+          setOrderError(error || 'El pedido cambió durante la confirmación. Revisa los datos antes de continuar.');
+          setAcceptedAddressKey('');
+          setReviewedPaymentKey('');
+          setCurrentStep(1);
+          return;
+        }
+        const result = createPurchase(newPurchase);
+        if (result.success) {
+          created = true;
+          setRecordedPurchaseId(purchaseId);
+          removeItems(selectedItems.map((item) => item.id));
+          navigate(`/cliente/pedidos/${purchaseId}`, { state: { isNewOrder: true } });
+        } else {
+          setOrderError(result.message || 'No se pudo registrar el pedido. Tus productos siguen en el carrito.');
+        }
+      } catch {
+        setOrderError(created ? 'El pedido ya se registró. Revisa tus pedidos antes de volver a intentarlo.' :
+          'No se pudo registrar el pedido. Revisa tus pedidos antes de volver a intentarlo.');
+      } finally {
+        submitTimerRef.current = null;
+        if (!created) submissionRef.current = false;
+        setIsSubmitting(false);
       }
     }, 450);
   };
 
+  if (!isAuthenticated || !currentUser || !selectedItems.length) return null;
+
   return (
-    <div className="w-full pb-20">
-      {/* Barra de navegación estática/fija de esquina a esquina (Full-width, Slim & Sticky) */}
-      <nav
-        aria-label="Barra de navegación de checkout"
-        className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-[125px] md:top-[106px] z-20 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-      >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs">
-          {/* Lado izquierdo: Volver solo en letras (sin botones bordeados) + Breadcrumbs */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-            <Link
-              to="/carrito"
-              className="inline-flex items-center gap-1 font-bold text-primary hover:text-primary-hover hover:underline transition-colors cursor-pointer text-xs group py-0.5"
-              title="Volver al carrito"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-              <span>Volver al carrito</span>
-            </Link>
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 pb-32 sm:px-6 lg:px-8">
+      <Link to="/carrito" aria-disabled={checkoutLocked} onClick={(event) => { if (checkoutLocked) event.preventDefault(); }}
+        className="inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-medium text-primary hover:text-primary-hover">
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />Volver al carrito
+      </Link>
+      <header className="space-y-2">
+        <h1 className="text-xl font-bold text-ink sm:text-2xl">Finalizar pedido</h1>
+        <p className="text-sm text-ink-light">Completa la dirección y el pago; después revisa los datos antes de confirmar.</p>
+      </header>
 
-            <span className="text-gray-300 font-light">|</span>
-
-            <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs flex-wrap">
-              <span className="uppercase text-[11px] font-bold tracking-wider text-gray-500">
-                PAGO
-              </span>
-              <span className="text-gray-300 text-[10px]">&gt;</span>
-              <span className="text-ink font-semibold">
-                Checkout seguro Quickly
-              </span>
-            </div>
-          </div>
-
-          {/* Lado derecho: Indicador seguro */}
-          <div className="flex items-center gap-3 text-xs font-semibold ml-auto text-emerald-600">
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Compra 100% Protegida
-            </span>
-          </div>
-        </div>
+      <nav aria-label="Pasos del pedido" className="rounded-2xl border border-border bg-surface p-2">
+        <ol className="grid grid-cols-3 gap-2">
+          {([[1, 'Dirección'], [2, 'Pago'], [3, 'Revisión']] as const).map(([step, label]) => {
+            const completed = step === 1 ? addressCompleted : step === 2 ? paymentCompleted : false;
+            const unlocked = step === 1 || step === 2 && addressCompleted || step === 3 && paymentCompleted;
+            return (
+              <li key={step}>
+                <Button type="button" variant="ghost" size="sm" disabled={!unlocked || checkoutLocked}
+                  aria-label={`Paso ${step}: ${label}`} aria-current={currentStep === step ? 'step' : undefined}
+                  className={`w-full flex-col gap-1 text-xs sm:flex-row sm:gap-2 sm:text-sm ${currentStep === step ? 'bg-primary-50 text-primary' : 'text-ink-light'}`}
+                  onClick={() => goToStep(step)}>
+                  <span className="inline-flex items-center gap-2">{completed ? <Check className="h-4 w-4" aria-hidden="true" /> : <span className="tabular-nums">{step}</span>}{label}</span>
+                  <span className="text-xs">{currentStep === step ? 'Actual' : completed ? 'Completado' : 'Pendiente'}</span>
+                </Button>
+              </li>
+            );
+          })}
+        </ol>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Finalizar Compra</h1>
-            <span className="text-xs font-semibold text-gray-500">
-              Entrega express en Tingo María
-            </span>
-          </div>
-        </div>
-
-      {/* Stepper with visual indicators */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-2 sm:p-3 shadow-sm">
-        <div className="grid grid-cols-3 gap-2">
-          {/* Step 1 */}
-          <button
-            type="button"
-            onClick={() => setCurrentStep(1)}
-            className={`min-h-[44px] py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all ${
-              currentStep === 1
-                ? 'bg-primary text-white shadow-md'
-                : selectedAddress
-                ? 'bg-primary-soft/60 text-primary hover:bg-primary-soft'
-                : 'text-gray-500 hover:text-ink hover:bg-gray-50'
-            }`}
-          >
-            <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                currentStep === 1
-                  ? 'bg-white text-primary'
-                  : selectedAddress
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {selectedAddress && currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
-            </span>
-            <span className="truncate">Dirección</span>
-          </button>
-
-          {/* Step 2 */}
-          <button
-            type="button"
-            disabled={!selectedAddress}
-            onClick={() => selectedAddress && setCurrentStep(2)}
-            className={`min-h-[44px] py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-              currentStep === 2
-                ? 'bg-primary text-white shadow-md'
-                : currentStep === 3
-                ? 'bg-primary-soft/60 text-primary hover:bg-primary-soft'
-                : 'text-gray-500 hover:text-ink hover:bg-gray-50'
-            }`}
-          >
-            <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                currentStep === 2
-                  ? 'bg-white text-primary'
-                  : currentStep === 3
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {currentStep === 3 ? <Check className="w-3.5 h-3.5" /> : '2'}
-            </span>
-            <span className="truncate">Pago</span>
-          </button>
-
-          {/* Step 3 */}
-          <button
-            type="button"
-            disabled={!selectedAddress}
-            onClick={() => selectedAddress && setCurrentStep(3)}
-            className={`min-h-[44px] py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-              currentStep === 3
-                ? 'bg-primary text-white shadow-md'
-                : 'text-gray-500 hover:text-ink hover:bg-gray-50'
-            }`}
-          >
-            <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                currentStep === 3
-                  ? 'bg-white text-primary'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              3
-            </span>
-            <span className="truncate">Confirmar</span>
-          </button>
-        </div>
-      </div>
-
       {orderError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs sm:text-sm text-red-700 flex items-start gap-2.5 shadow-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
-          <div className="flex-1">
-            <p className="font-bold">No se pudo procesar el pedido</p>
-            <p className="mt-0.5 text-red-600">{orderError}</p>
-          </div>
+        <div role="alert" className={`space-y-3 rounded-xl border p-4 text-sm ${recordedPurchaseId ? 'border-info-border bg-info-soft text-info-strong' : 'border-destructive-border bg-destructive-soft text-destructive-strong'}`}>
+          <div className="flex items-start gap-3"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><div className="min-w-0 space-y-1"><p className="font-semibold">{recordedPurchaseId ? 'Tu pedido ya está registrado' : 'Revisa los datos del pedido'}</p><p>{orderError}</p></div></div>
+          {recordedPurchaseId && <Link className="inline-flex min-h-11 items-center rounded-xl border border-info px-4 py-2 font-medium" to={`/cliente/pedidos/${recordedPurchaseId}`}>Ver pedido registrado</Link>}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column (Interactive Steps) */}
-        <div className="lg:col-span-2 space-y-6">
+        <fieldset disabled={checkoutLocked} aria-busy={isSubmitting} className="min-w-0 lg:col-span-2 space-y-6">
+          <legend className="sr-only">Datos del pedido</legend>
           {/* STEP 1: DIRECCIÓN */}
           {currentStep === 1 && (
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5 animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    <span>Dirección de Entrega</span>
-                  </h2>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    Elige dónde deseas recibir tu pedido en Tingo María
-                  </p>
+            <section aria-labelledby="checkout-address-heading" className="space-y-4 rounded-2xl border border-border bg-surface p-4 sm:p-6">
+              <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="checkout-address-heading" className="text-base font-semibold text-ink">Dirección de entrega</h2>
+                  <p className="text-sm text-ink-light">Selecciona dónde recibirás el pedido y revisa la tarifa de envío.</p>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="min-h-[44px] font-bold"
-                  onClick={() => setShowNewAddressDialog(true)}
-                >
-                  <Plus className="w-4 h-4 mr-1.5" />
-                  Nueva Dirección
+                <Button type="button" variant="outline" size="sm" className="shrink-0 gap-2" onClick={() => { setAddressNotice(''); setShowNewAddressDialog(true); }}>
+                  <Plus className="h-4 w-4" aria-hidden="true" />Nueva dirección
                 </Button>
-              </div>
-
-              {/* Address Cards List */}
-              <div className="space-y-3">
-                {userAddresses.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-3xl space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mx-auto">
-                      <MapPin className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-ink text-sm">No tienes direcciones guardadas</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Registra tu primera dirección para calcular la tarifa exacta de reparto.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="md"
-                      className="min-h-[44px] font-bold"
-                      onClick={() => setShowNewAddressDialog(true)}
-                    >
-                      Agregar mi dirección
-                    </Button>
-                  </div>
-                ) : (
-                  userAddresses.map((addr) => {
-                    const isSelected = selectedAddressId === addr.id;
-                    const zone = zones.find((z) => z.id === addr.zoneId);
-
+              </header>
+              {addressNotice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{addressNotice}</p>}
+              {userAddresses.length === 0 ? (
+                <EmptyState icon={<MapPin className="h-8 w-8" aria-hidden="true" />} title="No tienes direcciones guardadas" description="Agrega una dirección para calcular el envío y continuar con el pago." />
+              ) : (
+                <fieldset className="space-y-3">
+                  <legend className="sr-only">Elige una dirección de entrega</legend>
+                  {userAddresses.map((address) => {
+                    const zone = zones.find((entry) => entry.id === address.zoneId);
+                    const available = Boolean(zone?.isAvailable);
+                    const selected = selectedAddressId === address.id;
                     return (
-                      <div
-                        key={addr.id}
-                        role="radio"
-                        aria-checked={isSelected}
-                        tabIndex={0}
-                        onClick={() => setSelectedAddressId(addr.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === ' ' || e.key === 'Enter') setSelectedAddressId(addr.id);
-                        }}
-                        className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-primary bg-primary-soft/40 ring-2 ring-primary/20 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3.5">
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 flex-shrink-0 transition-colors ${
-                                isSelected ? 'border-primary' : 'border-gray-300'
-                              }`}
-                            >
-                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-sm text-ink">{addr.label}</span>
-                                {addr.isDefault && (
-                                  <span className="text-[10px] bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded-full">
-                                    Principal
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-800 font-medium mt-1">
-                                {addr.street} #{addr.number}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-0.5">
-                                Ref: {addr.reference}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Recibe: <strong className="text-gray-700">{addr.recipientName}</strong> • Cel: {addr.phone}
-                              </p>
-                            </div>
-                          </div>
-
-                          {zone && (
-                            <div className="text-right flex-shrink-0">
-                              <span className="inline-block text-xs font-bold text-ink bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200 shadow-sm">
-                                {zone.name}
-                              </span>
-                              <span className="block text-[11px] font-bold text-primary mt-1 tabular-nums">
-                                Tarifa: {formatCents(zone.baseFeeCents)}
-                              </span>
-                            </div>
-                          )}
+                      <label key={address.id} className={`flex min-h-11 items-start gap-3 rounded-xl border p-4 ${selected ? 'border-primary bg-primary-50' : 'border-border'} ${available ? 'cursor-pointer hover:border-field' : 'bg-surface-subtle'}`}>
+                        <input type="radio" name="checkout-address" value={address.id} checked={selected} disabled={!available}
+                          onChange={() => chooseAddress(address.id)} aria-label={`Entregar en ${address.label}: ${address.street} ${address.number}`}
+                          className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-ink">{address.label}</span>{address.isDefault && <Badge>Principal</Badge>}{!available && <Badge variant="danger">Sin cobertura</Badge>}</div>
+                          <p className="break-words text-sm font-medium text-ink">{address.street} #{address.number}</p>
+                          <p className="break-words text-xs text-ink-light">Referencia: {address.reference}</p>
+                          <p className="break-words text-xs text-ink-muted">Recibe: {address.recipientName} · <span className="tabular-nums">{address.phone}</span></p>
+                          {available && zone ? <div className="flex flex-wrap justify-between gap-2 border-t border-border pt-2 text-xs text-ink-light"><span>{zone.name}</span><span className="tabular-nums">Envío: <strong>{formatCents(zone.baseFeeCents)}</strong> · {zone.estimatedMinutes} min estimados</span></div> : <p className="text-xs text-destructive">Selecciona otra dirección con cobertura para continuar.</p>}
                         </div>
-                      </div>
+                      </label>
                     );
-                  })
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-gray-100 flex justify-end">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  disabled={!selectedAddress}
-                  className="min-h-[46px] px-6 font-bold shadow-md"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  Continuar al Método de Pago
-                </Button>
-              </div>
-            </div>
+                  })}
+                </fieldset>
+              )}
+              {contextError && selectedAddress && <p className="text-sm text-destructive">{contextError}</p>}
+              <footer className="flex justify-end border-t border-border pt-4">
+                <Button type="button" variant="primary" className="min-h-12 w-full text-sm sm:w-auto" disabled={!selectedAddress || Boolean(contextError)} onClick={continueToPayment}>Continuar al pago</Button>
+              </footer>
+            </section>
           )}
 
           {/* STEP 2: MÉTODO DE PAGO */}
           {currentStep === 2 && (
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6 animate-in fade-in duration-150">
-              <div>
-                <h2 className="text-lg font-extrabold text-ink">Método de Pago</h2>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Elige cómo deseas abonar tu compra (aplica a todos los comercios del pedido)
-                </p>
-              </div>
+            <section aria-labelledby="checkout-payment-heading" className="space-y-5 rounded-2xl border border-border bg-surface p-4 sm:p-6">
+              <header className="space-y-2">
+                <h2 ref={stepHeadingRef} tabIndex={-1} id="checkout-payment-heading" className="text-base font-semibold text-ink">Cómo pagarás</h2>
+                <p className="text-sm text-ink-light">Selecciona un método y completa sus datos antes de revisar el pedido.</p>
+                <p className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-3 text-sm text-ink-light">Total del pedido <span className="text-lg font-bold tabular-nums text-ink">{formatCents(cartCalculations.grandTotalCents)}</span></p>
+              </header>
 
-              {/* Payment Options Radio Cards */}
-              <div className="space-y-4">
-                {/* 1. Yape / Plin */}
-                <div
-                  role="radio"
-                  aria-checked={paymentMethod === 'yape_plin'}
-                  tabIndex={0}
-                  onClick={() => setPaymentMethod('yape_plin')}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') setPaymentMethod('yape_plin');
-                  }}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                    paymentMethod === 'yape_plin'
-                      ? 'border-primary bg-primary-soft/30 ring-2 ring-primary/20 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          paymentMethod === 'yape_plin' ? 'border-primary' : 'border-gray-300'
-                        }`}
-                      >
-                        {paymentMethod === 'yape_plin' && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        {/* Custom Brand Badges */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-lg bg-[#742284] text-white font-black text-xs">
-                            Yape
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-[#00B4D8] text-white font-black text-xs">
-                            Plin
-                          </span>
-                        </div>
-                        <span className="font-extrabold text-sm text-ink">
-                          Billeteras Digitales
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-primary bg-primary-soft px-2.5 py-1 rounded-full border border-primary/20">
-                      Más rápido en Tingo María
-                    </span>
+              <fieldset className="space-y-3">
+                <legend className="sr-only">Método de pago</legend>
+                {paymentOptions.map((option) => (
+                  <label key={option.method} className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-3 ${paymentMethod === option.method ? 'border-primary bg-primary-50' : 'border-border hover:border-field'}`}>
+                    <input type="radio" name="checkout-payment-method" value={option.method} aria-label={option.label}
+                      checked={paymentMethod === option.method} onChange={() => selectPaymentMethod(option.method)}
+                      className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                    <option.icon className="mt-1 h-5 w-5 shrink-0 text-ink-muted" aria-hidden="true" />
+                    <span className="min-w-0 space-y-1"><span className="block text-sm font-semibold text-ink">{option.label}</span><span className="block text-xs text-ink-light">{option.description}</span></span>
+                  </label>
+                ))}
+              </fieldset>
+
+              {!paymentMethod && <p className="text-sm text-ink-muted">Selecciona un método de pago para continuar.</p>}
+
+              {paymentMethod === 'efectivo' && (
+                <div className="space-y-4 border-t border-border pt-4">
+                  <h3 className="text-sm font-semibold text-ink">Prepara el efectivo y tu vuelto</h3>
+                  <div className="flex flex-wrap gap-2" role="group" aria-label="Montos rápidos de efectivo">
+                    <Button type="button" variant="outline" size="sm" aria-pressed={parsedCashCents === cartCalculations.grandTotalCents}
+                      className={parsedCashCents === cartCalculations.grandTotalCents ? 'bg-primary-50' : ''}
+                      onClick={handleSetExactCash}>Monto exacto ({formatCents(cartCalculations.grandTotalCents)})</Button>
+                    {cashBills.map((amount) => (
+                      <Button key={amount} type="button" variant="outline" size="sm" aria-pressed={parsedCashCents === amount}
+                        className={parsedCashCents === amount ? 'bg-primary-50' : ''}
+                        onClick={() => setCashAmount(String(centsToSoles(amount)))}>{formatCents(amount)}</Button>
+                    ))}
                   </div>
-
-                  {paymentMethod === 'yape_plin' && (
-                    <div className="mt-4 pl-8 pt-3 border-t border-gray-100">
-                      <div className="bg-white p-4 rounded-2xl border border-gray-200 flex flex-col sm:flex-row items-center gap-4">
-                        {/* Realistic Mock QR for Tingo María */}
-                        <div className="w-24 h-24 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center p-2 text-center flex-shrink-0">
-                          <QrCode className="w-10 h-10 text-gray-700 mb-1" />
-                          <span className="text-[9px] font-bold text-gray-600 uppercase">
-                            Escanea QR
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs text-gray-700 flex-1">
-                          <p className="font-bold text-ink text-sm">
-                            Quickly Delivery E.I.R.L.
-                          </p>
-                          <p className="flex items-center gap-1.5 font-semibold text-gray-800">
-                            <Smartphone className="w-4 h-4 text-primary" />
-                            <span>Número oficial:</span>
-                            <span className="text-sm font-black text-ink bg-gray-100 px-2 py-0.5 rounded-md tabular-nums">
-                              962 100 200
-                            </span>
-                          </p>
-                          <p className="text-[11px] text-gray-500">
-                            En este prototipo interactivo, tu pago por billetera digital se confirma automáticamente al finalizar.
-                          </p>
-                        </div>
-                      </div>
+                  <Input id="checkout-cash-amount" label="Monto con el que pagarás" type="text" inputMode="decimal"
+                    value={cashAmountGivenSoles} onChange={(event) => setCashAmount(event.target.value)}
+                    onBlur={() => setCashTouched(true)} placeholder="Ej. 50,00" error={cashInputError}
+                    helperText="Escribe el monto disponible en soles. Puedes usar coma o punto decimal." />
+                  {parsedCashCents !== null && cashValidation.isValid && (
+                    <div role="status" className="rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">
+                      <dl className="space-y-2"><div className="flex flex-wrap justify-between gap-3"><dt>Pagas con</dt><dd className="font-semibold tabular-nums">{formatCents(cashGivenCents)}</dd></div><div className="flex flex-wrap justify-between gap-3"><dt>Vuelto</dt><dd className="font-semibold tabular-nums">{formatCents(cashValidation.changeDueCents)}</dd></div></dl>
+                      <p className="mt-2 text-xs">{cashValidation.changeDueCents === 0 ? 'Pagarás el monto exacto, sin vuelto.' : 'El monto y el vuelto quedarán registrados en tu pedido.'}</p>
                     </div>
                   )}
                 </div>
+              )}
 
-                {/* 2. Efectivo Contra Entrega */}
-                <div
-                  role="radio"
-                  aria-checked={paymentMethod === 'efectivo'}
-                  tabIndex={0}
-                  onClick={() => setPaymentMethod('efectivo')}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') setPaymentMethod('efectivo');
-                  }}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                    paymentMethod === 'efectivo'
-                      ? 'border-primary bg-primary-soft/30 ring-2 ring-primary/20 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          paymentMethod === 'efectivo' ? 'border-primary' : 'border-gray-300'
-                        }`}
-                      >
-                        {paymentMethod === 'efectivo' && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Banknote className="w-5 h-5 text-emerald-600" />
-                        <span className="font-extrabold text-sm text-ink">
-                          Pago Contra Entrega en Efectivo
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-500">
-                      Pagas al recibir
-                    </span>
-                  </div>
-
-                  {paymentMethod === 'efectivo' && (
-                    <div className="mt-4 pl-8 pt-3 border-t border-gray-100 space-y-3.5">
-                      <div>
-                        <label className="text-xs font-bold text-ink block mb-2">
-                          ¿Con cuánto dinero pagarás al repartidor?
-                        </label>
-
-                        {/* Quick Soles Bills Shortcuts */}
-                        <div className="flex flex-wrap gap-2 mb-2.5">
-                          <button
-                            type="button"
-                            onClick={handleSetExactCash}
-                            className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
-                              cashAmountGivenSoles === grandTotalSoles.toFixed(2)
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
-                            }`}
-                          >
-                            Monto exacto ({formatCents(cartCalculations.grandTotalCents)})
-                          </button>
-                          {grandTotalSoles <= 20 && (
-                            <button
-                              type="button"
-                              onClick={() => setCashAmountGivenSoles('20')}
-                              className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
-                                cashAmountGivenSoles === '20'
-                                  ? 'bg-primary text-white border-primary'
-                                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
-                              }`}
-                            >
-                              S/ 20
-                            </button>
-                          )}
-                          {grandTotalSoles <= 50 && (
-                            <button
-                              type="button"
-                              onClick={() => setCashAmountGivenSoles('50')}
-                              className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
-                                cashAmountGivenSoles === '50'
-                                  ? 'bg-primary text-white border-primary'
-                                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
-                              }`}
-                            >
-                              S/ 50
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setCashAmountGivenSoles('100')}
-                            className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
-                              cashAmountGivenSoles === '100'
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
-                            }`}
-                          >
-                            S/ 100
-                          </button>
-                        </div>
-
-                        <div className="max-w-xs">
-                          <Input
-                            type="number"
-                            step="0.5"
-                            inputMode="decimal"
-                            value={cashAmountGivenSoles}
-                            onChange={(e) => setCashAmountGivenSoles(e.target.value)}
-                            placeholder="Monto en Soles"
-                            helperText="Ingresa el billete con el que pagarás para preparar tu cambio."
-                          />
-                        </div>
-                      </div>
-
-                      {cashValidation.isValid ? (
-                        <div className="p-3 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-2xl text-xs flex items-center justify-between font-semibold">
-                          <span className="flex items-center gap-1.5">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                            <span>Vuelto que llevará el repartidor:</span>
-                          </span>
-                          <span className="font-black text-sm text-emerald-800 tabular-nums">
-                            {formatCents(cashValidation.changeDueCents)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-xs flex items-center gap-2 font-semibold">
-                          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                          <span>
-                            {cashValidation.errorMessage}. Total a pagar:{' '}
-                            <strong className="tabular-nums">
-                              {formatCents(cartCalculations.grandTotalCents)}
-                            </strong>
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+              {paymentMethod && paymentMethod !== 'efectivo' && (
+                <div className="space-y-3 rounded-xl border border-info-border bg-info-soft p-4">
+                  <h3 className="text-sm font-semibold text-info-strong">{paymentMethod === 'yape_plin' ? 'Pago con Yape / Plin' : 'Pago con tarjeta'}</h3>
+                  <p id="checkout-digital-help" className="text-sm text-info-strong">El pedido quedará con pago pendiente de verificación. Elegir este método no realiza un cargo ni confirma que hayas pagado.</p>
+                  <p className="text-xs text-ink-light">{paymentMethod === 'yape_plin' ? 'Los datos de cobro deberán ser proporcionados por el comercio o el servicio de pago.' : 'Aún no hay una pasarela conectada. No ingreses datos de tu tarjeta en este formulario.'}</p>
+                  <label htmlFor="checkout-digital-acknowledgement" className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl text-sm text-ink">
+                    <input id="checkout-digital-acknowledgement" type="checkbox" checked={digitalAcknowledged}
+                      aria-describedby="checkout-digital-help" className="mt-1 h-5 w-5 shrink-0 accent-primary"
+                      onChange={(event) => { setDigitalAcknowledgementKey(event.target.checked ? digitalKey : ''); setOrderError(null); }} />
+                    <span>Entiendo que el pago quedará pendiente de verificación.</span>
+                  </label>
                 </div>
+              )}
 
-                {/* 3. Tarjeta de Débito / Crédito (Simulada) */}
-                <div
-                  role="radio"
-                  aria-checked={paymentMethod === 'tarjeta'}
-                  tabIndex={0}
-                  onClick={() => setPaymentMethod('tarjeta')}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') setPaymentMethod('tarjeta');
-                  }}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                    paymentMethod === 'tarjeta'
-                      ? 'border-primary bg-primary-soft/30 ring-2 ring-primary/20 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          paymentMethod === 'tarjeta' ? 'border-primary' : 'border-gray-300'
-                        }`}
-                      >
-                        {paymentMethod === 'tarjeta' && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-blue-600" />
-                        <span className="font-extrabold text-sm text-ink">
-                          Tarjeta de Débito / Crédito
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-600 font-semibold tabular-nums">
-                      Visa •••• 4242
-                    </span>
-                  </div>
-
-                  {paymentMethod === 'tarjeta' && (
-                    <div className="mt-4 pl-8 pt-3 border-t border-gray-100 space-y-3">
-                      <div className="bg-blue-50/60 border border-blue-100 p-3.5 rounded-2xl text-xs text-blue-900 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-blue-600" />
-                          <span>Pasarela protegida SSL 256-bit (Tarjeta de prueba precargada)</span>
-                        </div>
-                      </div>
-
-                      {/* Expandable test evaluation scenario without clutter */}
-                      <div className="pt-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDevOptions(!showDevOptions);
-                          }}
-                          className="text-[11px] font-bold text-gray-500 hover:text-ink flex items-center gap-1"
-                        >
-                          <span>Opciones de prueba</span>
-                          {showDevOptions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        </button>
-
-                        {showDevOptions && (
-                          <label className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-900 bg-amber-50 p-2.5 rounded-xl cursor-pointer border border-amber-200">
-                            <input
-                              type="checkbox"
-                              checked={simulateCardFailure}
-                              onChange={(e) => setSimulateCardFailure(e.target.checked)}
-                              className="w-4 h-4 text-primary rounded"
-                            />
-                            <span>Simular rechazo de banco emisor (para validar manejo de error)</span>
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-100 flex justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  className="min-h-[46px] font-semibold"
-                  onClick={() => setCurrentStep(1)}
-                >
-                  Volver a Dirección
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  disabled={paymentMethod === 'efectivo' && !cashValidation.isValid}
-                  className="min-h-[46px] px-6 font-bold shadow-md"
-                  onClick={() => setCurrentStep(3)}
-                >
-                  Revisar y Confirmar
-                </Button>
-              </div>
-            </div>
+              <footer className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-between">
+                <Button type="button" variant="outline" size="sm" onClick={() => goToStep(1)}>Volver a dirección</Button>
+                <Button type="button" variant="primary" size="sm" className="min-h-12" disabled={!paymentReady || isSubmitting} onClick={continueToReview}>Revisar pedido</Button>
+              </footer>
+            </section>
           )}
 
-          {/* STEP 3: REVISIÓN Y CONFIRMACIÓN */}
+          {/* STEP 3: REVISIÓN */}
           {currentStep === 3 && (
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6 animate-in fade-in duration-150">
-              <div>
-                <h2 className="text-lg font-extrabold text-ink">Revisión Final de tu Pedido</h2>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Verifica que los datos de entrega y productos sean correctos antes de enviar a cocina
-                </p>
-              </div>
+            <section aria-labelledby="checkout-review-heading" className="space-y-5 rounded-2xl border border-border bg-surface p-4 sm:p-6">
+              <header className="space-y-2">
+                <h2 ref={stepHeadingRef} tabIndex={-1} id="checkout-review-heading" className="text-base font-semibold text-ink">Revisa tu pedido</h2>
+                <p className="text-sm text-ink-light">Verifica los productos, la dirección y el pago. El comercio revisará el pedido cuando lo registres.</p>
+              </header>
 
-              {/* Delivery Details Snapshot */}
-              <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-2 text-xs">
-                <div className="flex items-center justify-between font-bold text-ink text-sm">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    Destino: {selectedAddress?.label} ({selectedZone?.name})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(1)}
-                    className="text-primary hover:underline font-bold text-xs"
-                  >
-                    Cambiar
-                  </button>
+              <section aria-labelledby="checkout-review-products" className="space-y-3 border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 id="checkout-review-products" className="text-sm font-semibold text-ink">Productos seleccionados</h3>
+                  <Link to="/carrito" aria-disabled={checkoutLocked} onClick={(event) => { if (checkoutLocked) event.preventDefault(); }}
+                    className="inline-flex min-h-11 items-center rounded-xl text-sm font-medium text-primary hover:text-primary-hover">Cambiar productos</Link>
                 </div>
-                <p className="text-gray-700 font-medium">
-                  {selectedAddress?.street} #{selectedAddress?.number} • Ref: {selectedAddress?.reference}
-                </p>
-                <p className="text-gray-600">
-                  Recibe: <strong>{selectedAddress?.recipientName}</strong> • Tel: {selectedAddress?.phone}
-                </p>
-              </div>
-
-              {/* Payment Details Snapshot */}
-              <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-bold text-ink">
-                  {paymentMethod === 'efectivo' ? (
-                    <Banknote className="w-4 h-4 text-emerald-600" />
-                  ) : paymentMethod === 'yape_plin' ? (
-                    <Smartphone className="w-4 h-4 text-purple-600" />
-                  ) : (
-                    <CreditCard className="w-4 h-4 text-blue-600" />
-                  )}
-                  <span>
-                    Método:{' '}
-                    {paymentMethod === 'efectivo'
-                      ? `Efectivo contra entrega (Pagas con S/ ${cashAmountGivenSoles}, vuelto ${formatCents(
-                          cashValidation.changeDueCents
-                        )})`
-                      : paymentMethod === 'yape_plin'
-                      ? 'Yape / Plin (Confirmación automática)'
-                      : 'Tarjeta de Crédito / Débito'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="text-primary hover:underline font-bold text-xs"
-                >
-                  Cambiar
-                </button>
-              </div>
-
-              {/* Stores involved breakdown */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Subpedidos por comercio ({cartCalculations.groups.length})
-                  </p>
-                  <span className="text-[11px] text-gray-500">
-                    Despacho independiente desde cada local
-                  </span>
-                </div>
-
                 {cartCalculations.groups.map((group) => (
-                  <div
-                    key={group.merchant.id}
-                    className="p-4 rounded-2xl border border-gray-100 bg-white space-y-3 text-xs"
-                  >
-                    <div className="flex items-center justify-between font-extrabold text-ink text-sm">
-                      <span className="flex items-center gap-1.5">
-                        <Store className="w-4 h-4 text-primary" />
-                        {group.merchant.name}
-                      </span>
-                      <span className="text-primary font-black tabular-nums">
-                        {formatCents(group.totalCents)}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5 text-gray-700 pl-5">
-                      {group.items.map((it) => {
-                        const prod = products.find((p) => p.id === it.productId);
+                  <div key={group.merchant.id} className="space-y-3">
+                    <p className="flex items-start gap-2 text-sm font-medium text-ink-light"><Store className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{group.merchant.name}</span></p>
+                    <ul className="divide-y divide-border">
+                      {group.items.map((item) => {
+                        const product = products.find((entry) => entry.id === item.productId);
+                        const unitPrice = item.unitPriceCents + (item.variantPriceDifferenceCents || 0);
                         return (
-                          <div key={it.id} className="flex justify-between items-center">
-                            <span>
-                              <strong>{it.quantity}x</strong> {prod?.name}{' '}
-                              {it.selectedVariantName ? `(${it.selectedVariantName})` : ''}
-                            </span>
-                            <span className="tabular-nums font-semibold">
-                              {formatCents(
-                                (it.unitPriceCents + (it.variantPriceDifferenceCents || 0)) *
-                                  it.quantity
-                              )}
-                            </span>
-                          </div>
+                          <li key={item.id} className="flex items-start gap-3 py-3 text-sm">
+                            <span className="shrink-0 font-semibold tabular-nums text-ink">{item.quantity} ×</span>
+                            <div className="min-w-0 flex-1 space-y-1"><p className="break-words font-medium text-ink">{product?.name || 'Producto no disponible'}</p>{item.selectedVariantName && <p className="break-words text-xs text-ink-light">Opción: {item.selectedVariantName}</p>}{item.note && <p className="break-words text-xs text-ink-muted">Nota: {item.note}</p>}<p className="text-xs tabular-nums text-ink-muted">{formatCents(unitPrice)} por unidad</p></div>
+                            <span className="break-words text-right font-medium tabular-nums text-ink">{formatCents(unitPrice * item.quantity)}</span>
+                          </li>
                         );
                       })}
-                      <div className="flex justify-between text-gray-600 pt-2 border-t border-gray-100">
-                        <span className="flex items-center gap-1">
-                          <Bike className="w-3.5 h-3.5 text-primary" /> Delivery asignado:
-                        </span>
-                        <span className="tabular-nums font-semibold">
-                          {formatCents(group.deliveryFeeCents)}
-                        </span>
-                      </div>
-                    </div>
+                    </ul>
+                    <p className="flex flex-wrap justify-between gap-3 text-sm text-ink-light">Envío a tu dirección <span className="font-medium tabular-nums text-ink">{formatCents(group.deliveryFeeCents)}</span></p>
                   </div>
                 ))}
-              </div>
+                {items.some((item) => item.selected === false) && <p className="text-xs text-ink-muted">Los productos que dejaste sin seleccionar seguirán en tu carrito después de esta compra.</p>}
+              </section>
 
-              <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  className="min-h-[48px] font-semibold"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  Volver a Pago
+              <section aria-labelledby="checkout-review-address" className="space-y-2 border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="checkout-review-address" className="text-sm font-semibold text-ink">Dirección de entrega</h3><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => goToStep(1)}>Cambiar dirección</Button></div>
+                <p className="break-words text-sm font-medium text-ink">{selectedAddress?.street} #{selectedAddress?.number}</p>
+                <p className="break-words text-xs text-ink-light">Referencia: {selectedAddress?.reference}</p>
+                <p className="break-words text-xs text-ink-light">Recibe: {selectedAddress?.recipientName} · <span className="tabular-nums">{selectedAddress?.phone}</span></p>
+                <p className="text-xs text-ink-muted">{selectedZone?.name} · <span className="tabular-nums">{selectedZone?.estimatedMinutes} min de reparto estimados</span></p>
+              </section>
+
+              <section aria-labelledby="checkout-review-payment" className="space-y-3 border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="checkout-review-payment" className="text-sm font-semibold text-ink">Pago</h3><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => goToStep(2)}>Cambiar pago</Button></div>
+                <p className="text-sm font-medium text-ink">{paymentOptions.find((option) => option.method === paymentMethod)?.label || 'No seleccionado'}</p>
+                {paymentMethod === 'efectivo' ? (
+                  <dl className="space-y-2 text-sm text-ink-light"><div className="flex flex-wrap justify-between gap-3"><dt>Pagas con</dt><dd className="font-medium tabular-nums text-ink">{formatCents(cashGivenCents)}</dd></div><div className="flex flex-wrap justify-between gap-3"><dt>Vuelto</dt><dd className="font-medium tabular-nums text-ink">{formatCents(cashValidation.changeDueCents)}</dd></div><div><dt className="sr-only">Estado del pago</dt><dd className="text-xs text-ink-muted">Pagarás cuando recibas el pedido.</dd></div></dl>
+                ) : <p className="rounded-xl border border-info-border bg-info-soft p-3 text-sm text-info-strong">El pago digital quedará pendiente de verificación. Registrar el pedido no realiza un cargo.</p>}
+              </section>
+
+              <footer className="space-y-3 border-t border-border pt-4">
+                <Button type="button" variant="primary" className="min-h-12 w-full flex-wrap gap-2 text-sm" isLoading={isSubmitting}
+                  disabled={!paymentCompleted || checkoutLocked} onClick={handleConfirmOrder}>
+                  <span>{isSubmitting ? 'Registrando pedido…' : recordedPurchaseId ? 'Pedido registrado' : 'Confirmar pedido'}</span><span aria-hidden="true">·</span><span className="tabular-nums">{formatCents(cartCalculations.grandTotalCents)}</span>
                 </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="lg"
-                  className="flex-1 min-h-[50px] shadow-xl font-black text-base"
-                  isLoading={isSubmitting}
-                  onClick={handleConfirmOrder}
-                >
-                  <span>Confirmar Pedido</span>
-                  <span className="mx-1">•</span>
-                  <span className="tabular-nums">{formatCents(cartCalculations.grandTotalCents)}</span>
-                </Button>
-              </div>
-            </div>
+                <Button type="button" variant="ghost" size="sm" className="w-full text-ink-light" onClick={() => goToStep(2)}>Volver a pago</Button>
+                <p className="text-xs text-ink-muted">Podrás consultar el estado del pedido después de registrarlo.</p>
+              </footer>
+            </section>
           )}
-        </div>
+        </fieldset>
 
-        {/* Right Summary Column */}
-        <div className="space-y-4 sticky top-24">
-          <PriceSummary
-            groups={cartCalculations.groups}
-            itemsSubtotalCents={cartCalculations.itemsSubtotalCents}
-            totalDeliveryFeeCents={cartCalculations.totalDeliveryFeeCents}
-            grandTotalCents={cartCalculations.grandTotalCents}
-          />
-
-          <div className="bg-emerald-50/80 border border-emerald-100 p-3.5 rounded-2xl flex items-center gap-2.5 text-xs text-emerald-900">
-            <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <p>
-              ¡Recibirás actualizaciones en tiempo real y el contacto directo con tu repartidor tingalés!
-            </p>
-          </div>
-        </div>
+        <aside aria-label="Importe del pedido" className="min-w-0 space-y-4 lg:sticky lg:top-40">
+          <PriceSummary deliveryIsEstimate={!selectedZone} groups={cartCalculations.groups}
+            itemsSubtotalCents={cartCalculations.itemsSubtotalCents} totalDeliveryFeeCents={cartCalculations.totalDeliveryFeeCents}
+            grandTotalCents={cartCalculations.grandTotalCents} />
+          <p className="text-xs text-ink-muted">El resumen incluye únicamente los productos seleccionados en el carrito.</p>
+        </aside>
       </div>
 
       {/* New Address Dialog */}
       <Dialog
         isOpen={showNewAddressDialog}
         onClose={() => setShowNewAddressDialog(false)}
-        title="Nueva Dirección en Tingo María"
-        description="Ingresa tu dirección y referencia para que el repartidor ubique tu puerta rápidamente"
-        maxWidth="md"
+        title="Nueva dirección"
+        description="Indica quién recibe el pedido, la ubicación y una referencia para la entrega."
+        maxWidth="lg"
       >
         <AddressForm
           userId={currentUser?.id || 'u_cliente_demo'}
-          onSuccess={() => setShowNewAddressDialog(false)}
+          onSuccess={(address) => {
+            chooseAddress(address.id);
+            setAddressNotice('Dirección guardada y seleccionada.');
+            setShowNewAddressDialog(false);
+          }}
           onCancel={() => setShowNewAddressDialog(false)}
         />
       </Dialog>
-    </div>
     </div>
   );
 };

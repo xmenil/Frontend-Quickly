@@ -29,8 +29,11 @@ import {
 import { canTransitionOrder, derivePurchaseStatus, calculateOrderRefund } from '../domain/orderRules';
 import { safeJsonParse } from '../lib/utils';
 import { mergeCourierActivity } from '../mocks/courierActivityData';
+import { addExampleAddresses } from '../mocks/exampleAddresses';
 
 interface DataState {
+  addressExampleUserIds: string[];
+  ensureExampleAddresses: (user: Pick<User, 'id' | 'name' | 'phone'>) => void;
   merchants: Merchant[];
   products: Product[];
   couriers: Courier[];
@@ -106,6 +109,7 @@ interface DataState {
 const STORAGE_KEY = 'quickly_datastore_v4';
 
 interface StoredDataPayload {
+  addressExampleUserIds: string[];
   courierActivitySeedVersion?: number;
   merchants: Merchant[];
   products: Product[];
@@ -154,6 +158,7 @@ function getInitialStoredData(): StoredDataPayload {
 
       const merged: StoredDataPayload = {
         ...parsed,
+        addressExampleUserIds: parsed.addressExampleUserIds || [],
         ...(parsed.courierActivitySeedVersion === 1 ? {} : mergeCourierActivity(parsed.purchases || [], parsed.couriers || INITIAL_COURIERS)),
         courierActivitySeedVersion: 1,
         merchants: [...parsed.merchants, ...missingMerchants],
@@ -165,6 +170,7 @@ function getInitialStoredData(): StoredDataPayload {
   }
 
   return {
+    addressExampleUserIds: [],
     ...mergeCourierActivity(INITIAL_PURCHASES, INITIAL_COURIERS),
     courierActivitySeedVersion: 1,
     merchants: INITIAL_MERCHANTS,
@@ -185,6 +191,7 @@ const initialPayload = getInitialStoredData();
 
 function saveToLocalStorage(state: DataState) {
   const payload: StoredDataPayload = {
+    addressExampleUserIds: state.addressExampleUserIds || [],
     courierActivitySeedVersion: 1,
     merchants: state.merchants,
     products: state.products,
@@ -205,6 +212,19 @@ function saveToLocalStorage(state: DataState) {
 
 export const useDataStore = create<DataState>((set, get) => ({
   ...initialPayload,
+
+  ensureExampleAddresses: (user) => {
+    if (!user.id || get().addressExampleUserIds.includes(user.id)) return;
+    set((state) => {
+      const nextState = {
+        ...state,
+        addresses: addExampleAddresses(state.addresses, user),
+        addressExampleUserIds: [...state.addressExampleUserIds, user.id],
+      };
+      saveToLocalStorage(nextState);
+      return nextState;
+    });
+  },
 
   createPurchase: (purchase: Purchase) => {
     const { products, purchases, auditLogs, notifications, merchants } = get();
@@ -911,6 +931,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   resetToSeed: () => {
     localStorage.removeItem(STORAGE_KEY);
     const freshPayload: StoredDataPayload = {
+      addressExampleUserIds: [],
       ...mergeCourierActivity(INITIAL_PURCHASES, INITIAL_COURIERS),
       courierActivitySeedVersion: 1,
       merchants: INITIAL_MERCHANTS,

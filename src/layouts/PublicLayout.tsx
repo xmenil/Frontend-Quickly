@@ -1,11 +1,13 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/shared/Navbar';
 import { MobileNav } from '../components/shared/MobileNav';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { BrandLogo } from '../components/shared/BrandLogo';
 
 export const PublicLayout: React.FC = () => {
+  const { pathname } = useLocation();
+  const isCheckoutFlow = pathname === '/carrito' || pathname === '/checkout';
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
@@ -13,7 +15,7 @@ export const PublicLayout: React.FC = () => {
         <Outlet />
       </main>
       <MobileNav />
-      <DemoSwitcher />
+      {!isCheckoutFlow && <DemoSwitcher />}
 
       {/* Footer */}
       <footer className="hidden md:block bg-white border-t border-gray-100 py-10 mt-auto">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDataStore } from '../../store/dataStore';
 import { useAuthStore } from '../../store/authStore';
 import { Address } from '../../domain/types';
@@ -21,8 +21,12 @@ import {
 } from 'lucide-react';
 
 export const CustomerAddressesPage: React.FC = () => {
-  const { addresses, deleteAddress, setDefaultAddress, zones } = useDataStore();
+  const { addresses, deleteAddress, setDefaultAddress, zones, ensureExampleAddresses } = useDataStore();
   const { currentUser } = useAuthStore();
+
+  useEffect(() => {
+    if (currentUser) ensureExampleAddresses(currentUser);
+  }, [currentUser, ensureExampleAddresses]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | undefined>(undefined);

@@ -135,6 +135,7 @@ export const PurchaseStatusBadge: React.FC<{ status: ParentPurchaseStatus }> = (
 
 export const PaymentStatusBadge: React.FC<{ status: PaymentStatus; method?: string }> = ({
   status,
+  method,
 }) => {
   switch (status) {
     case 'pagado':
@@ -146,7 +147,7 @@ export const PaymentStatusBadge: React.FC<{ status: PaymentStatus; method?: stri
     case 'pendiente':
       return (
         <Badge variant="warning" icon={<Banknote className="w-3.5 h-3.5" />}>
-          Pago pendiente (Efectivo)
+          {method === 'efectivo' ? 'Pago pendiente (Efectivo)' : 'Pago pendiente'}
         </Badge>
       );
     case 'fallido':
