@@ -4,8 +4,6 @@ import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { ProductDetailModal } from './ProductDetailModal';
-import { QuickCategoryStrip } from '../../components/shared/QuickCategoryStrip';
-import { CategoryGridSection } from '../../components/shared/CategoryGridSection';
 import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
 import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
 import { Product, MerchantCategory } from '../../domain/types';
@@ -367,7 +365,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Section: Accesos directos con Switch de Rol (exacto a prototipo v2) */}
-      <section className="w-full bg-white py-2 sm:py-3 select-none">
+      <section className="w-full bg-white pt-2 pb-5 sm:pt-3 sm:pb-6 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -488,9 +486,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Grid Categorías de Tingo María (Full Width Edge-to-Edge) */}
-      <CategoryGridSection />
 
       {/* Official Stores Section (Full Width Edge-to-Edge) */}
       <OfficialStoresSection />
