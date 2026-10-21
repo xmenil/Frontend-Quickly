@@ -116,16 +116,16 @@ export const QuickCategoryStrip: React.FC<QuickCategoryStripProps> = ({ variant 
       <div
         className={`h-full flex flex-col justify-between select-none ${
           isIntegrated
-            ? 'bg-[#FAF5F8]/75 p-3.5 sm:p-5'
-            : 'bg-[#FAF5F8]/90 rounded-3xl border border-pink-100/90 p-3.5 sm:p-4 shadow-subtle'
+            ? 'bg-emerald-50/25 p-3.5 sm:p-5'
+            : 'bg-emerald-50/30 rounded-3xl border border-emerald-100/80 p-3.5 sm:p-4 shadow-subtle'
         }`}
       >
         {/* Recuadro Header */}
-        <div className="flex items-center justify-between pb-2.5 border-b border-pink-100/80">
+        <div className="flex items-center justify-between pb-2.5 border-b border-emerald-100/80">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-primary" />
             <span className="text-xs sm:text-sm font-black text-ink">Accesos directos</span>
-            <span className="text-[10px] bg-pink-100 text-primary font-bold px-2 py-0.5 rounded-full">
+            <span className="text-[10px] bg-emerald-100 text-primary font-bold px-2 py-0.5 rounded-full">
               Tingo María
             </span>
           </div>
@@ -150,7 +150,7 @@ export const QuickCategoryStrip: React.FC<QuickCategoryStripProps> = ({ variant 
             >
               {/* Circular / Rounded-2xl icon container */}
               <div
-                className={`rounded-2xl border border-pink-200/90 bg-white group-hover:border-primary group-hover:bg-primary-50/70 shadow-xs group-hover:shadow-sm flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95 ${
+                className={`rounded-2xl border border-emerald-100 bg-white group-hover:border-primary group-hover:bg-primary-50/70 shadow-xs group-hover:shadow-sm flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95 ${
                   isIntegrated
                     ? 'w-11 h-11 sm:w-13 sm:h-13 [&_svg]:w-5 sm:[&_svg]:w-6 [&_svg]:h-5 sm:[&_svg]:h-6'
                     : 'w-10 h-10 sm:w-11 sm:h-11 [&_svg]:w-5 [&_svg]:h-5'
@@ -175,7 +175,7 @@ export const QuickCategoryStrip: React.FC<QuickCategoryStripProps> = ({ variant 
 
         {/* Recuadro Footer strip */}
         {isIntegrated && (
-          <div className="pt-2 border-t border-pink-100/70 flex items-center justify-between text-[11px] text-gray-500 font-medium">
+          <div className="pt-2 border-t border-emerald-100/70 flex items-center justify-between text-[11px] text-gray-500 font-medium">
             <span className="flex items-center gap-1.5 text-ink-light truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
               <span>Envíos en 20-35 min en Rupa Rupa y Castillo Grande</span>
@@ -205,8 +205,8 @@ export const QuickCategoryStrip: React.FC<QuickCategoryStripProps> = ({ variant 
               className="flex flex-col items-center group cursor-pointer focus:outline-none flex-shrink-0"
               style={{ minWidth: '76px' }}
             >
-              {/* Circular Icon Container matching brand berry */}
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-pink-200/90 bg-white group-hover:border-primary group-hover:bg-primary-50/60 shadow-sm group-hover:shadow-md flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95">
+              {/* Circular Icon Container matching brand green */}
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-emerald-100 bg-white group-hover:border-primary group-hover:bg-primary-50/60 shadow-sm group-hover:shadow-md flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95">
                 {item.icon}
               </div>
 

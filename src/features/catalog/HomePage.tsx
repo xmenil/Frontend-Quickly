@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/dataStore';
 import { useCartStore } from '../../store/cartStore';
@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   UtensilsCrossed,
   PlusCircle,
   Shirt,
@@ -34,6 +35,7 @@ import {
   TrendingDown,
   BadgeCheck,
   Building2,
+  Heart,
 } from 'lucide-react';
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
@@ -42,39 +44,51 @@ import heroSmartphoneView from '../../assets/img/image copy 4.png';
 export const HomePage: React.FC = () => {
   const { merchants, products, purchases } = useDataStore();
   const { addItem } = useCartStore();
-  const { isAuthenticated, currentUser } = useAuthStore();
+  const { isAuthenticated, currentUser, activeRole, loginDemo } = useAuthStore();
   const navigate = useNavigate();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement>(null);
 
-  // 3 Slides con fotos locales de Tingo María y textos según la notación de cada imagen
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setShowRoleMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 3 Slides con fotos locales de Tingo María y micro-copys concisos estilo Rappi
   const heroSlides = [
     {
       id: 1,
       image: heroFamilyGroceries,
-      badge: 'Supermercados & Bodegas en Tingo María',
-      title: 'Tus compras del hogar, frescas y completas',
-      description: 'Frutas, verduras frescas, abarrotes y productos de la selva alta directo a la puerta de tu hogar.',
-      ctaText: 'Ver supermercados',
-      ctaLink: '/negocios?categoria=supermercados',
+      badge: 'Restaurantes, Bodegas, Farmacias y más',
+      title: 'Todo lo que necesitas, en un solo lugar',
+      description: 'Comida típica, abarrotes de Minisol, medicamentos y productos de la selva al instante.',
+      ctaText: 'Ver categorías',
+      ctaLink: '/negocios',
     },
     {
       id: 2,
       image: heroMotorcycleDelivery,
-      badge: 'Envíos Express en Leoncio Prado',
-      title: 'Lo mejor de la selva en tu puerta en minutos',
-      description: 'Tacacho con cecina, juanes, farmacias y antojos con motorizados locales en Rupa Rupa y Castillo Grande.',
+      badge: 'Envíos Express Tingo María',
+      title: 'Pollería Rubén & Sabores de la Selva',
+      description: 'Pollo a la brasa con papas nativas, tacacho con cecina y comidas calientes en 20-35 min.',
       ctaText: 'Pedir comida caliente',
       ctaLink: '/negocios?categoria=restaurantes',
     },
     {
       id: 3,
       image: heroSmartphoneView,
-      badge: 'Fácil, Rápido y Seguro',
-      title: 'Todo Tingo María al alcance de tu celular',
-      description: 'Pide desde donde estés con delivery centralizado, rastreo en vivo y pagos al instante con Yape, Plin o efectivo.',
+      badge: 'Supermercado Minisol & Farmacias',
+      title: 'Tus compras del hogar directo a tu puerta',
+      description: 'Abarrotes frescos, boticas y productos locales con entrega rápida y pagos Yape/Plin.',
       ctaText: 'Explorar comercios',
       ctaLink: '/negocios',
     },
@@ -87,36 +101,36 @@ export const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  // 5 Categorías destacadas (como en la captura del usuario: Restaurantes, Farmacias, Bodegas, Ropa, Emprendedores)
+  // 5 Categorías destacadas del prototipo v2 (Restaurantes, Bodegas, Farmacias, Ropa, Emprendedores)
   const mainCategoryCards = [
     {
       id: 'restaurantes',
       name: 'Restaurantes',
-      icon: <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2]" />,
+      icon: <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2.2]" />,
       link: '/negocios?categoria=restaurantes',
-    },
-    {
-      id: 'farmacias',
-      name: 'Farmacias',
-      icon: <PlusCircle className="w-6 h-6 text-primary stroke-[2]" />,
-      link: '/negocios?categoria=farmacias',
     },
     {
       id: 'bodegas',
       name: 'Bodegas',
-      icon: <Store className="w-6 h-6 text-primary stroke-[2]" />,
+      icon: <ShoppingCart className="w-6 h-6 text-primary stroke-[2.2]" />,
       link: '/negocios?categoria=bodegas',
+    },
+    {
+      id: 'farmacias',
+      name: 'Farmacias',
+      icon: <PlusCircle className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=farmacias',
     },
     {
       id: 'ropa',
       name: 'Ropa',
-      icon: <Shirt className="w-6 h-6 text-primary stroke-[2]" />,
+      icon: <Shirt className="w-6 h-6 text-primary stroke-[2.2]" />,
       link: '/negocios?categoria=ropa',
     },
     {
       id: 'emprendedores',
       name: 'Emprendedores',
-      icon: <Sprout className="w-6 h-6 text-primary stroke-[2]" />,
+      icon: <Sprout className="w-6 h-6 text-primary stroke-[2.2]" />,
       link: '/negocios?categoria=emprendedores',
     },
   ];
@@ -246,189 +260,231 @@ export const HomePage: React.FC = () => {
   );
 
   return (
-    <div className="w-full flex flex-col">
-      {/* Location & Coverage Strip */}
-      <div className="w-full bg-white/95 border-b border-gray-100 py-2 select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200/90 shadow-xs text-ink">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-            <span className="font-bold">Tingo María • Zona Centro</span>
-            <span className="text-ink-light hidden sm:inline">• Tarifa S/ 4.00</span>
+    <div className="w-full flex flex-col bg-white">
+      {/* Indicador de Entrega: Despachos en 20 - 35 min (exacto a prototipo v2) */}
+      <div className="w-full bg-white select-none pt-2.5 pb-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs sm:text-sm">
+          <div className="inline-flex items-center gap-2 text-ink font-bold">
+            <Clock className="w-4 h-4 text-ink flex-shrink-0 stroke-[2.2]" />
+            <span>Despachos en 20 - 35 min</span>
           </div>
-          <div className="flex items-center gap-1.5 text-ink-light font-medium">
-            <Clock className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="tabular-nums">Despachos en 20-35 min</span>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-ink-light">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            <span>Repartidores activos en Leoncio Prado</span>
           </div>
         </div>
       </div>
 
-      {/* Top Section: Hero Carousel Banner & Quick Category Grid side-by-side */}
-      <section className="w-full bg-white pb-6 pt-3 select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          {/* Main Hero Grid Layout: Banner & 5 Category Cards on Left, Quick Shortcuts Card on Right (matching screenshot) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-            {/* Left Column (col-span-8): Hero Banner on top, 5 Category Cards directly below */}
-            <div className="lg:col-span-8 xl:col-span-8 flex flex-col justify-between gap-3 sm:gap-3.5">
-              {/* Hero Banner Carousel */}
-              <div className="relative rounded-2xl overflow-hidden shadow-card h-[240px] sm:h-[260px] lg:h-[270px] flex flex-col justify-end p-5 sm:p-6 text-white select-none group w-full">
-                {/* Background Slides with crossfade transition */}
-                {heroSlides.map((slide, idx) => {
-                  const isActive = idx === currentHeroSlide;
-                  return (
-                    <div
-                      key={slide.id}
-                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                        isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
-                      }`}
-                    >
-                      <img
-                        src={slide.image}
-                        alt={slide.title}
-                        className="w-full h-full object-cover object-center filter blur-[0.3px] scale-100 group-hover:scale-105 transition-transform duration-1000"
-                      />
-                    </div>
-                  );
-                })}
-
-                {/* Toque medio moradito claro: gradiente sutil y armónico de marca */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#2c0517]/85 via-[#590a2d]/45 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1b030e]/85 via-[#450723]/30 to-transparent" />
-                <div className="absolute inset-0 bg-[#be185d]/10 mix-blend-color pointer-events-none" />
-
-                {/* Slide Content */}
-                <div className="relative z-10 space-y-1.5 sm:space-y-2 max-w-lg">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/90 backdrop-blur-xs text-[10px] sm:text-[11px] font-bold text-white shadow-subtle">
-                    <Sparkles className="w-3 h-3 text-pink-200" />
-                    {heroSlides[currentHeroSlide].badge}
-                  </span>
-
-                  <h1 className="text-lg sm:text-2xl lg:text-[26px] font-black tracking-tight leading-tight text-white drop-shadow-md">
-                    {heroSlides[currentHeroSlide].title}
-                  </h1>
-
-                  <p className="text-xs sm:text-sm text-gray-100 font-medium leading-snug drop-shadow line-clamp-2 max-w-md">
-                    {heroSlides[currentHeroSlide].description}
-                  </p>
-
-                  <div className="pt-0.5 flex items-center gap-2">
-                    <Link
-                      to={heroSlides[currentHeroSlide].ctaLink}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-pink-50 text-primary font-black text-xs shadow-card hover:shadow-hover transition-all active:scale-95 cursor-pointer"
-                    >
-                      <span>{heroSlides[currentHeroSlide].ctaText}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Prev & Next subtle buttons */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/35 hover:bg-black/65 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
-                  aria-label="Slide anterior"
+      {/* Top Section: Hero Banner Carousel & 5 Category Cards */}
+      <section className="w-full bg-white pb-3 pt-1 select-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3.5">
+          {/* Hero Banner Carousel (estilo prototipo v2 con micro-copys concisos) */}
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm h-[200px] sm:h-[240px] lg:h-[260px] flex flex-col justify-end p-5 sm:p-7 text-white select-none group w-full bg-gradient-to-br from-emerald-900 to-emerald-950">
+            {/* Background Slides with crossfade transition */}
+            {heroSlides.map((slide, idx) => {
+              const isActive = idx === currentHeroSlide;
+              return (
+                <div
+                  key={slide.id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+                  }`}
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/35 hover:bg-black/65 text-white/90 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
-                  aria-label="Siguiente slide"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                {/* Carousel Pagination Dots */}
-                <div className="absolute bottom-3.5 right-3.5 sm:bottom-4 sm:right-4 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
-                  {heroSlides.map((slide, idx) => (
-                    <button
-                      key={slide.id}
-                      type="button"
-                      onClick={() => setCurrentHeroSlide(idx)}
-                      className={`transition-all duration-300 rounded-full cursor-pointer ${
-                        idx === currentHeroSlide
-                          ? 'w-4 h-1.5 bg-primary shadow-sm'
-                          : 'w-1.5 h-1.5 bg-white/60 hover:bg-white'
-                      }`}
-                      aria-label={`Ir al slide ${idx + 1}`}
-                    />
-                  ))}
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="w-full h-full object-cover object-center filter brightness-[0.85] scale-100 group-hover:scale-105 transition-transform duration-1000"
+                  />
                 </div>
-              </div>
+              );
+            })}
 
-              {/* 5 Main Category Cards directly below the banner (matching Screenshot) */}
-              <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                {mainCategoryCards.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={cat.link}
-                    className="bg-[#FAF5F8] hover:bg-pink-100/70 border border-pink-100 hover:border-pink-300 rounded-2xl py-3 px-2 sm:py-3.5 sm:px-3 flex flex-col items-center justify-center gap-1.5 group transition-all duration-200 shadow-2xs hover:shadow-subtle hover:-translate-y-0.5 active:scale-95 text-center"
-                  >
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center text-primary group-hover:scale-110 shadow-2xs transition-transform">
-                      {cat.icon}
-                    </div>
-                    <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full">
-                      {cat.name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* Sombra y gradiente para contraste limpio sobre fondos naturales */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
 
-            {/* Right Column (col-span-4): Replaces "Tu carrito" with Accesos Directos Card "bien claros" */}
-            <div className="lg:col-span-4 xl:col-span-4 bg-white rounded-2xl border border-gray-200/90 shadow-card p-4 sm:p-5 flex flex-col justify-between select-none">
-              {/* Card Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                  <h3 className="text-sm font-black text-ink">Accesos directos</h3>
-                </div>
-                <span className="text-[10px] bg-pink-50 text-primary border border-pink-200 font-bold px-2 py-0.5 rounded-full">
-                  Tingo María
-                </span>
-              </div>
+            {/* Slide Content */}
+            <div className="relative z-20 space-y-2 max-w-lg">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-white text-[11px] sm:text-xs font-bold shadow-xs">
+                <Sprout className="w-3.5 h-3.5 text-white" />
+                <span>{heroSlides[currentHeroSlide].badge}</span>
+              </span>
 
-              {/* 8 Crisp Shortcut Tiles in 2 columns (Bien Claros) */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-2.5 my-auto py-2.5">
-                {rightSidebarShortcuts.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => navigate(item.link)}
-                    className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50/80 hover:bg-pink-50/70 border border-gray-100 hover:border-pink-200 group transition-all text-left cursor-pointer active:scale-95 shadow-2xs hover:shadow-xs"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-primary group-hover:scale-105 shadow-2xs border border-pink-100 flex-shrink-0">
-                      {item.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate">
-                        {item.label}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium truncate">
-                        {item.subtitle}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight text-white drop-shadow-md">
+                {heroSlides[currentHeroSlide].title}
+              </h1>
 
-              {/* Card Footer */}
-              <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-ink-light text-[11px] font-medium truncate">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                  <span className="truncate">Despachos en 20-35 min</span>
-                </div>
+              <p className="text-xs sm:text-sm text-gray-100 font-medium leading-snug drop-shadow line-clamp-2 max-w-md">
+                {heroSlides[currentHeroSlide].description}
+              </p>
+
+              <div className="pt-1 flex items-center gap-2">
                 <Link
-                  to="/negocios"
-                  className="text-primary hover:text-primary-hover font-bold text-[11px] flex items-center gap-0.5 hover:underline flex-shrink-0 ml-2"
+                  to={heroSlides[currentHeroSlide].ctaLink}
+                  className="inline-flex items-center gap-2 px-5 py-2 sm:py-2.5 rounded-full bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <span>Ver catálogo</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span>{heroSlides[currentHeroSlide].ctaText}</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
+
+            {/* Carousel Pagination Dots */}
+            <div className="absolute bottom-3.5 right-3.5 sm:bottom-5 sm:right-6 z-20 flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+              {heroSlides.map((slide, idx) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => setCurrentHeroSlide(idx)}
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
+                    idx === currentHeroSlide
+                      ? 'w-5 h-2 bg-white shadow-sm'
+                      : 'w-2 h-2 bg-white/50 hover:bg-white'
+                  }`}
+                  aria-label={`Ir al slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 5 Main Category Cards directly below banner (exacto a prototipo v2) */}
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+            {mainCategoryCards.map((cat) => (
+              <Link
+                key={cat.id}
+                to={cat.link}
+                className="bg-white hover:bg-emerald-50/40 border border-gray-150/80 hover:border-primary/50 rounded-2xl py-3 px-1 sm:py-4 sm:px-3 flex flex-col items-center justify-center gap-1.5 group transition-all duration-200 shadow-xs hover:shadow-subtle hover:-translate-y-0.5 active:scale-95 text-center"
+              >
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-primary flex items-center justify-center group-hover:scale-105 group-hover:bg-primary group-hover:text-white shadow-2xs transition-all duration-200">
+                  {cat.icon}
+                </div>
+                <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full">
+                  {cat.name}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section: Accesos directos con Switch de Rol (exacto a prototipo v2) */}
+      <section className="w-full bg-white py-2 sm:py-3 select-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+              <h2 className="text-sm sm:text-base font-extrabold text-ink">Accesos directos</h2>
+            </div>
+
+            {/* Switch de Rol: Panel: CLIENTE ⌃ */}
+            <div className="relative" ref={roleMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowRoleMenu(!showRoleMenu)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-bold text-ink transition-all cursor-pointer shadow-2xs"
+                aria-label="Cambiar modo de vista o panel de demostración"
+              >
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                <span className="text-gray-500 font-normal">Panel:</span>
+                <span className="text-primary font-black uppercase tracking-wide">{activeRole}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown de Roles */}
+              {showRoleMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-floating border border-gray-100 p-2 z-40 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Cambiar Modo de Vista
+                  </div>
+                  {[
+                    { role: 'cliente', label: 'Cliente', desc: 'Catálogo y pedidos' },
+                    { role: 'comercio', label: 'Comercio', desc: 'Panel de tienda y menú' },
+                    { role: 'repartidor', label: 'Repartidor', desc: 'Rutas y entregas' },
+                    { role: 'admin', label: 'Admin', desc: 'Supervisión y zonas' },
+                  ].map((r) => (
+                    <button
+                      key={r.role}
+                      type="button"
+                      onClick={() => {
+                        loginDemo(r.role as any);
+                        setShowRoleMenu(false);
+                      }}
+                      className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                        activeRole === r.role ? 'bg-emerald-50 text-primary font-bold' : 'hover:bg-gray-50 text-ink'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-bold capitalize">{r.label}</p>
+                        <p className="text-[10px] text-gray-400">{r.desc}</p>
+                      </div>
+                      {activeRole === r.role && <Check className="w-3.5 h-3.5 text-primary" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 4 Action Pills (exacto a prototipo v2) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <Link
+              to="/negocios?q=oferta"
+              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs shadow-2xs">
+                  %
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
+                  Ofertas
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
+
+            <Link
+              to="/negocios"
+              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-100 shadow-2xs">
+                  <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
+                  Pedidos
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
+
+            <Link
+              to="/cliente/pedidos"
+              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xs">
+                  <Clock className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
+                  Mis pedidos
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
+
+            <Link
+              to="/cliente/favoritos"
+              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xs">
+                  <Heart className="w-4 h-4 fill-white stroke-[0]" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
+                  Favoritos
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
           </div>
         </div>
       </section>
@@ -439,7 +495,7 @@ export const HomePage: React.FC = () => {
       {/* Official Stores Section (Full Width Edge-to-Edge) */}
       <OfficialStoresSection />
 
-      {/* Big Stores Products & Deals Showcase (Full Width Edge-to-Edge with #FAF5F8) */}
+      {/* Big Stores Products & Deals Showcase (Full Width Edge-to-Edge with emerald-50/20) */}
       <BigStoreProductsSection />
 
       {/* Productos Destacados Section: Gastronomía & Tradición Tingalesa (Full Width Edge-to-Edge) */}
@@ -486,7 +542,7 @@ export const HomePage: React.FC = () => {
                 <Link
                   key={item.id}
                   to={`/producto/${item.id}`}
-                  className="group bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
+                  className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
                 >
                   {/* Product Image: De esquina a esquina */}
                   <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
@@ -577,11 +633,11 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Bottom 3 Cards Row: Dirección de entrega | Estado de pedido dinámico | Mis pedidos */}
-      <section className="w-full bg-[#FAF5F8]/60 border-b border-pink-100/50 py-8 sm:py-10 select-none">
+      <section className="w-full bg-emerald-50/20 border-b border-emerald-100/50 py-8 sm:py-10 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Card 1: Dirección de entrega */}
-            <div className="bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.03)] p-5 sm:p-6 flex flex-col justify-between space-y-3">
+            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-ink">
                   <MapPin className="w-4 h-4 text-primary" />
@@ -620,7 +676,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Card 2: Estado del Pedido DINÁMICO (o Cobertura si no hay pedido activo) */}
-            <div className="bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.03)] p-5 sm:p-6 flex flex-col justify-between space-y-3">
+            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-ink">
                   <Bike className="w-4 h-4 text-primary" />
@@ -679,7 +735,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Card 3: Mis pedidos recientes */}
-            <div className="bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.03)] p-5 sm:p-6 flex flex-col justify-between space-y-3">
+            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
                 <span className="font-bold text-ink">Mis pedidos recientes</span>
                 <Link to="/cliente/pedidos" className="text-primary hover:underline font-semibold">

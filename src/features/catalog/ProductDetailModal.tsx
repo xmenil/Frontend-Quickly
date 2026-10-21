@@ -78,11 +78,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}`}
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" fill="%23FFF1F6"><rect width="600" height="300" fill="%23FFF1F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23C60050" font-family="sans-serif" font-weight="bold" font-size="24">Quickly Delivery</text></svg>';
+                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" fill="%23ECFDF5"><rect width="600" height="300" fill="%23ECFDF5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="24">Quickly Delivery</text></svg>';
             }}
           />
           {merchant && (
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-bold text-ink shadow-sm">
+            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-bold text-ink shadow-sm">
               {merchant.name}
             </div>
           )}
@@ -102,6 +102,27 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <p className="text-xs sm:text-sm text-gray-500 mt-1.5 leading-relaxed">
             {product.description}
           </p>
+
+          {/* SKU, Código de Barras y QR (Minisol, Rubén, Comercios Locales) */}
+          {(product.sku || product.barcode || product.qrCode) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10.5px]">
+              {product.sku && (
+                <span className="inline-flex items-center gap-1 font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
+                  <span className="font-sans font-bold text-gray-500">SKU:</span> {product.sku}
+                </span>
+              )}
+              {product.barcode && (
+                <span className="inline-flex items-center gap-1 font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
+                  <span className="font-sans font-bold text-gray-500">Barras:</span> {product.barcode}
+                </span>
+              )}
+              {product.qrCode && (
+                <span className="inline-flex items-center gap-1 font-mono bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200 font-semibold">
+                  <span>QR Verificado:</span> {product.qrCode}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Stock state */}
           <div className="mt-2 flex items-center gap-2">

@@ -7,13 +7,13 @@ import { ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
 export const AuthLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col justify-between text-ink antialiased">
-      {/* Top Header Bar - Matches Home Main Navbar (primary berry token) */}
+      {/* Top Header Bar - Matches Home Main Navbar (primary green token) */}
       <header className="w-full bg-primary border-b border-primary-hover sticky top-0 z-30 shadow-md select-none text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BrandLogo size="md" variant="white" showSubtitle={false} />
             <span className="hidden sm:inline-block h-4 w-px bg-white/30" />
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-pink-100 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-100 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
               <span>🚚 Tingo María • Selva Alta</span>
             </span>
           </div>

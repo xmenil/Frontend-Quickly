@@ -1,0 +1,677 @@
+% Archivo autónomo en UTF-8. No necesita imágenes ni archivos externos.
+% Formato APA 7 para trabajo estudiantil. Completar los datos de portada.
+% Compilar dos veces con pdfLaTeX para actualizar referencias.
+% También admite LuaLaTeX o XeLaTeX. No requiere shell-escape.
+\documentclass[12pt,letterpaper]{article}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{newtxtext}
+\else
+  \usepackage{fontspec}
+  \setmainfont{TeX Gyre Termes}
+  \setsansfont{Latin Modern Sans}
+  \setmonofont{Latin Modern Mono}
+\fi
+\usepackage[spanish,es-tabla,es-nodecimaldot]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{array,booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,babel}
+\usepackage{hyperref}
+\definecolor{quickly}{HTML}{BE185D}
+\definecolor{ink}{HTML}{172033}
+\definecolor{soft}{HTML}{FDF2F8}
+\hypersetup{hidelinks,
+  pdftitle={Quickly Delivery: manual de funcionamiento},
+  pdfauthor={Proyecto Frontend-Quickly},unicode=true}
+\setlength{\parindent}{0.5in}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+\setlist{itemsep=0.25em,topsep=0.3em}
+\renewcommand{\arraystretch}{1.0}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\codigo}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\soles}[1]{S/\,#1}
+
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{ragged2e}
+\doublespacing
+\setcounter{secnumdepth}{0}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{15pt}
+\setlength{\LTcapwidth}{\textwidth}
+\titleformat{\section}{\normalfont\bfseries\centering}{}{0pt}{}
+\titleformat{\subsection}{\normalfont\bfseries}{}{0pt}{}
+\titleformat{\subsubsection}{\normalfont\bfseries\itshape}{}{0pt}{}
+\captionsetup{position=top,labelfont=bf,textfont=it,labelsep=newline,
+  justification=raggedright,singlelinecheck=false,font=normalsize}
+% Completar los datos reales antes de entregar el trabajo.
+\newcommand{\nombreAutor}{[Nombre y apellido del autor]}
+\newcommand{\institucion}{[Departamento e institución]}
+\newcommand{\asignatura}{[Código y nombre de la asignatura]}
+\newcommand{\docente}{[Nombre del docente]}
+\newcommand{\fechaEntrega}{[Fecha de entrega]}
+\newcommand{\apaportada}{%
+  \thispagestyle{fancy}
+  \vspace*{1in}
+  \begin{center}
+    \textbf{Quickly Delivery: manual de funcionamiento del sistema}\par
+    \vspace{\baselineskip}
+    \nombreAutor\par
+    \institucion\par
+    \asignatura\par
+    \docente\par
+    \fechaEntrega\par
+  \end{center}
+}
+
+\begin{document}
+\apaportada
+\clearpage
+\renewcommand{\contentsname}{Índice}
+\setcounter{tocdepth}{2}
+\tableofcontents
+\clearpage
+\RaggedRight
+\setlength{\parindent}{0.5in}
+\begin{center}\textbf{Quickly Delivery: manual de funcionamiento del sistema}\end{center}
+
+
+\section{Propósito y alcance}
+
+Quickly Delivery permite explorar comercios, seleccionar productos, registrar una compra y coordinar su preparación y entrega. Sus interfaces representan cuatro participantes: cliente, comercio, repartidor y administrador.
+
+La presentación adopta el formato de trabajo estudiantil de APA 7 (American Psychological Association, s. f.).
+
+Este manual describe el funcionamiento implementado en el repositorio, con especial atención al flujo de Carrito y Checkout y a los paneles de administración y reparto. Sirve como guía de uso y como referencia para mantenimiento. Las rutas y archivos corresponden al commit \codigo{d0a8c92} del repositorio (xmenil, 2026); cambios posteriores pueden modificar este comportamiento.
+
+\subsection{Estado actual del proyecto}
+
+El sistema es un \textbf{prototipo frontend interactivo}. Las acciones cambian datos compartidos dentro de la aplicación y los guardan en el navegador. No existe en esta versión un servidor central de pedidos, una pasarela de pagos conectada ni seguimiento GPS real.
+
+Los pedidos y direcciones precargados permiten observar pantallas con contenido y probar operaciones. Su presencia no demuestra compras, cobros o entregas reales. El registro local de un estado de pago tampoco constituye una confirmación bancaria.
+
+\subsection{Conceptos principales}
+
+\begin{description}
+  \item[Compra.] Registro general que reúne cliente, dirección, método de pago, importes y pedidos por comercio. En el código se representa mediante \codigo{Purchase}.
+  \item[Pedido por comercio.] Parte de una compra asociada a un local, con productos, estado, repartidor y eventos propios. Se representa mediante \codigo{MerchantOrder}.
+  \item[Carrito.] Productos elegidos por el cliente, incluidos los que conserva para después. Solamente los seleccionados se compran.
+  \item[Zona de cobertura.] Sector con tarifa base, tiempo estimado y disponibilidad de reparto.
+  \item[Incidencia.] Caso registrado para revisión de soporte o administración.
+\end{description}
+
+La interfaz actual permite comprar de \textbf{un comercio a la vez}. El modelo conserva un arreglo de pedidos por comercio para representar registros anteriores y estructuras multicomercio. Esta capacidad del modelo no implica que el carrito actual permita pagar varios locales simultáneamente.
+
+\section{Participantes y módulos}
+
+\begin{table}[htbp]
+\caption{Participantes y responsabilidades}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{L{2.8cm}X}
+\toprule
+Participante & Responsabilidad principal \\
+\midrule
+Cliente & Seleccionar productos, indicar dirección y pago, registrar el pedido y consultar su estado. \\
+Comercio & Administrar su catálogo y disponibilidad, revisar pedidos y avanzar su preparación. \\
+Repartidor & Aceptar entregas disponibles, confirmar recojo y entrega, y reportar inconvenientes. \\
+Administrador & Revisar solicitudes, supervisar cuentas, comercios, repartidores, pedidos e incidencias. \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+\begin{figure}[htbp]
+\caption{Relación operativa entre los paneles. En el prototipo utilizan datos locales compartidos.}
+\centering
+\begin{tikzpicture}[node distance=0.45cm,
+  panel/.style={draw=quickly,fill=soft,rounded corners,align=center,
+    text width=2.7cm,minimum height=1.1cm,font=\small\sffamily},
+  arrow/.style={-{Latex},thick,draw=ink}]
+\node[panel] (client) {Cliente\\Registra la compra};
+\node[panel,right=of client] (merchant) {Comercio\\Prepara el pedido};
+\node[panel,right=of merchant] (courier) {Repartidor\\Recoge y entrega};
+\draw[arrow] (client) -- (merchant);
+\draw[arrow] (merchant) -- (courier);
+\node[panel,below=0.8cm of merchant,text width=5cm] (admin) {Administrador\\Supervisa pedidos y atiende incidencias};
+\draw[arrow,dashed] (merchant) -- (admin);
+\draw[arrow,dashed] (courier.south) |- (admin.east);
+\end{tikzpicture}
+\par\medskip
+\noindent\textit{Nota.} Elaboración propia basada en el flujo implementado (xmenil, 2026).
+\end{figure}
+
+\subsection{Acceso y cuentas de ejemplo}
+
+El acceso se ofrece en \path{/login}. El prototipo contiene estas cuentas de referencia:
+
+\begin{table}[htbp]
+\caption{Cuentas de ejemplo}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{L{2.7cm}X}
+\toprule
+Rol & Correo de ejemplo \\
+\midrule
+Cliente & \path{cliente@quickly.pe} \\
+Comercio & \path{comercio@quickly.pe} \\
+Repartidor & \path{repartidor@quickly.pe} \\
+Administrador & \path{admin@quickly.pe} \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+La sesión del prototipo se resuelve con los datos de ejemplo y se almacena localmente. El botón de Google crea una sesión de ejemplo; no ejecuta una integración OAuth real. Estas cuentas no son credenciales de un servicio de producción.
+
+El selector de paneles permite cambiar de rol y observar el mismo conjunto de datos. Se oculta en Carrito y Checkout para no interferir con la compra. El panel de comercio también permite seleccionar el comercio activo según las funciones de la sesión local.
+
+\subsection{Registros y aprobaciones}
+
+El administrador puede aprobar, rechazar, suspender y reactivar usuarios existentes en el almacén de datos. Las solicitudes precargadas permiten probar ese recorrido.
+
+Los formularios públicos de afiliación de comercio y repartidor muestran una confirmación visual, pero sus manejadores actuales no crean una nueva solicitud persistente en el almacén compartido. El registro de cliente crea una sesión local; su incorporación completa al listado administrativo también requiere integración. Por ello, no debe asumirse que todos los registros públicos aparecen automáticamente en Administración.
+
+\section{Flujo del cliente}
+
+\subsection{Exploración y selección de productos}
+
+El cliente puede consultar el inicio, el catálogo de comercios, el detalle de un comercio y el detalle de un producto. Allí observa la información disponible del catálogo, precios, opciones o variantes y disponibilidad.
+
+Agregar un producto actualiza el carrito. Si el producto corresponde a otro comercio, las reglas de selección mantienen activa una sola tienda para la compra y conservan los demás productos sin seleccionar.
+
+\subsection{Carrito}
+
+En \path{/carrito} los productos se agrupan por comercio. Cada grupo presenta el nombre del local, su disponibilidad, tiempo de preparación publicado y pedido mínimo. El cliente puede:
+
+\begin{itemize}
+  \item Elegir ``Comprar de este comercio'' para seleccionar sus productos.
+  \item Marcar o desmarcar productos mediante casillas explícitas.
+  \item Aumentar o disminuir cantidades dentro de la disponibilidad permitida.
+  \item Eliminar un producto con su acción específica.
+  \item Vaciar todo el carrito después de confirmar la eliminación, incluidos los productos guardados para después.
+\end{itemize}
+
+Disminuir una cantidad de una unidad está bloqueado en la interfaz: para retirarla se utiliza la acción de eliminar. Modificar cantidades no cambia por sí mismo la selección de comercio.
+
+El resumen calcula únicamente lo seleccionado. Antes de elegir dirección, el envío y el total se presentan como \textbf{estimados}. Si no existe una zona elegida, la función de cálculo utiliza la tarifa del comercio o su valor de respaldo. En Checkout se utiliza la tarifa de la zona de la dirección.
+
+La continuación se bloquea si faltan productos seleccionados, el comercio no está activo o abierto, un producto u opción no está disponible, el stock no alcanza, el precio está desactualizado o no se llega al pedido mínimo. Si un precio cambió, la interfaz indica retirar el producto y agregarlo nuevamente.
+
+Si el cliente no ha iniciado sesión, continuar conduce al acceso y conserva la intención de regresar a Checkout.
+
+\subsection{Checkout y protección de pasos}
+
+El recorrido de \path{/checkout} es:
+
+\begin{center}
+\textbf{Dirección} $\longrightarrow$ \textbf{Pago} $\longrightarrow$ \textbf{Revisión} $\longrightarrow$ \textbf{Pedido registrado}
+\end{center}
+
+\begin{enumerate}
+  \item \textbf{Dirección:} seleccionar una dirección de la cuenta, con cobertura disponible, y continuar al pago.
+  \item \textbf{Pago:} elegir expresamente un método y completar sus condiciones. No existe un método seleccionado por defecto.
+  \item \textbf{Revisión:} comprobar productos, dirección, tarifa y pago; corregir los datos mediante sus acciones y confirmar el importe final.
+\end{enumerate}
+
+El indicador permite volver a pasos anteriores o a pasos ya completados. No habilita la revisión con solo haber seleccionado una dirección. Cambiar los productos, la dirección, la tarifa o datos relevantes invalida la revisión anterior. Cambiar el método de pago obliga a revisar nuevamente ese paso.
+
+La confirmación repite las comprobaciones de sesión, selección, cobertura, comercio, precios, cantidades y stock. También comprueba si los datos cambiaron durante la espera de registro. Un bloqueo de envío evita que pulsaciones repetidas generen pedidos duplicados durante esa operación.
+
+\subsection{Métodos de pago}
+
+\subsubsection{Efectivo contra entrega}
+
+El cliente indica el monto disponible. Puede utilizar coma o punto decimal, elegir el monto exacto o un atajo suficiente para cubrir el total. El sistema rechaza importes incompletos, negativos, con precisión inválida o menores que el pedido.
+
+El vuelto se calcula como:
+\[
+  V = E - T, \qquad E \geq T,
+\]
+donde $E$ es el efectivo indicado y $T$ el total. El importe representa con cuánto \emph{pagará} el cliente, no un cobro ya recibido.
+
+\subsubsection{Yape/Plin y tarjeta}
+
+Elegir un método digital no genera un cargo. La interfaz informa que el pago quedará pendiente de verificación y exige reconocer esa condición antes de pasar a revisión. No ofrece un QR cobrable, un número de cobro oficial ni un formulario para recopilar datos de tarjeta.
+
+Todas las compras nuevas se registran con pago \codigo{pendiente}. La confirmación de un cobro digital requiere una pasarela o un procedimiento administrativo que aún no está integrado. En efectivo, confirmar la entrega actualiza el estado de pago del pedido por comercio; ese cambio no garantiza que el estado global de la compra se actualice del mismo modo.
+
+\subsection{Registro y recuperación ante errores}
+
+Al registrar la compra, se construyen sus pedidos por comercio, se conserva una copia de productos y dirección, se reserva stock y se crean eventos y notificaciones locales. Se retiran del carrito solamente los productos adquiridos. Los demás permanecen disponibles para otra compra.
+
+La aplicación abre el detalle del pedido y muestra ``Pedido registrado''. Si el registro falla, conserva el carrito y comunica el motivo. Si el pedido ya se guardó pero falla la limpieza del carrito, bloquea una nueva confirmación y ofrece abrir el registro existente.
+
+\section{Direcciones, cobertura y tarifas}
+
+\subsection{Direcciones guardadas}
+
+En \path{/cliente/direcciones} se pueden consultar, agregar, editar, eliminar y elegir una dirección principal. Cada dirección pertenece a una cuenta y contiene destinatario, celular, calle, número, referencia, zona y nombre identificador.
+
+La precarga temporal proporciona dos ubicaciones:
+
+\begin{table}[htbp]
+\caption{Direcciones precargadas}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{L{3cm}X}
+\toprule
+Nombre & Ubicación y referencia \\
+\midrule
+Casa & Av. Alameda Perú 315. Frente al Parque Ramón Castilla, puerta verde. Zona Centro. \\
+Trabajo / UNAS & Av. Universitaria s/n, Pabellón Central. Facultad de Agronomía, garita 2. Zona Rupa Rupa Norte / UNAS. \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+Los datos de contacto se adaptan a la cuenta que abre las direcciones. La carga se realiza una sola vez por cuenta, preserva registros editados y no vuelve a insertar una dirección eliminada después de la precarga. Si ya existe una dirección principal, no la sustituye.
+
+\subsection{Formulario de nueva dirección}
+
+El modal organiza el formulario en contacto, ubicación y opciones de guardado. El celular comienza vacío, acepta separadores habituales y se guarda como nueve dígitos. Los campos de texto se limpian de espacios exteriores. El número admite referencias como manzana, lote o s/n.
+
+La zona debe elegirse expresamente y tener cobertura al guardar. Las validaciones aparecen junto a los campos y se enfoca el primer error. Si falla el guardado, se conserva lo escrito. En Checkout, la dirección recién guardada queda seleccionada y actualiza el envío y el total, sin saltar el paso de Pago.
+
+\subsection{Zonas de referencia}
+
+\begin{table}[htbp]
+\caption{Zonas de cobertura}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{XrrL{2.3cm}}
+\toprule
+Zona & Tarifa base & Tiempo & Disponibilidad inicial \\
+\midrule
+Centro de Tingo María & \soles{4.00} & 20 min & Habilitada \\
+Rupa Rupa Norte / UNAS & \soles{5.00} & 25 min & Habilitada \\
+Rupa Rupa Sur / Afilador & \soles{5.50} & 30 min & Habilitada \\
+Castillo Grande & \soles{6.50} & 35 min & Habilitada \\
+Naranjillo Periférica & \soles{8.00} & 45 min & Sin cobertura \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+Son valores iniciales del prototipo. Los tiempos son estimaciones registradas, no predicciones GPS ni compromisos de llegada. El panel administrativo de zonas permite consultarlos; no contiene actualmente un editor de tarifas.
+
+\section{Panel del comercio}
+
+\subsection{Organización}
+
+\begingroup\singlespacing
+\begin{longtable}{L{5.2cm}L{10.1cm}}
+\caption{Rutas del comercio}\\
+\toprule
+Ruta & Uso principal \\
+\midrule
+\endhead
+\path{/comercio/tienda} & Resumen operativo y disponibilidad del comercio. \\
+\path{/comercio/perfil-tienda} & Datos y presentación del local. \\
+\path{/comercio/productos} & Creación, edición y disponibilidad del catálogo. \\
+\path{/comercio/pedidos} & Revisión de pedidos, preparación y acciones operativas. \\
+\path{/comercio/reportes} & Consulta de información comercial y reportes. \\
+\path{/comercio/configuracion} & Opciones de configuración del panel. \\
+\bottomrule
+\end{longtable}
+\endgroup
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).\par\bigskip
+
+\subsection{Preparación de un pedido}
+
+El comercio consulta los pedidos asociados a su identificador. Un pedido nuevo queda pendiente hasta que se confirma o rechaza. La preparación utiliza los estados permitidos: confirmado, en preparación y listo para recojo.
+
+Marcar un pedido listo para recojo lo incorpora a las solicitudes de reparto si todavía no tiene repartidor. Cada cambio conserva un evento en la línea de tiempo y puede generar registros de auditoría y notificaciones locales.
+
+Pausar el comercio cambia su recepción de pedidos; no elimina el catálogo ni los pedidos existentes. El carrito y Checkout revisan su disponibilidad antes de continuar y registrar una nueva compra.
+
+\section{Panel del repartidor}
+
+\begingroup\singlespacing
+\begin{longtable}{L{5.8cm}L{9.5cm}}
+\caption{Rutas del repartidor}\\
+\toprule
+Ruta & Uso principal \\
+\midrule
+\endhead
+\path{/repartidor/solicitudes} & Pedidos listos para recojo sin repartidor asignado. \\
+\path{/repartidor/entrega-activa} & Dirección, contacto, cobro, recojo y entrega en curso. \\
+\path{/repartidor/historial} & Entregas completadas y detalles desplegables. \\
+\path{/repartidor/ingresos} & Tarifas registradas, número de entregas y promedio. \\
+\path{/repartidor/perfil} & Identidad, vehículo, zona, estado de cuenta y disponibilidad. \\
+\bottomrule
+\end{longtable}
+\endgroup
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).\par\bigskip
+
+\subsection{Disponibilidad y solicitudes}
+
+El control de cabecera permite activar o pausar la disponibilidad. Una cuenta activa y la disponibilidad son conceptos distintos: el primero corresponde a la gestión administrativa; el segundo a la disposición para recibir trabajo.
+
+Una solicitud muestra código, comercio, tarifa, dirección de recojo, destino, referencia y método de pago. La interfaz bloquea aceptar mientras el repartidor esté en pausa o tenga una entrega en curso. Si otro repartidor tomó el pedido, la acción comunica el error.
+
+Estos controles pertenecen a la interfaz y no sustituyen validaciones de un servidor. Algunas operaciones internas del almacén y la asignación administrativa todavía no aplican todas las restricciones de capacidad o identidad.
+
+\subsection{Entrega activa}
+
+La dirección y el siguiente paso aparecen primero. Durante el recojo se muestran dirección y contacto del comercio; durante la entrega, dirección, referencia y contacto del cliente. La llamada utiliza un enlace telefónico.
+
+\begin{enumerate}
+  \item Aceptar la solicitud asigna el pedido al repartidor.
+  \item ``Confirmar recojo'' cambia el pedido de listo para recojo a en camino.
+  \item ``Confirmar entrega'' abre una confirmación final.
+  \item ``Finalizar entrega'' registra el estado entregado y abre el historial cuando la operación tiene éxito.
+\end{enumerate}
+
+Los errores conservan el contexto. El recorrido de referencia es un esquema de origen y destino, sin coordenadas ni distancia calculada. Para compras antiguas multicomercio, el vuelto global requiere cuidado: el dato de vuelto puede pertenecer a la compra completa y no al pedido individual.
+
+\subsection{Historial, ganancias y datos precargados}
+
+El historial muestra pedidos asignados al repartidor que estén entregados. Ganancias suma sus tarifas de entrega y calcula el promedio. Sin registros, muestra cero. La tarifa registrada no confirma una liquidación ni un pago al repartidor.
+
+Los datos iniciales adicionales incluyen tres solicitudes listas, una entrega en camino y cuatro entregas completadas. La carga evita duplicar sus identificadores y preserva una entrega activa existente. Se integran en los datos compartidos, por lo que también pueden verse desde cliente, comercio y administración según la cuenta y el filtro utilizados.
+
+\section{Administración y soporte}
+
+\begingroup\singlespacing
+\begin{longtable}{L{5.2cm}L{10.1cm}}
+\caption{Rutas de administración}\\
+\toprule
+Ruta & Función \\
+\midrule
+\endhead
+\path{/admin/resumen} & Pendientes, disponibilidad operativa y cifras generales. \\
+\path{/admin/usuarios} & Solicitudes, aprobación, rechazo, suspensión y reactivación. \\
+\path{/admin/comercios} & Datos de comercios y apertura o pausa. \\
+\path{/admin/repartidores} & Flota, vehículo, zona y disponibilidad. \\
+\path{/admin/pedidos} & Monitor de pedidos y asignación manual de repartidor. \\
+\path{/admin/zonas} & Consulta de cobertura, tarifas y tiempos. \\
+\path{/admin/incidencias} & Casos abiertos, en revisión y resueltos. \\
+\path{/admin/reportes} & Totales registrados y exportación CSV. \\
+\path{/admin/auditoria} & Historial de actividad, búsqueda y filtro por responsable. \\
+\bottomrule
+\end{longtable}
+\endgroup
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).\par\bigskip
+
+\subsection{Gestión de cuentas}
+
+La aprobación activa al usuario y, según el caso, el perfil asociado de comercio o repartidor. El rechazo de una solicitud deja al usuario suspendido y el perfil asociado rechazado. Suspender o reactivar una cuenta utiliza acciones diferentes de pausar la disponibilidad operativa.
+
+El rechazo y la suspensión requieren un motivo escrito en la interfaz. El sistema registra la decisión en el historial local. Estos registros son editables desde el entorno del navegador y no constituyen una auditoría inmutable de producción.
+
+\subsection{Incidencias}
+
+El repartidor puede informar lluvia, tráfico, falta de respuesta del cliente, dificultad para ubicar la dirección o avería. El envío crea un caso de prioridad alta, vinculado al código de compra y en revisión.
+
+Administración consulta el caso y escribe una respuesta obligatoria para resolverlo. La interfaz conserva el texto si falla la operación y permite leer respuestas anteriores. Resolver una incidencia no modifica automáticamente el tiempo estimado, la posición del repartidor ni el estado de entrega.
+
+\subsection{Reportes}
+
+Los totales administrativos incluyen los registros disponibles, sin filtro de fecha y con todos sus estados. El monto total registrado incluye compras canceladas; no equivale a ingresos cobrados. Las tarifas de envío registradas tampoco equivalen a pagos liquidados a repartidores.
+
+La exportación CSV incluye identificador, código, cliente, fecha, método de pago, total en soles y estado. El archivo procede de los datos locales del navegador.
+
+\section{Estados y cálculos}
+
+\subsection{Estados del pedido por comercio}
+
+\begin{figure}[htbp]
+\caption{Transiciones permitidas por las reglas del prototipo.}
+\centering
+\begin{tikzpicture}[node distance=0.38cm,
+  state/.style={draw=quickly,fill=soft,rounded corners,text width=5cm,align=center,minimum height=0.75cm,font=\small\sffamily},
+  branch/.style={draw=ink,rounded corners,text width=2.4cm,align=center,minimum height=0.75cm,font=\small\sffamily},
+  arrow/.style={-{Latex},draw=ink}]
+\node[state] (pending) {Pendiente};
+\node[state,below=of pending] (confirmed) {Confirmado};
+\node[state,below=of confirmed] (preparing) {En preparación};
+\node[state,below=of preparing] (ready) {Listo para recojo};
+\node[state,below=of ready] (transit) {En camino};
+\node[state,below=of transit] (delivered) {Entregado};
+\draw[arrow] (pending) -- (confirmed);
+\draw[arrow] (confirmed) -- (preparing);
+\draw[arrow] (preparing) -- (ready);
+\draw[arrow] (ready) -- (transit);
+\draw[arrow] (transit) -- (delivered);
+\node[branch,right=1cm of pending] (rejected) {Rechazado};
+\node[branch,left=1cm of confirmed] (cancelled) {Cancelado};
+\draw[arrow] (pending.east) -- (rejected.west);
+\draw[arrow] (pending.west) -| (cancelled.north);
+\draw[arrow] (confirmed.west) -- (cancelled.east);
+\end{tikzpicture}
+\par\medskip
+\noindent\textit{Nota.} Elaboración propia basada en el flujo implementado (xmenil, 2026).
+\end{figure}
+
+\begin{table}[htbp]
+\caption{Estados del pedido}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{L{4.2cm}X}
+\toprule
+Estado interno & Significado \\
+\midrule
+\codigo{pendiente} & Espera aceptación del comercio. \\
+\codigo{confirmado} & El comercio aceptó el pedido. \\
+\codigo{en_preparacion} & El comercio prepara los productos. \\
+\codigo{listo_recoger} & Puede recogerse y pasar al reparto. \\
+\codigo{en_camino} & El repartidor confirmó el recojo. \\
+\codigo{entregado} & Se confirmó la entrega. \\
+\codigo{cancelado} & El pedido fue cancelado. \\
+\codigo{rechazado} & El comercio rechazó el pedido. \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+La compra general deriva su estado de los pedidos que contiene: pendiente, en proceso, entrega parcial, completada, cancelada o finalizada con cancelaciones. Los estados globales y los estados por comercio no son intercambiables.
+
+\subsection{Cancelaciones y reintegros}
+
+El cliente puede cancelar pedidos pendientes o confirmados, antes de la preparación. Las transiciones terminales no permiten continuar al siguiente paso de reparto. Una cancelación o rechazo restaura stock según la implementación actual y libera la asignación del repartidor cuando corresponde.
+
+La regla de reintegro de métodos digitales conserva una suposición anterior de prepago y puede marcar el registro como reembolsado aunque el Checkout nuevo deje el pago pendiente. \textbf{No se realiza una transferencia bancaria.} Esta regla debe reconciliarse con la verificación de pagos antes de utilizar el sistema para cobros reales.
+
+\subsection{Importes en centavos}
+
+El código guarda dinero como enteros en centavos y lo presenta mediante \codigo{formatCents}. Para una línea de producto:
+\[
+  L_i = q_i\,(p_i + v_i), \qquad
+  P = \sum_i L_i, \qquad T = P + F,
+\]
+donde $q_i$ es la cantidad, $p_i$ el precio base, $v_i$ la diferencia de variante, $P$ el subtotal y $F$ el envío. La tarifa de la zona se aplica cuando hay dirección seleccionada. La comprobación de stock considera la cantidad conjunta del mismo producto en las opciones seleccionadas.
+
+\subsection{Ejemplo de uso completo}
+
+Para ilustrar el recorrido, supóngase un producto de \soles{28.00}, entrega al Centro de \soles{4.00} y pago en efectivo con \soles{50.00}. El total es \soles{32.00} y el vuelto \soles{18.00}. Son valores ilustrativos, no un cobro real.
+
+\begin{enumerate}
+  \item El cliente selecciona el comercio y el producto en Carrito.
+  \item En Checkout elige Casa, comprueba el envío y continúa.
+  \item Elige efectivo, indica el monto y revisa el vuelto.
+  \item Revisa el pedido y confirma. Se reserva stock y se genera un código.
+  \item El comercio confirma, prepara y marca listo para recojo.
+  \item Un repartidor disponible, sin otra entrega activa en su interfaz, acepta la solicitud.
+  \item Confirma el recojo, consulta dirección y referencia y realiza la entrega.
+  \item Confirma la entrega y consulta su historial y tarifa registrada.
+  \item Administración puede observar los mismos registros y atender una incidencia vinculada.
+\end{enumerate}
+
+La coincidencia entre paneles depende del mismo origen web y almacenamiento local, de la cuenta o comercio seleccionados y de los filtros. Abrir otra computadora no comparte automáticamente estos datos.
+
+\section{Arquitectura y mantenimiento}
+
+\subsection{Tecnologías}
+
+La aplicación utiliza React 18 y TypeScript, Vite para desarrollo y compilación, React Router 6 para rutas, Zustand para estado, Tailwind CSS 3 para estilos, Lucide para iconos y React Hook Form con Zod para el formulario de direcciones. Las pruebas utilizan Vitest y Testing Library.
+
+\subsection{Almacenes y persistencia}
+
+\begin{table}[htbp]
+\caption{Almacenes de datos}
+\begin{singlespace}
+\begin{tabularx}{\textwidth}{L{3cm}X}
+\toprule
+Archivo & Responsabilidad \\
+\midrule
+\path{src/store/authStore.ts} & Usuario, sesión, rol y comercio activo de ejemplo. \\
+\path{src/store/cartStore.ts} & Productos, cantidades y selección de un comercio. \\
+\path{src/store/dataStore.ts} & Compras, catálogo, direcciones, flota, incidencias, eventos y acciones compartidas. \\
+\bottomrule
+\end{tabularx}
+\end{singlespace}
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).
+\end{table}
+
+Las claves principales de \codigo{localStorage} son \codigo{quickly_auth_v1}, \codigo{quickly_cart_v1} y \codigo{quickly_datastore_v4}. El almacén de datos puede recuperar versiones anteriores y agregar semillas faltantes sin reemplazar todos los registros.
+
+Los cambios de sesión, carrito y datos cuentan con manejadores de eventos de almacenamiento para ciertas actualizaciones entre pestañas del mismo origen. Esto no equivale a sincronización con un servidor. Borrar el almacenamiento puede eliminar la sesión y las modificaciones locales.
+
+La acción ``Restaurar datos'' repone los datos iniciales del almacén compartido. Puede borrar cambios locales de pedidos, productos e incidencias; no debe interpretarse como una copia de seguridad. Los ejemplos de reparto y direcciones cuentan con controles para evitar su inserción repetida.
+
+\subsection{Datos y reglas}
+
+\begin{itemize}
+  \item \path{src/domain/types.ts}: entidades y tipos.
+  \item \path{src/domain/pricingRules.ts}: agrupación de productos, importes y efectivo.
+  \item \path{src/domain/orderRules.ts}: transiciones, estado global y cancelaciones.
+  \item \path{src/features/checkout/checkoutFlow.ts}: validaciones de selección, cobertura, precios, stock y clave de revisión.
+  \item \path{src/mocks/initialData.ts}: catálogo, cuentas y datos iniciales.
+  \item \path{src/mocks/courierActivityData.ts}: actividad adicional de reparto.
+  \item \path{src/mocks/exampleAddresses.ts}: precarga de direcciones por cuenta.
+  \item \path{src/lib/currency.ts}: conversión y presentación monetaria.
+  \item \path{src/lib/date.ts}: presentación de fechas en la zona horaria de Lima.
+\end{itemize}
+
+\subsection{Diseño y componentes}
+
+Las reglas visuales se documentan en las skills locales \codigo{quickly-ui} y \codigo{ux-principles-reviewer}. Los tokens se definen en \path{src/styles/index.css} y se exponen en \path{tailwind.config.js}. Los componentes compartidos se encuentran en \path{src/components/ui} y \path{src/components/shared}.
+
+El diseño prioriza contraste, etiquetas visibles, importes tabulares, acciones táctiles de al menos 44 píxeles, mensajes de error y conservación de datos. El diálogo compartido gestiona foco, navegación de teclado y cierre con Escape. La verificación visual en teléfonos sigue siendo necesaria; las pruebas automatizadas no comprueban por sí solas todos los tamaños o desbordamientos.
+
+\subsection{Ejecución y comprobaciones}
+
+Desde la raíz del proyecto:
+\begin{verbatim}
+npm install
+npm run dev
+npm test
+npm run build
+npm run preview
+\end{verbatim}
+
+\codigo{dev} inicia el servidor de desarrollo; \codigo{test} ejecuta las pruebas; \codigo{build} comprueba TypeScript y genera los recursos de producción en \codigo{dist}; \codigo{preview} permite consultar esa compilación localmente. \codigo{npm install} requiere Node.js y npm disponibles y acceso a las dependencias.
+
+En la verificación previa del rediseño se aprobaron 71 pruebas y la compilación. Esa cifra describe la revisión realizada, no sustituye ejecutar las comprobaciones después de nuevos cambios. La configuración de Vercel incluye una reescritura a \codigo{index.html} para las rutas de la aplicación.
+
+\section{Alcances pendientes y comprobación de uso}
+
+\subsection{Integraciones pendientes}
+
+Para evolucionar el prototipo a una operación con usuarios reales se necesita:
+\begin{itemize}
+  \item Servidor y base de datos central para cuentas, catálogo, compras e incidencias.
+  \item Autenticación real y autorización por rol y propiedad del registro.
+  \item Validaciones de stock y precios en servidor, con control de concurrencia e idempotencia.
+  \item Pasarela o proceso verificable de cobro, conciliación y devolución.
+  \item Registro persistente de afiliaciones y sincronización de nuevas cuentas.
+  \item Reglas de asignación que impidan entregas simultáneas no autorizadas y validen quién puede avanzar un pedido.
+  \item Geolocalización y cálculo de rutas si se desea seguimiento real.
+  \item Notificaciones externas y una auditoría protegida frente a modificación.
+\end{itemize}
+
+Actualmente, los layouts de comercio, repartidor y administrador no deben considerarse barreras de autorización de producción. Algunos seleccionan el primer perfil disponible como respaldo. Los controles de Checkout y de selección de reparto mejoran el flujo normal de la interfaz, pero no impiden manipular el estado desde el navegador.
+
+\subsection{Recorrido recomendado para probar el sistema}
+
+\begin{enumerate}
+  \item Iniciar sesión con el cliente de ejemplo y agregar un producto de un comercio abierto.
+  \item Confirmar que cambiar de comercio conserva los otros productos sin seleccionar.
+  \item Verificar que no se puede abrir Revisión antes de Dirección y Pago.
+  \item Agregar una dirección y comprobar su selección y el cambio de tarifa.
+  \item Probar efectivo insuficiente, monto exacto y vuelto.
+  \item Registrar un pago digital y comprobar que permanece pendiente.
+  \item Confirmar una compra y comprobar que solo desaparece lo adquirido del carrito.
+  \item Cambiar al comercio correspondiente y avanzar los estados permitidos.
+  \item Cambiar al repartidor, completar su entrega activa si la tiene y aceptar un pedido listo.
+  \item Reportar una incidencia y resolverla desde Administración.
+  \item Confirmar entrega y consultar Historial, Ganancias y Auditoría.
+\end{enumerate}
+
+También deben probarse los estados vacíos, zonas sin cobertura, cambios de precio o stock durante la compra, cancelaciones permitidas y fallos de almacenamiento. La revisión visual debe incluir escritorio y teléfono, navegación por teclado y ausencia de acciones tapadas por barras fijas.
+
+\clearpage
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\everypar{\hangindent=0.5in\hangafter=1}
+American Psychological Association. (s. f.). \textit{Paper format}. \url{https://apastyle.apa.org/style-grammar-guidelines/paper-format}\par
+xmenil. (2026). \textit{Frontend-Quickly} (commit d0a8c92) [Código fuente]. GitHub. \url{https://github.com/xmenil/Frontend-Quickly/tree/d0a8c92cab013decde2fb45ea01e4daae964389c}\par
+\endgroup
+
+\appendix
+\clearpage
+\section*{Apéndice A}
+\addcontentsline{toc}{section}{Apéndice A}
+\begin{center}\textbf{Mapa de archivos de las pantallas}\end{center}
+
+\begingroup\singlespacing
+\begin{longtable}{L{3.4cm}L{11.9cm}}
+\caption{Mapa de archivos}\\
+\toprule
+Área & Archivos de referencia \\
+\midrule
+\endhead
+Rutas & \path{src/app/router.tsx} \\
+Estructura & \path{src/layouts/PublicLayout.tsx}, \path{src/layouts/CustomerLayout.tsx}, \path{src/layouts/MerchantLayout.tsx}, \path{src/layouts/CourierLayout.tsx}, \path{src/layouts/AdminLayout.tsx} \\
+Carrito & \path{src/features/cart/CartPage.tsx} \\
+Checkout & \path{src/features/checkout/CheckoutPage.tsx}, \path{src/features/checkout/checkoutFlow.ts} \\
+Direcciones & \path{src/components/shared/AddressForm.tsx}, \path{src/features/customer/CustomerAddressesPage.tsx} \\
+Resumen de precios & \path{src/components/shared/PriceSummary.tsx} \\
+Pedidos del cliente & \path{src/features/orders/CustomerOrdersPage.tsx}, \path{src/features/orders/OrderDetailPage.tsx}, \path{src/features/orders/TrackingPage.tsx} \\
+Comercio & Pantallas de \path{src/features/merchant/}; preparación en \path{src/features/merchant/MerchantOrdersPage.tsx}. \\
+Solicitudes de reparto & \path{src/features/courier/CourierRequestsPage.tsx} \\
+Entrega activa & \path{src/features/courier/CourierActiveDeliveryPage.tsx} \\
+Historial de reparto & \path{src/features/courier/CourierHistoryPage.tsx} \\
+Ganancias & \path{src/features/courier/CourierEarningsPage.tsx} \\
+Perfil de reparto & \path{src/features/courier/CourierProfilePage.tsx} \\
+Administración & Pantallas de \path{src/features/admin/}; pedidos en \path{src/features/admin/AdminOrdersPage.tsx} y soporte en \path{src/features/admin/AdminTicketsPage.tsx}. \\
+Pruebas & \path{src/test/}; incluye validaciones de Checkout, integración de dirección, selección de carrito y operaciones de reparto. \\
+\bottomrule
+\end{longtable}
+\endgroup
+\noindent\textit{Nota.} Elaboración propia a partir del código del proyecto (xmenil, 2026).\par\bigskip
+
+\clearpage
+\section*{Apéndice B}
+\addcontentsline{toc}{section}{Apéndice B}
+\begin{center}\textbf{Compilación de este manual}\end{center}
+
+Este archivo utiliza UTF-8 y no depende de imágenes externas. Requiere paquetes habituales de una distribución LaTeX, incluidos \codigo{newtxtext}, \codigo{setspace}, \codigo{fancyhdr}, \codigo{titlesec}, \codigo{caption} y \codigo{babel}, \codigo{hyperref}, \codigo{tikz}, \codigo{longtable} y \codigo{xurl}. El preámbulo selecciona las fuentes según el motor utilizado.
+
+Para generar el PDF y actualizar las referencias de tablas y figuras, desde la carpeta \codigo{docs}:
+\begin{verbatim}
+pdflatex manual-funcionamiento-quickly.tex
+pdflatex manual-funcionamiento-quickly.tex
+\end{verbatim}
+
+También puede compilarse dos veces con LuaLaTeX o XeLaTeX. El documento no requiere ejecutar comandos externos desde LaTeX ni habilitar \codigo{shell-escape}.
+
+\end{document}

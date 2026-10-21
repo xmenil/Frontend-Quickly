@@ -51,7 +51,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
             <div
               className={`absolute -left-6 top-1.5 w-5 h-5 rounded-full border-2 bg-white flex items-center justify-center transition-all ${
                 isLatest
-                  ? 'border-primary ring-4 ring-pink-200/70 shadow-sm animate-pulse'
+                  ? 'border-primary ring-4 ring-emerald-200/70 shadow-sm animate-pulse'
                   : 'border-emerald-500 bg-emerald-50'
               }`}
             >
@@ -66,7 +66,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
             <div
               className={`p-4 rounded-2xl border transition-all ${
                 isLatest
-                  ? 'bg-gradient-to-br from-white to-pink-50/30 border-primary/40 shadow-sm ring-1 ring-primary/20'
+                  ? 'bg-gradient-to-br from-white to-emerald-50/40 border-primary/40 shadow-sm ring-1 ring-primary/20'
                   : 'bg-white border-gray-100 shadow-subtle hover:border-gray-200'
               }`}
             >

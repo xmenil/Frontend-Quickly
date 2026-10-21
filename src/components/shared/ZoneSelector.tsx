@@ -46,12 +46,12 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
         >
           <MapPin className="w-4 h-4 text-white flex-shrink-0" />
           <div className="flex flex-col leading-tight">
-            <span className="text-[10px] text-pink-100/80">Enviar a</span>
+            <span className="text-[10px] text-emerald-100">Enviar a</span>
             <div className="flex items-center gap-1">
               <span className="font-bold text-xs text-white max-w-[130px] sm:max-w-[160px] truncate">
                 {currentZone?.name || 'Tingo María'}
               </span>
-              <ChevronDown className="w-3 h-3 text-pink-100/90 flex-shrink-0" />
+              <ChevronDown className="w-3 h-3 text-white flex-shrink-0" />
             </div>
           </div>
         </button>
@@ -59,11 +59,12 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-gray-200 text-xs font-bold text-ink hover:border-primary hover:text-primary transition-all shadow-subtle ${className}`}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-ink text-xs font-bold shadow-xs hover:shadow-sm border border-gray-100 transition-all cursor-pointer flex-shrink-0 ${className}`}
+          aria-label={`Zona actual: ${currentZone?.name}. Clic para cambiar`}
         >
-          <MapPin className="w-3.5 h-3.5 text-primary" />
-          <span className="truncate max-w-[140px]">{currentZone?.name}</span>
-          <ChevronDown className="w-3 h-3 text-gray-400" />
+          <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+          <span className="truncate max-w-[160px]">Tingo María • {currentZone?.name?.replace(' de Tingo María', '') || 'Centro'}</span>
+          <ChevronDown className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 stroke-[2.5]" />
         </button>
       ) : (
         <button

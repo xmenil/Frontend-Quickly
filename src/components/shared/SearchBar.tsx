@@ -11,12 +11,12 @@ interface SearchBarProps {
 }
 
 const DEFAULT_HISTORY = [
-  'samsung s23 ultra',
-  'xiaomi 15t pro',
+  'Minisol abarrotes',
+  'Pollería Rubén',
   'tacacho con cecina',
-  'café de tingo maría',
-  'juane de gallina',
-  'farmacias y boticas',
+  'café de Tingo María',
+  'Farmacias y boticas',
+  'jugos naturales',
 ];
 
 const STORAGE_KEY = 'quickly_search_history';
@@ -141,11 +141,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <form
         onSubmit={handleSubmit}
         className={`relative flex items-center w-full bg-white transition-all duration-150 ${
-          showDropdown ? 'rounded-t-sm shadow-md' : 'rounded-sm shadow-xs'
+          showDropdown ? 'rounded-t-2xl shadow-md' : 'rounded-2xl shadow-sm'
         } ${
           isFocused
-            ? 'border-2 border-[#3483fa]'
-            : 'border border-gray-300 hover:border-gray-400'
+            ? 'ring-2 ring-primary border-primary'
+            : 'border border-gray-200 hover:border-gray-300'
         }`}
       >
         <input
@@ -178,15 +178,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <button
           type="submit"
           aria-label="Buscar"
-          className="px-3 sm:px-3.5 py-2 text-gray-500 hover:text-[#3483fa] flex items-center justify-center transition-colors cursor-pointer group"
+          className="px-3.5 py-2.5 text-gray-500 hover:text-primary flex items-center justify-center transition-colors cursor-pointer group"
         >
-          <Search className="w-4 h-4 stroke-[1.75] group-hover:scale-105 transition-transform" />
+          <Search className="w-4 h-4 stroke-[2] group-hover:scale-110 transition-transform" />
         </button>
       </form>
 
-      {/* Mercado Libre Search Dropdown with Recent Searches & Clock Icon */}
+      {/* Search Dropdown with Recent Searches */}
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full bg-white rounded-b-sm shadow-xl border-x-2 border-b-2 border-[#3483fa] z-50 overflow-hidden divide-y divide-gray-100 animate-in fade-in-50 duration-100">
+        <div className="absolute left-0 right-0 top-full bg-white rounded-b-2xl shadow-xl border-x border-b border-primary/20 z-50 overflow-hidden divide-y divide-gray-100 animate-in fade-in-50 duration-100">
           {filteredHistory.map((item) => (
             <div
               key={item}
@@ -218,7 +218,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           {query.trim() && (
             <div
               onMouseDown={() => executeSearch(query)}
-              className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-pink-50/60 cursor-pointer text-primary transition-colors font-medium text-xs sm:text-sm"
+              className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-emerald-50/70 cursor-pointer text-primary transition-colors font-medium text-xs sm:text-sm"
             >
               <Search className="w-4 h-4 text-primary flex-shrink-0" />
               <span>

@@ -266,14 +266,14 @@ export const CustomerProfilePage: React.FC = () => {
             className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-primary-200 shadow-subtle hover:shadow-md transition-all flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-pink-50 text-primary flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                 <Heart className="w-5 h-5" />
               </div>
               <div>
                 <div className="font-bold text-sm text-ink group-hover:text-primary transition-colors flex items-center gap-2">
                   <span>Mis Favoritos</span>
                   {totalFavoritesCount > 0 && (
-                    <span className="text-[10px] bg-pink-100 text-primary font-bold px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-emerald-100 text-primary font-bold px-1.5 py-0.5 rounded-full">
                       {totalFavoritesCount}
                     </span>
                   )}

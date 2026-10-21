@@ -527,7 +527,7 @@ export const MerchantsPage: React.FC = () => {
                               </span>
                             )}
                             {hasDiscount && (
-                              <span className="bg-[#BE185D] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
+                              <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
                                 -{discountPercent}% OFF
                               </span>
                             )}
@@ -611,7 +611,7 @@ export const MerchantsPage: React.FC = () => {
                                   handleQuickAddProduct(e, product);
                                 }
                               }}
-                              className="w-full mt-1 py-2 px-3 rounded-xl bg-pink-50 hover:bg-primary text-primary hover:text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+                              className="w-full mt-1 py-2 px-3 rounded-xl bg-primary-50 hover:bg-primary text-primary hover:text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
                             >
                               {product.hasVariants ? (
                                 <>

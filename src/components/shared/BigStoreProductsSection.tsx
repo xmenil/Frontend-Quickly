@@ -71,10 +71,10 @@ export const BigStoreProductsSection: React.FC = () => {
   };
 
   return (
-    <section className="w-full bg-[#FAF5F8] border-y border-pink-100/70 py-8 sm:py-10 select-none">
+    <section className="w-full bg-emerald-50/20 border-y border-emerald-100/60 py-8 sm:py-10 select-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-200/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-100/60">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -115,7 +115,7 @@ export const BigStoreProductsSection: React.FC = () => {
                 className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all font-bold cursor-pointer text-xs flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-primary text-white shadow-xs'
-                    : 'bg-white text-gray-700 border border-pink-200/70 hover:border-primary hover:text-primary'
+                    : 'bg-white text-gray-700 border border-emerald-100 hover:border-primary hover:text-primary'
                 }`}
               >
                 {tab.id === 'all' && <Tag className="w-3 h-3" />}
@@ -144,7 +144,7 @@ export const BigStoreProductsSection: React.FC = () => {
               <Link
                 key={product.id}
                 to={`/producto/${product.id}`}
-                className="group bg-white rounded-2xl border border-pink-100/80 shadow-[0_2px_8px_rgba(190,24,93,0.04)] hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
+                className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
               >
                 {/* Product Image: De esquina a esquina */}
                 <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">

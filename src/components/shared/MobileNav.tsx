@@ -1,22 +1,20 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useCartStore } from '../../store/cartStore';
-import { Home, Store, ShoppingBag, ShoppingCart, User } from 'lucide-react';
+import { Home, Search, FileText, Heart, User } from 'lucide-react';
+
+interface MobileNavItem {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+}
 
 export const MobileNav: React.FC = () => {
-  const { getItemCount } = useCartStore();
-  const cartCount = getItemCount();
-
-  const navItems = [
+  const navItems: MobileNavItem[] = [
     { to: '/', label: 'Inicio', icon: Home },
-    { to: '/negocios', label: 'Comercios', icon: Store },
-    {
-      to: '/carrito',
-      label: 'Carrito',
-      icon: ShoppingCart,
-      badge: cartCount,
-    },
-    { to: '/cliente/pedidos', label: 'Pedidos', icon: ShoppingBag },
+    { to: '/negocios', label: 'Buscar', icon: Search },
+    { to: '/cliente/pedidos', label: 'Pedidos', icon: FileText },
+    { to: '/cliente/favoritos', label: 'Favoritos', icon: Heart },
     { to: '/cliente/perfil', label: 'Perfil', icon: User },
   ];
 

@@ -193,7 +193,7 @@ export const MerchantLayout: React.FC = () => {
                   className="w-8 h-8 rounded-full object-cover border border-border"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="%23FDF2F8"><rect width="32" height="32" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="12">Q</text></svg>';
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="%23ECFDF5"><rect width="32" height="32" rx="16" fill="%23ECFDF5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="12">Q</text></svg>';
                   }}
                 />
                 <div className="text-left leading-tight">

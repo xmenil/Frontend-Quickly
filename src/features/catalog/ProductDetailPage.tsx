@@ -786,7 +786,7 @@ export const ProductDetailPage: React.FC = () => {
 
               {/* Active Color Tag on Preview */}
               <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-pink-300" />
+                <Palette className="w-3.5 h-3.5 text-emerald-300" />
                 <span>Color: {galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
               </div>
 
@@ -932,7 +932,7 @@ export const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* AI Review Summary Card (Capture 3: Resumen de opiniones generado por IA) */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50/90 to-pink-50/70 border border-primary-200 space-y-2">
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50/90 to-emerald-50/70 border border-primary-200 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                 <Sparkles className="w-4 h-4 text-primary animate-pulse" />
                 <span>Resumen de opiniones generado por IA</span>
@@ -1049,7 +1049,7 @@ export const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Coupon Callout */}
-            <div className="p-2.5 rounded-xl bg-pink-50/80 border border-primary-200 flex items-center gap-2 text-xs text-primary font-semibold">
+            <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-primary-200 flex items-center gap-2 text-xs text-primary font-semibold">
               <Sparkles className="w-4 h-4 flex-shrink-0" />
               <span>Cupón S/ 25 OFF en tu primera compra con Quickly</span>
             </div>

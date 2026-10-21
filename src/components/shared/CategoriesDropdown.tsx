@@ -18,41 +18,66 @@ interface CategoryOption {
 
 const CATEGORIES_DATA: CategoryOption[] = [
   {
-    id: 'tecnologia',
-    name: 'Tecnología',
+    id: 'restaurantes',
+    name: 'Restaurantes Amazónicos',
+    route: '/negocios?categoria=restaurantes',
     hasSubcategories: true,
     subcategories: [
-      { name: 'Celulares y Smartphones', query: 'celulares' },
-      { name: 'Notebooks y Computación', query: 'notebooks' },
-      { name: 'Audio y Audífonos', query: 'audio' },
-      { name: 'Cámaras y Drones', query: 'camaras' },
-      { name: 'Consolas y Videojuegos', query: 'videojuegos' },
-      { name: 'Televisores y Smart TV', query: 'televisores' },
-      { name: 'Accesorios y Cables', query: 'accesorios' },
+      { name: 'Tacacho con Cecina y Chorizo', query: 'tacacho' },
+      { name: 'Pollería Rubén (Pollo a la Brasa)', query: 'pollo' },
+      { name: 'Juanes de Gallina de Chacra', query: 'juane' },
+      { name: 'Pescados de Río y Patarashca', query: 'pescado' },
+      { name: 'Chaufa Amazónico al Wok', query: 'chaufa' },
     ],
   },
   {
-    id: 'electrodomesticos',
-    name: 'Electrodomésticos',
+    id: 'bodegas',
+    name: 'Bodegas & Supermercado Minisol',
+    route: '/negocios?categoria=bodegas',
     hasSubcategories: true,
     subcategories: [
-      { name: 'Refrigeración', query: 'refrigerador' },
-      { name: 'Lavado y Secado', query: 'lavadora' },
-      { name: 'Cocina y Microondas', query: 'cocina' },
-      { name: 'Licuadoras y Batidoras', query: 'licuadora' },
-      { name: 'Aires Acondicionados', query: 'aire' },
+      { name: 'Supermercado Minisol (Abarrotes)', query: 'minisol' },
+      { name: 'Aceites, Arroz y Fideos', query: 'arroz' },
+      { name: 'Lácteos Gloria y Embutidos', query: 'leche' },
+      { name: 'Bebidas Heladas y Cervezas', query: 'bebidas' },
+      { name: 'Golosinas Field y Snacks', query: 'galleta' },
     ],
   },
   {
-    id: 'hogar-muebles',
-    name: 'Hogar y Muebles',
+    id: 'farmacias',
+    name: 'Farmacias & Boticas',
+    route: '/negocios?categoria=farmacias',
     hasSubcategories: true,
     subcategories: [
-      { name: 'Muebles de Sala', query: 'sala' },
-      { name: 'Dormitorio y Camas', query: 'camas' },
-      { name: 'Cocina y Menaje', query: 'menaje' },
-      { name: 'Iluminación y Lámparas', query: 'iluminacion' },
-      { name: 'Organización y Cajas', query: 'organizacion' },
+      { name: 'Medicamentos y Analgésicos', query: 'medicamentos' },
+      { name: 'Repelentes para Selva y Mosquitos', query: 'repelente' },
+      { name: 'Bloqueadores Solares', query: 'bloqueador' },
+      { name: 'Cuidado del Bebé y Pañales', query: 'bebe' },
+      { name: 'Primeros Auxilios y Botiquín', query: 'botiquin' },
+    ],
+  },
+  {
+    id: 'ropa',
+    name: 'Ropa & Moda Tingalesa',
+    route: '/negocios?categoria=ropa',
+    hasSubcategories: true,
+    subcategories: [
+      { name: 'Galería San Benito', query: 'san benito' },
+      { name: 'Jeans y Palazos Denim', query: 'denim' },
+      { name: 'Polos de Algodón Tropicales', query: 'polos' },
+      { name: 'Mochilas y Accesorios', query: 'mochilas' },
+    ],
+  },
+  {
+    id: 'emprendedores',
+    name: 'Cacao, Café & Emprendedores',
+    route: '/negocios?categoria=emprendedores',
+    hasSubcategories: true,
+    subcategories: [
+      { name: 'Chocolate 70% Cacao Nativo', query: 'chocolate' },
+      { name: 'Café Pashto Tingo María', query: 'cafe' },
+      { name: 'Miel de Abeja Virgen', query: 'miel' },
+      { name: 'Licores Exóticos y Macerados', query: 'macerado' },
     ],
   },
   {
@@ -191,7 +216,11 @@ const LOCAL_DELIVERY_SPECIALS = [
   { name: 'Cacao, Café & Selva Central', route: '/negocios?categoria=emprendedores', icon: '☕' },
 ];
 
-export const CategoriesDropdown: React.FC = () => {
+interface CategoriesDropdownProps {
+  variant?: 'default' | 'compact';
+}
+
+export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant = 'default' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<CategoryOption | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -241,25 +270,42 @@ export const CategoriesDropdown: React.FC = () => {
       }}
     >
       {/* Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setIsOpen(true)}
-        className={`flex items-center gap-1 transition-all py-1 px-2.5 rounded-full cursor-pointer focus:outline-none group ${
-          isOpen
-            ? 'bg-white text-[#BE185D] font-extrabold shadow-sm ring-1 ring-white/50'
-            : 'text-white hover:text-white hover:bg-white/15 font-medium'
-        }`}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        <span className="text-xs sm:text-[13px] leading-tight font-inherit">Categorías</span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-[#BE185D]' : 'text-white/80 group-hover:text-white'
+      {variant === 'compact' ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-ink text-xs font-bold shadow-xs hover:shadow-sm border border-gray-100 transition-all cursor-pointer flex-shrink-0"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <span className="text-xs leading-tight">Categorías</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-gray-500 stroke-[2.5] transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-primary' : ''
+            }`}
+          />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          onMouseEnter={() => setIsOpen(true)}
+          className={`flex items-center gap-1 transition-all py-1 px-2.5 rounded-full cursor-pointer focus:outline-none group ${
+            isOpen
+              ? 'bg-white text-primary font-black shadow-sm ring-1 ring-white/50'
+              : 'text-white hover:text-white hover:bg-white/15 font-medium'
           }`}
-        />
-      </button>
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <span className="text-xs sm:text-[13px] leading-tight font-inherit">Categorías</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-primary' : 'text-white/80 group-hover:text-white'
+            }`}
+          />
+        </button>
+      )}
 
       {/* Floating Popover Menu */}
       {isOpen && (

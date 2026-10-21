@@ -94,6 +94,9 @@ export interface Product {
   ratingCount?: number;
   freeShipping?: boolean;
   brand?: string;
+  sku?: string;
+  barcode?: string;
+  qrCode?: string;
 }
 
 export interface CoverageZone {

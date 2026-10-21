@@ -9,8 +9,8 @@ export function getCategoryFallbackSvg(category?: string, name?: string): string
   const title = name ? name.slice(0, 24) : 'Quickly Tingo María';
 
   // Determine theme colors and icon path based on category
-  let bgColor = '%23FDF2F8'; // default pink-50
-  let strokeColor = '%23BE185D'; // primary berry
+  let bgColor = '%23ECFDF5'; // default emerald-50
+  let strokeColor = '%2300A859'; // primary green
   let iconPath = ''; // SVG path
 
   if (cat.includes('farmacia') || cat.includes('salud') || cat.includes('medicin')) {
@@ -28,7 +28,7 @@ export function getCategoryFallbackSvg(category?: string, name?: string): string
   } else if (cat.includes('tienda') || cat.includes('bodega') || cat.includes('mercado') || cat.includes('super')) {
     // Shopping / Grocery
     bgColor = '%23F0FDF4';
-    strokeColor = '%2316A34A';
+    strokeColor = '%2300A859';
     // Shopping bag
     iconPath = '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
   } else if (cat.includes('postre') || cat.includes('pan') || cat.includes('dulce')) {
@@ -39,8 +39,8 @@ export function getCategoryFallbackSvg(category?: string, name?: string): string
     iconPath = '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1M12 11V7m0-4v1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
   } else {
     // Default Food / Restaurant (Tacacho, Juane, Amazonian dishes)
-    bgColor = '%23FFF1F2';
-    strokeColor = '%23BE185D';
+    bgColor = '%23ECFDF5';
+    strokeColor = '%2300A859';
     // Utensils / Fork and spoon
     iconPath = '<path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2m3 9v11M6 2v10a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V2m-2 12v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
   }
@@ -66,8 +66,8 @@ export function getMerchantFallbackBanner(category?: string, name?: string): str
   const cat = (category || '').toLowerCase();
   const title = name ? name.slice(0, 28) : 'Comercio Local';
 
-  let bgColor = '%23FFF1F6';
-  let strokeColor = '%23BE185D';
+  let bgColor = '%23ECFDF5';
+  let strokeColor = '%2300A859';
 
   if (cat.includes('farmacia')) {
     bgColor = '%23ECFDF5';

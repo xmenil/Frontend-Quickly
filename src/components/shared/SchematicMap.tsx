@@ -112,7 +112,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
             id="deliveryRoute"
             d="M 230 110 L 320 110 L 320 230 L 450 230"
             fill="none"
-            stroke="#BE185D"
+            stroke="#00A859"
             strokeWidth="4"
             strokeDasharray="6 4"
             className={orderStatus === 'en_camino' ? 'animate-pulse' : ''}
@@ -120,7 +120,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
           {/* Origin Pin (Store) at (230, 110) */}
           <g transform="translate(230, 110)">
-            <circle r="14" fill="#BE185D" />
+            <circle r="14" fill="#00A859" />
             <circle r="6" fill="#ffffff" />
           </g>
 

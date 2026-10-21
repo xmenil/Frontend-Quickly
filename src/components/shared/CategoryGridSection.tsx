@@ -190,10 +190,10 @@ export const CategoryGridSection: React.FC = () => {
   };
 
   return (
-    <section className="w-full bg-[#FAF5F8]/50 border-y border-pink-100/50 py-8 sm:py-10 select-none relative">
+    <section className="w-full bg-emerald-50/20 border-y border-emerald-100/60 py-8 sm:py-10 select-none relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-200/50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-100/60">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
               <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -254,7 +254,7 @@ export const CategoryGridSection: React.FC = () => {
             <div
               key={item.id}
               onClick={() => handleCardClick(item)}
-              className={`group bg-white rounded-xl border border-pink-100/80 hover:border-primary-300 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-card p-3 items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${
+              className={`group bg-white rounded-xl border border-emerald-100/70 hover:border-primary-300 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-card p-3 items-center gap-3.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${
                 index >= 4 && !showAllMobile ? 'hidden sm:flex' : 'flex'
               }`}
             >

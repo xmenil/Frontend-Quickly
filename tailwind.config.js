@@ -21,6 +21,7 @@ export default {
           hover: token('primary-hover'),
           light: token('primary-50'),
           50: token('primary-50'),
+          dark: token('primary-dark'),
         },
         background: token('background'),
         surface: {

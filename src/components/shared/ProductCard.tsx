@@ -80,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={handleCardClick}
-      className="group relative flex flex-col bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-md hover:border-primary-200 transition-all duration-200 overflow-hidden cursor-pointer"
+      className="group relative flex flex-col bg-white rounded-2xl border border-gray-150/80 shadow-subtle hover:shadow-md hover:border-primary/40 transition-all duration-200 overflow-hidden cursor-pointer"
     >
       {/* Image Container with Fallback & Shimmer Loader */}
       <div className="relative aspect-square w-full bg-gray-100 overflow-hidden border-b border-gray-100/70">
@@ -91,8 +91,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {imgError ? (
           // Elegant SVG/Vector Branded Fallback
-          <div className="w-full h-full bg-gradient-to-br from-pink-50 via-rose-50/70 to-amber-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
-            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 border border-pink-100/80">
+          <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50/70 to-emerald-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
+            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 border border-emerald-100/80">
               {renderCategoryIcon()}
             </div>
             <span className="text-xs font-bold text-ink line-clamp-1 max-w-[90%]">

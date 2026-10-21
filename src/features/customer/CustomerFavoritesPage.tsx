@@ -132,7 +132,7 @@ export const CustomerFavoritesPage: React.FC = () => {
         <section aria-label="Platos y productos favoritos">
           {favoriteProducts.length === 0 ? (
             <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-4 max-w-xl mx-auto my-6 shadow-subtle">
-              <div className="w-16 h-16 rounded-2xl bg-pink-50 text-primary flex items-center justify-center mx-auto shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto shadow-sm">
                 <Heart className="w-8 h-8 text-primary" />
               </div>
               <div className="space-y-1">

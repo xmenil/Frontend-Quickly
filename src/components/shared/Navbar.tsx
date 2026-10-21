@@ -91,7 +91,7 @@ export const Navbar: React.FC = () => {
 
   const getNavBtnClass = (active: boolean) =>
     active
-      ? 'bg-white text-[#BE185D] font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
+      ? 'bg-white text-primary font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
       : 'text-white hover:text-white hover:bg-white/15 px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer';
 
   const cartCount = getItemCount();
@@ -101,7 +101,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#BE185D] border-b border-[#9D174D] shadow-md select-none text-white">
+      <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-6 pt-1">
@@ -192,7 +192,7 @@ export const Navbar: React.FC = () => {
                 >
                   <Bell className="w-5 h-5" />
                   {unreadNotifications.length > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-300 rounded-full ring-2 ring-[#BE185D]" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-300 rounded-full ring-2 ring-primary-dark" />
                   )}
                 </button>
 
@@ -228,7 +228,7 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* User Profile Dropdown with Outside Click Protection */}
-              {isAuthenticated && currentUser && (
+              {isAuthenticated && currentUser ? (
                 <div className="relative" ref={profileRef}>
                   <button
                     type="button"
@@ -299,6 +299,16 @@ export const Navbar: React.FC = () => {
                     </div>
                   )}
                 </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="p-1 sm:px-2 text-white hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+                  aria-label="Ingresar a tu cuenta"
+                >
+                  <div className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white">
+                    <User className="w-4 h-4" />
+                  </div>
+                </Link>
               )}
             </div>
           </div>
@@ -400,45 +410,13 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Search Bar & Mobile Zone/Categories Strip */}
-          <div className="sm:hidden pb-2.5 pt-1 space-y-2">
+          {/* Mobile Search Bar & Mobile Zone/Categories Pills */}
+          <div className="sm:hidden pb-3 pt-1 space-y-2.5">
             <SearchBar variant="navbar-mobile" />
 
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs text-white font-medium px-1 py-0.5 whitespace-nowrap">
-              <CategoriesDropdown />
+            <div className="flex items-center gap-2 text-xs font-medium px-0.5">
+              <CategoriesDropdown variant="compact" />
               <ZoneSelector variant="compact" />
-
-              <Link
-                to="/negocios?q=oferta"
-                className={
-                  isOfertasActive
-                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0'
-                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0'
-                }
-              >
-                Ofertas
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowCouponsModal(true)}
-                className={
-                  isCuponesActive
-                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0 cursor-pointer'
-                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0 cursor-pointer'
-                }
-              >
-                Cupones
-              </button>
-              <Link
-                to="/cliente/pedidos"
-                className={
-                  isPedidosActive
-                    ? 'bg-white text-[#BE185D] px-2.5 py-1 rounded-full font-black shadow-xs flex-shrink-0'
-                    : 'bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-white flex-shrink-0'
-                }
-              >
-                Pedidos
-              </Link>
             </div>
           </div>
         </div>
@@ -456,7 +434,7 @@ export const Navbar: React.FC = () => {
           {/* Drawer panel */}
           <div className="fixed inset-y-0 left-0 max-w-[85%] w-80 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
-            <div className="bg-[#BE185D] text-white p-4 flex items-center justify-between shadow-xs">
+            <div className="bg-primary text-white p-4 flex items-center justify-between shadow-xs">
               <BrandLogo size="sm" variant="white" />
               <button
                 type="button"
@@ -469,12 +447,12 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Perfil del Usuario o Botones de Login */}
-            <div className="p-4 bg-pink-50/50 border-b border-pink-100">
+            <div className="p-4 bg-emerald-50/60 border-b border-emerald-100">
               {isAuthenticated && currentUser ? (
                 <div>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider font-bold">Bienvenido(a)</p>
                   <p className="font-extrabold text-ink text-sm truncate">{currentUser.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{currentUser.email}</p>
+                  <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <RoleBadge role={activeRole} />
                   </div>
@@ -486,7 +464,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       to="/login"
                       onClick={() => setShowMobileDrawer(false)}
-                      className="flex-1 py-2 text-center text-xs font-black bg-[#BE185D] text-white rounded-xl shadow-xs hover:bg-[#9D174D] transition-colors"
+                      className="flex-1 py-2 text-center text-xs font-black bg-primary text-white rounded-xl shadow-xs hover:bg-primary-hover transition-colors"
                     >
                       Ingresar
                     </Link>
@@ -509,7 +487,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setShowMobileDrawer(false)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
               >
-                <Store className="w-4 h-4 text-[#BE185D]" />
+                <Store className="w-4 h-4 text-primary" />
                 <span>Comercios & Tiendas</span>
               </Link>
 
@@ -539,7 +517,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setShowMobileDrawer(false)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
               >
-                <ShoppingBag className="w-4 h-4 text-pink-500" />
+                <ShoppingBag className="w-4 h-4 text-primary" />
                 <span>Moda & Confección</span>
               </Link>
 
@@ -596,9 +574,9 @@ export const Navbar: React.FC = () => {
                 <Link
                   to="/comercio/tienda"
                   onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
                 >
-                  <Store className="w-4 h-4 text-[#BE185D]" />
+                  <Store className="w-4 h-4 text-primary" />
                   <span>Panel Proveedor</span>
                 </Link>
               )}
@@ -606,9 +584,9 @@ export const Navbar: React.FC = () => {
                 <Link
                   to="/repartidor/solicitudes"
                   onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
                 >
-                  <Bike className="w-4 h-4 text-[#BE185D]" />
+                  <Bike className="w-4 h-4 text-primary" />
                   <span>Panel Repartidor</span>
                 </Link>
               )}
@@ -616,9 +594,9 @@ export const Navbar: React.FC = () => {
                 <Link
                   to="/admin/resumen"
                   onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-pink-50 text-[#BE185D] font-bold"
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
                 >
-                  <ShieldCheck className="w-4 h-4 text-[#BE185D]" />
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   <span>Panel Admin</span>
                 </Link>
               )}

@@ -271,7 +271,7 @@ export const MerchantDetailPage: React.FC = () => {
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center space-y-3">
-            <div className="w-14 h-14 mx-auto rounded-full bg-pink-50 flex items-center justify-center text-primary">
+            <div className="w-14 h-14 mx-auto rounded-full bg-primary-50 flex items-center justify-center text-primary">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <h3 className="text-base font-bold text-ink">No hay productos en esta categoría</h3>

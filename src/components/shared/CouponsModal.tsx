@@ -66,7 +66,7 @@ export const CouponsModal: React.FC<CouponsModalProps> = ({ isOpen, onClose }) =
           {coupons.map((coupon) => (
             <div
               key={coupon.code}
-              className="p-3.5 rounded-2xl border border-dashed border-primary/40 bg-pink-50/50 flex items-center justify-between gap-3"
+              className="p-3.5 rounded-2xl border border-dashed border-primary/40 bg-primary-50/60 flex items-center justify-between gap-3"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">

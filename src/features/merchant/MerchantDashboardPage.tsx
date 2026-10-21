@@ -233,7 +233,7 @@ export const MerchantDashboardPage: React.FC = () => {
               className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
-                  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="%23FDF2F8"><rect width="72" height="72" rx="16" fill="%23FDF2F8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="24">Q</text></svg>';
+                  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="%23ECFDF5"><rect width="72" height="72" rx="16" fill="%23ECFDF5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="24">Q</text></svg>';
               }}
             />
           </div>
@@ -685,7 +685,7 @@ export const MerchantDashboardPage: React.FC = () => {
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" fill="%23FDF2F8"><rect width="300" height="225" fill="%23FDF2F8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23BE185D" font-family="sans-serif" font-weight="bold" font-size="16">Plato Amazónico</text></svg>';
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" fill="%23ECFDF5"><rect width="300" height="225" fill="%23ECFDF5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="16">Plato Amazónico</text></svg>';
                   }}
                 />
                 {!p.isAvailable && (

@@ -9,20 +9,21 @@
 
 @layer base {
   :root {
-    /* Marca: Berry Carmine */
-    --color-primary: 190 24 93;            /* #BE185D acción principal, carrito activo, enlaces (6.0:1 sobre blanco) */
-    --color-primary-hover: 157 23 77;      /* #9D174D hover y presionado (7.9:1) */
-    --color-primary-50: 253 242 248;       /* #FDF2F8 fondo suave: categoría elegida, badge sutil, alerta informativa */
+    /* Marca: Verde Quickly, Verde Selva Oscuro, Negro y Blanco */
+    --color-primary: 0 168 89;             /* #00A859 Verde claro vibrante / acción principal */
+    --color-primary-hover: 0 140 74;       /* #008C4A Verde activo presionado */
+    --color-primary-50: 236 253 245;       /* #ECFDF5 Fondo verde suave para selección y tarjetas */
+    --color-primary-dark: 6 95 70;         /* #065F46 Verde oscuro de alto contraste */
 
     /* Superficies */
-    --color-background: 249 250 251;       /* #F9FAFB fondo general */
-    --color-surface: 255 255 255;          /* #FFFFFF tarjetas, modales, hojas inferiores */
-    --color-surface-subtle: 243 244 246;   /* #F3F4F6 contenedores secundarios y selectores */
+    --color-background: 249 250 251;       /* #F9FAFB fondo general limpio */
+    --color-surface: 255 255 255;          /* #FFFFFF tarjetas, modales y barras */
+    --color-surface-subtle: 243 244 246;   /* #F3F4F6 contenedores secundarios */
 
     /* Texto */
-    --color-ink: 23 32 51;                 /* #172033 títulos, precios, etiquetas (16:1 sobre blanco) */
-    --color-ink-light: 75 85 99;           /* #4B5563 descripciones y texto secundario (7.6:1) */
-    --color-ink-muted: 107 114 128;        /* #6B7280 placeholders y ayudas (4.8:1 sobre blanco). Nunca gris más claro. */
+    --color-ink: 17 24 39;                 /* #111827 Negro puro / títulos y precios (16:1) */
+    --color-ink-light: 55 65 81;           /* #374151 texto secundario y descripciones */
+    --color-ink-muted: 107 114 128;        /* #6B7280 placeholders y metadatos (4.8:1) */
 
     /* Bordes */
     --color-border: 229 231 235;           /* #E5E7EB divisores y contorno de tarjetas */

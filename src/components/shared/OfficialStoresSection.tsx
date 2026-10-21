@@ -101,7 +101,7 @@ export const OfficialStoresSection: React.FC = () => {
                 aria-label="Deslizar a la izquierda"
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all ${
                   canScrollLeft
-                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-pink-50 cursor-pointer shadow-2xs'
+                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-emerald-50 cursor-pointer shadow-2xs'
                     : 'border-gray-200 text-gray-300 cursor-not-allowed opacity-40'
                 }`}
               >
@@ -114,7 +114,7 @@ export const OfficialStoresSection: React.FC = () => {
                 aria-label="Deslizar a la derecha"
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all ${
                   canScrollRight
-                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-pink-50 cursor-pointer shadow-2xs'
+                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-emerald-50 cursor-pointer shadow-2xs'
                     : 'border-gray-200 text-gray-300 cursor-not-allowed opacity-40'
                 }`}
               >

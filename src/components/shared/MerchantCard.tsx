@@ -31,8 +31,8 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
 
         {imgError ? (
           // Vector fallback banner
-          <div className="w-full h-full bg-gradient-to-br from-pink-50 via-rose-50/70 to-amber-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
-            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-1.5 border border-pink-100/80">
+          <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50/70 to-emerald-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
+            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-1.5 border border-emerald-100/80">
               <Store className="w-7 h-7 text-primary" />
             </div>
             <span className="text-sm font-bold text-ink line-clamp-1 max-w-[90%]">

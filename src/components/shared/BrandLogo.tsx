@@ -30,34 +30,40 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   return (
     <Link to="/" className={`inline-flex items-center gap-2.5 group select-none ${className}`}>
-      {/* SVG stylized hummingbird (colibrí origami) */}
+      {/* Ícono oficial: Repartidor Quickly corriendo con mochila de pedidos */}
       <div
         className={`${iconSizes[size]} ${
           isWhite ? 'bg-white shadow-md' : 'bg-primary shadow-sm'
         } rounded-xl p-1.5 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0`}
       >
-        <svg viewBox="0 0 64 64" fill="none" className="w-full h-full">
-          <path
-            d="M48 18C44 21 39 23 35 24C38 19 40 14 38 10C31 12 25 18 23 25C21 27 18 28 14 28C11 28 8 27 6 25C10 32 18 35 25 34C24 38 22 43 17 46C24 46 30 42 34 37C38 43 45 48 54 50C49 43 47 36 48 29C52 27 56 23 58 18C54 18 50 18 48 18Z"
-            fill={isWhite ? '#BE185D' : '#FFFFFF'}
-          />
-          <circle cx="33" cy="18" r="2.5" fill={isWhite ? '#FFFFFF' : '#BE185D'} />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`w-full h-full ${isWhite ? 'text-primary' : 'text-white'}`}>
+          {/* Mochila / caja de delivery */}
+          <rect x="2" y="7" width="5" height="7" rx="1" fill="currentColor" fillOpacity="0.25" />
+          {/* Cabeza */}
+          <circle cx="15" cy="4" r="2" fill="currentColor" />
+          {/* Cuerpo y piernas en carrera */}
+          <path d="M10 8h4l2 5-3 2" />
+          <path d="M13 15l-2 5-4-1" />
+          <path d="M16 13l3 2 2-3" />
+          <path d="M9 10l-2 3" />
         </svg>
       </div>
 
       <div className="flex flex-col leading-none">
-        <span
-          className={`font-extrabold tracking-tight ${
-            isWhite ? 'text-white' : 'text-ink'
-          } ${textSizes[size]}`}
-        >
-          Quickly
-          <span className={isWhite ? 'text-pink-200' : 'text-primary'}>.</span>
-        </span>
+        <div className="flex items-baseline">
+          <span
+            className={`font-black tracking-tight ${
+              isWhite ? 'text-white' : 'text-ink'
+            } ${textSizes[size]}`}
+          >
+            Quickly
+          </span>
+          <span className={`font-black text-2xl ${isWhite ? 'text-white' : 'text-primary'}`}>.</span>
+        </div>
         {showSubtitle && size !== 'sm' && (
           <span
-            className={`text-[10px] font-semibold tracking-tight mt-0.5 ${
-              isWhite ? 'text-pink-100/90' : 'text-primary'
+            className={`text-[10px] font-medium tracking-tight mt-0.5 ${
+              isWhite ? 'text-emerald-100' : 'text-ink-muted'
             }`}
           >
             IA para impulsar negocios locales
