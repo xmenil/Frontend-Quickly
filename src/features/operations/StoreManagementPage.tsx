@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { useAuthStore } from '../../store/authStore';
 import { operationsApi, Store } from '../../services/api/operationsApi';
 import { StoreFieldsForm } from './ApplicationPages';
+import { StoreBrandingEditor } from './MediaEditors';
 import { Feedback, inputClass, PageTitle, Pager, panel, RemoteState, roleLabels, Status, useRemote } from './shared';
 
 function HoursEditor({ store, saved }: { store: Store; saved: () => void }) {
@@ -65,7 +66,7 @@ function MembersEditor({ storeId }: { storeId: string }) {
 
 export function StoreManagementPage() {
   const [params, setParams] = useSearchParams(); const selected = params.get('store') || '';
-  const [cursor, setCursor] = useState<string>(); const [tab, setTab] = useState<'profile' | 'hours' | 'members'>('profile');
+  const [cursor, setCursor] = useState<string>(); const [tab, setTab] = useState<'profile' | 'hours' | 'members' | 'branding'>('profile');
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState('');
   const navigate = useNavigate(); const { initialize, switchMerchant } = useAuthStore();
   const resource = useRemote(`my-stores:${selected}:${cursor || ''}`, async (signal) => {
@@ -95,13 +96,14 @@ export function StoreManagementPage() {
           {canManage && store.status === 'active' && <Button variant="outline" disabled={busy} onClick={() => void toggle()}>{store.acceptingOrders ? 'Pausar recepción' : 'Activar recepción'}</Button>}
         </section>
         <section className={panel}>{canManage ? <>
-          <div className="flex flex-wrap gap-2" aria-label="Gestión de tienda">{(['profile','hours','members'] as const).filter((t) => t !== 'members' || ['owner','admin'].includes(store.membershipRole)).map((t) => <Button key={t} variant={tab === t ? 'primary' : 'outline'} aria-pressed={tab === t} onClick={() => setTab(t)}>{t === 'profile' ? 'Datos de tienda' : t === 'hours' ? 'Horarios' : 'Equipo'}</Button>)}</div>
+          <div className="flex flex-wrap gap-2" aria-label="Gestión de tienda">{(['profile','hours','members','branding'] as const).filter((t) => t !== 'members' || ['owner','admin'].includes(store.membershipRole)).map((t) => <Button key={t} variant={tab === t ? 'primary' : 'outline'} aria-pressed={tab === t} onClick={() => setTab(t)}>{t === 'profile' ? 'Datos de tienda' : t === 'hours' ? 'Horarios' : t === 'members' ? 'Equipo' : 'Imágenes de tienda'}</Button>)}</div>
           {tab === 'profile' && <StoreFieldsForm key={JSON.stringify({ ...store, openingIntervals: undefined, acceptingOrders: undefined, isOpen: undefined })} initial={store} zones={resource.data.zones} categories={resource.data.categories} onSave={async (input) => {
             const result = await operationsApi.updateStore(store.id, input);
             if (result.status !== 'active') { navigate('/cliente/solicitudes'); await initialize(true); } else { resource.reload(); setSuccess('Datos de tienda guardados.'); }
           }} />}
           {tab === 'hours' && <HoursEditor key={`${store.id}:${JSON.stringify(store.openingIntervals)}`} store={store} saved={() => { resource.reload(); setSuccess('Horario guardado correctamente.'); }} />}
           {tab === 'members' && ['owner','admin'].includes(store.membershipRole) && <MembersEditor key={store.id} storeId={store.id} />}
+          {tab === 'branding' && <StoreBrandingEditor key={store.id} storeId={store.id} />}
         </> : <><h2 className="text-xl font-bold">{store.name}</h2><p>{store.addressText}</p><p>{store.phone}</p><p>Tu acceso no permite modificar la configuración de esta tienda.</p></>}</section>
       </>}
     </>}

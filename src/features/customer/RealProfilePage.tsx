@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { AvatarEditor } from '../operations/MediaEditors';
 
 export function RealProfilePage() {
   const { currentUser, updateProfile, busy } = useAuthStore();
@@ -28,5 +29,6 @@ export function RealProfilePage() {
       {saved && <p role="status" className="text-sm text-emerald-700">Tus datos se guardaron correctamente.</p>}
       <Button type="submit" isLoading={busy}>Guardar cambios</Button>
     </form>
+    <AvatarEditor />
   </section>;
 }

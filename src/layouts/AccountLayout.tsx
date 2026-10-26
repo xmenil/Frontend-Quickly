@@ -1,3 +1,4 @@
+import {NotificationLink} from '../features/engagement/RealEngagementPages';
 import React, { useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
@@ -18,11 +19,15 @@ export function AccountLayout() {
     <header className="bg-white border-b border-border"><div className="max-w-5xl mx-auto p-4 flex flex-wrap items-center justify-between gap-4">
       <BrandLogo size="md" />
       <nav className="flex flex-wrap items-center gap-3 text-sm" aria-label="Cuenta">
+        <Link to="/">Catálogo</Link><Link to="/negocios">Negocios</Link><Link to="/carrito">Carrito</Link>
         {currentUser ? <>
           <Link to="/cliente/perfil" className="font-semibold text-primary">Mi perfil</Link>
           <Link to="/cliente/direcciones">Direcciones</Link>
-          <Link to="/cliente/solicitudes">Mis solicitudes</Link>
+          <Link to="/cliente/pedidos">Mis pedidos</Link>
+          <Link to="/cliente/favoritos">Favoritos</Link><NotificationLink/><Link to="/cliente/ayuda">Ayuda</Link><Link to="/cliente/solicitudes">Mis solicitudes</Link>
           {roles.filter((role) => role !== 'cliente').map((role) => <Link key={role} to={destinationForRole(role)} onClick={() => switchRole(role)} className="capitalize">{role}</Link>)}
+          {roles.includes('comercio') && <><Link to="/comercio/reportes">Reportes de tienda</Link><Link to="/comercio/productos">Productos</Link><Link to="/comercio/pedidos">Pedidos de tienda</Link></>}
+          {roles.includes('repartidor')&&<><Link to="/repartidor/solicitudes">Entregas</Link><Link to="/repartidor/ingresos">Mis tarifas</Link></>}
           <Button variant="outline" size="sm" disabled={busy} onClick={() => void signOut()}>Cerrar sesión</Button>
         </> : <><Link to="/login" className="font-semibold text-primary">Iniciar sesión</Link><Link to="/registro">Crear cuenta</Link></>}
       </nav>

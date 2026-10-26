@@ -24,7 +24,7 @@ test('registro, cookie HttpOnly, recarga, perfil persistido y logout real', asyn
   expect(await page.evaluate(() => localStorage.getItem('quickly_auth_v1'))).toBeNull();
   await page.getByLabel('Nombres y apellidos').fill('Nombre actualizado en servidor');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
-  await expect(page.getByRole('status')).toHaveText('Tus datos se guardaron correctamente.');
+  await expect(page.getByRole('status').filter({hasText:'Tus datos se guardaron correctamente.'})).toHaveText('Tus datos se guardaron correctamente.');
   await page.reload();
   await expect(page.getByLabel('Nombres y apellidos')).toHaveValue('Nombre actualizado en servidor');
   await page.getByRole('button', { name: 'Cerrar sesión' }).click();
@@ -47,7 +47,7 @@ test('login inválido no crea sesión; cliente no accede a administración ni co
   await page.goto('/admin/usuarios');
   await expect(page).toHaveURL(/\/acceso-denegado$/);
   await page.goto('/checkout');
-  await expect(page.getByRole('heading', { name: 'Esta sección estará disponible próximamente' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmar compra' })).toBeVisible();
   await expect(page.getByRole('button', { name: /confirmar compra/i })).toHaveCount(0);
 });
 

@@ -17,6 +17,7 @@ export function resetApiSession() {
 }
 
 interface RequestOptions {
+  headers?: Record<string,string>;
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
@@ -33,7 +34,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   pending.add(controller);
   try {
     const method = options.method || 'GET';
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: 'application/json',...options.headers };
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
     if (csrfToken && method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
     const response = await fetch(`${baseUrl}${path}`, {

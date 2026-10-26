@@ -9,7 +9,7 @@ import { Feedback, inputClass, PageTitle, Pager, panel, RemoteState, Status, sta
 
 export function AdminOperationsLayout() {
   return <div className="space-y-7"><nav aria-label="Administración" className="flex flex-wrap gap-2">{[
-    ['/admin/resumen','Resumen'], ['/admin/comercios','Comercios'], ['/admin/repartidores','Repartidores'], ['/admin/usuarios','Usuarios'], ['/admin/zonas','Zonas'],
+    ['/admin/resumen','Resumen'], ['/admin/pedidos','Pedidos'], ['/admin/incidencias','Soporte'], ['/admin/reportes','Reportes'], ['/admin/auditoria','Auditoría'], ['/admin/comercios','Comercios'], ['/admin/repartidores','Repartidores'], ['/admin/usuarios','Usuarios'], ['/admin/zonas','Zonas'],
   ].map(([to,label]) => <NavLink key={to} to={to} className={({ isActive }) => `px-4 py-2 rounded-xl text-sm font-semibold ${isActive ? 'bg-primary text-white' : 'bg-white border border-border text-primary'}`}>{label}</NavLink>)}</nav><Outlet /></div>;
 }
 

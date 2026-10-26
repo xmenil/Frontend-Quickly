@@ -1,15 +1,20 @@
+import {RealFavoritesPage,RealNotificationsPage,RealTicketsPage,RealTicketDetail,RealReportsPage,RealAuditPage} from '../features/engagement/RealEngagementPages';
 import React from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { isDemoMode } from '../config/appMode';
 import { RequireSession } from '../features/auth/SessionBoundary';
 import { RealLoginPage, RealRegisterPage } from '../features/auth/AccountForms';
 import { RealProfilePage } from '../features/customer/RealProfilePage';
-import { AccountLayout, AccountHomePage, PendingIntegrationPage } from '../layouts/AccountLayout';
+import { AccountLayout, PendingIntegrationPage } from '../layouts/AccountLayout';
 import { ApplicationsPage, StoreApplicationPage, CourierApplicationPage } from '../features/operations/ApplicationPages';
 import { StoreManagementPage } from '../features/operations/StoreManagementPage';
 import { OperationalCourierPage } from '../features/operations/CourierProfilePage';
 import { RealAddressesPage } from '../features/operations/AddressesPage';
 import { AdminOperationsLayout, RealAdminOverviewPage, AdminRequestsPage, RealAdminUsersPage, RealAdminZonesPage } from '../features/operations/AdminPages';
+import { RealCatalogPage, RealMerchantsPage, RealProductDetailPage } from '../features/catalog/RealCatalogPages';
+import { RealMerchantProductsPage } from '../features/merchant/RealMerchantProductsPage';
+import {RealCartPage,RealCheckoutPage} from '../features/checkout/RealShoppingPages';
+import {RealOrdersPage,RealOrderDetailPage} from '../features/orders/RealOrderPages';
 
 const pending = <PendingIntegrationPage />;
 
@@ -78,12 +83,12 @@ export const router = createBrowserRouter([
     path: '/',
     element: isDemoMode ? <PublicLayout /> : <AccountLayout />,
     children: [
-      { index: true, element: isDemoMode ? <HomePage /> : <AccountHomePage /> },
-      { path: 'negocios', element: isDemoMode ? <MerchantsPage /> : pending },
-      { path: 'negocios/:id', element: isDemoMode ? <MerchantDetailPage /> : pending },
-      { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : pending },
-      { path: 'carrito', element: isDemoMode ? <CartPage /> : pending },
-      { path: 'checkout', element: isDemoMode ? <CheckoutPage /> : <RequireSession>{pending}</RequireSession> },
+      { index: true, element: isDemoMode ? <HomePage /> : <RealCatalogPage /> },
+      { path: 'negocios', element: isDemoMode ? <MerchantsPage /> : <RealMerchantsPage /> },
+      { path: 'negocios/:id', element: isDemoMode ? <MerchantDetailPage /> : <RealCatalogPage /> },
+      { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : <RealProductDetailPage /> },
+      { path: 'carrito', element: isDemoMode ? <CartPage /> : <RealCartPage /> },
+      { path: 'checkout', element: isDemoMode ? <CheckoutPage /> : <RequireSession><RealCheckoutPage/></RequireSession> },
     ],
   },
 
@@ -104,15 +109,16 @@ export const router = createBrowserRouter([
     path: 'cliente',
     element: isDemoMode ? <CustomerLayout /> : <RequireSession><AccountLayout /></RequireSession>,
     children: [
-      { path: 'pedidos', element: isDemoMode ? <CustomerOrdersPage /> : pending },
-      { path: 'pedidos/:id', element: isDemoMode ? <OrderDetailPage /> : pending },
-      { path: 'seguimiento/:id', element: isDemoMode ? <TrackingPage /> : pending },
+      { path: 'pedidos', element: isDemoMode ? <CustomerOrdersPage /> : <RealOrdersPage kind="customer"/> },
+      { path: 'pedidos/:id', element: isDemoMode ? <OrderDetailPage /> : <RealOrderDetailPage kind="customer"/> },
+      { path: 'seguimiento/:id', element: isDemoMode ? <TrackingPage /> : <RealOrderDetailPage kind="customer"/> },
       { path: 'direcciones', element: isDemoMode ? <CustomerAddressesPage /> : <RealAddressesPage /> },
       { path: 'solicitudes', element: isDemoMode ? pending : <ApplicationsPage /> },
-      { path: 'favoritos', element: isDemoMode ? <CustomerFavoritesPage /> : pending },
+      { path: 'favoritos', element: isDemoMode ? <CustomerFavoritesPage /> : <RealFavoritesPage/> },
       { path: 'perfil', element: isDemoMode ? <CustomerProfilePage /> : <RealProfilePage /> },
-      { path: 'notificaciones', element: isDemoMode ? <CustomerNotificationsPage /> : pending },
-      { path: 'ayuda', element: isDemoMode ? <CustomerHelpPage /> : pending },
+      { path: 'notificaciones', element: isDemoMode ? <CustomerNotificationsPage /> : <RealNotificationsPage/> },
+      { path: 'ayuda/:id', element: <RealTicketDetail/> },
+      { path: 'ayuda', element: isDemoMode ? <CustomerHelpPage /> : <RealTicketsPage/> },
     ],
   },
 
@@ -124,9 +130,11 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/comercio/tienda" replace /> },
       { path: 'tienda', element: isDemoMode ? <MerchantDashboardPage /> : <StoreManagementPage /> },
       { path: 'perfil-tienda', element: isDemoMode ? <MerchantStorePage /> : <Navigate to="/comercio/tienda" replace /> },
-      { path: 'productos', element: isDemoMode ? <MerchantProductsPage /> : pending },
-      { path: 'pedidos', element: isDemoMode ? <MerchantOrdersPage /> : pending },
-      { path: 'reportes', element: isDemoMode ? <MerchantReportsPage /> : pending },
+      { path: 'productos', element: isDemoMode ? <MerchantProductsPage /> : <RealMerchantProductsPage /> },
+      { path: 'pedidos', element: isDemoMode ? <MerchantOrdersPage /> : <RealOrdersPage kind="merchant"/> },
+      { path: 'pedidos/:id', element:<RealOrderDetailPage kind="merchant"/> },
+      { path: 'reportes', element: isDemoMode ? <MerchantReportsPage /> : <RealReportsPage kind="merchant"/> },
+      { path: 'resumen', element: <RealReportsPage kind="merchant"/> },
       { path: 'configuracion', element: isDemoMode ? <MerchantSettingsPage /> : <Navigate to="/comercio/tienda" replace /> },
     ],
   },
@@ -137,10 +145,11 @@ export const router = createBrowserRouter([
     element: isDemoMode ? <CourierLayout /> : <RequireSession role="repartidor"><AccountLayout /></RequireSession>,
     children: [
       { index: true, element: <Navigate to={isDemoMode ? '/repartidor/solicitudes' : '/repartidor/perfil'} replace /> },
-      { path: 'solicitudes', element: isDemoMode ? <CourierRequestsPage /> : pending },
-      { path: 'entrega-activa', element: isDemoMode ? <CourierActiveDeliveryPage /> : pending },
-      { path: 'historial', element: isDemoMode ? <CourierHistoryPage /> : pending },
-      { path: 'ingresos', element: isDemoMode ? <CourierEarningsPage /> : pending },
+      { path: 'solicitudes', element: isDemoMode ? <CourierRequestsPage /> : <RealOrdersPage kind="courier" scope="available"/> },
+      { path: 'entrega-activa', element: isDemoMode ? <CourierActiveDeliveryPage /> : <RealOrdersPage kind="courier" scope="active"/> },
+      { path: 'historial', element: isDemoMode ? <CourierHistoryPage /> : <RealOrdersPage kind="courier" scope="history"/> },
+      { path: 'pedidos/:id', element:<RealOrderDetailPage kind="courier"/> },
+      { path: 'ingresos', element: isDemoMode ? <CourierEarningsPage /> : <RealReportsPage kind="courier"/> },
       { path: 'perfil', element: isDemoMode ? <CourierProfilePage /> : <OperationalCourierPage /> },
     ],
   },
@@ -155,11 +164,13 @@ export const router = createBrowserRouter([
       { path: 'usuarios', element: isDemoMode ? <AdminUsersPage /> : <RealAdminUsersPage /> },
       { path: 'comercios', element: isDemoMode ? <AdminMerchantsPage /> : <AdminRequestsPage key="stores" kind="stores" /> },
       { path: 'repartidores', element: isDemoMode ? <AdminCouriersPage /> : <AdminRequestsPage key="couriers" kind="couriers" /> },
-      { path: 'pedidos', element: isDemoMode ? <AdminOrdersPage /> : pending },
+      { path: 'pedidos', element: isDemoMode ? <AdminOrdersPage /> : <RealOrdersPage kind="admin"/> },
+      { path: 'pedidos/:id', element:<RealOrderDetailPage kind="admin"/> },
       { path: 'zonas', element: isDemoMode ? <AdminZonesPage /> : <RealAdminZonesPage /> },
-      { path: 'incidencias', element: isDemoMode ? <AdminTicketsPage /> : pending },
-      { path: 'reportes', element: isDemoMode ? <AdminReportsPage /> : pending },
-      { path: 'auditoria', element: isDemoMode ? <AdminAuditPage /> : pending },
+      { path: 'incidencias/:id', element: <RealTicketDetail admin/> },
+      { path: 'incidencias', element: isDemoMode ? <AdminTicketsPage /> : <RealTicketsPage admin/> },
+      { path: 'reportes', element: isDemoMode ? <AdminReportsPage /> : <RealReportsPage kind="admin"/> },
+      { path: 'auditoria', element: isDemoMode ? <AdminAuditPage /> : <RealAuditPage/> },
     ] }],
   },
 
