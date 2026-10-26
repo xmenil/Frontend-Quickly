@@ -1,5 +1,17 @@
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { isDemoMode } from '../config/appMode';
+import { RequireSession } from '../features/auth/SessionBoundary';
+import { RealLoginPage, RealRegisterPage } from '../features/auth/AccountForms';
+import { RealProfilePage } from '../features/customer/RealProfilePage';
+import { AccountLayout, AccountHomePage, PendingIntegrationPage } from '../layouts/AccountLayout';
+import { ApplicationsPage, StoreApplicationPage, CourierApplicationPage } from '../features/operations/ApplicationPages';
+import { StoreManagementPage } from '../features/operations/StoreManagementPage';
+import { OperationalCourierPage } from '../features/operations/CourierProfilePage';
+import { RealAddressesPage } from '../features/operations/AddressesPage';
+import { AdminOperationsLayout, RealAdminOverviewPage, AdminRequestsPage, RealAdminUsersPage, RealAdminZonesPage } from '../features/operations/AdminPages';
+
+const pending = <PendingIntegrationPage />;
 
 // Layouts
 import { PublicLayout } from '../layouts/PublicLayout';
@@ -64,14 +76,14 @@ export const router = createBrowserRouter([
   // Public Routes (Shop, Cart, Catalog)
   {
     path: '/',
-    element: <PublicLayout />,
+    element: isDemoMode ? <PublicLayout /> : <AccountLayout />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'negocios', element: <MerchantsPage /> },
-      { path: 'negocios/:id', element: <MerchantDetailPage /> },
-      { path: 'producto/:id', element: <ProductDetailPage /> },
-      { path: 'carrito', element: <CartPage /> },
-      { path: 'checkout', element: <CheckoutPage /> },
+      { index: true, element: isDemoMode ? <HomePage /> : <AccountHomePage /> },
+      { path: 'negocios', element: isDemoMode ? <MerchantsPage /> : pending },
+      { path: 'negocios/:id', element: isDemoMode ? <MerchantDetailPage /> : pending },
+      { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : pending },
+      { path: 'carrito', element: isDemoMode ? <CartPage /> : pending },
+      { path: 'checkout', element: isDemoMode ? <CheckoutPage /> : <RequireSession>{pending}</RequireSession> },
     ],
   },
 
@@ -79,75 +91,76 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: 'login', element: <LoginPage /> },
-      { path: 'registro', element: <RegisterCustomerPage /> },
-      { path: 'registro/comercio', element: <RegisterMerchantPage /> },
-      { path: 'registro/repartidor', element: <RegisterCourierPage /> },
-      { path: 'recuperar-acceso', element: <RecoverPasswordPage /> },
+      { path: 'login', element: isDemoMode ? <LoginPage /> : <RealLoginPage /> },
+      { path: 'registro', element: isDemoMode ? <RegisterCustomerPage /> : <RealRegisterPage /> },
+      { path: 'registro/comercio', element: isDemoMode ? <RegisterMerchantPage /> : <RequireSession><StoreApplicationPage /></RequireSession> },
+      { path: 'registro/repartidor', element: isDemoMode ? <RegisterCourierPage /> : <RequireSession><CourierApplicationPage /></RequireSession> },
+      { path: 'recuperar-acceso', element: isDemoMode ? <RecoverPasswordPage /> : pending },
     ],
   },
 
   // Customer Protected Routes
   {
     path: 'cliente',
-    element: <CustomerLayout />,
+    element: isDemoMode ? <CustomerLayout /> : <RequireSession><AccountLayout /></RequireSession>,
     children: [
-      { path: 'pedidos', element: <CustomerOrdersPage /> },
-      { path: 'pedidos/:id', element: <OrderDetailPage /> },
-      { path: 'seguimiento/:id', element: <TrackingPage /> },
-      { path: 'direcciones', element: <CustomerAddressesPage /> },
-      { path: 'favoritos', element: <CustomerFavoritesPage /> },
-      { path: 'perfil', element: <CustomerProfilePage /> },
-      { path: 'notificaciones', element: <CustomerNotificationsPage /> },
-      { path: 'ayuda', element: <CustomerHelpPage /> },
+      { path: 'pedidos', element: isDemoMode ? <CustomerOrdersPage /> : pending },
+      { path: 'pedidos/:id', element: isDemoMode ? <OrderDetailPage /> : pending },
+      { path: 'seguimiento/:id', element: isDemoMode ? <TrackingPage /> : pending },
+      { path: 'direcciones', element: isDemoMode ? <CustomerAddressesPage /> : <RealAddressesPage /> },
+      { path: 'solicitudes', element: isDemoMode ? pending : <ApplicationsPage /> },
+      { path: 'favoritos', element: isDemoMode ? <CustomerFavoritesPage /> : pending },
+      { path: 'perfil', element: isDemoMode ? <CustomerProfilePage /> : <RealProfilePage /> },
+      { path: 'notificaciones', element: isDemoMode ? <CustomerNotificationsPage /> : pending },
+      { path: 'ayuda', element: isDemoMode ? <CustomerHelpPage /> : pending },
     ],
   },
 
   // Merchant Routes
   {
     path: 'comercio',
-    element: <MerchantLayout />,
+    element: isDemoMode ? <MerchantLayout /> : <RequireSession role="comercio"><AccountLayout /></RequireSession>,
     children: [
       { index: true, element: <Navigate to="/comercio/tienda" replace /> },
-      { path: 'tienda', element: <MerchantDashboardPage /> },
-      { path: 'perfil-tienda', element: <MerchantStorePage /> },
-      { path: 'productos', element: <MerchantProductsPage /> },
-      { path: 'pedidos', element: <MerchantOrdersPage /> },
-      { path: 'reportes', element: <MerchantReportsPage /> },
-      { path: 'configuracion', element: <MerchantSettingsPage /> },
+      { path: 'tienda', element: isDemoMode ? <MerchantDashboardPage /> : <StoreManagementPage /> },
+      { path: 'perfil-tienda', element: isDemoMode ? <MerchantStorePage /> : <Navigate to="/comercio/tienda" replace /> },
+      { path: 'productos', element: isDemoMode ? <MerchantProductsPage /> : pending },
+      { path: 'pedidos', element: isDemoMode ? <MerchantOrdersPage /> : pending },
+      { path: 'reportes', element: isDemoMode ? <MerchantReportsPage /> : pending },
+      { path: 'configuracion', element: isDemoMode ? <MerchantSettingsPage /> : <Navigate to="/comercio/tienda" replace /> },
     ],
   },
 
   // Courier Routes
   {
     path: 'repartidor',
-    element: <CourierLayout />,
+    element: isDemoMode ? <CourierLayout /> : <RequireSession role="repartidor"><AccountLayout /></RequireSession>,
     children: [
-      { index: true, element: <Navigate to="/repartidor/solicitudes" replace /> },
-      { path: 'solicitudes', element: <CourierRequestsPage /> },
-      { path: 'entrega-activa', element: <CourierActiveDeliveryPage /> },
-      { path: 'historial', element: <CourierHistoryPage /> },
-      { path: 'ingresos', element: <CourierEarningsPage /> },
-      { path: 'perfil', element: <CourierProfilePage /> },
+      { index: true, element: <Navigate to={isDemoMode ? '/repartidor/solicitudes' : '/repartidor/perfil'} replace /> },
+      { path: 'solicitudes', element: isDemoMode ? <CourierRequestsPage /> : pending },
+      { path: 'entrega-activa', element: isDemoMode ? <CourierActiveDeliveryPage /> : pending },
+      { path: 'historial', element: isDemoMode ? <CourierHistoryPage /> : pending },
+      { path: 'ingresos', element: isDemoMode ? <CourierEarningsPage /> : pending },
+      { path: 'perfil', element: isDemoMode ? <CourierProfilePage /> : <OperationalCourierPage /> },
     ],
   },
 
   // Admin Routes
   {
     path: 'admin',
-    element: <AdminLayout />,
-    children: [
+    element: isDemoMode ? <AdminLayout /> : <RequireSession role="admin"><AccountLayout /></RequireSession>,
+    children: [{ element: isDemoMode ? <Outlet /> : <AdminOperationsLayout />, children: [
       { index: true, element: <Navigate to="/admin/resumen" replace /> },
-      { path: 'resumen', element: <AdminOverviewPage /> },
-      { path: 'usuarios', element: <AdminUsersPage /> },
-      { path: 'comercios', element: <AdminMerchantsPage /> },
-      { path: 'repartidores', element: <AdminCouriersPage /> },
-      { path: 'pedidos', element: <AdminOrdersPage /> },
-      { path: 'zonas', element: <AdminZonesPage /> },
-      { path: 'incidencias', element: <AdminTicketsPage /> },
-      { path: 'reportes', element: <AdminReportsPage /> },
-      { path: 'auditoria', element: <AdminAuditPage /> },
-    ],
+      { path: 'resumen', element: isDemoMode ? <AdminOverviewPage /> : <RealAdminOverviewPage /> },
+      { path: 'usuarios', element: isDemoMode ? <AdminUsersPage /> : <RealAdminUsersPage /> },
+      { path: 'comercios', element: isDemoMode ? <AdminMerchantsPage /> : <AdminRequestsPage key="stores" kind="stores" /> },
+      { path: 'repartidores', element: isDemoMode ? <AdminCouriersPage /> : <AdminRequestsPage key="couriers" kind="couriers" /> },
+      { path: 'pedidos', element: isDemoMode ? <AdminOrdersPage /> : pending },
+      { path: 'zonas', element: isDemoMode ? <AdminZonesPage /> : <RealAdminZonesPage /> },
+      { path: 'incidencias', element: isDemoMode ? <AdminTicketsPage /> : pending },
+      { path: 'reportes', element: isDemoMode ? <AdminReportsPage /> : pending },
+      { path: 'auditoria', element: isDemoMode ? <AdminAuditPage /> : pending },
+    ] }],
   },
 
   // Error Pages

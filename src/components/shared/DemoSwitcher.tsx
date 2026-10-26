@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isDemoMode } from '../../config/appMode';
 import { useAuthStore } from '../../store/authStore';
 import { useDataStore } from '../../store/dataStore';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ export const DemoSwitcher: React.FC = () => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  if (!isDemoMode) return null;
 
   const roles: { role: UserRole; label: string; icon: React.ReactNode; path: string }[] = [
     { role: 'cliente', label: 'Cliente', icon: <UserCheck className="w-4 h-4" />, path: '/' },

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isDemoMode } from '../config/appMode';
 import {
   Merchant,
   Product,
@@ -127,6 +128,10 @@ interface StoredDataPayload {
 }
 
 function getInitialStoredData(): StoredDataPayload {
+  if (!isDemoMode) return {
+    addressExampleUserIds: [], merchants: [], products: [], couriers: [], users: [], zones: [], purchases: [],
+    addresses: [], favoriteMerchantIds: [], favoriteProductIds: [], reviews: [], tickets: [], auditLogs: [], notifications: [],
+  };
   const raw =
     localStorage.getItem(STORAGE_KEY) ||
     localStorage.getItem('quickly_datastore_v3') ||
@@ -190,6 +195,7 @@ function getInitialStoredData(): StoredDataPayload {
 const initialPayload = getInitialStoredData();
 
 function saveToLocalStorage(state: DataState) {
+  if (!isDemoMode) return;
   const payload: StoredDataPayload = {
     addressExampleUserIds: state.addressExampleUserIds || [],
     courierActivitySeedVersion: 1,
@@ -214,6 +220,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   ...initialPayload,
 
   ensureExampleAddresses: (user) => {
+    if (!isDemoMode) return;
     if (!user.id || get().addressExampleUserIds.includes(user.id)) return;
     set((state) => {
       const nextState = {
@@ -929,6 +936,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   resetToSeed: () => {
+    if (!isDemoMode) return;
     localStorage.removeItem(STORAGE_KEY);
     const freshPayload: StoredDataPayload = {
       addressExampleUserIds: [],
@@ -954,7 +962,7 @@ export const useDataStore = create<DataState>((set, get) => ({
 // Cross-tab synchronization
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY && e.newValue) {
+    if (isDemoMode && e.key === STORAGE_KEY && e.newValue) {
       const parsed = safeJsonParse<StoredDataPayload | null>(e.newValue, null);
       if (parsed) {
         useDataStore.setState(parsed);

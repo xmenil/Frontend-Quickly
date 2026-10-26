@@ -1,0 +1,3557 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "summary": "Verificar estado de salud del backend y base de datos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Monitoreo y Salud"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "summary": "Registrar nueva cuenta de cliente",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "summary": "Iniciar sesión con correo y contraseña",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "summary": "Cerrar y revocar sesión actual",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "operationId": "AuthController_session",
+        "summary": "Restaurar sesión web y protección CSRF",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "summary": "Obtener perfil del usuario autenticado",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AuthController_updateProfile",
+        "summary": "Actualizar datos propios sin modificar roles, estado o membresías",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/overview": {
+      "get": {
+        "operationId": "AdminUsersController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de cuentas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminUsersController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "active",
+                "pending",
+                "suspended"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de cuentas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/status": {
+      "patch": {
+        "operationId": "AdminUsersController_change",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Administración de cuentas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/geography/zones": {
+      "get": {
+        "operationId": "GeographyController_zones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ZoneDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ]
+      }
+    },
+    "/api/v1/me/addresses": {
+      "get": {
+        "operationId": "GeographyController_addresses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "GeographyController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/addresses/{id}": {
+      "patch": {
+        "operationId": "GeographyController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "GeographyController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/addresses/{id}/default": {
+      "put": {
+        "operationId": "GeographyController_default",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Direcciones y cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/zones": {
+      "get": {
+        "operationId": "AdminZonesController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminZonesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateZoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/zones/{id}": {
+      "patch": {
+        "operationId": "AdminZonesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateZoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de cobertura"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stores": {
+      "get": {
+        "operationId": "StoresController_listStores",
+        "summary": "Listar comercios activos",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Comercios públicos"
+        ]
+      }
+    },
+    "/api/v1/stores/{id}": {
+      "get": {
+        "operationId": "StoresController_getStoreById",
+        "summary": "Detalle público de comercio",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Comercios públicos"
+        ]
+      }
+    },
+    "/api/v1/merchant/categories": {
+      "get": {
+        "operationId": "StoreManagementController_categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreCategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores": {
+      "get": {
+        "operationId": "StoreManagementController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "StoreManagementController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{id}": {
+      "get": {
+        "operationId": "StoreManagementController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "StoreManagementController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{id}/hours": {
+      "put": {
+        "operationId": "StoreManagementController_hours",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{id}/members": {
+      "get": {
+        "operationId": "StoreManagementController_members",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreMemberDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "StoreManagementController_setMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetStoreMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{id}/members/{userId}": {
+      "delete": {
+        "operationId": "StoreManagementController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Gestión de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/stores": {
+      "get": {
+        "operationId": "AdminStoresController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "active",
+                "rejected",
+                "suspended"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/stores/{id}": {
+      "get": {
+        "operationId": "AdminStoresController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/stores/{id}/decisions": {
+      "post": {
+        "operationId": "AdminStoresController_decide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationalDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/stores/{id}/approve": {
+      "post": {
+        "operationId": "AdminStoresController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de comercios"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/catalog/categories": {
+      "get": {
+        "operationId": "CatalogController_listCategories",
+        "summary": "Listar categorías del catálogo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Catálogo e Inventario"
+        ]
+      }
+    },
+    "/api/v1/stores/{id}/products": {
+      "get": {
+        "operationId": "CatalogController_getStoreProducts",
+        "summary": "Listar productos, SKUs con precios y stock disponible de una tienda",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Catálogo e Inventario"
+        ]
+      }
+    },
+    "/api/v1/catalog/search": {
+      "get": {
+        "operationId": "CatalogController_searchProducts",
+        "summary": "Búsqueda de productos en comercios activos",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Término de búsqueda",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "ID de categoría",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Catálogo e Inventario"
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{id}/products": {
+      "post": {
+        "operationId": "CatalogController_createProduct",
+        "summary": "Publicar nuevo producto con SKU y stock inicial",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Catálogo e Inventario"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/purchases": {
+      "post": {
+        "operationId": "OrderingController_createPurchase",
+        "summary": "Crear compra e iniciar reserva de inventario (Idempotente)",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave de 1 a 200 caracteres, única por intención de compra",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/purchases": {
+      "get": {
+        "operationId": "OrderingController_getUserPurchases",
+        "summary": "Consultar historial de compras del cliente",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/cancellations": {
+      "post": {
+        "operationId": "OrderingController_cancelOrder",
+        "summary": "Cancelar un pedido antes de su preparación (libera reservas de stock)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/stores/{storeId}/orders": {
+      "get": {
+        "operationId": "OrderingController_getStoreOrders",
+        "summary": "Listar comandas de una tienda (Panel de Comercio)",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/orders/{id}/accept": {
+      "post": {
+        "operationId": "OrderingController_acceptOrder",
+        "summary": "Comercio acepta pedido (pending -> confirmed)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/orders/{id}/start-preparation": {
+      "post": {
+        "operationId": "OrderingController_startPreparation",
+        "summary": "Comercio inicia preparación en cocina (confirmed -> preparing)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/orders/{id}/mark-ready": {
+      "post": {
+        "operationId": "OrderingController_markReady",
+        "summary": "Comercio marca pedido listo para recojo (preparing -> ready)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Compras y Pedidos"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/available-orders": {
+      "get": {
+        "operationId": "DeliveryController_listAvailableOrders",
+        "summary": "Listar pedidos listos para recojo en espera de repartidor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reparto y Entregas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/active-assignment": {
+      "get": {
+        "operationId": "DeliveryController_getActiveAssignment",
+        "summary": "Obtener la entrega actualmente activa del repartidor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reparto y Entregas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/orders/{id}/claim": {
+      "post": {
+        "operationId": "DeliveryController_claimOrder",
+        "summary": "Repartidor toma un pedido listo para entrega (claim)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reparto y Entregas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/assignments/{id}/pickup": {
+      "post": {
+        "operationId": "DeliveryController_pickupDelivery",
+        "summary": "Repartidor retira pedido del comercio (descuenta stock físico on_hand)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reparto y Entregas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/assignments/{id}/deliver": {
+      "post": {
+        "operationId": "DeliveryController_completeDelivery",
+        "summary": "Repartidor entrega pedido al cliente (confirma cobro de efectivo)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reparto y Entregas"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/profile": {
+      "get": {
+        "operationId": "CourierProfileController_own",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Perfil operativo de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "CourierProfileController_apply",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyCourierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Perfil operativo de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/courier/profile/availability": {
+      "patch": {
+        "operationId": "CourierProfileController_availability",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourierAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Perfil operativo de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/couriers": {
+      "get": {
+        "operationId": "AdminCouriersController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "active",
+                "rejected",
+                "suspended"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/couriers/{id}": {
+      "get": {
+        "operationId": "AdminCouriersController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/couriers/{id}/decisions": {
+      "post": {
+        "operationId": "AdminCouriersController_decide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationalDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administración de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "PlatformController_getNotifications",
+        "summary": "Obtener notificaciones del usuario autenticado",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Plataforma y Notificaciones"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "operationId": "PlatformController_markAsRead",
+        "summary": "Marcar notificación como leída",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Plataforma y Notificaciones"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Quickly API",
+    "description": "Sesión web HttpOnly. Las mutaciones exigen Origin autorizado y X-CSRF-Token de /auth/session. Los contratos tipados de identidad se integran en F1; los demás módulos se completan por fases.",
+    "version": "1.1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "quickly_session"
+      }
+    },
+    "schemas": {
+      "ErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "code",
+          "message",
+          "requestId",
+          "timestamp",
+          "path"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Juan Pérez"
+          },
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+51962123456",
+            "description": "Número en formato E.164 (+51...)"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!",
+            "minLength": 6
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "phone",
+          "password"
+        ]
+      },
+      "MembershipDto": {
+        "type": "object",
+        "properties": {
+          "storeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "storeStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "rejected",
+              "suspended"
+            ]
+          },
+          "membershipRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "operator"
+            ]
+          }
+        },
+        "required": [
+          "storeId",
+          "storeName",
+          "storeStatus",
+          "membershipRole"
+        ]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "customer",
+                "merchant",
+                "courier",
+                "admin"
+              ]
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending",
+              "suspended"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MembershipDto"
+            }
+          },
+          "courierId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "email",
+          "phone",
+          "roles",
+          "status",
+          "createdAt",
+          "memberships",
+          "courierId"
+        ]
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserProfileDto"
+          },
+          "csrfToken": {
+            "type": "string",
+            "description": "Protección CSRF; conservar solo en memoria"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "user",
+          "csrfToken",
+          "expiresAt"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "AdminOverviewDto": {
+        "type": "object",
+        "properties": {
+          "pendingStores": {
+            "type": "number"
+          },
+          "pendingCouriers": {
+            "type": "number"
+          },
+          "activeStores": {
+            "type": "number"
+          },
+          "activeCouriers": {
+            "type": "number"
+          },
+          "activeUsers": {
+            "type": "number"
+          },
+          "suspendedUsers": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pendingStores",
+          "pendingCouriers",
+          "activeStores",
+          "activeCouriers",
+          "activeUsers",
+          "suspendedUsers"
+        ]
+      },
+      "AdminUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending",
+              "suspended"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "email",
+          "phone",
+          "status",
+          "roles",
+          "createdAt",
+          "statusReason"
+        ]
+      },
+      "AdminUserListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "UserStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reason"
+        ]
+      },
+      "ZoneDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "baseFeeCents": {
+            "type": "number"
+          },
+          "estimatedMinutes": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "baseFeeCents",
+          "estimatedMinutes",
+          "isActive"
+        ]
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zoneName": {
+            "type": "string"
+          },
+          "zoneActive": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "street": {
+            "type": "string"
+          },
+          "streetNumber": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "zoneId",
+          "zoneName",
+          "zoneActive",
+          "label",
+          "recipientName",
+          "phone",
+          "street",
+          "streetNumber",
+          "reference",
+          "isDefault",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "CreateAddressDto": {
+        "type": "object",
+        "properties": {
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "street": {
+            "type": "string"
+          },
+          "streetNumber": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "zoneId",
+          "label",
+          "recipientName",
+          "phone",
+          "street",
+          "streetNumber"
+        ]
+      },
+      "UpdateAddressDto": {
+        "type": "object",
+        "properties": {
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "street": {
+            "type": "string"
+          },
+          "streetNumber": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ZoneListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ZoneDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "CreateZoneDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "baseFeeCents": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "estimatedMinutes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "baseFeeCents",
+          "estimatedMinutes"
+        ]
+      },
+      "UpdateZoneDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "baseFeeCents": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "estimatedMinutes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "StoreCategoryDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ]
+      },
+      "StoreDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categoryCode": {
+            "type": "string"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zoneName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "addressText": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "legalBusinessName": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "rejected",
+              "suspended"
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptingOrders": {
+            "type": "boolean"
+          },
+          "isOpen": {
+            "type": "boolean"
+          },
+          "minimumOrderCents": {
+            "type": "number"
+          },
+          "preparationMinutes": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "membershipRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "operator",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "categoryCode",
+          "zoneId",
+          "zoneName",
+          "description",
+          "addressText",
+          "phone",
+          "legalBusinessName",
+          "taxId",
+          "status",
+          "statusReason",
+          "acceptingOrders",
+          "isOpen",
+          "minimumOrderCents",
+          "preparationMinutes",
+          "createdAt",
+          "membershipRole"
+        ]
+      },
+      "StoreListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "CreateStoreDto": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addressText": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "legalBusinessName": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxId": {
+            "type": "string",
+            "nullable": true
+          },
+          "minimumOrderCents": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "preparationMinutes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440
+          }
+        },
+        "required": [
+          "categoryCode",
+          "zoneId",
+          "name",
+          "addressText",
+          "phone"
+        ]
+      },
+      "OpeningIntervalDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "opensAt": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "closesAt": {
+            "type": "string",
+            "example": "22:00"
+          }
+        },
+        "required": [
+          "weekday",
+          "opensAt",
+          "closesAt"
+        ]
+      },
+      "StoreDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categoryCode": {
+            "type": "string"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zoneName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "addressText": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "legalBusinessName": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "rejected",
+              "suspended"
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptingOrders": {
+            "type": "boolean"
+          },
+          "isOpen": {
+            "type": "boolean"
+          },
+          "minimumOrderCents": {
+            "type": "number"
+          },
+          "preparationMinutes": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "membershipRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "operator",
+              "admin"
+            ]
+          },
+          "openingIntervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpeningIntervalDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "categoryCode",
+          "zoneId",
+          "zoneName",
+          "description",
+          "addressText",
+          "phone",
+          "legalBusinessName",
+          "taxId",
+          "status",
+          "statusReason",
+          "acceptingOrders",
+          "isOpen",
+          "minimumOrderCents",
+          "preparationMinutes",
+          "createdAt",
+          "membershipRole",
+          "openingIntervals"
+        ]
+      },
+      "UpdateStoreDto": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addressText": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "legalBusinessName": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxId": {
+            "type": "string",
+            "nullable": true
+          },
+          "minimumOrderCents": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "preparationMinutes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "acceptingOrders": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReplaceHoursDto": {
+        "type": "object",
+        "properties": {
+          "intervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpeningIntervalDto"
+            }
+          }
+        },
+        "required": [
+          "intervals"
+        ]
+      },
+      "StoreMemberDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "membershipRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "operator"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "userId",
+          "fullName",
+          "email",
+          "membershipRole",
+          "isActive"
+        ]
+      },
+      "SetStoreMemberDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "membershipRole": {
+            "type": "string",
+            "enum": [
+              "manager",
+              "operator"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "membershipRole"
+        ]
+      },
+      "OperationalDecisionDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject",
+              "suspend",
+              "reactivate"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason"
+        ]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hamburguesa Artesanal Clásica"
+          },
+          "description": {
+            "type": "string",
+            "example": "Carne 150g, queso cheddar, vegetales frescos y papas fritas"
+          },
+          "skuCode": {
+            "type": "string",
+            "example": "HAMB-CLAS-01",
+            "description": "Código único de SKU"
+          },
+          "variantName": {
+            "type": "string",
+            "example": "Estándar",
+            "description": "Nombre de la variante"
+          },
+          "priceCents": {
+            "type": "number",
+            "example": 1850,
+            "description": "Precio absoluto en céntimos PEN (S/ 18.50 = 1850 céntimos)"
+          },
+          "initialStock": {
+            "type": "number",
+            "example": 30,
+            "description": "Stock inicial físico on_hand"
+          }
+        },
+        "required": [
+          "categoryId",
+          "name",
+          "skuCode",
+          "variantName",
+          "priceCents",
+          "initialStock"
+        ]
+      },
+      "PurchaseItemDto": {
+        "type": "object",
+        "properties": {
+          "skuId": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "description": "ID del SKU a comprar"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2,
+            "description": "Cantidad deseada"
+          },
+          "note": {
+            "type": "string",
+            "example": "Sin ají"
+          }
+        },
+        "required": [
+          "skuId",
+          "quantity"
+        ]
+      },
+      "CreatePurchaseDto": {
+        "type": "object",
+        "properties": {
+          "addressId": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "description": "ID de la dirección de entrega del usuario"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "example": "cash",
+            "enum": [
+              "cash"
+            ],
+            "description": "Efectivo; digital se habilitará en F6"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseItemDto"
+            }
+          }
+        },
+        "required": [
+          "addressId",
+          "paymentMethod",
+          "items"
+        ]
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Cliente solicitó cambio de planes"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "CourierProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "vehicleType": {
+            "type": "string",
+            "enum": [
+              "motorcycle",
+              "bicycle",
+              "mototaxi"
+            ]
+          },
+          "plate": {
+            "type": "string",
+            "nullable": true
+          },
+          "zoneId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "zoneName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "rejected",
+              "suspended"
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "isOnline": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "fullName",
+          "email",
+          "phone",
+          "vehicleType",
+          "plate",
+          "zoneId",
+          "zoneName",
+          "status",
+          "statusReason",
+          "isOnline",
+          "createdAt"
+        ]
+      },
+      "ApplyCourierDto": {
+        "type": "object",
+        "properties": {
+          "vehicleType": {
+            "type": "string",
+            "enum": [
+              "motorcycle",
+              "bicycle",
+              "mototaxi"
+            ]
+          },
+          "plate": {
+            "type": "string",
+            "nullable": true
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "vehicleType",
+          "zoneId"
+        ]
+      },
+      "CourierAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "isOnline": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isOnline"
+        ]
+      },
+      "CourierListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourierProfileDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      }
+    }
+  }
+}

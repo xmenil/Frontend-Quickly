@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../store/demoAuthStore';
 import { UserRole } from '../../domain/types';
 import { Dialog } from '../../components/ui/Dialog';
 import {

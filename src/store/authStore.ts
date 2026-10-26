@@ -1,222 +1,156 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../domain/types';
-import { INITIAL_USERS } from '../mocks/initialData';
-import { safeJsonParse } from '../lib/utils';
+import { isDemoMode } from '../config/appMode';
+import { useAuthStore as demo } from './demoAuthStore';
+import { identityApi, Profile, ProfileUpdate, Session } from '../services/api/identityApi';
+import { ApiError, onUnauthorized, resetApiSession, setCsrfToken } from '../services/api/apiClient';
+import { normalizePhone, profileToUser, roleMap } from '../services/api/profileAdapter';
 
+interface AuthResult { success: boolean; message?: string; user?: User }
 interface AuthState {
   currentUser: User | null;
+  profile: Profile | null;
   activeRole: UserRole;
+  roles: UserRole[];
   isAuthenticated: boolean;
-  loginDemo: (role: UserRole) => void;
-  login: (identifier: string, roleHint?: UserRole) => { success: boolean; message?: string; user?: User };
-  loginGoogle: () => { success: boolean; user: User };
-  registerCustomer: (data: { name: string; email: string; phone: string }) => { success: boolean; user: User };
-  logout: () => void;
+  sessionStatus: 'checking' | 'ready' | 'error';
+  sessionError: string | null;
+  busy: boolean;
+  initialize: (background?: boolean) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  registerCustomer: (data: { name: string; email: string; phone: string; password: string }) => Promise<AuthResult>;
+  logout: () => Promise<AuthResult>;
+  updateProfile: (updates: Partial<User>) => Promise<AuthResult>;
   switchRole: (role: UserRole) => void;
   switchMerchant: (merchantId: string) => void;
-  updateProfile: (updates: Partial<User>) => void;
+  loginDemo: (role: UserRole) => void;
+  loginGoogle: () => Promise<AuthResult>;
 }
+let epoch = 0;
+let restoration: Promise<void> | undefined;
+const emptyIdentity = { currentUser: null, profile: null, activeRole: 'cliente' as UserRole, roles: [], isAuthenticated: false };
+const channel = typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function'
+  ? new window.BroadcastChannel('quickly-session') : undefined;
+const announce = () => channel?.postMessage('changed');
+const message = (error: unknown) => error instanceof Error ? error.message : 'No se pudo completar la operación.';
 
-const STORAGE_KEY = 'quickly_auth_v1';
-
-function getStoredUser(): User | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null; // Guest mode when no session is stored
-  return safeJsonParse<User | null>(raw, null);
-}
-
-const initialUser = getStoredUser();
-
-export const useAuthStore = create<AuthState>((set, get) => ({
-  currentUser: initialUser,
-  activeRole: initialUser?.role || 'cliente',
-  isAuthenticated: Boolean(initialUser),
-
-  loginDemo: (role: UserRole) => {
-    const user = INITIAL_USERS.find(u => u.role === role && u.status === 'activo') || INITIAL_USERS[0];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    set({
-      currentUser: user,
-      activeRole: user.role,
-      isAuthenticated: true,
-    });
-  },
-
-  loginGoogle: () => {
-    const googleUser: User = {
-      id: 'u_google_cliente',
-      name: 'Nilver Valdivia',
-      email: 'nilver.valdivia@gmail.com',
-      phone: '962 123 456',
-      role: 'cliente',
-      status: 'activo',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
-      createdAt: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(googleUser));
-    set({
-      currentUser: googleUser,
-      activeRole: 'cliente',
-      isAuthenticated: true,
-    });
-    return { success: true, user: googleUser };
-  },
-
-  registerCustomer: (data: { name: string; email: string; phone: string }) => {
-    const newUser: User = {
-      id: `u_cust_${Date.now()}`,
-      name: data.name.trim() || 'Nuevo Cliente',
-      email: data.email.trim().toLowerCase(),
-      phone: data.phone.trim(),
-      role: 'cliente',
-      status: 'activo',
-      createdAt: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-    set({
-      currentUser: newUser,
-      activeRole: 'cliente',
-      isAuthenticated: true,
-    });
-    return { success: true, user: newUser };
-  },
-
-  login: (identifier: string, roleHint?: UserRole) => {
-    const clean = identifier.trim().toLowerCase();
-    const cleanDigits = clean.replace(/\D/g, '');
-
-    // 1. Search for user matching identifier and matching roleHint
-    let user = INITIAL_USERS.find(
-      u => (u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))) &&
-           (!roleHint || u.role === roleHint)
-    );
-
-    // 2. If not found with specific role, look for general match
-    if (!user) {
-      user = INITIAL_USERS.find(
-        u => u.email.toLowerCase() === clean || (cleanDigits && u.phone.replace(/\D/g, '').includes(cleanDigits))
-      );
-    }
-
-    // 3. Fallback: Create instant session respecting the roleHint or 'cliente'
-    if (!user) {
-      const assignedRole = roleHint || 'cliente';
-      const fallbackUser: User = {
-        id: `u_${assignedRole}_${Date.now()}`,
-        name: clean.includes('@') ? clean.split('@')[0] : `Usuario ${assignedRole}`,
-        email: clean.includes('@') ? clean : `${cleanDigits || 'usuario'}@quickly.pe`,
-        phone: cleanDigits ? `+51 ${cleanDigits}` : '962 123 456',
-        role: assignedRole,
-        status: 'activo',
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackUser));
-      set({
-        currentUser: fallbackUser,
-        activeRole: assignedRole,
-        isAuthenticated: true,
-      });
-      return { success: true, user: fallbackUser };
-    }
-
-    if (user.status === 'suspendido') {
-      return { success: false, message: 'Esta cuenta está suspendida por administración.' };
-    }
-    if (user.status === 'pendiente_aprobacion') {
-      return { success: false, message: 'Tu registro aún está pendiente de aprobación por el Administrador.' };
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    set({
-      currentUser: user,
-      activeRole: user.role,
-      isAuthenticated: true,
-    });
-    return { success: true, user };
-  },
-
-  logout: () => {
-    localStorage.removeItem(STORAGE_KEY);
-    set({
-      currentUser: null,
-      activeRole: 'cliente',
-      isAuthenticated: false,
-    });
-  },
-
-  switchRole: (role: UserRole) => {
-    // Finds demo user for this role or creates virtual role context
-    const user = INITIAL_USERS.find(u => u.role === role && u.status === 'activo');
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-      set({
-        currentUser: user,
-        activeRole: role,
-        isAuthenticated: true,
-      });
-    } else {
-      set({ activeRole: role });
-    }
-  },
-
-  switchMerchant: (merchantId: string) => {
-    const current = get().currentUser;
-    const ownerUser = INITIAL_USERS.find(
-      (u) => u.merchantId === merchantId || u.id === `u_${merchantId.replace('m_', '')}`
-    );
-    let updated: User;
-    if (ownerUser) {
-      updated = {
-        ...ownerUser,
-        merchantId,
-      };
-    } else {
-      updated = {
-        id: current?.id || `u_merchant_${merchantId}`,
-        name: current?.name || 'Administrador de Tienda',
-        email: current?.email || `${merchantId}@quickly.pe`,
-        phone: current?.phone || '962 123 456',
-        role: 'comercio',
-        status: 'activo',
-        merchantId,
-        createdAt: current?.createdAt || new Date().toISOString(),
-      };
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    set({
-      currentUser: updated,
-      activeRole: 'comercio',
-      isAuthenticated: true,
-    });
-  },
-
-  updateProfile: (updates: Partial<User>) => {
-    const current = get().currentUser;
-    if (!current) return;
-    const updated = { ...current, ...updates };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    set({ currentUser: updated });
-  },
-}));
-
-// Cross-tab synchronization
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-      const user = safeJsonParse<User | null>(e.newValue, null);
-      if (user) {
-        useAuthStore.setState({
-          currentUser: user,
-          activeRole: user.role,
-          isAuthenticated: true,
-        });
-      } else {
-        useAuthStore.setState({
-          currentUser: null,
-          activeRole: 'cliente',
-          isAuthenticated: false,
-        });
+export const useAuthStore = create<AuthState>((set, get) => {
+  function acceptProfile(profile: Profile) {
+    const currentUser = profileToUser(profile, get().isAuthenticated ? get().activeRole : undefined);
+    set({ profile, currentUser, activeRole: currentUser.role,
+      roles: profile.roles.map((role) => roleMap[role]).filter(Boolean), isAuthenticated: true,
+      sessionStatus: 'ready', sessionError: null, busy: false });
+    return currentUser;
+  }
+  function acceptSession(session: Session) { setCsrfToken(session.csrfToken); return acceptProfile(session.user); }
+  return {
+    ...emptyIdentity,
+    ...(isDemoMode ? { currentUser: demo.getState().currentUser, activeRole: demo.getState().activeRole,
+      isAuthenticated: demo.getState().isAuthenticated } : {}),
+    sessionStatus: isDemoMode ? 'ready' : 'checking', sessionError: null, busy: false,
+    initialize: async (background = false) => {
+      if (isDemoMode) return;
+      if (restoration) return restoration;
+      const version = ++epoch;
+      resetApiSession();
+      set({ sessionStatus: background ? get().sessionStatus : 'checking', sessionError: null, busy: true });
+      restoration = (async () => {
+        try {
+          const session = await identityApi.session();
+          if (version === epoch) acceptSession(session);
+        } catch (error) {
+          if (version !== epoch) return;
+          if (error instanceof ApiError && error.status === 401) {
+            resetApiSession(); set({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null, busy: false });
+          } else set({ sessionStatus: 'error', sessionError: message(error), busy: false });
+        } finally { restoration = undefined; }
+      })();
+      return restoration;
+    },
+    login: async (email, password) => {
+      if (isDemoMode) return demo.getState().login(email);
+      if (get().busy) return { success: false, message: 'Hay una operación en curso.' };
+      const version = ++epoch;
+      resetApiSession(); set({ ...emptyIdentity, busy: true });
+      try {
+        const session = await identityApi.login(email.trim().toLowerCase(), password);
+        if (version !== epoch) return { success: false, message: 'La sesión cambió. Vuelve a intentarlo.' };
+        const user = acceptSession(session); announce(); return { success: true, user };
+      } catch (error) { return { success: false, message: message(error) }; }
+      finally { if (version === epoch) set({ busy: false }); }
+    },
+    registerCustomer: async (data) => {
+      if (isDemoMode) return demo.getState().registerCustomer(data);
+      if (get().busy) return { success: false, message: 'Hay una operación en curso.' };
+      const version = ++epoch;
+      resetApiSession(); set({ ...emptyIdentity, busy: true });
+      try {
+        const session = await identityApi.register({ fullName: data.name.trim(), email: data.email.trim().toLowerCase(),
+          phone: normalizePhone(data.phone), password: data.password });
+        if (version !== epoch) return { success: false, message: 'La sesión cambió. Vuelve a intentarlo.' };
+        const user = acceptSession(session); announce(); return { success: true, user };
+      } catch (error) { return { success: false, message: message(error) }; }
+      finally { if (version === epoch) set({ busy: false }); }
+    },
+    logout: async () => {
+      if (isDemoMode) { demo.getState().logout(); return { success: true }; }
+      if (get().busy) return { success: false, message: 'Espera a que termine la operación en curso.' };
+      set({ busy: true });
+      try {
+        await identityApi.logout();
+        epoch++; resetApiSession(); set({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null });
+        announce(); return { success: true };
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) return { success: true };
+        return { success: false, message: message(error) };
+      } finally { set({ busy: false }); }
+    },
+    updateProfile: async (updates) => {
+      if (isDemoMode) { demo.getState().updateProfile(updates); return { success: true }; }
+      if (get().busy) return { success: false, message: 'Hay una operación en curso.' };
+      const version = epoch;
+      set({ busy: true });
+      const body: ProfileUpdate = { fullName: updates.name, email: updates.email?.trim().toLowerCase(),
+        phone: updates.phone === undefined ? undefined : normalizePhone(updates.phone) };
+      try {
+        const profile = await identityApi.updateProfile(body);
+        if (version !== epoch) return { success: false, message: 'La sesión cambió. Inicia sesión de nuevo.' };
+        const user = acceptProfile(profile); announce(); return { success: true, user };
+      } catch (error) { return { success: false, message: message(error) }; }
+      finally { if (version === epoch) set({ busy: false }); }
+    },
+    switchRole: (role) => {
+      if (isDemoMode) { demo.getState().switchRole(role); return; }
+      if (get().roles.includes(role) && get().profile) {
+        set({ activeRole: role, currentUser: profileToUser(get().profile!, role) });
       }
-    }
+    },
+    switchMerchant: (merchantId) => {
+      if (isDemoMode) { demo.getState().switchMerchant(merchantId); return; }
+      const membership = get().profile?.memberships.find((m) => m.storeId === merchantId && m.storeStatus === 'active');
+      if (membership && get().roles.includes('comercio') && get().currentUser) {
+        set({ currentUser: { ...get().currentUser!, merchantId } });
+      }
+    },
+    loginDemo: (role) => { if (isDemoMode) demo.getState().loginDemo(role); },
+    loginGoogle: async () => isDemoMode ? demo.getState().loginGoogle() : { success: false, message: 'El acceso con Google aún no está disponible.' },
+  };
+});
+
+if (isDemoMode) {
+  demo.subscribe((state) => useAuthStore.setState({ currentUser: state.currentUser, activeRole: state.activeRole,
+    isAuthenticated: state.isAuthenticated, roles: state.currentUser ? [state.activeRole] : [] }));
+} else {
+  localStorage.removeItem('quickly_auth_v1');
+  onUnauthorized(() => {
+    epoch++; resetApiSession();
+    useAuthStore.setState({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null, busy: false });
   });
+  if (channel) channel.onmessage = async () => {
+    const previous = restoration;
+    epoch++; resetApiSession();
+    if (previous) await previous;
+    void useAuthStore.getState().initialize();
+  };
+  window.addEventListener('focus', () => { if (!useAuthStore.getState().busy) void useAuthStore.getState().initialize(true); });
 }

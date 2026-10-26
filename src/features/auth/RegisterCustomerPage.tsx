@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../store/demoAuthStore';
 import { Eye, EyeOff, CheckCircle2, Mail, Phone, Lock, User, Store, Bike, AlertCircle } from 'lucide-react';
 
 interface FieldErrors {
