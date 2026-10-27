@@ -13,7 +13,7 @@ import { RealAddressesPage } from '../features/operations/AddressesPage';
 import { AdminOperationsLayout, RealAdminOverviewPage, AdminRequestsPage, RealAdminUsersPage, RealAdminZonesPage } from '../features/operations/AdminPages';
 import { RealCatalogPage, RealMerchantsPage, RealProductDetailPage } from '../features/catalog/RealCatalogPages';
 import { RealMerchantProductsPage } from '../features/merchant/RealMerchantProductsPage';
-import {RealCartPage,RealCheckoutPage} from '../features/checkout/RealShoppingPages';
+import {RealCheckoutPage} from '../features/checkout/RealShoppingPages';
 import {GroupCheckoutPage} from '../features/checkout/GroupCheckoutPage';
 import {OperationalHealthPage} from '../features/operations/OperationalHealthPage';
 import {RealOrdersPage,RealOrderDetailPage} from '../features/orders/RealOrderPages';
@@ -90,7 +90,7 @@ export const router = createBrowserRouter([
       { path: 'negocios', element: isDemoMode ? <MerchantsPage /> : <RealMerchantsPage /> },
       { path: 'negocios/:id', element: isDemoMode ? <MerchantDetailPage /> : <RealCatalogPage /> },
       { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : <RealProductDetailPage /> },
-      { path: 'carrito', element: isDemoMode ? <CartPage /> : <RealCartPage /> },
+      { path: 'carrito', element: <CartPage /> },
       { path: 'checkout', element: isDemoMode ? <CheckoutPage /> : <RequireSession><RealCheckoutPage/></RequireSession> },
       { path: 'cliente/compras/:id', element: <RequireSession><GroupCheckoutPage/></RequireSession> },
     ],
