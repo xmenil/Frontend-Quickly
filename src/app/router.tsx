@@ -14,6 +14,8 @@ import { AdminOperationsLayout, RealAdminOverviewPage, AdminRequestsPage, RealAd
 import { RealCatalogPage, RealMerchantsPage, RealProductDetailPage } from '../features/catalog/RealCatalogPages';
 import { RealMerchantProductsPage } from '../features/merchant/RealMerchantProductsPage';
 import {RealCartPage,RealCheckoutPage} from '../features/checkout/RealShoppingPages';
+import {GroupCheckoutPage} from '../features/checkout/GroupCheckoutPage';
+import {OperationalHealthPage} from '../features/operations/OperationalHealthPage';
 import {RealOrdersPage,RealOrderDetailPage} from '../features/orders/RealOrderPages';
 
 const pending = <PendingIntegrationPage />;
@@ -89,6 +91,7 @@ export const router = createBrowserRouter([
       { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : <RealProductDetailPage /> },
       { path: 'carrito', element: isDemoMode ? <CartPage /> : <RealCartPage /> },
       { path: 'checkout', element: isDemoMode ? <CheckoutPage /> : <RequireSession><RealCheckoutPage/></RequireSession> },
+      { path: 'cliente/compras/:id', element: <RequireSession><GroupCheckoutPage/></RequireSession> },
     ],
   },
 
@@ -161,6 +164,7 @@ export const router = createBrowserRouter([
     children: [{ element: isDemoMode ? <Outlet /> : <AdminOperationsLayout />, children: [
       { index: true, element: <Navigate to="/admin/resumen" replace /> },
       { path: 'resumen', element: isDemoMode ? <AdminOverviewPage /> : <RealAdminOverviewPage /> },
+      { path: 'operacion', element: isDemoMode ? pending : <OperationalHealthPage/> },
       { path: 'usuarios', element: isDemoMode ? <AdminUsersPage /> : <RealAdminUsersPage /> },
       { path: 'comercios', element: isDemoMode ? <AdminMerchantsPage /> : <AdminRequestsPage key="stores" kind="stores" /> },
       { path: 'repartidores', element: isDemoMode ? <AdminCouriersPage /> : <AdminRequestsPage key="couriers" kind="couriers" /> },

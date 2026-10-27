@@ -2,7 +2,11 @@
 
 Frontend React de **Quickly**, una plataforma web de delivery para **Tingo María, Rupa Rupa, provincia de Leoncio Prado, Huánuco, Perú**. F1 integra registro, login, restauración/cierre de sesión y perfil con la API NestJS y PostgreSQL en Docker. El prototipo completo se conserva en un modo demo explícito.
 
-## Estado actual: F2
+## Estado actual: F0–F5 y multitienda F7
+
+Carrito real permite seleccionar productos de varias tiendas, cotizar envíos por tienda y confirmar una vez. Cada tienda genera su pedido/entrega/cobro independiente, con efectivo exacto previsto por entrega y recuperación segura de la misma confirmación. Resumen en `/cliente/compras/:id`; cancelación y seguimiento por pedido. Una tienda conserva el flujo de efectivo con cambio de F4.
+
+Pasarela F6 pendiente por decisión del usuario. Google, GPS, promociones, carrito remoto y liquidaciones de F7 pendientes. Reglas y evidencia actualizadas se conservan en el workspace versionado del backend (`docs/workspace/docs/harness/`). No se declara piloto/despliegue real completado.
 
 Entrega de desarrollo en rama `feat/integracion-backend-f0-f2`, sin fusionar a `main`. El plan completo, decisiones, evidencia y pasos para continuar están en [el relevo del backend](https://github.com/xmenil/Quickly-backend/blob/main/docs/RELEVO_F2.md). Clonar backend y frontend como carpetas hermanas para ejecutar el harness conjunto.
 
@@ -27,6 +31,10 @@ Para el prototipo anterior: `npm run dev:demo`, en `http://localhost:5175`. Este
 - El workflow frontend valida contrato local, compilación y pruebas. El E2E integrado requiere ambos repositorios; su ejecución remota depende de disponer de ambos checkouts.
 
 ### Despliegue
+
+F8 incorpora Dockerfile y `deploy/Caddyfile` para servir el build real y `/api` en el mismo origen HTTPS junto con `backend/deploy/compose.staging.yml`. Ensayo aislado desde backend: `npm run test:staging`. Verifica cookie Secure/HttpOnly, CSRF, SPA, monitor administrativo y persistencia tras reiniciar API. No cambia el despliegue actual de main ni publica automáticamente.
+
+Administración añade `/admin/operacion` para avisos reales de outbox, vencimientos y pool. Staging público/piloto, alertas externas, copias remotas y correcciones mayores de dependencias siguen pendientes; revisar `docs/workspace/docs/harness/` en backend.
 
 La integración se verifica localmente mediante proxy del mismo origen. Antes de publicar la versión real, configurar el proxy `/api` hacia el backend desplegado y HTTPS con `SESSION_COOKIE_SECURE=true`, junto con los orígenes exactos en `CORS_ORIGIN`. La reescritura SPA existente de Vercel no sustituye ese proxy: requiere su destino público cuando se despliegue la API. La validación en un staging público queda como requisito de despliegue antes del piloto.
 

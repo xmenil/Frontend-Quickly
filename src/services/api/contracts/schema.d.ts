@@ -1,5 +1,37 @@
 /** Generado desde OpenAPI. Ejecutar npm run contracts:sync; no editar manualmente. */
 export interface paths {
+    "/api/v1/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HealthController_live"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HealthController_ready"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1072,6 +1104,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/checkout/groups/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GroupCheckoutController_quote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkout/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GroupCheckoutController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/checkout-groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GroupCheckoutController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/group-checkout-attempts/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GroupCheckoutController_attempt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/courier/available-orders": {
         parameters: {
             query?: never;
@@ -1447,6 +1543,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OperationsController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/favorites": {
         parameters: {
             query?: never;
@@ -1617,6 +1729,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["SupportController_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BillingQueryController_methods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/purchases/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BillingQueryController_own"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2105,6 +2249,7 @@ export interface components {
             agreedFeeCents: number;
         };
         OrderSummaryDto: {
+            checkoutGroupId?: string | null;
             id: string;
             purchaseId: string;
             code: string;
@@ -2145,6 +2290,7 @@ export interface components {
             occurredAt: string;
         };
         OrderDetailDto: {
+            checkoutGroupId?: string | null;
             id: string;
             purchaseId: string;
             code: string;
@@ -2170,6 +2316,32 @@ export interface components {
         CourierChoiceDto: {
             userId: string;
             fullName: string;
+        };
+        GroupQuoteDto: {
+            stores: components["schemas"]["QuoteDto"][];
+            subtotalCents: number;
+            deliveryFeeCents: number;
+            totalCents: number;
+        };
+        GroupOrderDto: {
+            orderId: string;
+            purchaseId: string;
+            storeId: string;
+            storeName: string;
+            code: string;
+            status: string;
+            paymentStatus: string;
+            totalCents: number;
+            subtotalCents: number;
+            deliveryFeeCents: number;
+        };
+        GroupCheckoutDto: {
+            id: string;
+            createdAt: string;
+            totalCents: number;
+            deliveryFeeCents: number;
+            subtotalCents: number;
+            orders: components["schemas"]["GroupOrderDto"][];
         };
         DeliverCashDto: {
             expectedVersion: number;
@@ -2256,6 +2428,19 @@ export interface components {
             items: components["schemas"]["AuditItem"][];
             nextCursor: string | null;
         };
+        OperationsDto: {
+            checkedAt: string;
+            pendingEvents: number;
+            retryingEvents: number;
+            oldestPendingEventSeconds: number | null;
+            expiredPendingOrders: number;
+            activeAssignments: number;
+            openTickets: number;
+            poolTotal: number;
+            poolIdle: number;
+            poolWaiting: number;
+            alerts: string[];
+        };
         FavoriteItem: {
             id: string;
             /** @enum {string} */
@@ -2331,6 +2516,35 @@ export interface components {
             /** @enum {string} */
             priority: "low" | "normal" | "high";
         };
+        PaymentMethodDto: {
+            code: string;
+            label: string;
+            available: boolean;
+            unavailableReason: string | null;
+        };
+        RefundSummaryDto: {
+            id: string;
+            orderId: string;
+            amountCents: number;
+            /** @enum {string} */
+            status: "pending" | "processing" | "succeeded" | "failed";
+            createdAt: string;
+            succeededAt: string | null;
+        };
+        PaymentAttemptDto: {
+            id: string;
+            methodCode: string;
+            /** @enum {string} */
+            status: "pending" | "processing" | "succeeded" | "failed" | "cancelled";
+            amountCents: number;
+            createdAt: string;
+            succeededAt: string | null;
+            refunds: components["schemas"]["RefundSummaryDto"][];
+        };
+        PaymentHistoryDto: {
+            items: components["schemas"]["PaymentAttemptDto"][];
+            nextCursor: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -2340,6 +2554,40 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    HealthController_live: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    HealthController_ready: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     HealthController_getHealth: {
         parameters: {
             query?: never;
@@ -4336,6 +4584,96 @@ export interface operations {
             };
         };
     };
+    GroupCheckoutController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupQuoteDto"];
+                };
+            };
+        };
+    };
+    GroupCheckoutController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupCheckoutDto"];
+                };
+            };
+        };
+    };
+    GroupCheckoutController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupCheckoutDto"];
+                };
+            };
+        };
+    };
+    GroupCheckoutController_attempt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupCheckoutDto"];
+                };
+            };
+        };
+    };
     DeliveryController_listAvailableOrders: {
         parameters: {
             query?: never;
@@ -4856,6 +5194,25 @@ export interface operations {
             };
         };
     };
+    OperationsController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationsDto"];
+                };
+            };
+        };
+    };
     EngagementController_favorites: {
         parameters: {
             query?: {
@@ -5155,6 +5512,49 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    BillingQueryController_methods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodDto"][];
+                };
+            };
+        };
+    };
+    BillingQueryController_own: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentHistoryDto"];
+                };
             };
         };
     };

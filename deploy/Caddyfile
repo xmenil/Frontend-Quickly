@@ -1,0 +1,27 @@
+{$SITE_ADDRESS} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy same-origin
+    Strict-Transport-Security "max-age=31536000"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+    -Server
+  }
+  handle /api/* {
+    reverse_proxy api:3000 {
+      header_up X-Forwarded-For {remote_host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+    }
+  }
+  handle {
+    root * /srv
+    route {
+      try_files {path} /index.html
+      header /index.html Cache-Control "no-store"
+      file_server
+    }
+  }
+}
