@@ -56,6 +56,15 @@ export const INITIAL_ZONES: CoverageZone[] = [
 
 export const INITIAL_USERS: User[] = [
   {
+    id: 'u_cliente_tingo',
+    name: 'Nilver Valdivia (Cliente Tingo María)',
+    email: 'cliente.tingo@quickly.pe',
+    phone: '962 998 877',
+    role: 'cliente',
+    status: 'activo',
+    createdAt: '2026-03-01T08:00:00Z',
+  },
+  {
     id: 'u_cliente_demo',
     name: 'Nilver Valdivia',
     email: 'cliente@quickly.pe',
