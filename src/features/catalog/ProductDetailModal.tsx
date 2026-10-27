@@ -3,6 +3,7 @@ import { Dialog } from '../../components/ui/Dialog';
 import { Button } from '../../components/ui/Button';
 import { useRealCartStore } from '../../store/realCartStore';
 import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
+import { FavoriteButton } from '../engagement/RealEngagementPages';
 import { Plus, Minus, AlertCircle, ShoppingCart, Loader2, Store, Check } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -162,9 +163,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </p>
                 )}
               </div>
-              <span className="text-xl sm:text-2xl font-black text-primary whitespace-nowrap tabular-nums">
-                {money(unitPrice)}
-              </span>
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <span className="text-xl sm:text-2xl font-black text-primary whitespace-nowrap tabular-nums">
+                  {money(unitPrice)}
+                </span>
+                <FavoriteButton kind="product" id={currentProduct.id} />
+              </div>
             </div>
 
             {currentProduct.description && (

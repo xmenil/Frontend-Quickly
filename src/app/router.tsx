@@ -54,21 +54,6 @@ import { CustomerProfilePage } from '../features/customer/CustomerProfilePage';
 import { CustomerNotificationsPage } from '../features/customer/CustomerNotificationsPage';
 import { CustomerHelpPage } from '../features/customer/CustomerHelpPage';
 
-// Merchant
-// demo merchant pages removed
-
-
-
-
-
-
-// Courier
-// demo courier pages removed
-
-
-
-
-
 // Admin
 import { AdminOverviewPage } from '../features/admin/AdminOverviewPage';
 import { AdminUsersPage } from '../features/admin/AdminUsersPage';
@@ -111,18 +96,18 @@ export const router = createBrowserRouter([
   // Customer Protected Routes
   {
     path: 'cliente',
-    element: isDemoMode ? <CustomerLayout /> : <RequireSession><AccountLayout /></RequireSession>,
+    element: <RequireSession><AccountLayout /></RequireSession>,
     children: [
-      { path: 'pedidos', element: isDemoMode ? <CustomerOrdersPage /> : <RealOrdersPage kind="customer"/> },
-      { path: 'pedidos/:id', element: isDemoMode ? <OrderDetailPage /> : <RealOrderDetailPage kind="customer"/> },
-      { path: 'seguimiento/:id', element: isDemoMode ? <TrackingPage /> : <RealOrderDetailPage kind="customer"/> },
-      { path: 'direcciones', element: isDemoMode ? <CustomerAddressesPage /> : <RealAddressesPage /> },
-      { path: 'solicitudes', element: isDemoMode ? pending : <ApplicationsPage /> },
-      { path: 'favoritos', element: isDemoMode ? <CustomerFavoritesPage /> : <RealFavoritesPage/> },
-      { path: 'perfil', element: isDemoMode ? <CustomerProfilePage /> : <RealProfilePage /> },
-      { path: 'notificaciones', element: isDemoMode ? <CustomerNotificationsPage /> : <RealNotificationsPage/> },
+      { path: 'pedidos', element: <RealOrdersPage kind="customer"/> },
+      { path: 'pedidos/:id', element: <RealOrderDetailPage kind="customer"/> },
+      { path: 'seguimiento/:id', element: <RealOrderDetailPage kind="customer"/> },
+      { path: 'direcciones', element: <RealAddressesPage /> },
+      { path: 'solicitudes', element: <ApplicationsPage /> },
+      { path: 'favoritos', element: <RealFavoritesPage/> },
+      { path: 'perfil', element: <RealProfilePage /> },
+      { path: 'notificaciones', element: <RealNotificationsPage/> },
       { path: 'ayuda/:id', element: <RealTicketDetail/> },
-      { path: 'ayuda', element: isDemoMode ? <CustomerHelpPage /> : <RealTicketsPage/> },
+      { path: 'ayuda', element: <RealTicketsPage/> },
     ],
   },
 
@@ -161,21 +146,21 @@ export const router = createBrowserRouter([
   // Admin Routes
   {
     path: 'admin',
-    element: isDemoMode ? <AdminLayout /> : <RequireSession role="admin"><AccountLayout /></RequireSession>,
-    children: [{ element: isDemoMode ? <Outlet /> : <AdminOperationsLayout />, children: [
+    element: <RequireSession role="admin"><AccountLayout /></RequireSession>,
+    children: [{ element: <AdminOperationsLayout />, children: [
       { index: true, element: <Navigate to="/admin/resumen" replace /> },
-      { path: 'resumen', element: isDemoMode ? <AdminOverviewPage /> : <RealAdminOverviewPage /> },
-      { path: 'operacion', element: isDemoMode ? pending : <OperationalHealthPage/> },
-      { path: 'usuarios', element: isDemoMode ? <AdminUsersPage /> : <RealAdminUsersPage /> },
-      { path: 'comercios', element: isDemoMode ? <AdminMerchantsPage /> : <AdminRequestsPage key="stores" kind="stores" /> },
-      { path: 'repartidores', element: isDemoMode ? <AdminCouriersPage /> : <AdminRequestsPage key="couriers" kind="couriers" /> },
-      { path: 'pedidos', element: isDemoMode ? <AdminOrdersPage /> : <RealOrdersPage kind="admin"/> },
+      { path: 'resumen', element: <RealAdminOverviewPage /> },
+      { path: 'operacion', element: <OperationalHealthPage/> },
+      { path: 'usuarios', element: <RealAdminUsersPage /> },
+      { path: 'comercios', element: <AdminRequestsPage key="stores" kind="stores" /> },
+      { path: 'repartidores', element: <AdminRequestsPage key="couriers" kind="couriers" /> },
+      { path: 'pedidos', element: <RealOrdersPage kind="admin"/> },
       { path: 'pedidos/:id', element:<RealOrderDetailPage kind="admin"/> },
-      { path: 'zonas', element: isDemoMode ? <AdminZonesPage /> : <RealAdminZonesPage /> },
+      { path: 'zonas', element: <RealAdminZonesPage /> },
       { path: 'incidencias/:id', element: <RealTicketDetail admin/> },
-      { path: 'incidencias', element: isDemoMode ? <AdminTicketsPage /> : <RealTicketsPage admin/> },
-      { path: 'reportes', element: isDemoMode ? <AdminReportsPage /> : <RealReportsPage kind="admin"/> },
-      { path: 'auditoria', element: isDemoMode ? <AdminAuditPage /> : <RealAuditPage/> },
+      { path: 'incidencias', element: <RealTicketsPage admin/> },
+      { path: 'reportes', element: <RealReportsPage kind="admin"/> },
+      { path: 'auditoria', element: <RealAuditPage/> },
     ] }],
   },
 
