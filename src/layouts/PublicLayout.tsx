@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
-import { Outlet, useLocation, ScrollRestoration } from 'react-router-dom';
+import { Outlet, useLocation, ScrollRestoration, Link } from 'react-router-dom';
 import { Navbar } from '../components/shared/Navbar';
 import { MobileNav } from '../components/shared/MobileNav';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import {CatalogNavbar, CatalogMobileNav} from '../components/shared/CatalogNavbar';
-import {isDemoMode} from '../config/appMode';
-import {Link} from 'react-router-dom';
+import { isDemoMode } from '../config/appMode';
 
 export const PublicLayout: React.FC = () => {
   const { pathname } = useLocation();
@@ -19,19 +17,19 @@ export const PublicLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <ScrollRestoration />
-      {isDemoMode ? <Navbar /> : <CatalogNavbar />}
-      <main className={`flex-1 pb-24 md:pb-12 w-full ${!isDemoMode && pathname!=='/'?'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8':''}`}>
+      <Navbar />
+      <main className="flex-1 pb-24 md:pb-12 w-full">
         <Outlet />
       </main>
-      {isDemoMode ? <MobileNav /> : <CatalogMobileNav />}
-      {isDemoMode && !isCheckoutFlow && <DemoSwitcher />}
+      <MobileNav />
+      {!isCheckoutFlow && <DemoSwitcher />}
 
       {/* Footer */}
       <footer className="bg-white border-t border-border pt-10 pb-24 md:pb-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex flex-col items-center md:items-start">
-              <BrandLogo size="md" showSubtitle={isDemoMode} />
+              <BrandLogo size="md" showSubtitle={true} />
               <p className="text-xs text-ink-light mt-2 text-center md:text-left">
                 Plataforma de delivery para Tingo María, Rupa Rupa, provincia de Leoncio Prado, Huánuco, Perú.
               </p>
@@ -44,7 +42,7 @@ export const PublicLayout: React.FC = () => {
             </div>
             <div className="text-xs text-ink-light text-center md:text-right">
               <p>Quickly Delivery © 2026</p>
-              <p className="text-[11px] text-ink-light mt-0.5">{isDemoMode?'Demostración frontend simulada':'Pago en efectivo · Envío por tienda'}</p>
+              <p className="text-[11px] text-ink-light mt-0.5">{isDemoMode ? 'Demostración frontend simulada' : 'Pago en efectivo · Envío por tienda'}</p>
             </div>
           </div>
         </div>

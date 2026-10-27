@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useRealCartStore } from '../../store/realCartStore';
@@ -9,11 +9,9 @@ import { OfficialStoresSection } from '../../components/shared/OfficialStoresSec
 import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
 import {
   ArrowRight,
-  MapPin,
   Clock,
   Check,
   Bike,
-  Truck,
   ShoppingCart,
   Store,
   Sparkles,
@@ -22,36 +20,41 @@ import {
   PlusCircle,
   Shirt,
   Sprout,
-  Laptop,
   Heart,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Building2,
-  BadgeCheck,
 } from 'lucide-react';
 
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
 import heroSmartphoneView from '../../assets/img/image copy 4.png';
 
-interface CategoryItem {
-  id: string;
-  code: string;
-  name: string;
-}
-
 export function HomePage() {
-  const { isAuthenticated, currentUser, activeRole } = useAuthStore();
+  const { isAuthenticated, currentUser, activeRole, switchRole, loginDemo } = useAuthStore();
   const add = useRealCartStore((s) => s.add);
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<CatalogProduct[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
+
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setShowRoleMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 3 Slides con fotografías locales de Tingo María y micro-copys concisos estilo Rappi
   const heroSlides = [
@@ -62,7 +65,7 @@ export function HomePage() {
       title: 'Todo lo que necesitas, en un solo lugar',
       description:
         'Comida típica, abarrotes de Minisol, medicamentos y productos de la selva al instante.',
-      ctaText: 'Ver comercios',
+      ctaText: 'Ver categorías',
       ctaLink: '/negocios',
     },
     {
@@ -78,11 +81,11 @@ export function HomePage() {
     {
       id: 3,
       image: heroSmartphoneView,
-      badge: 'Supermercado Minisol & Boticas',
+      badge: 'Supermercado Minisol & Farmacias',
       title: 'Tus compras del hogar directo a tu puerta',
       description:
         'Abarrotes frescos, boticas y productos locales con entrega rápida y pago contra entrega en efectivo.',
-      ctaText: 'Explorar catálogo',
+      ctaText: 'Explorar comercios',
       ctaLink: '/negocios',
     },
   ];
@@ -95,18 +98,50 @@ export function HomePage() {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  // Load real categories, featured products, and zones from PostgreSQL
+  // 5 Categorías destacadas del prototipo v2 (Restaurantes, Bodegas, Farmacias, Ropa, Emprendedores)
+  const mainCategoryCards = [
+    {
+      id: 'restaurantes',
+      name: 'Restaurantes',
+      icon: <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=restaurantes',
+    },
+    {
+      id: 'bodegas',
+      name: 'Bodegas',
+      icon: <ShoppingCart className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=bodegas',
+    },
+    {
+      id: 'farmacias',
+      name: 'Farmacias',
+      icon: <PlusCircle className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=farmacias',
+    },
+    {
+      id: 'ropa',
+      name: 'Ropa',
+      icon: <Shirt className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=ropa',
+    },
+    {
+      id: 'emprendedores',
+      name: 'Emprendedores',
+      icon: <Sprout className="w-6 h-6 text-primary stroke-[2.2]" />,
+      link: '/negocios?categoria=emprendedores',
+    },
+  ];
+
+  // Load real featured products and zones from PostgreSQL
   useEffect(() => {
     let isMounted = true;
 
     Promise.all([
-      catalogApi.categories(),
       catalogApi.search({ limit: 4 }),
       operationsApi.zones(),
     ])
-      .then(([cats, prodRes, zonesRes]) => {
+      .then(([prodRes, zonesRes]) => {
         if (isMounted) {
-          setCategories(cats);
           setFeaturedProducts(prodRes.items);
           setZones(zonesRes.filter((z) => z.isActive));
           setLoadingFeatured(false);
@@ -121,25 +156,6 @@ export function HomePage() {
       isMounted = false;
     };
   }, []);
-
-  const getCategoryIcon = (code: string) => {
-    switch (code.toLowerCase()) {
-      case 'restaurantes':
-        return <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2.2]" />;
-      case 'bodegas':
-        return <ShoppingCart className="w-6 h-6 text-primary stroke-[2.2]" />;
-      case 'farmacias':
-        return <PlusCircle className="w-6 h-6 text-primary stroke-[2.2]" />;
-      case 'ropa':
-        return <Shirt className="w-6 h-6 text-primary stroke-[2.2]" />;
-      case 'emprendedores':
-        return <Sprout className="w-6 h-6 text-primary stroke-[2.2]" />;
-      case 'electrohogar':
-        return <Laptop className="w-6 h-6 text-primary stroke-[2.2]" />;
-      default:
-        return <Sparkles className="w-6 h-6 text-primary stroke-[2.2]" />;
-    }
-  };
 
   const handleAddFeatured = (e: React.MouseEvent, product: CatalogProduct) => {
     e.stopPropagation();
@@ -174,11 +190,11 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs sm:text-sm">
           <div className="inline-flex items-center gap-2 text-ink font-bold">
             <Clock className="w-4 h-4 text-ink flex-shrink-0 stroke-[2.2]" />
-            <span>Despachos locales en 20 - 35 min</span>
+            <span>Despachos en 20 - 35 min</span>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-ink-light">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Repartidores activos en Tingo María y Leoncio Prado</span>
+            <span>Repartidores activos en Leoncio Prado</span>
           </div>
         </div>
       </div>
@@ -254,18 +270,18 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Dynamic Category Cards from PostgreSQL catalogApi */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
-            {categories.slice(0, 6).map((cat) => (
+          {/* 5 Main Category Cards directly below banner (exacto a prototipo v2) */}
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+            {mainCategoryCards.map((cat) => (
               <Link
                 key={cat.id}
-                to={`/negocios?categoria=${encodeURIComponent(cat.code)}`}
+                to={cat.link}
                 className="bg-white hover:bg-emerald-50/40 border border-gray-150/80 hover:border-primary/50 rounded-2xl py-3 px-1 sm:py-4 sm:px-3 flex flex-col items-center justify-center gap-1.5 group transition-all duration-200 shadow-xs hover:shadow-subtle hover:-translate-y-0.5 active:scale-95 text-center"
               >
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-primary flex items-center justify-center group-hover:scale-105 group-hover:bg-primary group-hover:text-white shadow-2xs transition-all duration-200">
-                  {getCategoryIcon(cat.code)}
+                  {cat.icon}
                 </div>
-                <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full px-1">
+                <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full">
                   {cat.name}
                 </span>
               </Link>
@@ -274,23 +290,66 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Accesos Directos */}
-      <section className="w-full bg-white pt-2 pb-5 sm:pt-3 sm:pb-6">
+      {/* Section: Accesos directos con Switch de Rol (exacto a prototipo v2) */}
+      <section className="w-full bg-white pt-2 pb-5 sm:pt-3 sm:pb-6 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-              <h2 className="text-sm sm:text-base font-extrabold text-ink">Accesos rápidos</h2>
+              <h2 className="text-sm sm:text-base font-extrabold text-ink">Accesos directos</h2>
             </div>
 
-            {isAuthenticated && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-bold text-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Panel activo: {activeRole.toUpperCase()}</span>
-              </div>
-            )}
+            {/* Switch de Rol: Panel: CLIENTE ⌃ */}
+            <div className="relative" ref={roleMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowRoleMenu(!showRoleMenu)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-bold text-ink transition-all cursor-pointer shadow-2xs"
+                aria-label="Cambiar modo de vista o panel de demostración"
+              >
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                <span className="text-gray-500 font-normal">Panel:</span>
+                <span className="text-primary font-black uppercase tracking-wide">{activeRole}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown de Roles */}
+              {showRoleMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-floating border border-gray-100 p-2 z-40 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Cambiar Modo de Vista
+                  </div>
+                  {[
+                    { role: 'cliente', label: 'Cliente', desc: 'Catálogo y pedidos' },
+                    { role: 'comercio', label: 'Comercio', desc: 'Panel de tienda y menú' },
+                    { role: 'repartidor', label: 'Repartidor', desc: 'Rutas y entregas' },
+                    { role: 'admin', label: 'Admin', desc: 'Supervisión y zonas' },
+                  ].map((r) => (
+                    <button
+                      key={r.role}
+                      type="button"
+                      onClick={() => {
+                        loginDemo(r.role as any);
+                        switchRole(r.role as any);
+                        setShowRoleMenu(false);
+                      }}
+                      className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                        activeRole === r.role ? 'bg-emerald-50 text-primary font-bold' : 'hover:bg-gray-50 text-ink'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-bold capitalize">{r.label}</p>
+                        <p className="text-[10px] text-gray-400">{r.desc}</p>
+                      </div>
+                      {activeRole === r.role && <Check className="w-3.5 h-3.5 text-primary" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* 4 Action Pills (exacto a prototipo v2) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Link
               to="/negocios?q=oferta"
@@ -301,7 +360,7 @@ export function HomePage() {
                   %
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Ofertas del Día
+                  Ofertas
                 </span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -316,7 +375,7 @@ export function HomePage() {
                   <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Comercios
+                  Pedidos
                 </span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -331,7 +390,7 @@ export function HomePage() {
                   <Clock className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Mis Pedidos
+                  Mis pedidos
                 </span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -449,44 +508,40 @@ export function HomePage() {
                             <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
                               {item.storeName}
                             </span>
-                            <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
                           </div>
 
-                          <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                hasStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
-                              }`}
-                            />
-                            <span>{hasStock ? 'En stock' : 'Agotado'}</span>
-                          </div>
+                          <span className={`text-[10px] font-bold ${hasStock ? 'text-primary' : 'text-gray-400'}`}>
+                            {hasStock ? 'En stock' : 'Agotado'}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Bottom Row */}
-                      <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
-                        <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
-                          {money(price)}
-                        </span>
+                      {/* Price & Add to Cart button */}
+                      <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-gray-100/70">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-ink-light">Precio contado</span>
+                          <span className="font-black text-sm sm:text-base text-ink">
+                            {money(price)}
+                          </span>
+                        </div>
 
                         <button
                           type="button"
-                          disabled={!hasStock}
                           onClick={(e) => handleAddFeatured(e, item)}
-                          title="Agregar al carrito"
-                          aria-label={`Agregar ${item.name} al carrito`}
-                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                          disabled={!hasStock}
+                          className={`p-2 rounded-xl transition-all cursor-pointer ${
                             isJustAdded
-                              ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                              ? 'bg-emerald-600 text-white scale-105'
                               : hasStock
-                              ? 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
-                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
+                          aria-label={`Agregar ${item.name} al carrito`}
                         >
                           {isJustAdded ? (
                             <Check className="w-4 h-4 stroke-[3]" />
                           ) : (
-                            <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <ShoppingCart className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -499,52 +554,41 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Bottom 3 Cards Row: Dirección de entrega | Cobertura & Tarifas | Mis pedidos */}
-      <section className="w-full bg-emerald-50/20 border-b border-emerald-100/50 py-8 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {/* Card 1: Dirección de entrega */}
+      {/* Information Cards: Cobertura, Entrega y Seguridad */}
+      <section className="w-full bg-emerald-50/30 py-8 sm:py-10 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="text-center max-w-xl mx-auto space-y-1">
+            <h3 className="text-lg sm:text-xl font-black text-ink">
+              Compras seguras en la Bella Durmiente
+            </h3>
+            <p className="text-xs text-ink-light">
+              Logística local transparente para comercios, repartidores y familias tingalesas.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Card 1: Dirección */}
             <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-ink">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span>Dirección de entrega</span>
-                </div>
+                <span className="font-bold text-ink">Direcciones guardadas</span>
                 <Link to="/cliente/direcciones" className="text-primary hover:underline font-semibold">
-                  Gestionar
+                  Gestionar <ArrowRight className="w-3 h-3 inline" />
                 </Link>
               </div>
 
-              <p className="text-xs text-ink font-medium">
-                Tingo María (Zona de cobertura Leoncio Prado)
-              </p>
-
-              {/* Stylized Schematic Mini Map */}
-              <div className="rounded-xl overflow-hidden border border-gray-100 relative h-32 bg-sky-50/50 flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 0 300 150" fill="none">
-                  <rect width="300" height="150" fill="#f8fafc" />
-                  <line x1="0" y1="75" x2="300" y2="75" stroke="#e2e8f0" strokeWidth="12" />
-                  <line x1="150" y1="0" x2="150" y2="150" stroke="#e2e8f0" strokeWidth="10" />
-                  <line x1="50" y1="0" x2="250" y2="150" stroke="#f1f5f9" strokeWidth="8" />
-                  <path
-                    d="M 230 0 Q 250 80 270 150"
-                    stroke="#bae6fd"
-                    strokeWidth="16"
-                    fill="none"
-                  />
-                </svg>
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="px-2 py-0.5 rounded-full bg-white shadow-subtle border border-gray-100 text-[10px] font-bold text-ink flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Río Huallaga • Centro
-                  </div>
-                  <MapPin className="w-5 h-5 text-primary fill-primary-100 -mt-0.5 animate-bounce" />
+              <div className="space-y-2 py-1 text-xs">
+                <p className="text-gray-600 leading-relaxed">
+                  Registra tus puntos de entrega frecuentes (casa, trabajo o negocio) con referencias
+                  claras de tu barrio en Tingo María.
+                </p>
+                <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[11px] text-ink flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="font-medium truncate">Centro, Castillo Grande, Supte San Jorge</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Cobertura & Tarifas Reales */}
+            {/* Card 2: Cobertura PostgreSQL */}
             <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-ink">
