@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, UserRole } from '../domain/types';
+import { User, UserRole, UserStatus } from '../domain/types';
 import { INITIAL_USERS } from '../mocks/initialData';
 import { safeJsonParse } from '../lib/utils';
 
@@ -9,8 +9,12 @@ interface AuthState {
   isAuthenticated: boolean;
   loginDemo: (role: UserRole) => void;
   login: (identifier: string, roleHint?: UserRole) => { success: boolean; message?: string; user?: User };
+  loginWithApi: (credentialsOrEmail: { email: string; password?: string } | string, password?: string) => Promise<{ success: boolean; message?: string; user?: User }>;
   loginGoogle: () => { success: boolean; user: User };
+  loginGoogleWithToken: (idToken: string, phone?: string) => Promise<{ success: boolean; message?: string; user?: User }>;
+  sendVerificationCode: (email: string) => Promise<{ success: boolean; message: string; devCode?: string }>;
   registerCustomer: (data: { name: string; email: string; phone: string }) => { success: boolean; user: User };
+  registerCustomerWithApi: (data: { name: string; email: string; phone: string; password?: string; verificationCode?: string }) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   switchMerchant: (merchantId: string) => void;
@@ -18,6 +22,41 @@ interface AuthState {
 }
 
 const STORAGE_KEY = 'quickly_auth_v1';
+
+export function mapBackendUserToFrontend(dto: any): User {
+  const roleMap: Record<string, UserRole> = {
+    customer: 'cliente',
+    merchant: 'comercio',
+    courier: 'repartidor',
+    admin: 'admin',
+    cliente: 'cliente',
+    comercio: 'comercio',
+    repartidor: 'repartidor',
+  };
+  const statusMap: Record<string, UserStatus> = {
+    active: 'activo',
+    pending: 'pendiente_aprobacion',
+    suspended: 'suspendido',
+    activo: 'activo',
+  };
+
+  const primaryRole = (dto.roles && dto.roles.length > 0) ? (roleMap[dto.roles[0]] || 'cliente') : 'cliente';
+  const status = statusMap[dto.status] || 'activo';
+  const merchantId = (dto.memberships && dto.memberships.length > 0) ? dto.memberships[0].storeId : undefined;
+
+  return {
+    id: dto.id,
+    name: dto.fullName || dto.name || 'Usuario Quickly',
+    email: dto.email,
+    phone: dto.phone || '962 123 456',
+    role: primaryRole,
+    status,
+    avatarUrl: dto.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    merchantId,
+    courierId: dto.courierId || undefined,
+    createdAt: dto.createdAt || new Date().toISOString(),
+  };
+}
 
 function getStoredUser(): User | null {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -31,6 +70,129 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   currentUser: initialUser,
   activeRole: initialUser?.role || 'cliente',
   isAuthenticated: Boolean(initialUser),
+
+  sendVerificationCode: async (email: string) => {
+    try {
+      const res = await fetch('/api/v1/auth/verification-code/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Error al enviar código' };
+      }
+      return { success: true, message: data.message, devCode: data.devCode };
+    } catch {
+      return { success: false, message: 'No se pudo conectar con el servidor. Revisa tu conexión.' };
+    }
+  },
+
+  registerCustomerWithApi: async (data: { name: string; email: string; phone: string; password?: string; verificationCode?: string }) => {
+    try {
+      const cleanPhone = data.phone.replace(/\D/g, '');
+      const e164Phone = cleanPhone.startsWith('51') ? `+${cleanPhone}` : `+51${cleanPhone}`;
+      const res = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: data.name.trim(),
+          email: data.email.trim().toLowerCase(),
+          phone: e164Phone,
+          password: data.password || 'Password123!',
+          verificationCode: data.verificationCode?.trim(),
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        return { success: false, message: resData.message || 'Error al registrar la cuenta' };
+      }
+      const frontendUser = mapBackendUserToFrontend(resData.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.csrfToken) {
+        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+      }
+      set({
+        currentUser: frontendUser,
+        activeRole: frontendUser.role,
+        isAuthenticated: true,
+      });
+      return { success: true, user: frontendUser };
+    } catch {
+      // Fallback to local store if backend unreachable
+      return { success: true, user: get().registerCustomer(data).user };
+    }
+  },
+
+  loginGoogleWithToken: async (idToken: string, phone?: string) => {
+    try {
+      const res = await fetch('/api/v1/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, phone }),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        return { success: false, message: resData.message || 'Error al autenticar con Google' };
+      }
+      const frontendUser = mapBackendUserToFrontend(resData.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.csrfToken) {
+        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+      }
+      set({
+        currentUser: frontendUser,
+        activeRole: frontendUser.role,
+        isAuthenticated: true,
+      });
+      return { success: true, user: frontendUser };
+    } catch {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  },
+
+  loginWithApi: async (
+    credentialsOrEmail: { email: string; password?: string } | string,
+    passwordParam?: string
+  ) => {
+    const email =
+      typeof credentialsOrEmail === 'string'
+        ? credentialsOrEmail
+        : credentialsOrEmail.email;
+    const password =
+      typeof credentialsOrEmail === 'string'
+        ? passwordParam || 'Password123!'
+        : credentialsOrEmail.password || 'Password123!';
+
+    try {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        return { success: false, message: resData.message || 'Correo o contraseña incorrectos' };
+      }
+      const frontendUser = mapBackendUserToFrontend(resData.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.csrfToken) {
+        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+      }
+      set({
+        currentUser: frontendUser,
+        activeRole: frontendUser.role,
+        isAuthenticated: true,
+      });
+      return { success: true, user: frontendUser };
+    } catch {
+      // Fallback to local demo login
+      return get().login(email);
+    }
+  },
 
   loginDemo: (role: UserRole) => {
     const user = INITIAL_USERS.find(u => u.role === role && u.status === 'activo') || INITIAL_USERS[0];

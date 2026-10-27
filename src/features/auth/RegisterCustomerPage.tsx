@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { Eye, EyeOff, CheckCircle2, Mail, Phone, Lock, User, Store, Bike, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Mail, Phone, Lock, User, Store, Bike, AlertCircle, RefreshCw } from 'lucide-react';
+import { promptGoogleLogin } from '../../lib/googleAuth';
+import { EmailVerificationModal } from '../../components/auth/EmailVerificationModal';
+import { GoogleConfigModal } from '../../components/auth/GoogleConfigModal';
 
 interface FieldErrors {
   name?: string;
@@ -11,7 +14,7 @@ interface FieldErrors {
 }
 
 export const RegisterCustomerPage: React.FC = () => {
-  const { registerCustomer, loginGoogle } = useAuthStore();
+  const { registerCustomerWithApi, sendVerificationCode, loginGoogleWithToken, loginGoogle } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,6 +32,13 @@ export const RegisterCustomerPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Email verification modal state
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [devCode, setDevCode] = useState<string | undefined>(undefined);
+
+  // Google setup modal state
+  const [isGoogleConfigOpen, setIsGoogleConfigOpen] = useState(false);
 
   // Helper validation
   const validateForm = (): boolean => {
@@ -63,7 +73,7 @@ export const RegisterCustomerPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
 
@@ -71,30 +81,72 @@ export const RegisterCustomerPage: React.FC = () => {
       return;
     }
 
-    const cleanPhone = phone.replace(/\D/g, '');
-
     setIsLoading(true);
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // Enviar código de verificación al correo para validar existencia
+    const res = await sendVerificationCode(trimmedEmail);
+    setIsLoading(false);
+
+    if (!res.success) {
+      if (res.message?.includes('Ya existe')) {
+        setErrors((prev) => ({
+          ...prev,
+          email: 'Ya existe una cuenta con este correo. Inicia sesión en su lugar.',
+        }));
+      } else {
+        setGeneralError(res.message || 'No se pudo enviar el código de verificación.');
+      }
+      return;
+    }
+
+    setDevCode(res.devCode);
+    setIsVerificationModalOpen(true);
+  };
+
+  const handleVerifyCode = async (code: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const res = await registerCustomerWithApi({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: `+51 ${cleanPhone}`,
+      password,
+      verificationCode: code,
+    });
+
+    if (!res.success) {
+      return { success: false, message: res.message || 'Código incorrecto o expirado.' };
+    }
+
+    setIsVerificationModalOpen(false);
+    setIsSuccess(true);
     setTimeout(() => {
-      registerCustomer({
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: `+51 ${cleanPhone}`,
-      });
-      setIsLoading(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        navigate(from !== '/login' ? from : '/', { replace: true });
-      }, 900);
-    }, 450);
+      navigate(from !== '/login' ? from : '/', { replace: true });
+    }, 900);
+    return { success: true };
+  };
+
+  const handleResendCode = async () => {
+    return sendVerificationCode(email.trim().toLowerCase());
   };
 
   const handleGoogleRegister = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      loginGoogle();
-      setIsLoading(false);
-      navigate(from !== '/login' ? from : '/', { replace: true });
-    }, 350);
+    promptGoogleLogin(
+      async (credential) => {
+        setIsLoading(true);
+        const cleanPhone = phone.replace(/\D/g, '');
+        const res = await loginGoogleWithToken(credential, cleanPhone ? `+51${cleanPhone}` : undefined);
+        setIsLoading(false);
+        if (res.success) {
+          navigate(from !== '/login' ? from : '/', { replace: true });
+        } else {
+          setGeneralError(res.message || 'No se pudo completar el registro con Google');
+        }
+      },
+      () => {
+        setIsGoogleConfigOpen(true);
+      }
+    );
   };
 
   return (
@@ -405,6 +457,27 @@ export const RegisterCustomerPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={isVerificationModalOpen}
+        email={email}
+        devCode={devCode}
+        onClose={() => setIsVerificationModalOpen(false)}
+        onVerify={handleVerifyCode}
+        onResend={handleResendCode}
+        onEditEmail={() => setIsVerificationModalOpen(false)}
+      />
+
+      {/* Google Setup Guide Modal */}
+      <GoogleConfigModal
+        isOpen={isGoogleConfigOpen}
+        onClose={() => setIsGoogleConfigOpen(false)}
+        onContinueDemo={() => {
+          loginGoogle();
+          navigate(from !== '/login' ? from : '/', { replace: true });
+        }}
+      />
     </div>
   );
 };

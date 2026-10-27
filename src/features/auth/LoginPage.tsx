@@ -3,6 +3,8 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../domain/types';
 import { Dialog } from '../../components/ui/Dialog';
+import { promptGoogleLogin } from '../../lib/googleAuth';
+import { GoogleConfigModal } from '../../components/auth/GoogleConfigModal';
 import {
   Mail,
   Phone,
@@ -71,7 +73,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 ];
 
 export const LoginPage: React.FC = () => {
-  const { login, loginGoogle } = useAuthStore();
+  const { login, loginWithApi, loginGoogle, loginGoogleWithToken } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -88,6 +90,9 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+
+  // Google setup guide modal state
+  const [isGoogleConfigOpen, setIsGoogleConfigOpen] = useState(false);
 
   // Status modal for pending/suspended accounts
   const [statusModal, setStatusModal] = useState<{
@@ -116,7 +121,7 @@ export const LoginPage: React.FC = () => {
     }, 350);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim()) {
       setError('Ingresa tu celular o correo electrónico.');
@@ -131,6 +136,34 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setLoadingMessage('Verificando credenciales...');
 
+    // Si es un correo electrónico, intentar primero con la API real del backend
+    if (identifier.includes('@')) {
+      const apiResult = await loginWithApi({
+        email: identifier.trim().toLowerCase(),
+        password,
+      });
+
+      if (apiResult.success) {
+        setIsLoading(false);
+        setLoadingMessage(null);
+        navigate(from !== '/login' ? from : '/', { replace: true });
+        return;
+      }
+
+      // Si la API devolvió un mensaje de error específico
+      if (
+        apiResult.message &&
+        !apiResult.message.includes('servidor') &&
+        !apiResult.message.includes('conexión')
+      ) {
+        setIsLoading(false);
+        setLoadingMessage(null);
+        setError(apiResult.message);
+        return;
+      }
+    }
+
+    // Fallback con cuentas demo locales si no es email o si no hay backend disponible
     setTimeout(() => {
       // Determine probable role if using known demo email or default to cliente
       const matchedDemo = DEMO_ACCOUNTS.find(
@@ -172,14 +205,23 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
-    setIsLoading(true);
-    setLoadingMessage('Conectando con Google...');
-    setTimeout(() => {
-      loginGoogle();
-      setIsLoading(false);
-      setLoadingMessage(null);
-      navigate(from !== '/login' ? from : '/', { replace: true });
-    }, 350);
+    promptGoogleLogin(
+      async (credential) => {
+        setIsLoading(true);
+        setLoadingMessage('Validando cuenta con Google...');
+        const res = await loginGoogleWithToken(credential);
+        setIsLoading(false);
+        setLoadingMessage(null);
+        if (res.success) {
+          navigate(from !== '/login' ? from : '/', { replace: true });
+        } else {
+          setError(res.message || 'No se pudo iniciar sesión con Google.');
+        }
+      },
+      () => {
+        setIsGoogleConfigOpen(true);
+      }
+    );
   };
 
   return (
@@ -483,6 +525,12 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
       </Dialog>
+
+      {/* Google Cloud OAuth Configuration Guide Modal */}
+      <GoogleConfigModal
+        isOpen={isGoogleConfigOpen}
+        onClose={() => setIsGoogleConfigOpen(false)}
+      />
     </div>
   );
 };
