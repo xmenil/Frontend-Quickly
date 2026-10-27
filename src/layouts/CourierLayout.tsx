@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { Button } from '../components/ui/Button';
@@ -9,10 +9,28 @@ import { useDataStore } from '../store/dataStore';
 import { ClipboardList, Navigation, History, DollarSign, User, MapPin, Power, AlertCircle } from 'lucide-react';
 
 export const CourierLayout: React.FC = () => {
-  const { currentUser } = useAuthStore();
+  const { currentUser, isAuthenticated } = useAuthStore();
   const { couriers, toggleCourierAvailability } = useDataStore();
   const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [availabilityError, setAvailabilityError] = useState('');
+  const location = useLocation();
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <Navigate
+        to="/login"
+        state={{
+          from: location.pathname,
+          message: 'Inicia sesión con tu cuenta de repartidor para acceder al panel',
+        }}
+        replace
+      />
+    );
+  }
+
+  if (currentUser.role !== 'repartidor' && currentUser.role !== 'admin') {
+    return <Navigate to="/acceso-denegado" replace />;
+  }
   const currentCourier =
     couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
     couriers[0];

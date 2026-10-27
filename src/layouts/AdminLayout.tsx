@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { Button } from '../components/ui/Button';
@@ -22,12 +22,30 @@ import {
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
-  const { currentUser, logout } = useAuthStore();
+  const { currentUser, isAuthenticated, logout } = useAuthStore();
   const { users, tickets } = useDataStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <Navigate
+        to="/login"
+        state={{
+          from: location.pathname,
+          message: 'Inicia sesión como administrador para acceder a este panel',
+        }}
+        replace
+      />
+    );
+  }
+
+  if (currentUser.role !== 'admin') {
+    return <Navigate to="/acceso-denegado" replace />;
+  }
 
   const pendingApprovalsCount = users.filter((u) => u.status === 'pendiente_aprobacion').length;
   const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;

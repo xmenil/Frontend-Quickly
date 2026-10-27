@@ -72,6 +72,20 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   },
 ];
 
+export function getRoleDefaultPath(role?: UserRole): string {
+  switch (role) {
+    case 'admin':
+      return '/admin/resumen';
+    case 'comercio':
+      return '/comercio/tienda';
+    case 'repartidor':
+      return '/repartidor/solicitudes';
+    case 'cliente':
+    default:
+      return '/';
+  }
+}
+
 export const LoginPage: React.FC = () => {
   const { login, loginWithApi, loginGoogle, loginGoogleWithToken } = useAuthStore();
   const navigate = useNavigate();
@@ -105,20 +119,36 @@ export const LoginPage: React.FC = () => {
   const cleanDigits = identifier.replace(/\D/g, '');
   const isPhone = cleanDigits.length === 9 && cleanDigits.startsWith('9');
 
-  const handleQuickDemoLogin = (acc: DemoAccount) => {
+  const handleQuickDemoLogin = async (acc: DemoAccount) => {
     setIdentifier(acc.identifier);
     setPassword(acc.passwordDefault);
     setError(null);
     setIsLoading(true);
     setLoadingMessage(`Ingresando como ${acc.title}...`);
 
-    setTimeout(() => {
-      login(acc.identifier, acc.role);
-      setIsLoading(false);
-      setLoadingMessage(null);
-      const destination = acc.role === 'cliente' ? (from !== '/login' ? from : '/') : acc.targetPath;
+    // Intentar autenticación real con la API del backend
+    const apiResult = await loginWithApi({
+      email: acc.identifier,
+      password: acc.passwordDefault,
+    });
+
+    setIsLoading(false);
+    setLoadingMessage(null);
+
+    if (apiResult.success) {
+      const destination =
+        from && from !== '/login' && from !== '/'
+          ? from
+          : getRoleDefaultPath(apiResult.user?.role || acc.role);
       navigate(destination, { replace: true });
-    }, 350);
+      return;
+    }
+
+    // Fallback con almacenamiento demo local
+    login(acc.identifier, acc.role);
+    const destination =
+      from && from !== '/login' && from !== '/' ? from : acc.targetPath;
+    navigate(destination, { replace: true });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,7 +176,11 @@ export const LoginPage: React.FC = () => {
       if (apiResult.success) {
         setIsLoading(false);
         setLoadingMessage(null);
-        navigate(from !== '/login' ? from : '/', { replace: true });
+        const destination =
+          from && from !== '/login' && from !== '/'
+            ? from
+            : getRoleDefaultPath(apiResult.user?.role || 'cliente');
+        navigate(destination, { replace: true });
         return;
       }
 
@@ -176,10 +210,11 @@ export const LoginPage: React.FC = () => {
       setLoadingMessage(null);
 
       if (result.success) {
+        const assignedRole = result.user?.role || roleHint;
         const destination =
-          result.user?.role === 'cliente'
-            ? from !== '/login' ? from : '/'
-            : DEMO_ACCOUNTS.find((a) => a.role === result.user?.role)?.targetPath || '/';
+          from && from !== '/login' && from !== '/'
+            ? from
+            : getRoleDefaultPath(assignedRole);
 
         navigate(destination, { replace: true });
       } else {

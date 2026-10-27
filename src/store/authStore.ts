@@ -40,7 +40,24 @@ export function mapBackendUserToFrontend(dto: any): User {
     activo: 'activo',
   };
 
-  const primaryRole = (dto.roles && dto.roles.length > 0) ? (roleMap[dto.roles[0]] || 'cliente') : 'cliente';
+  // Priorizar roles operativos con mayores privilegios sobre el rol base cliente
+  let primaryRole: UserRole = 'cliente';
+  if (dto.roles && Array.isArray(dto.roles)) {
+    if (dto.roles.includes('admin')) {
+      primaryRole = 'admin';
+    } else if (dto.roles.includes('merchant') || dto.roles.includes('comercio')) {
+      primaryRole = 'comercio';
+    } else if (dto.roles.includes('courier') || dto.roles.includes('repartidor')) {
+      primaryRole = 'repartidor';
+    } else if (dto.roles.includes('customer') || dto.roles.includes('cliente')) {
+      primaryRole = 'cliente';
+    } else if (dto.roles[0]) {
+      primaryRole = roleMap[dto.roles[0]] || 'cliente';
+    }
+  } else if (dto.role) {
+    primaryRole = roleMap[dto.role] || 'cliente';
+  }
+
   const status = statusMap[dto.status] || 'activo';
   const merchantId = (dto.memberships && dto.memberships.length > 0) ? dto.memberships[0].storeId : undefined;
 

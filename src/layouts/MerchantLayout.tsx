@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
 import { DemoSwitcher } from '../components/shared/DemoSwitcher';
 import { useAuthStore } from '../store/authStore';
@@ -21,11 +21,29 @@ import {
 } from 'lucide-react';
 
 export const MerchantLayout: React.FC = () => {
-  const { currentUser, logout, switchMerchant } = useAuthStore();
+  const { currentUser, isAuthenticated, logout, switchMerchant } = useAuthStore();
   const { merchants, purchases } = useDataStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <Navigate
+        to="/login"
+        state={{
+          from: location.pathname,
+          message: 'Inicia sesión con tu cuenta de comercio para acceder al panel',
+        }}
+        replace
+      />
+    );
+  }
+
+  if (currentUser.role !== 'comercio' && currentUser.role !== 'admin') {
+    return <Navigate to="/acceso-denegado" replace />;
+  }
 
   // Find merchant belonging to current user (prioritize explicit active merchantId)
   const currentMerchant =
