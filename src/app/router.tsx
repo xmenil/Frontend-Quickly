@@ -55,12 +55,12 @@ import { CustomerNotificationsPage } from '../features/customer/CustomerNotifica
 import { CustomerHelpPage } from '../features/customer/CustomerHelpPage';
 
 // Merchant
-import { MerchantDashboardPage } from '../features/merchant/MerchantDashboardPage';
-import { MerchantStorePage } from '../features/merchant/MerchantStorePage';
-import { MerchantProductsPage } from '../features/merchant/MerchantProductsPage';
-import { MerchantOrdersPage } from '../features/merchant/MerchantOrdersPage';
-import { MerchantReportsPage } from '../features/merchant/MerchantReportsPage';
-import { MerchantSettingsPage } from '../features/merchant/MerchantSettingsPage';
+// demo merchant pages removed
+
+
+
+
+
 
 // Courier
 import { CourierRequestsPage } from '../features/courier/CourierRequestsPage';
@@ -129,17 +129,17 @@ export const router = createBrowserRouter([
   // Merchant Routes
   {
     path: 'comercio',
-    element: isDemoMode ? <MerchantLayout /> : <RequireSession role="comercio"><AccountLayout /></RequireSession>,
+    element: <RequireSession role="comercio"><AccountLayout /></RequireSession>,
     children: [
       { index: true, element: <Navigate to="/comercio/tienda" replace /> },
-      { path: 'tienda', element: isDemoMode ? <MerchantDashboardPage /> : <StoreManagementPage /> },
-      { path: 'perfil-tienda', element: isDemoMode ? <MerchantStorePage /> : <Navigate to="/comercio/tienda" replace /> },
-      { path: 'productos', element: isDemoMode ? <MerchantProductsPage /> : <RealMerchantProductsPage /> },
-      { path: 'pedidos', element: isDemoMode ? <MerchantOrdersPage /> : <RealOrdersPage kind="merchant"/> },
+      { path: 'tienda', element: <StoreManagementPage /> },
+      { path: 'perfil-tienda', element: <Navigate to="/comercio/tienda" replace /> },
+      { path: 'productos', element: <RealMerchantProductsPage /> },
+      { path: 'pedidos', element: <RealOrdersPage kind="merchant"/> },
       { path: 'pedidos/:id', element:<RealOrderDetailPage kind="merchant"/> },
-      { path: 'reportes', element: isDemoMode ? <MerchantReportsPage /> : <RealReportsPage kind="merchant"/> },
+      { path: 'reportes', element: <RealReportsPage kind="merchant"/> },
       { path: 'resumen', element: <RealReportsPage kind="merchant"/> },
-      { path: 'configuracion', element: isDemoMode ? <MerchantSettingsPage /> : <Navigate to="/comercio/tienda" replace /> },
+      { path: 'configuracion', element: <Navigate to="/comercio/tienda" replace /> },
     ],
   },
 
