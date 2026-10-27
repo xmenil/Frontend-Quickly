@@ -63,11 +63,11 @@ import { CustomerHelpPage } from '../features/customer/CustomerHelpPage';
 
 
 // Courier
-import { CourierRequestsPage } from '../features/courier/CourierRequestsPage';
-import { CourierActiveDeliveryPage } from '../features/courier/CourierActiveDeliveryPage';
-import { CourierHistoryPage } from '../features/courier/CourierHistoryPage';
-import { CourierEarningsPage } from '../features/courier/CourierEarningsPage';
-import { CourierProfilePage } from '../features/courier/CourierProfilePage';
+// demo courier pages removed
+
+
+
+
 
 // Admin
 import { AdminOverviewPage } from '../features/admin/AdminOverviewPage';
@@ -146,15 +146,15 @@ export const router = createBrowserRouter([
   // Courier Routes
   {
     path: 'repartidor',
-    element: isDemoMode ? <CourierLayout /> : <RequireSession role="repartidor"><AccountLayout /></RequireSession>,
+    element: <RequireSession role="repartidor"><AccountLayout /></RequireSession>,
     children: [
-      { index: true, element: <Navigate to={isDemoMode ? '/repartidor/solicitudes' : '/repartidor/perfil'} replace /> },
-      { path: 'solicitudes', element: isDemoMode ? <CourierRequestsPage /> : <RealOrdersPage kind="courier" scope="available"/> },
-      { path: 'entrega-activa', element: isDemoMode ? <CourierActiveDeliveryPage /> : <RealOrdersPage kind="courier" scope="active"/> },
-      { path: 'historial', element: isDemoMode ? <CourierHistoryPage /> : <RealOrdersPage kind="courier" scope="history"/> },
+      { index: true, element: <Navigate to="/repartidor/solicitudes" replace /> },
+      { path: 'solicitudes', element: <RealOrdersPage kind="courier" scope="available"/> },
+      { path: 'entrega-activa', element: <RealOrdersPage kind="courier" scope="active"/> },
+      { path: 'historial', element: <RealOrdersPage kind="courier" scope="history"/> },
       { path: 'pedidos/:id', element:<RealOrderDetailPage kind="courier"/> },
-      { path: 'ingresos', element: isDemoMode ? <CourierEarningsPage /> : <RealReportsPage kind="courier"/> },
-      { path: 'perfil', element: isDemoMode ? <CourierProfilePage /> : <OperationalCourierPage /> },
+      { path: 'ingresos', element: <RealReportsPage kind="courier"/> },
+      { path: 'perfil', element: <OperationalCourierPage /> },
     ],
   },
 
