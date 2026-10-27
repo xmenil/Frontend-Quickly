@@ -30,6 +30,7 @@ import { AuthLayout } from '../layouts/AuthLayout';
 
 // Public & Catalog
 import { HomePage } from '../features/catalog/HomePage';
+import { DemoHomePage } from '../features/catalog/DemoHomePage';
 import { MerchantsPage } from '../features/catalog/MerchantsPage';
 import { MerchantDetailPage } from '../features/catalog/MerchantDetailPage';
 import { ProductDetailPage } from '../features/catalog/ProductDetailPage';
@@ -83,9 +84,9 @@ export const router = createBrowserRouter([
   // Public Routes (Shop, Cart, Catalog)
   {
     path: '/',
-    element: isDemoMode ? <PublicLayout /> : <AccountLayout />,
+    element: <PublicLayout />,
     children: [
-      { index: true, element: isDemoMode ? <HomePage /> : <RealCatalogPage /> },
+      { index: true, element: isDemoMode ? <DemoHomePage /> : <HomePage /> },
       { path: 'negocios', element: isDemoMode ? <MerchantsPage /> : <RealMerchantsPage /> },
       { path: 'negocios/:id', element: isDemoMode ? <MerchantDetailPage /> : <RealCatalogPage /> },
       { path: 'producto/:id', element: isDemoMode ? <ProductDetailPage /> : <RealProductDetailPage /> },

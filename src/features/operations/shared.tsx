@@ -29,7 +29,7 @@ export function useRemote<T>(key: string, load: (signal: AbortSignal) => Promise
   return { ...(state.key === fullKey ? state : { key: fullKey, data: undefined, error: undefined, loading: true }), reload };
 }
 export function RemoteState({ loading, error, retry }: { loading: boolean; error?: string; retry: () => void }) {
-  if (error) return <div className="space-y-3"><p role="alert" className="text-destructive">{error}</p><Button variant="outline" onClick={retry}>Reintentar</Button></div>;
+  if (error) return <div className="space-y-3"><p role="alert" className="text-destructive">{error}</p><Button type="button" variant="outline" className="text-primary-dark border-primary-dark" onClick={retry}>Reintentar</Button></div>;
   return loading ? <p role="status" className="text-ink-light">Cargando información…</p> : null;
 }
 export function Status({ value }: { value: string }) {
@@ -42,5 +42,5 @@ export function PageTitle({ children, detail }: { children: React.ReactNode; det
   return <header className="space-y-2"><h1 className="text-2xl sm:text-3xl font-bold">{children}</h1>{detail && <p className="text-ink-light">{detail}</p>}</header>;
 }
 export function Pager({ next, onNext, onFirst, isFirst }: { next: string | null; onNext: () => void; onFirst: () => void; isFirst: boolean }) {
-  return <div className="flex gap-3"><Button variant="outline" disabled={isFirst} onClick={onFirst}>Primera página</Button><Button variant="outline" disabled={!next} onClick={onNext}>Siguiente página</Button></div>;
+  return <div className="flex flex-wrap gap-3"><Button variant="outline" className="text-primary-dark border-primary-dark" disabled={isFirst} onClick={onFirst}>Primera página</Button><Button variant="outline" className="text-primary-dark border-primary-dark" disabled={!next} onClick={onNext}>Siguiente página</Button></div>;
 }
