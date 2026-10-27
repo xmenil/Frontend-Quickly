@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
-import { formatCents } from '../../lib/currency';
+import { useRealCartStore } from '../../store/realCartStore';
+import { catalogApi, CatalogProduct, PublicStore, imageUrl, money } from '../../services/api/catalogApi';
+import { ProductDetailModal } from '../../features/catalog/ProductDetailModal';
 import {
   ShoppingCart,
   Sparkles,
@@ -10,64 +10,77 @@ import {
   Check,
   Building2,
   Tag,
-  BadgeCheck,
+  Loader2,
 } from 'lucide-react';
 
-const BIG_STORE_IDS = [
-  'm_super_lukita',
-  'm_tiendas_efe',
-  'm_la_curacao',
-  'm_super_baraton',
-  'm_carsa',
-  'm_el_balcon',
-  'm_minisol',
-  'm_galeria_san_benito',
-  'm_feria_continental',
-];
-
 export const BigStoreProductsSection: React.FC = () => {
-  const { merchants, products } = useDataStore();
-  const { addItem } = useCartStore();
+  const add = useRealCartStore((s) => s.add);
 
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [stores, setStores] = useState<PublicStore[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [selectedModalProduct, setSelectedModalProduct] = useState<CatalogProduct | null>(null);
 
-  // Big store filters
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      catalogApi.search({ limit: 15 }),
+      catalogApi.stores(),
+    ])
+      .then(([productsRes, storesRes]) => {
+        if (isMounted) {
+          setProducts(productsRes.items);
+          setStores(storesRes);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error al cargar productos de tiendas:', err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const storeFilters = [
-    { id: 'all', name: 'Todas las tiendas' },
-    { id: 'm_super_lukita', name: 'Supermercado Lukita' },
-    { id: 'm_tiendas_efe', name: 'Tiendas EFE' },
-    { id: 'm_la_curacao', name: 'La Curacao' },
-    { id: 'm_super_baraton', name: 'Supermercado Baratón' },
-    { id: 'm_carsa', name: 'Carsa' },
-    { id: 'm_el_balcon', name: 'El Balcón' },
-    { id: 'm_minisol', name: 'Minisol' },
+    { id: 'all', name: 'Todos los productos' },
+    ...stores.slice(0, 7).map((s) => ({ id: s.id, name: s.name })),
   ];
-
-  // Filter products by selected store or show curated mix
-  const bigStoreProducts = products.filter((p) => BIG_STORE_IDS.includes(p.merchantId));
 
   const displayedProducts = (
     selectedStoreId === 'all'
-      ? bigStoreProducts
-      : bigStoreProducts.filter((p) => p.merchantId === selectedStoreId)
+      ? products
+      : products.filter((p) => p.storeId === selectedStoreId)
   ).slice(0, 10);
 
-  const handleAddToCart = (e: React.MouseEvent, product: typeof displayedProducts[0]) => {
+  const handleAddToCart = (e: React.MouseEvent, product: CatalogProduct) => {
     e.preventDefault();
     e.stopPropagation();
 
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: 1,
-      unitPriceCents: product.priceCents,
-    });
+    const sku = product.skus.find((s) => s.isActive && s.availableStock > 0) || product.skus[0];
+    if (!sku) return;
 
-    setAddedProductId(product.id);
-    setTimeout(() => {
-      setAddedProductId((current) => (current === product.id ? null : current));
-    }, 1500);
+    try {
+      add(
+        {
+          skuId: sku.id,
+          productId: product.id,
+          storeId: product.storeId,
+        },
+        1
+      );
+
+      setAddedProductId(product.id);
+      setTimeout(() => {
+        setAddedProductId((curr) => (curr === product.id ? null : curr));
+      }, 1500);
+    } catch (err) {
+      console.error('Error al agregar producto:', err);
+    }
   };
 
   return (
@@ -82,173 +95,162 @@ export const BigStoreProductsSection: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-xl font-black text-ink tracking-tight">
-                  Productos de Grandes Tiendas y Supermercados
+                  Productos Destacados en Tingo María
                 </h2>
                 <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Stock local
+                  Stock Real PostgreSQL
                 </span>
               </div>
               <p className="text-xs text-ink-light">
-                Abarrotes, tecnología, electrohogar y moda oficial con entrega en Tingo María
+                Abarrotes, gastronomía, boticas y productos de la selva listos para entrega inmediata
               </p>
             </div>
           </div>
 
           <Link
-            to="/negocios?categoria=supermercados"
+            to="/negocios"
             className="text-xs sm:text-sm font-bold text-primary hover:text-primary-hover flex items-center gap-1 hover:underline"
           >
-            <span>Ver todas las tiendas</span>
+            <span>Ver todo el catálogo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         {/* Interactive Store Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
-          {storeFilters.map((tab) => {
-            const isActive = selectedStoreId === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setSelectedStoreId(tab.id)}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all font-bold cursor-pointer text-xs flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'bg-white text-gray-700 border border-emerald-100 hover:border-primary hover:text-primary'
-                }`}
-              >
-                {tab.id === 'all' && <Tag className="w-3 h-3" />}
-                {tab.id !== 'all' && <Building2 className="w-3 h-3" />}
-                <span>{tab.name}</span>
-              </button>
-            );
-          })}
-        </div>
+        {stores.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+            {storeFilters.map((tab) => {
+              const isActive = selectedStoreId === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedStoreId(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all font-bold cursor-pointer text-xs flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-white text-gray-700 border border-emerald-100 hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {tab.id === 'all' ? <Tag className="w-3 h-3" /> : <Building2 className="w-3 h-3" />}
+                  <span>{tab.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 5-Column Products Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {displayedProducts.map((product) => {
-            const store = merchants.find((m) => m.id === product.merchantId);
-            const isJustAdded = addedProductId === product.id;
+        {loading ? (
+          <div className="py-16 flex items-center justify-center gap-2 text-xs text-ink-light">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span>Cargando productos destacados...</span>
+          </div>
+        ) : displayedProducts.length === 0 ? (
+          <div className="py-12 text-center text-xs text-ink-light bg-white rounded-2xl border border-gray-150 p-6">
+            No se encontraron productos disponibles para este filtro.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            {displayedProducts.map((product) => {
+              const isJustAdded = addedProductId === product.id;
+              const sku = product.skus[0];
+              const price = sku ? sku.priceCents : 0;
+              const hasStock = (sku?.availableStock || 0) > 0;
+              const productImg = product.images[0]?.url
+                ? imageUrl(product.images[0].url)
+                : 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
 
-            const discountPercent =
-              product.originalPriceCents && product.originalPriceCents > product.priceCents
-                ? Math.round(
-                    ((product.originalPriceCents - product.priceCents) / product.originalPriceCents) *
-                      100
-                  )
-                : null;
-
-            return (
-              <Link
-                key={product.id}
-                to={`/producto/${product.id}`}
-                className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
-              >
-                {/* Product Image: De esquina a esquina */}
-                <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-
-                  {discountPercent && (
-                    <span className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
-                      {discountPercent}% OFF
-                    </span>
-                  )}
-
-                  {product.freeShipping && (
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => setSelectedModalProduct(product)}
+                  className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full cursor-pointer"
+                >
+                  {/* Product Image */}
+                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
+                    <img
+                      src={productImg}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
                     <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                      Envío rápido
+                      Envío local
                     </span>
-                  )}
-                </div>
+                  </div>
 
-                {/* Content Body */}
-                <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                  <div>
-                    {/* Product Name */}
-                    <h3 className="font-bold text-xs text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
-                      {product.name}
-                    </h3>
+                  {/* Content Body */}
+                  <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+                    <div>
+                      {/* Product Name */}
+                      <h3 className="font-bold text-xs text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
+                        {product.name}
+                      </h3>
 
-                    {/* Row: Perfil de tienda verificada a lado de Stock disponible */}
-                    <div className="flex items-center justify-between gap-1.5 mt-2">
-                      {/* Perfil de la tienda (pequeño y verificado) */}
-                      <div
-                        className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
-                        title={`${store?.name || 'Tienda Oficial'} • Tienda verificada`}
-                      >
-                        {store?.logoUrl ? (
-                          <img
-                            src={store.logoUrl}
-                            alt={store.name}
-                            className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
+                      {/* Store badge & Stock */}
+                      <div className="flex items-center justify-between gap-1.5 mt-2">
+                        <div
+                          className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full truncate max-w-[60%]"
+                          title={product.storeName}
+                        >
                           <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                        )}
-                        <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                          {(store?.name || 'Tienda Oficial')
-                            .replace(/Supermercado\s+/i, 'Super ')
-                            .replace(/\s+Tingo María$/i, '')}
-                        </span>
-                        <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
-                      </div>
-
-                      {/* Stock disponible */}
-                      <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0 animate-pulse" />
-                        <span>Stock disponible</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Row */}
-                  <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
-                    <div className="min-w-0">
-                      <div className="h-3.5 flex items-center">
-                        {discountPercent && product.originalPriceCents ? (
-                          <span className="text-[10px] text-gray-400 line-through tabular-nums leading-none">
-                            {formatCents(product.originalPriceCents)}
+                          <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                            {product.storeName}
                           </span>
-                        ) : null}
+                        </div>
+
+                        <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              hasStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                            }`}
+                          />
+                          <span>{hasStock ? 'En stock' : 'Agotado'}</span>
+                        </div>
                       </div>
-                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
-                        {formatCents(product.priceCents)}
-                      </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleAddToCart(e, product)}
-                      title="Agregar al carrito"
-                      aria-label={`Agregar ${product.name} al carrito`}
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
-                        isJustAdded
-                          ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
-                          : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
-                      }`}
-                    >
-                      {isJustAdded ? (
-                        <Check className="w-4 h-4 stroke-[3]" />
-                      ) : (
-                        <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      )}
-                    </button>
+                    {/* Bottom Row */}
+                    <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
+                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
+                        {money(price)}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={!hasStock}
+                        onClick={(e) => handleAddToCart(e, product)}
+                        title="Agregar al carrito"
+                        aria-label={`Agregar ${product.name} al carrito`}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                          isJustAdded
+                            ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                            : hasStock
+                            ? 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {isJustAdded ? (
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        ) : (
+                          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Product Detail Modal */}
+        <ProductDetailModal
+          product={selectedModalProduct}
+          isOpen={Boolean(selectedModalProduct)}
+          onClose={() => setSelectedModalProduct(null)}
+        />
       </div>
     </section>
   );

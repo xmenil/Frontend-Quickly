@@ -7,8 +7,8 @@ import { SearchBar } from './SearchBar';
 import { CouponsModal } from './CouponsModal';
 import { PlayModal } from './PlayModal';
 import { useAuthStore } from '../../store/authStore';
-import { useCartStore } from '../../store/cartStore';
-import { useDataStore } from '../../store/dataStore';
+import { useRealCartStore } from '../../store/realCartStore';
+import { engagementApi } from '../../services/api/engagementApi';
 import { RoleBadge } from '../ui/Badge';
 import {
   ShoppingCart,
@@ -31,8 +31,8 @@ import {
 
 export const Navbar: React.FC = () => {
   const { currentUser, activeRole, logout, isAuthenticated } = useAuthStore();
-  const { getItemCount } = useCartStore();
-  const { notifications } = useDataStore();
+  const cartCount = useRealCartStore((s) => s.items.reduce((acc, item) => acc + item.quantity, 0));
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; readAt: string | null }>>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -94,10 +94,23 @@ export const Navbar: React.FC = () => {
       ? 'bg-white text-primary font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
       : 'text-white hover:text-white hover:bg-white/15 px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer';
 
-  const cartCount = getItemCount();
-  const unreadNotifications = notifications.filter(
-    (n) => (currentUser ? n.userId === currentUser.id : false) && !n.isRead
-  );
+  useEffect(() => {
+    if (isAuthenticated) {
+      let isMounted = true;
+      engagementApi.notifications()
+        .then((data) => {
+          if (isMounted) setNotifications(data.items);
+        })
+        .catch(() => {
+          // ignore error if unauthenticated
+        });
+      return () => { isMounted = false; };
+    } else {
+      setNotifications([]);
+    }
+  }, [isAuthenticated]);
+
+  const unreadNotifications = notifications.filter((n) => !n.readAt);
 
   return (
     <>
@@ -293,7 +306,7 @@ export const Navbar: React.FC = () => {
                           className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
-                          Cerrar Sesión Demo
+                          Cerrar Sesión
                         </button>
                       </div>
                     </div>

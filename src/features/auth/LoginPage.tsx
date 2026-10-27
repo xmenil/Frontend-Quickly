@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuthStore } from '../../store/demoAuthStore';
+import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../domain/types';
 import { Dialog } from '../../components/ui/Dialog';
 import {
@@ -33,31 +33,31 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     title: 'Cliente',
     sublabel: 'Consumidor',
     identifier: 'cliente@quickly.pe',
-    passwordDefault: '123456',
+    passwordDefault: 'Password123!',
     targetPath: '/',
-  },
-  {
-    role: 'comercio',
-    title: 'El Balcón',
-    sublabel: 'Importaciones El Balcón',
-    identifier: 'elbalcon@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/comercio/productos',
   },
   {
     role: 'comercio',
     title: 'La Selva',
     sublabel: 'Restaurante Gourmet',
     identifier: 'comercio@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/comercio/productos',
+    passwordDefault: 'Password123!',
+    targetPath: '/comercio/tienda',
+  },
+  {
+    role: 'comercio',
+    title: 'El Balcón',
+    sublabel: 'Importaciones El Balcón',
+    identifier: 'elbalcon@quickly.pe',
+    passwordDefault: 'Password123!',
+    targetPath: '/comercio/tienda',
   },
   {
     role: 'repartidor',
     title: 'Repartidor',
     sublabel: 'Moto en Tingo María',
     identifier: 'repartidor@quickly.pe',
-    passwordDefault: '123456',
+    passwordDefault: 'Password123!',
     targetPath: '/repartidor/solicitudes',
   },
   {
@@ -65,20 +65,19 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     title: 'Admin',
     sublabel: 'Gestión central',
     identifier: 'admin@quickly.pe',
-    passwordDefault: '123456',
+    passwordDefault: 'Password123!',
     targetPath: '/admin/resumen',
   },
 ];
 
 export const LoginPage: React.FC = () => {
-  const { login, loginGoogle } = useAuthStore();
+  const { login, loginGoogle, busy } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as any)?.from || '/';
   const redirectMessage = (location.state as any)?.message;
 
-  // Clean initial state (Heuristic #5: Error Prevention & Jakob's Law)
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -89,34 +88,41 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
 
-  // Status modal for pending/suspended accounts
   const [statusModal, setStatusModal] = useState<{
     type: 'pendiente' | 'suspendido';
     title: string;
     message: string;
   } | null>(null);
 
-  // Auto-detect Peruvian mobile number (tolerant: spaces, dashes, +51)
   const cleanDigits = identifier.replace(/\D/g, '');
   const isPhone = cleanDigits.length === 9 && cleanDigits.startsWith('9');
 
-  const handleQuickDemoLogin = (acc: DemoAccount) => {
+  const handleQuickDemoLogin = async (acc: DemoAccount) => {
     setIdentifier(acc.identifier);
     setPassword(acc.passwordDefault);
     setError(null);
     setIsLoading(true);
-    setLoadingMessage(`Ingresando como ${acc.title}...`);
+    setLoadingMessage(`Autenticando como ${acc.title}...`);
 
-    setTimeout(() => {
-      login(acc.identifier, acc.role);
+    try {
+      const result = await login(acc.identifier, acc.passwordDefault);
       setIsLoading(false);
       setLoadingMessage(null);
-      const destination = acc.role === 'cliente' ? (from !== '/login' ? from : '/') : acc.targetPath;
-      navigate(destination, { replace: true });
-    }, 350);
+
+      if (result.success && result.user) {
+        const destination = acc.role === 'cliente' ? (from !== '/login' ? from : '/') : acc.targetPath;
+        navigate(destination, { replace: true });
+      } else {
+        setError(result.message || 'No se pudo iniciar sesión con la cuenta seleccionada.');
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setLoadingMessage(null);
+      setError(err.message || 'Error de conexión con el servidor.');
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim()) {
       setError('Ingresa tu celular o correo electrónico.');
@@ -129,57 +135,64 @@ export const LoginPage: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    setLoadingMessage('Verificando credenciales...');
+    setLoadingMessage('Verificando credenciales con el servidor...');
 
-    setTimeout(() => {
-      // Determine probable role if using known demo email or default to cliente
-      const matchedDemo = DEMO_ACCOUNTS.find(
-        (a) => a.identifier.toLowerCase() === identifier.trim().toLowerCase()
-      );
-      const roleHint = matchedDemo ? matchedDemo.role : 'cliente';
-
-      const result = login(identifier, roleHint);
+    try {
+      const result = await login(identifier.trim().toLowerCase(), password);
       setIsLoading(false);
       setLoadingMessage(null);
 
-      if (result.success) {
-        const destination =
-          result.user?.role === 'cliente'
-            ? from !== '/login' ? from : '/'
-            : DEMO_ACCOUNTS.find((a) => a.role === result.user?.role)?.targetPath || '/';
-
+      if (result.success && result.user) {
+        const userRole = result.user.role;
+        let destination = from !== '/login' ? from : '/';
+        if (destination === '/') {
+          if (userRole === 'comercio') destination = '/comercio/tienda';
+          else if (userRole === 'repartidor') destination = '/repartidor/solicitudes';
+          else if (userRole === 'admin') destination = '/admin/resumen';
+        }
         navigate(destination, { replace: true });
       } else {
-        if (result.message?.includes('pendiente')) {
+        const msg = result.message || '';
+        if (msg.toLowerCase().includes('pendiente') || msg.toLowerCase().includes('revisión')) {
           setStatusModal({
             type: 'pendiente',
             title: 'Cuenta en revisión',
-            message:
-              'Tu registro se encuentra en proceso de validación por el equipo de Quickly en Tingo María.',
+            message: 'Tu registro se encuentra en proceso de validación por el equipo de Quickly.',
           });
-        } else if (result.message?.includes('suspendid')) {
+        } else if (msg.toLowerCase().includes('suspendid')) {
           setStatusModal({
             type: 'suspendido',
             title: 'Cuenta suspendida',
-            message:
-              'Esta cuenta se encuentra inactiva temporalmente. Comunícate con soporte de Quickly.',
+            message: 'Esta cuenta se encuentra inactiva temporalmente. Comunícate con soporte de Quickly.',
           });
         } else {
           setError(result.message || 'Credenciales no válidas. Revisa los datos ingresados.');
         }
       }
-    }, 400);
-  };
-
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    setLoadingMessage('Conectando con Google...');
-    setTimeout(() => {
-      loginGoogle();
+    } catch (err: any) {
       setIsLoading(false);
       setLoadingMessage(null);
-      navigate(from !== '/login' ? from : '/', { replace: true });
-    }, 350);
+      setError(err.message || 'Error de conexión con el servidor.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setLoadingMessage('Conectando con Google...');
+    try {
+      const result = await loginGoogle();
+      setIsLoading(false);
+      setLoadingMessage(null);
+      if (result.success) {
+        navigate(from !== '/login' ? from : '/', { replace: true });
+      } else {
+        setError(result.message || 'El acceso con Google requiere configuración OAuth.');
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setLoadingMessage(null);
+      setError(err.message || 'Error al conectar con Google.');
+    }
   };
 
   return (

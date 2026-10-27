@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/demoAuthStore';
+import { useAuthStore } from '../../store/authStore';
 import { Eye, EyeOff, CheckCircle2, Mail, Phone, Lock, User, Store, Bike, AlertCircle } from 'lucide-react';
 
 interface FieldErrors {
@@ -11,7 +11,7 @@ interface FieldErrors {
 }
 
 export const RegisterCustomerPage: React.FC = () => {
-  const { registerCustomer, loginGoogle } = useAuthStore();
+  const { registerCustomer, loginGoogle, busy } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,7 +63,7 @@ export const RegisterCustomerPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
 
@@ -74,27 +74,43 @@ export const RegisterCustomerPage: React.FC = () => {
     const cleanPhone = phone.replace(/\D/g, '');
 
     setIsLoading(true);
-    setTimeout(() => {
-      registerCustomer({
+    try {
+      const result = await registerCustomer({
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        phone: `+51 ${cleanPhone}`,
+        phone: cleanPhone,
+        password,
       });
       setIsLoading(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        navigate(from !== '/login' ? from : '/', { replace: true });
-      }, 900);
-    }, 450);
+
+      if (result.success) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          navigate(from !== '/login' ? from : '/', { replace: true });
+        }, 900);
+      } else {
+        setGeneralError(result.message || 'No se pudo crear la cuenta. Revisa los datos ingresados.');
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setGeneralError(err.message || 'Error de conexión con el servidor.');
+    }
   };
 
-  const handleGoogleRegister = () => {
+  const handleGoogleRegister = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      loginGoogle();
+    try {
+      const result = await loginGoogle();
       setIsLoading(false);
-      navigate(from !== '/login' ? from : '/', { replace: true });
-    }, 350);
+      if (result.success) {
+        navigate(from !== '/login' ? from : '/', { replace: true });
+      } else {
+        setGeneralError(result.message || 'El registro con Google requiere configuración OAuth.');
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setGeneralError(err.message || 'Error al conectar con Google.');
+    }
   };
 
   return (

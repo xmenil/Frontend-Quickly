@@ -100,8 +100,8 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: 'login', element: isDemoMode ? <LoginPage /> : <RealLoginPage /> },
-      { path: 'registro', element: isDemoMode ? <RegisterCustomerPage /> : <RealRegisterPage /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'registro', element: <RegisterCustomerPage /> },
       { path: 'registro/comercio', element: isDemoMode ? <RegisterMerchantPage /> : <RequireSession><StoreApplicationPage /></RequireSession> },
       { path: 'registro/repartidor', element: isDemoMode ? <RegisterCourierPage /> : <RequireSession><CourierApplicationPage /></RequireSession> },
       { path: 'recuperar-acceso', element: isDemoMode ? <RecoverPasswordPage /> : pending },

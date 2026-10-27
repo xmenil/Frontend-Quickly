@@ -1,48 +1,52 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { catalogApi, PublicStore, imageUrl } from '../../services/api/catalogApi';
 import {
   Building2,
-  Star,
   Clock,
   ArrowRight,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Store,
+  Loader2,
+  MapPin,
 } from 'lucide-react';
 
+const FALLBACK_BANNERS = [
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
+];
+
 export const OfficialStoresSection: React.FC = () => {
-  const { merchants } = useDataStore();
+  const [stores, setStores] = useState<PublicStore[]>([]);
+  const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // Big stores & supermarkets from Tingo María
-  const bigStoreIds = [
-    'm_super_lukita',
-    'm_super_baraton',
-    'm_minisol',
-    'm_minimarket_rupa',
-    'm_tiendas_efe',
-    'm_la_curacao',
-    'm_carsa',
-    'm_el_balcon',
-    'm_galeria_san_benito',
-    'm_bodega_tingo',
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    catalogApi
+      .stores()
+      .then((data) => {
+        if (isMounted) {
+          setStores(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error al cargar tiendas oficiales:', err);
+        if (isMounted) setLoading(false);
+      });
 
-  // Prioritize big stores list, plus any other supermarkets
-  const officialStores = merchants
-    .filter((m) => bigStoreIds.includes(m.id) || m.category === 'supermercados' || m.category === 'electrohogar')
-    .sort((a, b) => {
-      const idxA = bigStoreIds.indexOf(a.id);
-      const idxB = bigStoreIds.indexOf(b.id);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return b.rating - a.rating;
-    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const checkScroll = () => {
     if (scrollContainerRef.current) {
@@ -56,7 +60,7 @@ export const OfficialStoresSection: React.FC = () => {
     checkScroll();
     window.addEventListener('resize', checkScroll);
     return () => window.removeEventListener('resize', checkScroll);
-  }, [officialStores.length]);
+  }, [stores.length]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -79,14 +83,14 @@ export const OfficialStoresSection: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-ink tracking-tight">
-                  Grandes Tiendas y Supermercados
+                  Tiendas y Comercios de Tingo María
                 </h2>
                 <span className="hidden sm:inline-flex text-[9px] uppercase font-extrabold bg-primary-50 text-primary border border-primary-100 px-2 py-0.5 rounded-full">
-                  Oficiales
+                  Locales Verificados
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-ink-light">
-                Surtido completo de tiendas departamentales y supermercados en Tingo María
+                Comercios afiliados en Rupa Rupa, Castillo Grande y alrededores
               </p>
             </div>
           </div>
@@ -99,11 +103,7 @@ export const OfficialStoresSection: React.FC = () => {
                 onClick={() => scroll('left')}
                 disabled={!canScrollLeft}
                 aria-label="Deslizar a la izquierda"
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all ${
-                  canScrollLeft
-                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-emerald-50 cursor-pointer shadow-2xs'
-                    : 'border-gray-200 text-gray-300 cursor-not-allowed opacity-40'
-                }`}
+                className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -112,18 +112,14 @@ export const OfficialStoresSection: React.FC = () => {
                 onClick={() => scroll('right')}
                 disabled={!canScrollRight}
                 aria-label="Deslizar a la derecha"
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all ${
-                  canScrollRight
-                    ? 'border-gray-300 text-ink hover:border-primary hover:text-primary hover:bg-emerald-50 cursor-pointer shadow-2xs'
-                    : 'border-gray-200 text-gray-300 cursor-not-allowed opacity-40'
-                }`}
+                className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
             <Link
-              to="/negocios?categoria=supermercados"
+              to="/negocios"
               className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1 hover:underline ml-1"
             >
               <span>Ver todas</span>
@@ -132,89 +128,125 @@ export const OfficialStoresSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Horizontal Slider: Achicado de tarjetas, sin mini imágenes, deslizable a la derecha */}
+        {/* Horizontal Slider: Comercios reales de PostgreSQL */}
         <div className="relative group">
-          <div
-            ref={scrollContainerRef}
-            onScroll={checkScroll}
-            className="flex items-stretch gap-3 sm:gap-3.5 overflow-x-auto scrollbar-none scroll-smooth pb-2 pt-1 px-0.5"
-          >
-            {officialStores.map((store) => (
-              <Link
-                key={store.id}
-                to={`/negocios/${store.id}`}
-                className="group/card w-[210px] sm:w-[230px] md:w-[240px] flex-shrink-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs hover:border-primary-300 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 cursor-pointer"
-              >
-                {/* Store Banner */}
-                <div>
-                  <div className="relative h-20 sm:h-22 overflow-hidden bg-gray-100">
-                    <img
-                      src={store.bannerUrl}
-                      alt={store.name}
-                      className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-ink text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
-                      <span>Verificado</span>
-                    </span>
-                  </div>
+          {loading ? (
+            <div className="py-12 flex items-center justify-center gap-2 text-xs text-ink-light">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span>Cargando comercios de Tingo María...</span>
+            </div>
+          ) : stores.length === 0 ? (
+            <p className="py-8 text-center text-xs text-ink-light">
+              No hay comercios activos disponibles.
+            </p>
+          ) : (
+            <div
+              ref={scrollContainerRef}
+              onScroll={checkScroll}
+              className="flex items-stretch gap-3 sm:gap-3.5 overflow-x-auto scrollbar-none scroll-smooth pb-2 pt-1 px-0.5"
+            >
+              {stores.map((store, idx) => {
+                const bannerSrc = store.bannerUrl
+                  ? imageUrl(store.bannerUrl)
+                  : FALLBACK_BANNERS[idx % FALLBACK_BANNERS.length];
 
-                  {/* Store Body: Achicado y limpio sin artículos destacados pequeños */}
-                  <div className="p-3 pt-0 relative">
-                    {/* Floating Logo Badge */}
-                    <div className="w-11 h-11 rounded-xl bg-white shadow-sm border border-gray-100 p-0.5 flex items-center justify-center -mt-5 mb-1.5 relative z-10">
-                      <img
-                        src={store.logoUrl}
-                        alt={store.name}
-                        className="w-full h-full object-contain rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80';
-                        }}
-                      />
+                return (
+                  <Link
+                    key={store.id}
+                    to={`/negocios/${store.id}`}
+                    className="group/card w-[210px] sm:w-[230px] md:w-[240px] flex-shrink-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs hover:border-primary-300 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 cursor-pointer"
+                  >
+                    {/* Store Banner */}
+                    <div>
+                      <div className="relative h-20 sm:h-22 overflow-hidden bg-gray-100">
+                        <img
+                          src={bannerSrc}
+                          alt={store.name}
+                          className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              FALLBACK_BANNERS[idx % FALLBACK_BANNERS.length];
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                        <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-ink text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                          <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                          <span>Verificado</span>
+                        </span>
+                      </div>
+
+                      {/* Store Body */}
+                      <div className="p-3 pt-0 relative">
+                        {/* Floating Logo Badge */}
+                        <div className="w-11 h-11 rounded-xl bg-white shadow-sm border border-gray-100 p-0.5 flex items-center justify-center -mt-5 mb-1.5 relative z-10 overflow-hidden">
+                          {store.logoUrl ? (
+                            <img
+                              src={imageUrl(store.logoUrl)}
+                              alt={store.name}
+                              className="w-full h-full object-contain rounded-lg"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80';
+                              }}
+                            />
+                          ) : (
+                            <Building2 className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+
+                        {/* Store Name & Zone */}
+                        <h3 className="font-bold text-xs sm:text-[13px] text-ink group-hover/card:text-primary transition-colors truncate">
+                          {store.name}
+                        </h3>
+                        <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-gray-500 mt-0.5">
+                          <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+                          <span className="truncate">{store.zone_name}</span>
+                        </div>
+
+                        {/* Status (Abierto / Cerrado) */}
+                        <div className="flex items-center justify-between text-xs text-gray-600 mt-2 font-medium pt-1.5 border-t border-gray-100/70">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                store.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'
+                              }`}
+                            />
+                            <span
+                              className={`text-[11px] font-bold ${
+                                store.isOpen ? 'text-emerald-700' : 'text-gray-500'
+                              }`}
+                            >
+                              {store.isOpen ? 'Abierto' : 'Cerrado'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                            <Clock className="w-3 h-3 text-primary" />
+                            <span>Entrega rápida</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Store Name & Description */}
-                    <h3 className="font-bold text-xs sm:text-[13px] text-ink group-hover/card:text-primary transition-colors truncate">
-                      {store.name}
-                    </h3>
-                    <p className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-1 mt-0.5">
-                      {store.description}
-                    </p>
-
-                    {/* Rating & Delivery Prep Time */}
-                    <div className="flex items-center justify-between text-xs text-gray-600 mt-2 font-medium pt-1.5 border-t border-gray-100/70">
-                      <div className="flex items-center gap-1 text-amber-600 font-bold text-xs">
-                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                        <span>{store.rating.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-500 text-[11px]">
-                        <Clock className="w-3 h-3 text-primary" />
-                        <span>{store.prepTimeMinutes} min</span>
-                      </div>
+                    {/* Bottom Card Action */}
+                    <div className="px-3 py-2 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-primary group-hover/card:bg-primary group-hover/card:text-white transition-colors">
+                      <span className="flex items-center gap-1">
+                        <Store className="w-3 h-3" />
+                        <span>Ver productos</span>
+                      </span>
+                      <ArrowRight className="w-3 h-3" />
                     </div>
-                  </div>
-                </div>
-
-                {/* Bottom Card Action */}
-                <div className="px-3 py-2 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-primary group-hover/card:bg-primary group-hover/card:text-white transition-colors">
-                  <span className="flex items-center gap-1">
-                    <Store className="w-3 h-3" />
-                    <span>Ver catálogo</span>
-                  </span>
-                  <ArrowRight className="w-3 h-3" />
-                </div>
-              </Link>
-            ))}
-          </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
 
           {/* Floating Right Arrow on hover for desktop slide */}
           {canScrollRight && (
             <button
               type="button"
               onClick={() => scroll('right')}
-              aria-label="Deslizar supermercados a la derecha"
+              aria-label="Deslizar a la derecha"
               className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 items-center justify-center text-primary hover:bg-primary hover:text-white hover:scale-105 active:scale-95 transition-all z-10 cursor-pointer"
             >
               <ChevronRight className="w-5 h-5 stroke-[2.5]" />
@@ -226,7 +258,7 @@ export const OfficialStoresSection: React.FC = () => {
             <button
               type="button"
               onClick={() => scroll('left')}
-              aria-label="Deslizar supermercados a la izquierda"
+              aria-label="Deslizar a la izquierda"
               className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 items-center justify-center text-primary hover:bg-primary hover:text-white hover:scale-105 active:scale-95 transition-all z-10 cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
