@@ -4,7 +4,7 @@ import { useDataStore } from '../../store/dataStore';
 import { SchematicMap } from '../../components/shared/SchematicMap';
 import { OrderTimeline } from '../../components/shared/OrderTimeline';
 import { OrderStatusBadge } from '../../components/ui/Badge';
-import { ChevronLeft, Store, Bike, MapPin, Phone, Clock, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Store, Bike, Phone, Clock, ArrowRight } from 'lucide-react';
 
 export const TrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -107,7 +107,7 @@ export const TrackingPage: React.FC = () => {
           />
 
           {/* Detailed status banner */}
-          <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+          <div className="p-4 sm:p-5 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-primary-soft flex items-center justify-center text-primary flex-shrink-0">
                 <Bike className="w-6 h-6" />
@@ -152,13 +152,13 @@ export const TrackingPage: React.FC = () => {
         </div>
 
         {/* Timeline Column (1 Column) */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <h2 className="font-extrabold text-sm text-ink flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               <span>Progreso de Entrega</span>
             </h2>
-            <span className="text-[11px] font-bold text-primary bg-primary-soft px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-bold text-primary bg-primary-soft px-2.5 py-0.5 rounded-full">
               En tiempo real
             </span>
           </div>
