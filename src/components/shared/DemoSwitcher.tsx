@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useDataStore } from '../../store/dataStore';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../domain/types';
+import { getBackendUrl, setBackendUrl, apiFetch } from '../../lib/api';
 import {
   UserCheck,
   Store,
@@ -12,6 +13,9 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Server,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 
 export const DemoSwitcher: React.FC = () => {
@@ -20,6 +24,39 @@ export const DemoSwitcher: React.FC = () => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [apiUrl, setApiUrlState] = useState<string>(getBackendUrl());
+  const [showApiConfig, setShowApiConfig] = useState(false);
+
+  const checkBackendHealth = async () => {
+    try {
+      setBackendStatus('checking');
+      const res = await apiFetch('/api/v1/health');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'ok' && data.database === 'connected') {
+          setBackendStatus('online');
+          return;
+        }
+      }
+      setBackendStatus('offline');
+    } catch {
+      setBackendStatus('offline');
+    }
+  };
+
+  useEffect(() => {
+    if (isExpanded) {
+      checkBackendHealth();
+    }
+  }, [isExpanded, apiUrl]);
+
+  const handleSaveApiUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    setBackendUrl(apiUrl);
+    setShowApiConfig(false);
+    checkBackendHealth();
+  };
 
   const roles: { role: UserRole; label: string; icon: React.ReactNode; path: string }[] = [
     { role: 'cliente', label: 'Cliente', icon: <UserCheck className="w-4 h-4" />, path: '/' },
@@ -57,6 +94,71 @@ export const DemoSwitcher: React.FC = () => {
               <ChevronDown className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Backend & Supabase Live Status Bar */}
+          <div className="mb-3 p-2 bg-gray-50 border border-gray-200/80 rounded-xl flex items-center justify-between text-[11px]">
+            <div className="flex items-center gap-2 min-w-0">
+              <Server className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+              <div className="truncate">
+                <span className="font-semibold text-gray-700">Backend + Supabase: </span>
+                {backendStatus === 'checking' && (
+                  <span className="text-amber-600 font-bold">Verificando...</span>
+                )}
+                {backendStatus === 'online' && (
+                  <span className="text-emerald-600 font-bold inline-flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" /> En línea
+                  </span>
+                )}
+                {backendStatus === 'offline' && (
+                  <span className="text-rose-600 font-bold inline-flex items-center gap-1">
+                    <XCircle className="w-3 h-3 text-rose-600 inline" /> Desconectado
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowApiConfig(!showApiConfig)}
+              className="text-primary hover:underline text-[10px] font-bold shrink-0 ml-1"
+            >
+              {showApiConfig ? 'Cerrar' : 'Config'}
+            </button>
+          </div>
+
+          {showApiConfig && (
+            <form onSubmit={handleSaveApiUrl} className="mb-3 p-2.5 bg-primary-soft/40 border border-primary/20 rounded-xl text-xs space-y-2">
+              <label className="block text-[11px] font-bold text-ink">
+                URL del Backend NestJS (Local o Túnel):
+              </label>
+              <input
+                type="text"
+                value={apiUrl}
+                onChange={(e) => setApiUrlState(e.target.value)}
+                placeholder="http://localhost:3000 o https://tu-tunel.loca.lt"
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiUrlState('http://localhost:3000');
+                    setBackendUrl('http://localhost:3000');
+                    setShowApiConfig(false);
+                    checkBackendHealth();
+                  }}
+                  className="text-[10.5px] text-gray-500 hover:text-ink underline"
+                >
+                  Restablecer localhost
+                </button>
+                <button
+                  type="submit"
+                  className="px-2.5 py-1 bg-primary text-white text-[11px] font-bold rounded-lg shadow-xs"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          )}
 
           <p className="text-[11px] text-gray-500 mb-2">
             Cambia entre las interfaces con la misma paleta y datos:
@@ -133,7 +235,7 @@ export const DemoSwitcher: React.FC = () => {
           onClick={() => setIsExpanded(true)}
           className="flex items-center gap-2 bg-white/95 hover:bg-white text-ink px-3.5 py-2 rounded-full shadow-floating border border-gray-200 backdrop-blur-md transition-all hover:scale-105"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className={`w-2 h-2 rounded-full ${backendStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-primary animate-pulse'}`} />
           <span className="text-xs font-bold text-gray-700">Panel:</span>
           <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
             {activeRole}

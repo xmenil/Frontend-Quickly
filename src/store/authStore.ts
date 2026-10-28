@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { User, UserRole, UserStatus } from '../domain/types';
 import { INITIAL_USERS } from '../mocks/initialData';
 import { safeJsonParse } from '../lib/utils';
+import { apiFetch, setSessionToken, setCsrfToken } from '../lib/api';
 
 interface AuthState {
   currentUser: User | null;
@@ -58,19 +59,24 @@ export function mapBackendUserToFrontend(dto: any): User {
     primaryRole = roleMap[dto.role] || 'cliente';
   }
 
-  const status = statusMap[dto.status] || 'activo';
-  const merchantId = (dto.memberships && dto.memberships.length > 0) ? dto.memberships[0].storeId : undefined;
+  const primaryStatus: UserStatus =
+    statusMap[dto.status] || (dto.status === 'suspended' ? 'suspendido' : 'activo');
+
+  // Si tiene membresía de comercio, vincular storeId
+  let merchantId: string | undefined = undefined;
+  if (dto.memberships && Array.isArray(dto.memberships) && dto.memberships.length > 0) {
+    merchantId = dto.memberships[0].storeId;
+  }
 
   return {
-    id: dto.id,
+    id: dto.id || `u_${Date.now()}`,
     name: dto.fullName || dto.name || 'Usuario Quickly',
-    email: dto.email,
-    phone: dto.phone || '962 123 456',
+    email: dto.email || '',
+    phone: dto.phone || '',
     role: primaryRole,
-    status,
-    avatarUrl: dto.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    status: primaryStatus,
     merchantId,
-    courierId: dto.courierId || undefined,
+    avatarUrl: dto.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
     createdAt: dto.createdAt || new Date().toISOString(),
   };
 }
@@ -90,21 +96,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   sendVerificationCode: async (email: string) => {
     try {
-      const res = await fetch('/api/v1/auth/verification-code/send', {
+      const res = await apiFetch('/api/v1/auth/verification-code/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        // Modo demo Vercel sin backend remoto
-        const simulatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-        return {
-          success: true,
-          message: 'Código de verificación generado para pruebas en Vercel',
-          devCode: simulatedCode,
-        };
-      }
       const data = await res.json();
       if (!res.ok) {
         return { success: false, message: data.message || 'Error al enviar código' };
@@ -124,9 +119,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const cleanPhone = data.phone.replace(/\D/g, '');
       const e164Phone = cleanPhone.startsWith('51') ? `+${cleanPhone}` : `+51${cleanPhone}`;
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await apiFetch('/api/v1/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: data.name.trim(),
           email: data.email.trim().toLowerCase(),
@@ -141,8 +135,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const frontendUser = mapBackendUserToFrontend(resData.user);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.token) {
+        setSessionToken(resData.token);
+      }
       if (resData.csrfToken) {
-        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+        setCsrfToken(resData.csrfToken);
       }
       set({
         currentUser: frontendUser,
@@ -158,9 +155,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginGoogleWithToken: async (idToken: string, phone?: string) => {
     try {
-      const res = await fetch('/api/v1/auth/google', {
+      const res = await apiFetch('/api/v1/auth/google', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken, phone }),
       });
       const resData = await res.json();
@@ -169,8 +165,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const frontendUser = mapBackendUserToFrontend(resData.user);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.token) {
+        setSessionToken(resData.token);
+      }
       if (resData.csrfToken) {
-        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+        setCsrfToken(resData.csrfToken);
       }
       set({
         currentUser: frontendUser,
@@ -197,9 +196,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : credentialsOrEmail.password || 'Password123!';
 
     try {
-      const res = await fetch('/api/v1/auth/login', {
+      const res = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           password,
@@ -211,8 +209,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const frontendUser = mapBackendUserToFrontend(resData.user);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(frontendUser));
+      if (resData.token) {
+        setSessionToken(resData.token);
+      }
       if (resData.csrfToken) {
-        sessionStorage.setItem('quickly_csrf', resData.csrfToken);
+        setCsrfToken(resData.csrfToken);
       }
       set({
         currentUser: frontendUser,
@@ -330,6 +331,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
+    try {
+      apiFetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    } catch {
+      // ignore
+    }
+    setSessionToken(null);
+    setCsrfToken(null);
     localStorage.removeItem(STORAGE_KEY);
     set({
       currentUser: null,
