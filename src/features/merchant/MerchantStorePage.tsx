@@ -729,7 +729,7 @@ export const MerchantStorePage: React.FC = () => {
               <Input
                 label="Costo envío base (S/)"
                 type="number"
-                step="0.5"
+                step="any"
                 min="0"
                 value={deliveryFeeSoles}
                 onChange={(e) => setDeliveryFeeSoles(e.target.value)}

@@ -231,7 +231,9 @@ export const MerchantProductsPage: React.FC = () => {
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    const priceCents = solesToCents(parseFloat(priceSoles) || 0);
+    const cleanPrice = String(priceSoles).replace(',', '.').trim();
+    const parsedPrice = parseFloat(cleanPrice);
+    const priceCents = solesToCents(!isNaN(parsedPrice) && parsedPrice >= 0 ? parsedPrice : 0);
     const stockNum = parseInt(stock, 10) || 0;
     const finalMainImage = galleryImages[0] || imageUrl.trim() || DEFAULT_PRODUCT_IMAGE;
 
@@ -317,7 +319,9 @@ export const MerchantProductsPage: React.FC = () => {
   }, [filteredProducts, currentPage]);
 
   const previewPriceCents = useMemo(() => {
-    return solesToCents(parseFloat(priceSoles) || 0);
+    const cleanPrice = String(priceSoles).replace(',', '.').trim();
+    const parsedPrice = parseFloat(cleanPrice);
+    return solesToCents(!isNaN(parsedPrice) && parsedPrice >= 0 ? parsedPrice : 0);
   }, [priceSoles]);
 
   return (
@@ -883,8 +887,8 @@ export const MerchantProductsPage: React.FC = () => {
                 <Input
                   label="Precio en Soles (PEN)"
                   type="number"
-                  step="0.50"
-                  min="0.10"
+                  step="any"
+                  min="0"
                   value={priceSoles}
                   onChange={(e) => setPriceSoles(e.target.value)}
                   required
