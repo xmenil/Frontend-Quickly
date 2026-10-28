@@ -94,12 +94,22 @@ export const MerchantOrdersPage: React.FC = () => {
   // Modal detalle de entrega del repartidor
   const [deliveryDetailOrder, setDeliveryDetailOrder] = useState<SuborderExtended | null>(null);
 
+  // Modal selección y asignación de repartidor
+  const [assignCourierOrderId, setAssignCourierOrderId] = useState<string | null>(null);
+
   // Alerta feedback
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const showNotice = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 3500);
+  };
+
+  const handleAssignCourier = (orderId: string, courierId: string) => {
+    const courier = couriers.find((c) => c.id === courierId);
+    adminAssignCourier(orderId, courierId);
+    showNotice(`Repartidor ${courier?.name || 'seleccionado'} asignado exitosamente al pedido.`);
+    setAssignCourierOrderId(null);
   };
 
   // Contadores reactivos
@@ -562,9 +572,9 @@ export const MerchantOrdersPage: React.FC = () => {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => handleAssignSampleCourier(order.id)}
-                            className="min-h-[30px] px-2.5 py-1 text-[11px] font-semibold border-warning-border bg-white text-ink rounded-lg"
-                            title="Asignar repartidor disponible de prueba"
+                            onClick={() => setAssignCourierOrderId(order.id)}
+                            className="min-h-[30px] px-2.5 py-1 text-[11px] font-semibold border-warning-border bg-white text-ink rounded-lg shadow-sm hover:border-primary hover:text-primary transition-colors"
+                            title="Seleccionar y asignar repartidor de Tingo María"
                           >
                             <Bike className="w-3 h-3 mr-1 text-primary" />
                             <span>Asignar Repartidor</span>
@@ -782,6 +792,70 @@ export const MerchantOrdersPage: React.FC = () => {
             </div>
           </div>
         )}
+      </Dialog>
+
+      {/* Modal Asignar Repartidor a Pedido */}
+      <Dialog
+        isOpen={Boolean(assignCourierOrderId)}
+        onClose={() => setAssignCourierOrderId(null)}
+        title="Asignar Repartidor a la Orden"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-ink-muted">
+            Selecciona un repartidor activo en Tingo María para retirar y despachar el pedido:
+          </p>
+
+          <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+            {couriers.map((c) => (
+              <div
+                key={c.id}
+                className="p-3 border border-border rounded-xl flex items-center justify-between gap-3 hover:border-primary transition-all bg-surface-subtle shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-50 text-primary border border-primary-100 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    <Bike className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                      <span>{c.name}</span>
+                      <span className="text-[10px] text-selva bg-selva-soft px-1.5 py-0.2 rounded font-semibold border border-selva-border">
+                        Disponible
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-ink-muted mt-0.5">
+                      {c.vehicleType === 'moto' ? 'Moto lineal' : c.vehicleType === 'bicicleta' ? 'Bicicleta' : 'Mototaxi'} • Placa: <strong className="text-ink">{c.plate || '4521-7B'}</strong>
+                    </p>
+                    <p className="text-[10px] text-ink-light">
+                      Zona: Centro de Tingo María • Cel: {c.phone}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => assignCourierOrderId && handleAssignCourier(assignCourierOrderId, c.id)}
+                  className="min-h-[32px] px-3.5 text-xs font-bold rounded-lg flex-shrink-0"
+                >
+                  Asignar
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setAssignCourierOrderId(null)}
+              className="text-xs font-semibold px-4 rounded-xl"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </Dialog>
     </div>
   );
