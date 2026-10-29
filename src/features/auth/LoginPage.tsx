@@ -198,14 +198,14 @@ export const LoginPage: React.FC = () => {
     }
 
     // Fallback con cuentas demo locales si no es email o si no hay backend disponible
-    setTimeout(() => {
+    setTimeout(async () => {
       // Determine probable role if using known demo email or default to cliente
       const matchedDemo = DEMO_ACCOUNTS.find(
         (a) => a.identifier.toLowerCase() === identifier.trim().toLowerCase()
       );
       const roleHint = matchedDemo ? matchedDemo.role : 'cliente';
 
-      const result = login(identifier, roleHint);
+      const result = await login(identifier, roleHint as any);
       setIsLoading(false);
       setLoadingMessage(null);
 
