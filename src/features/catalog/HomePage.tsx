@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useRealCartStore } from '../../store/realCartStore';
 import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
+import { INITIAL_PRODUCTS, INITIAL_MERCHANTS } from '../../mocks/initialData';
 import { operationsApi, Zone } from '../../services/api/operationsApi';
 import { ProductDetailModal } from './ProductDetailModal';
 import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
@@ -30,6 +31,38 @@ import {
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
 import heroSmartphoneView from '../../assets/img/image copy 4.png';
+
+
+const FALLBACK_FEATURED_PRODUCTS: CatalogProduct[] = INITIAL_PRODUCTS.slice(0, 8).map((p) => ({
+  id: p.id,
+  storeId: p.merchantId,
+  storeName: INITIAL_MERCHANTS.find((m) => m.id === p.merchantId)?.name || "Comercio Local",
+  categoryId: "c85594f9-080c-4b27-9e59-b93d8abcfdc8",
+  name: p.name,
+  description: p.description,
+  brand: null,
+  isActive: p.isAvailable ?? true,
+  position: 0,
+  skus: [
+    {
+      id: p.id,
+      skuCode: `SKU-${p.id}`,
+      variantName: "Estándar",
+      priceCents: p.priceCents,
+      barcode: null,
+      isActive: true,
+      availableStock: p.stock,
+    },
+  ],
+  images: [
+    {
+      id: p.id,
+      url: p.imageUrl,
+      altText: p.name,
+      position: 0,
+    },
+  ],
+}));
 
 export function HomePage() {
   const { isAuthenticated, currentUser, activeRole, switchRole, loginDemo } = useAuthStore();
@@ -142,14 +175,17 @@ export function HomePage() {
     ])
       .then(([prodRes, zonesRes]) => {
         if (isMounted) {
-          setFeaturedProducts(prodRes.items);
+          setFeaturedProducts(prodRes.items && prodRes.items.length > 0 ? prodRes.items : FALLBACK_FEATURED_PRODUCTS);
           setZones(zonesRes.filter((z) => z.isActive));
           setLoadingFeatured(false);
         }
       })
       .catch((err) => {
         console.error('Error al cargar datos de portada:', err);
-        if (isMounted) setLoadingFeatured(false);
+        if (isMounted) {
+          setFeaturedProducts(FALLBACK_FEATURED_PRODUCTS);
+          setLoadingFeatured(false);
+        }
       });
 
     return () => {
@@ -467,9 +503,9 @@ export function HomePage() {
                 const sku = item.skus[0];
                 const price = sku ? sku.priceCents : 0;
                 const hasStock = (sku?.availableStock || 0) > 0;
-                const productImg = item.images[0]?.url
-                  ? imageUrl(item.images[0].url)
-                  : 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+                const rawImg = item.images[0]?.url;
+                const resolvedImg = rawImg?.startsWith('http') ? rawImg : (rawImg ? imageUrl(rawImg) : '');
+                const productImg = resolvedImg || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
 
                 return (
                   <div
@@ -479,12 +515,7 @@ export function HomePage() {
                   >
                     {/* Product Image */}
                     <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                      <img
-                        src={productImg}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
+                      <img src={productImg} alt={item.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                       <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                         Envío rápido
                       </span>

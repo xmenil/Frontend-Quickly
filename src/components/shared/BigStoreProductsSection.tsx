@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useRealCartStore } from '../../store/realCartStore';
 import { catalogApi, CatalogProduct, PublicStore, imageUrl, money } from '../../services/api/catalogApi';
+import { INITIAL_MERCHANTS, INITIAL_PRODUCTS } from '../../mocks/initialData';
 import { ProductDetailModal } from '../../features/catalog/ProductDetailModal';
 import {
   ShoppingCart,
@@ -12,6 +13,50 @@ import {
   Tag,
   Loader2,
 } from 'lucide-react';
+
+
+const FALLBACK_CATALOG_STORES: PublicStore[] = INITIAL_MERCHANTS.slice(0, 10).map((m) => ({
+  id: m.id,
+  name: m.name,
+  zone_id: 'be6c3773-7bf9-47cd-a530-8060e1dc9874',
+  zone_name: 'Centro de Tingo María',
+  category_code: m.category,
+  isOpen: m.isOpen,
+  accepting_orders: m.isOpen,
+  logoUrl: m.logoUrl,
+  bannerUrl: m.bannerUrl,
+}));
+
+const FALLBACK_CATALOG_PRODUCTS: CatalogProduct[] = INITIAL_PRODUCTS.slice(0, 15).map((p) => ({
+  id: p.id,
+  storeId: p.merchantId,
+  storeName: INITIAL_MERCHANTS.find((m) => m.id === p.merchantId)?.name || 'Comercio Local',
+  categoryId: 'c85594f9-080c-4b27-9e59-b93d8abcfdc8',
+  name: p.name,
+  description: p.description,
+  brand: null,
+  isActive: p.isAvailable ?? true,
+  position: 0,
+  skus: [
+    {
+      id: p.id,
+      skuCode: `SKU-${p.id}`,
+      variantName: 'Estándar',
+      priceCents: p.priceCents,
+      barcode: null,
+      isActive: true,
+      availableStock: p.stock,
+    },
+  ],
+  images: [
+    {
+      id: p.id,
+      url: p.imageUrl,
+      altText: p.name,
+      position: 0,
+    },
+  ],
+}));
 
 export const BigStoreProductsSection: React.FC = () => {
   const add = useRealCartStore((s) => s.add);
@@ -31,14 +76,18 @@ export const BigStoreProductsSection: React.FC = () => {
     ])
       .then(([productsRes, storesRes]) => {
         if (isMounted) {
-          setProducts(productsRes.items);
-          setStores(storesRes);
+          setProducts(productsRes.items && productsRes.items.length > 0 ? productsRes.items : FALLBACK_CATALOG_PRODUCTS);
+          setStores(storesRes && storesRes.length > 0 ? storesRes : FALLBACK_CATALOG_STORES);
           setLoading(false);
         }
       })
       .catch((err) => {
         console.error('Error al cargar productos de tiendas:', err);
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setProducts(FALLBACK_CATALOG_PRODUCTS);
+          setStores(FALLBACK_CATALOG_STORES);
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -157,9 +206,9 @@ export const BigStoreProductsSection: React.FC = () => {
               const sku = product.skus[0];
               const price = sku ? sku.priceCents : 0;
               const hasStock = (sku?.availableStock || 0) > 0;
-              const productImg = product.images[0]?.url
-                ? imageUrl(product.images[0].url)
-                : 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+              const rawImg = product.images[0]?.url;
+              const resolvedImg = rawImg?.startsWith('http') ? rawImg : (rawImg ? imageUrl(rawImg) : '');
+              const productImg = resolvedImg || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
 
               return (
                 <div
@@ -169,12 +218,7 @@ export const BigStoreProductsSection: React.FC = () => {
                 >
                   {/* Product Image */}
                   <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                    <img
-                      src={productImg}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+                    <img src={productImg} alt={product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                       Envío local
                     </span>

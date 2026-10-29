@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { catalogApi, PublicStore, imageUrl } from '../../services/api/catalogApi';
+import { INITIAL_MERCHANTS } from '../../mocks/initialData';
 import {
   Building2,
   Clock,
@@ -20,6 +21,18 @@ const FALLBACK_BANNERS = [
   'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
 ];
+const FALLBACK_STORES: PublicStore[] = INITIAL_MERCHANTS.slice(0, 10).map((m) => ({
+  id: m.id,
+  name: m.name,
+  zone_id: 'be6c3773-7bf9-47cd-a530-8060e1dc9874',
+  zone_name: 'Centro de Tingo María',
+  category_code: m.category,
+  isOpen: m.isOpen,
+  accepting_orders: m.isOpen,
+  logoUrl: m.logoUrl,
+  bannerUrl: m.bannerUrl,
+}));
+
 
 export const OfficialStoresSection: React.FC = () => {
   const [stores, setStores] = useState<PublicStore[]>([]);
@@ -34,13 +47,16 @@ export const OfficialStoresSection: React.FC = () => {
       .stores()
       .then((data) => {
         if (isMounted) {
-          setStores(data);
+          setStores(data && data.length > 0 ? data : FALLBACK_STORES);
           setLoading(false);
         }
       })
       .catch((err) => {
         console.error('Error al cargar tiendas oficiales:', err);
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setStores(FALLBACK_STORES);
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -146,9 +162,7 @@ export const OfficialStoresSection: React.FC = () => {
               className="flex items-stretch gap-3 sm:gap-3.5 overflow-x-auto scrollbar-none scroll-smooth pb-2 pt-1 px-0.5"
             >
               {stores.map((store, idx) => {
-                const bannerSrc = store.bannerUrl
-                  ? imageUrl(store.bannerUrl)
-                  : FALLBACK_BANNERS[idx % FALLBACK_BANNERS.length];
+                const bannerSrc = (store.bannerUrl && store.bannerUrl.startsWith('http')) ? store.bannerUrl : (store.bannerUrl ? imageUrl(store.bannerUrl) : '') || FALLBACK_BANNERS[idx % FALLBACK_BANNERS.length];
 
                 return (
                   <Link
@@ -181,7 +195,7 @@ export const OfficialStoresSection: React.FC = () => {
                         <div className="w-11 h-11 rounded-xl bg-white shadow-sm border border-gray-100 p-0.5 flex items-center justify-center -mt-5 mb-1.5 relative z-10 overflow-hidden">
                           {store.logoUrl ? (
                             <img
-                              src={imageUrl(store.logoUrl)}
+                              src={(store.logoUrl && store.logoUrl.startsWith('http')) ? store.logoUrl : (store.logoUrl ? imageUrl(store.logoUrl) : '') || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80'}
                               alt={store.name}
                               className="w-full h-full object-contain rounded-lg"
                               onError={(e) => {
