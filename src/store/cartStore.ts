@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CartItem } from '../domain/types';
 import { safeJsonParse } from '../lib/utils';
+import { useRealCartStore } from './realCartStore';
 
 interface CartState {
   items: CartItem[];
@@ -42,6 +43,23 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: getStoredCart(),
 
   addItem: (item) => {
+    try {
+      const isUUID = (str?: string) => !!str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      if (isUUID(item.productId) && isUUID(item.merchantId)) {
+        const skuId = item.selectedVariantId && isUUID(item.selectedVariantId) ? item.selectedVariantId : item.productId;
+        useRealCartStore.getState().add(
+          {
+            skuId,
+            productId: item.productId,
+            storeId: item.merchantId,
+          },
+          item.quantity
+        );
+      }
+    } catch {
+      // safe fallback
+    }
+
     const current = get().items;
     const existingIndex = current.findIndex(
       (it) =>
@@ -89,6 +107,14 @@ export const useCartStore = create<CartState>((set, get) => ({
       return;
     }
 
+    const target = get().items.find((it) => it.id === id);
+    if (target) {
+      try {
+        const skuId = target.selectedVariantId || target.productId;
+        useRealCartStore.getState().update(skuId, { quantity });
+      } catch {}
+    }
+
     const updated = get().items.map((it) =>
       it.id === id ? { ...it, quantity } : it
     );
@@ -97,6 +123,14 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   removeItem: (id: string) => {
+    const target = get().items.find((it) => it.id === id);
+    if (target) {
+      try {
+        const skuId = target.selectedVariantId || target.productId;
+        useRealCartStore.getState().remove(skuId);
+      } catch {}
+    }
+
     const updated = get().items.filter((it) => it.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ items: updated });
@@ -110,6 +144,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   clearCart: () => {
+    try {
+      useRealCartStore.getState().clear();
+    } catch {}
     localStorage.removeItem(STORAGE_KEY);
     set({ items: [] });
   },

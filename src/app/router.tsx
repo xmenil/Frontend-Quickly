@@ -33,6 +33,7 @@ import { CustomerFavoritesPage } from '../features/customer/CustomerFavoritesPag
 import { CustomerProfilePage } from '../features/customer/CustomerProfilePage';
 import { CustomerNotificationsPage } from '../features/customer/CustomerNotificationsPage';
 import { CustomerHelpPage } from '../features/customer/CustomerHelpPage';
+import { GroupCheckoutPage } from '../features/checkout/GroupCheckoutPage';
 
 // Merchant
 import { MerchantDashboardPage } from '../features/merchant/MerchantDashboardPage';
@@ -59,6 +60,7 @@ import { AdminZonesPage } from '../features/admin/AdminZonesPage';
 import { AdminTicketsPage } from '../features/admin/AdminTicketsPage';
 import { AdminReportsPage } from '../features/admin/AdminReportsPage';
 import { AdminAuditPage } from '../features/admin/AdminAuditPage';
+import { OperationalHealthPage } from '../features/operations/OperationalHealthPage';
 
 export const router = createBrowserRouter([
   // Public Routes (Shop, Cart, Catalog)
@@ -72,6 +74,7 @@ export const router = createBrowserRouter([
       { path: 'producto/:id', element: <ProductDetailPage /> },
       { path: 'carrito', element: <CartPage /> },
       { path: 'checkout', element: <CheckoutPage /> },
+      { path: 'cliente/compras/:id', element: <GroupCheckoutPage /> },
     ],
   },
 
@@ -139,6 +142,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/admin/resumen" replace /> },
       { path: 'resumen', element: <AdminOverviewPage /> },
+      { path: 'operacion', element: <OperationalHealthPage /> },
       { path: 'usuarios', element: <AdminUsersPage /> },
       { path: 'comercios', element: <AdminMerchantsPage /> },
       { path: 'repartidores', element: <AdminCouriersPage /> },

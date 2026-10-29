@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Clock, Trash2 } from 'lucide-react';
+import { Search, X, Clock, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
+import { catalogApi, CatalogProduct, money, imageUrl } from '../../services/api/catalogApi';
 
 interface SearchBarProps {
   initialValue?: string;
@@ -30,6 +31,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const [query, setQuery] = useState(initialValue);
   const [isFocused, setIsFocused] = useState(false);
+  const [liveResults, setLiveResults] = useState<CatalogProduct[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,6 +49,40 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search to PostgreSQL catalogApi
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setLiveResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      let active = true;
+      catalogApi
+        .search({ q: trimmed, limit: 5 })
+        .then((res) => {
+          if (active) {
+            setLiveResults(res.items);
+            setIsSearching(false);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setLiveResults([]);
+            setIsSearching(false);
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -184,10 +221,83 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </button>
       </form>
 
-      {/* Search Dropdown with Recent Searches */}
+      {/* Search Dropdown with Recent Searches & Live Product Results */}
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full bg-white rounded-b-2xl shadow-xl border-x border-b border-primary/20 z-50 overflow-hidden divide-y divide-gray-100 animate-in fade-in-50 duration-100">
-          {filteredHistory.map((item) => (
+        <div className="absolute left-0 right-0 top-full bg-white rounded-b-2xl shadow-xl border-x border-b border-primary/20 z-50 overflow-hidden divide-y divide-gray-100 animate-in fade-in-50 duration-100 max-h-96 overflow-y-auto">
+          {/* Loading indicator */}
+          {isSearching && (
+            <div className="px-3.5 py-2 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50/50">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+              <span>Buscando en tiendas de Tingo María...</span>
+            </div>
+          )}
+
+          {/* Live Product Results from PostgreSQL */}
+          {liveResults.length > 0 && (
+            <>
+              <div className="bg-emerald-50/50 px-3.5 py-1 text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center justify-between">
+                <span>Productos sugeridos</span>
+                <span className="text-[10px] text-emerald-600 font-semibold">{liveResults.length} resultados</span>
+              </div>
+              {liveResults.map((product) => (
+                <div
+                  key={product.id}
+                  onMouseDown={() => {
+                    saveToHistory(product.name);
+                    setIsFocused(false);
+                    navigate(`/producto/${product.id}`);
+                  }}
+                  className="flex items-center justify-between px-3.5 py-2 hover:bg-gray-50 cursor-pointer text-gray-800 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
+                      {product.images[0]?.url ? (
+                        <img
+                          src={imageUrl(product.images[0].url)}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-primary">
+                          <ShoppingBag className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-primary truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-[10px] text-gray-500 truncate">{product.storeName}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 pl-2">
+                    <span className="text-xs sm:text-sm font-extrabold text-primary tabular-nums">
+                      {product.skus[0] ? money(product.skus[0].priceCents) : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Typing active query direct search option */}
+          {query.trim() && (
+            <div
+              onMouseDown={() => executeSearch(query)}
+              className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-emerald-50/70 cursor-pointer text-primary transition-colors font-semibold text-xs sm:text-sm"
+            >
+              <Search className="w-4 h-4 text-primary flex-shrink-0" />
+              <span>
+                Buscar "<strong>{query.trim()}</strong>" en todos los comercios
+              </span>
+            </div>
+          )}
+
+          {/* Recent searches history (shown when not typing or when matches exist) */}
+          {!query.trim() && filteredHistory.map((item) => (
             <div
               key={item}
               onMouseDown={() => {
@@ -197,7 +307,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               className="flex items-center justify-between px-3.5 py-2.5 hover:bg-gray-100/90 cursor-pointer text-gray-800 transition-colors group"
             >
               <div className="flex items-center gap-3 min-w-0">
-                {/* Thin Gray Clock Icon matching Screenshot 1 */}
                 <Clock className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 stroke-[1.6]" />
                 <span className="text-sm font-semibold text-gray-800 group-hover:text-black truncate">
                   {item}
@@ -213,19 +322,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               </button>
             </div>
           ))}
-
-          {/* Typing active query direct search option */}
-          {query.trim() && (
-            <div
-              onMouseDown={() => executeSearch(query)}
-              className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-emerald-50/70 cursor-pointer text-primary transition-colors font-medium text-xs sm:text-sm"
-            >
-              <Search className="w-4 h-4 text-primary flex-shrink-0" />
-              <span>
-                Buscar "<strong>{query.trim()}</strong>" en Tingo María
-              </span>
-            </div>
-          )}
 
           {/* Bottom toolbar for clear history */}
           {history.length > 0 && !query.trim() && (

@@ -1,19 +1,57 @@
 # Quickly — Plataforma de Delivery en Tingo María
 
-Prototipo frontend navegable, funcional y responsive de **Quickly**, una plataforma web de delivery para **Tingo María, Rupa Rupa, provincia de Leoncio Prado, Huánuco, Perú**, basada en la propuesta y arquitectura conceptual del informe **INNOVACIÓN II**.
+Frontend React de **Quickly**, una plataforma web de delivery para **Tingo María, Rupa Rupa, provincia de Leoncio Prado, Huánuco, Perú**. F1 integra registro, login, restauración/cierre de sesión y perfil con la API NestJS y PostgreSQL en Docker. El prototipo completo se conserva en un modo demo explícito.
+
+## Estado actual: F0–F5 y multitienda F7
+
+Carrito real permite seleccionar productos de varias tiendas, cotizar envíos por tienda y confirmar una vez. Cada tienda genera su pedido/entrega/cobro independiente, con efectivo exacto previsto por entrega y recuperación segura de la misma confirmación. Resumen en `/cliente/compras/:id`; cancelación y seguimiento por pedido. Una tienda conserva el flujo de efectivo con cambio de F4.
+
+Pasarela F6 pendiente por decisión del usuario. Google, GPS, promociones, carrito remoto y liquidaciones de F7 pendientes. Reglas y evidencia actualizadas se conservan en el workspace versionado del backend (`docs/workspace/docs/harness/`). No se declara piloto/despliegue real completado.
+
+Entrega de desarrollo en rama `feat/integracion-backend-f0-f2`, sin fusionar a `main`. El plan completo, decisiones, evidencia y pasos para continuar están en [el relevo del backend](https://github.com/xmenil/Quickly-backend/blob/main/docs/RELEVO_F2.md). Clonar backend y frontend como carpetas hermanas para ejecutar el harness conjunto.
+
+F2 conecta solicitudes y correcciones de comercio/reparto, seguimiento en `/cliente/solicitudes`, direcciones, perfil comercial con horarios/equipo, disponibilidad del repartidor y administración de solicitudes, usuarios y zonas. Las decisiones y los permisos proceden del servidor; los formularios presentan errores, estados vacíos y carga sin recurrir a datos simulados.
+
+Para la primera administración: registrar una cuenta personal y, desde `backend/`, ejecutar `npm run admin:bootstrap -- --email tu-correo@ejemplo.com`. Restaurar sesión y crear las zonas reales en administración. Solo después se pueden presentar solicitudes y crear direcciones. No existen credenciales administrativas predeterminadas ni zonas ficticias en desarrollo. Ver `backend/README.md` para reglas y migraciones.
+
+Desde `backend/`, iniciar `npm run dev:db` y `npm run start:dev`. En otra terminal, desde `Frontend-Quickly/`, ejecutar `npm ci` y `npm run dev`; abrir `http://localhost:5173`.
+
+El modo predeterminado es real. Vite hace proxy de `/api` a `http://127.0.0.1:3000` conservando Origin. La cookie HttpOnly queda bajo el mismo origen web; el cliente envía credenciales y CSRF automáticamente. `.env.example` permite ajustar la URL base y el proxy. El perfil se carga al abrir/recargar, se guarda en servidor y se limpia al recibir 401 o cerrar sesión. Un error de conexión ofrece reintento y no crea una identidad ficticia.
+
+Para el prototipo anterior: `npm run dev:demo`, en `http://localhost:5175`. Este modo usa exclusivamente las cuentas y operaciones simuladas. En modo real, las secciones todavía pendientes muestran su disponibilidad real; no aceptan compras o solicitudes ficticias. Google y recuperación de contraseña no se anuncian como activos.
+
+### Contratos, caché y pruebas
+
+- Identidad tipada desde OpenAPI: `src/services/api/contracts/`. `identityApi` valida respuestas en ejecución con Zod.
+- Tras cambiar un DTO backend: compilar backend, ejecutar allí `npm run contracts:export`, luego aquí `npm run contracts:sync`. `npm run contracts:check` detecta diferencias de tipos y, si existe el repositorio hermano, diferencias con su OpenAPI.
+- Estrategia inicial de caché: identidad en memoria de `authStore`, respuestas privadas sin almacenamiento persistente, cancelación/invalidación por generación de sesión. Los dominios posteriores añadirán sus consultas por recurso sobre el mismo cliente; no se reintroduce una DB global en localStorage.
+- `npm test` conserva pruebas del prototipo en modo demo y añade las pruebas reales de sesión, HTTP y permisos.
+- Desde la raíz del workspace, `node scripts/check-workspace.cjs` ejecuta el harness integral; necesita ambos repositorios con `npm ci` y Docker disponible.
+- Desde backend: `npm run harness:browser` prueba Edge/Chromium real, con API y Vite temporales y una DB Docker aleatoria. No ejecutar Playwright directamente contra la DB de desarrollo. En Windows usa Edge instalado; en Linux instalar Chromium mediante `npx playwright install --with-deps chromium` desde el frontend.
+- El workflow frontend valida contrato local, compilación y pruebas. El E2E integrado requiere ambos repositorios; su ejecución remota depende de disponer de ambos checkouts.
+
+### Despliegue
+
+F8 incorpora Dockerfile y `deploy/Caddyfile` para servir el build real y `/api` en el mismo origen HTTPS junto con `backend/deploy/compose.staging.yml`. Ensayo aislado desde backend: `npm run test:staging`. Verifica cookie Secure/HttpOnly, CSRF, SPA, monitor administrativo y persistencia tras reiniciar API. No cambia el despliegue actual de main ni publica automáticamente.
+
+Administración añade `/admin/operacion` para avisos reales de outbox, vencimientos y pool. Staging público/piloto, alertas externas, copias remotas y correcciones mayores de dependencias siguen pendientes; revisar `docs/workspace/docs/harness/` en backend.
+
+La integración se verifica localmente mediante proxy del mismo origen. Antes de publicar la versión real, configurar el proxy `/api` hacia el backend desplegado y HTTPS con `SESSION_COOKIE_SECURE=true`, junto con los orígenes exactos en `CORS_ORIGIN`. La reescritura SPA existente de Vercel no sustituye ese proxy: requiere su destino público cuando se despliegue la API. La validación en un staging público queda como requisito de despliegue antes del piloto.
+
+El resto del documento conserva la descripción del prototipo y sus capacidades demo; no implica que todas estén integradas en modo real.
 
 ---
 
 ## 1. Requisitos y Comandos de Ejecución
 
 ### Requisitos del Sistema
-- **Node.js**: v18.0.0 o superior (verificado y testeado en Node v24.11.1)
+- **Node.js**: 22 (mismo entorno que el backend y CI).
 - **Gestor de paquetes**: `npm` v9.0.0+ (incluido con Node.js)
 
 ### Comandos de Ejecución
 ```bash
 # 1. Instalar dependencias
-npm install
+npm ci
 
 # 2. Iniciar el servidor de desarrollo local
 npm run dev

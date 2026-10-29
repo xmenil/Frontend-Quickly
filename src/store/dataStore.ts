@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { isDemoMode } from '../config/appMode';
 import {
   Merchant,
+  MerchantCategory,
   Product,
   Courier,
   User,
@@ -30,6 +32,7 @@ import { canTransitionOrder, derivePurchaseStatus, calculateOrderRefund } from '
 import { safeJsonParse } from '../lib/utils';
 import { mergeCourierActivity } from '../mocks/courierActivityData';
 import { addExampleAddresses } from '../mocks/exampleAddresses';
+import { catalogApi } from '../services/api/catalogApi';
 
 interface DataState {
   addressExampleUserIds: string[];
@@ -104,6 +107,7 @@ interface DataState {
 
   // Factory Reset
   resetToSeed: () => void;
+  syncFromBackend: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'quickly_datastore_v4';
@@ -190,6 +194,7 @@ function getInitialStoredData(): StoredDataPayload {
 const initialPayload = getInitialStoredData();
 
 function saveToLocalStorage(state: DataState) {
+  if (!isDemoMode) return;
   const payload: StoredDataPayload = {
     addressExampleUserIds: state.addressExampleUserIds || [],
     courierActivitySeedVersion: 1,
@@ -214,6 +219,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   ...initialPayload,
 
   ensureExampleAddresses: (user) => {
+    if (!isDemoMode) return;
     if (!user.id || get().addressExampleUserIds.includes(user.id)) return;
     set((state) => {
       const nextState = {
@@ -929,6 +935,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   resetToSeed: () => {
+    if (!isDemoMode) return;
     localStorage.removeItem(STORAGE_KEY);
     const freshPayload: StoredDataPayload = {
       addressExampleUserIds: [],
@@ -949,16 +956,94 @@ export const useDataStore = create<DataState>((set, get) => ({
     localStorage.setItem(STORAGE_KEY, JSON.stringify(freshPayload));
     set(freshPayload);
   },
+
+  syncFromBackend: async () => {
+    try {
+      const [stores, prodsRes] = await Promise.all([
+        catalogApi.stores().catch(() => []),
+        catalogApi.search({ limit: 50 }).catch(() => ({ items: [] })),
+      ]);
+
+      if (stores && stores.length > 0) {
+        const mappedMerchants: Merchant[] = stores.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: (s.category_code as MerchantCategory) || 'bodegas',
+          description: `Comercio afiliado en ${s.zone_name}`,
+          address: s.zone_name,
+          phone: '+51962000000',
+          isOpen: s.isOpen,
+          logoUrl: s.logoUrl || '',
+          bannerUrl: s.bannerUrl || '',
+          rating: 4.8,
+          ratingCount: 18,
+          prepTimeMinutes: 25,
+          deliveryFeeCents: 400,
+          minOrderCents: 1000,
+          schedule: '08:00 - 22:00',
+          status: 'activo',
+          ownerUserId: '',
+          zoneId: s.zone_id,
+        }));
+
+        const mappedProducts: Product[] = prodsRes.items.map((p) => {
+          const primarySku = p.skus.find((s) => s.isActive && s.availableStock > 0) || p.skus[0];
+          const matchingStore = stores.find((s) => s.id === p.storeId);
+          return {
+            id: p.id,
+            merchantId: p.storeId,
+            name: p.name,
+            description: p.description,
+            category: (matchingStore?.category_code as MerchantCategory) || 'bodegas',
+            priceCents: primarySku ? primarySku.priceCents : 1000,
+            stock: primarySku ? primarySku.availableStock : 10,
+            imageUrl: p.images[0]?.url || '',
+            images: p.images.map((i) => i.url),
+            isAvailable: p.isActive && (primarySku ? primarySku.availableStock > 0 : true),
+            hasVariants: p.skus.length > 1,
+            variants: p.skus.map((s) => ({
+              id: s.id,
+              name: s.variantName,
+              priceDifferenceCents: primarySku ? s.priceCents - primarySku.priceCents : 0,
+              isAvailable: s.isActive && s.availableStock > 0,
+            })),
+            brand: p.brand || undefined,
+            sku: primarySku?.skuCode,
+          };
+        });
+
+        set((state) => {
+          const currentMerchants = state.merchants;
+          const currentProducts = state.products;
+          const newStoreIds = new Set(mappedMerchants.map((m) => m.id));
+          const newProdIds = new Set(mappedProducts.map((p) => p.id));
+
+          return {
+            merchants: [...mappedMerchants, ...currentMerchants.filter((m) => !newStoreIds.has(m.id))],
+            products: [...mappedProducts, ...currentProducts.filter((p) => !newProdIds.has(p.id))],
+          };
+        });
+      }
+    } catch (e) {
+      console.warn('dataStore.syncFromBackend failed', e);
+    }
+  },
 }));
 
 // Cross-tab synchronization
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY && e.newValue) {
+    if (isDemoMode && e.key === STORAGE_KEY && e.newValue) {
       const parsed = safeJsonParse<StoredDataPayload | null>(e.newValue, null);
       if (parsed) {
         useDataStore.setState(parsed);
       }
     }
   });
+}
+
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    useDataStore.getState().syncFromBackend?.();
+  }, 100);
 }

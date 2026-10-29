@@ -1,53 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useRealCartStore } from '../../store/realCartStore';
+import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
+import { operationsApi, Zone } from '../../services/api/operationsApi';
 import { ProductDetailModal } from './ProductDetailModal';
 import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
 import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
-import { Product, MerchantCategory } from '../../domain/types';
-import { formatCents } from '../../lib/currency';
-import { formatDate } from '../../lib/date';
 import {
   ArrowRight,
-  MapPin,
   Clock,
   Check,
   Bike,
-  Truck,
   ShoppingCart,
   Store,
   Sparkles,
   ShoppingBag,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
   UtensilsCrossed,
   PlusCircle,
   Shirt,
   Sprout,
-  Zap,
-  Smartphone,
-  Laptop,
-  TrendingDown,
-  BadgeCheck,
-  Building2,
   Heart,
+  ChevronRight,
+  ChevronDown,
+  Loader2,
+  Building2,
 } from 'lucide-react';
+
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
 import heroSmartphoneView from '../../assets/img/image copy 4.png';
 
-export const HomePage: React.FC = () => {
-  const { merchants, products, purchases } = useDataStore();
-  const { addItem } = useCartStore();
-  const { isAuthenticated, currentUser, activeRole, loginDemo } = useAuthStore();
+export function HomePage() {
+  const { isAuthenticated, currentUser, activeRole, switchRole, loginDemo } = useAuthStore();
+  const add = useRealCartStore((s) => s.add);
   const navigate = useNavigate();
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
+  const [featuredProducts, setFeaturedProducts] = useState<CatalogProduct[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
+
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const roleMenuRef = useRef<HTMLDivElement>(null);
 
@@ -61,14 +56,15 @@ export const HomePage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 3 Slides con fotos locales de Tingo María y micro-copys concisos estilo Rappi
+  // 3 Slides con fotografías locales de Tingo María y micro-copys concisos estilo Rappi
   const heroSlides = [
     {
       id: 1,
       image: heroFamilyGroceries,
       badge: 'Restaurantes, Bodegas, Farmacias y más',
       title: 'Todo lo que necesitas, en un solo lugar',
-      description: 'Comida típica, abarrotes de Minisol, medicamentos y productos de la selva al instante.',
+      description:
+        'Comida típica, abarrotes de Minisol, medicamentos y productos de la selva al instante.',
       ctaText: 'Ver categorías',
       ctaLink: '/negocios',
     },
@@ -77,7 +73,8 @@ export const HomePage: React.FC = () => {
       image: heroMotorcycleDelivery,
       badge: 'Envíos Express Tingo María',
       title: 'Pollería Rubén & Sabores de la Selva',
-      description: 'Pollo a la brasa con papas nativas, tacacho con cecina y comidas calientes en 20-35 min.',
+      description:
+        'Pollo a la brasa con papas nativas, tacacho con cecina y comidas calientes en 20-35 min.',
       ctaText: 'Pedir comida caliente',
       ctaLink: '/negocios?categoria=restaurantes',
     },
@@ -86,12 +83,14 @@ export const HomePage: React.FC = () => {
       image: heroSmartphoneView,
       badge: 'Supermercado Minisol & Farmacias',
       title: 'Tus compras del hogar directo a tu puerta',
-      description: 'Abarrotes frescos, boticas y productos locales con entrega rápida y pagos Yape/Plin.',
+      description:
+        'Abarrotes frescos, boticas y productos locales con entrega rápida y pago contra entrega en efectivo.',
       ctaText: 'Explorar comercios',
       ctaLink: '/negocios',
     },
   ];
 
+  // Auto-advance banner carousel
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
@@ -133,152 +132,79 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  // Atajos rápidos para el recuadro derecho (reemplazando el carrito, con iconos bien claros)
-  const rightSidebarShortcuts = [
-    {
-      id: 'ofertas-relampago',
-      label: 'Ofertas relámpago',
-      subtitle: 'Hasta 40% OFF',
-      icon: <Zap className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios?q=oferta',
-    },
-    {
-      id: 'ofertas-del-dia',
-      label: 'Ofertas del día',
-      subtitle: 'Precios bomba 24h',
-      icon: (
-        <span className="w-4 h-4 rounded-full border-[1.5px] border-primary text-primary font-black text-[9px] flex items-center justify-center leading-none">
-          24
-        </span>
-      ),
-      link: '/negocios?q=descuento',
-    },
-    {
-      id: 'celulares',
-      label: 'Celulares',
-      subtitle: 'Smartphones y más',
-      icon: <Smartphone className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios?q=celulares',
-    },
-    {
-      id: 'notebooks',
-      label: 'Notebooks',
-      subtitle: 'Laptops y PC',
-      icon: <Laptop className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios?q=notebooks',
-    },
-    {
-      id: 'menos-100',
-      label: 'Menos de S/100',
-      subtitle: 'Súper ahorro',
-      icon: (
-        <div className="flex flex-col items-center justify-center text-primary leading-none">
-          <span className="font-extrabold text-[9px]">S/↓</span>
-          <TrendingDown className="w-2.5 h-2.5 stroke-[2.5]" />
-        </div>
-      ),
-      link: '/negocios?q=combo',
-    },
-    {
-      id: 'envios-express',
-      label: 'Envíos Express',
-      subtitle: '20 a 35 min',
-      icon: <Bike className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios',
-    },
-    {
-      id: 'moda-selva',
-      label: 'Moda Selva',
-      subtitle: 'Tendencias locales',
-      icon: <Shirt className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios?categoria=ropa',
-    },
-    {
-      id: 'cacao-cafe',
-      label: 'Cacao & Café',
-      subtitle: 'Leoncio Prado',
-      icon: <Sparkles className="w-4 h-4 text-primary stroke-[2]" />,
-      link: '/negocios?categoria=emprendedores',
-    },
-  ];
+  // Load real featured products and zones from PostgreSQL
+  useEffect(() => {
+    let isMounted = true;
 
-  // 4 Platos y productos bandera 100% de Tingo María
-  const featuredCards = [
-    {
-      id: 'p_tacacho_cecina',
-      name: 'Tacacho con Cecina y Chorizo Amazónico',
-      merchantName: 'La Selva Gourmet',
-      priceCents: 2800,
-      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'p_juane_gallina',
-      name: 'Juane Tradicional de Gallina de Chacra',
-      merchantName: 'La Selva Gourmet',
-      priceCents: 2200,
-      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'p_repelente_selva',
-      name: 'Repelente Extra Fuerte para Selva Spray 150ml',
-      merchantName: 'Farmacia Vida',
-      priceCents: 1850,
-      imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'p_chocolate_70',
-      name: 'Chocolate 70% Cacao Nativo Leoncio Prado',
-      merchantName: 'Cacao & Café Tingo',
-      priceCents: 1400,
-      imageUrl: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=600&auto=format&fit=crop&q=80',
-    },
-  ];
+    Promise.all([
+      catalogApi.search({ limit: 4 }),
+      operationsApi.zones(),
+    ])
+      .then(([prodRes, zonesRes]) => {
+        if (isMounted) {
+          setFeaturedProducts(prodRes.items);
+          setZones(zonesRes.filter((z) => z.isActive));
+          setLoadingFeatured(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error al cargar datos de portada:', err);
+        if (isMounted) setLoadingFeatured(false);
+      });
 
-  const handleAddFeatured = (e: React.MouseEvent, item: typeof featuredCards[0]) => {
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleAddFeatured = (e: React.MouseEvent, product: CatalogProduct) => {
     e.stopPropagation();
     e.preventDefault();
-    const foundProd = products.find((p) => p.id === item.id) || products[0];
-    if (foundProd) {
-      addItem({
-        productId: foundProd.id,
-        merchantId: foundProd.merchantId,
-        quantity: 1,
-        unitPriceCents: item.priceCents,
-      });
-      setAddedFeaturedId(item.id);
+
+    const sku = product.skus.find((s) => s.isActive && s.availableStock > 0) || product.skus[0];
+    if (!sku) return;
+
+    try {
+      add(
+        {
+          skuId: sku.id,
+          productId: product.id,
+          storeId: product.storeId,
+        },
+        1
+      );
+
+      setAddedFeaturedId(product.id);
       setTimeout(() => {
-        setAddedFeaturedId((curr) => (curr === item.id ? null : curr));
+        setAddedFeaturedId((curr) => (curr === product.id ? null : curr));
       }, 1500);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // Find active purchase for realistic status card
-  const activePurchase = purchases.find((p) =>
-    ['pendiente', 'en_proceso', 'entrega_parcial'].includes(p.status)
-  );
-
   return (
-    <div className="w-full flex flex-col bg-white">
-      {/* Indicador de Entrega: Despachos en 20 - 35 min (exacto a prototipo v2) */}
-      <div className="w-full bg-white select-none pt-2.5 pb-1">
+    <div className="w-full flex flex-col bg-white select-none">
+      {/* Indicador de Entrega: Despachos en 20 - 35 min */}
+      <div className="w-full bg-white pt-2.5 pb-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs sm:text-sm">
           <div className="inline-flex items-center gap-2 text-ink font-bold">
             <Clock className="w-4 h-4 text-ink flex-shrink-0 stroke-[2.2]" />
             <span>Despachos en 20 - 35 min</span>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-ink-light">
-            <span className="w-2 h-2 rounded-full bg-primary" />
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span>Repartidores activos en Leoncio Prado</span>
           </div>
         </div>
       </div>
 
-      {/* Top Section: Hero Banner Carousel & 5 Category Cards */}
-      <section className="w-full bg-white pb-3 pt-1 select-none">
+      {/* Top Section: Hero Banner Carousel & Category Cards */}
+      <section className="w-full bg-white pb-3 pt-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3.5">
-          {/* Hero Banner Carousel (estilo prototipo v2 con micro-copys concisos) */}
+          {/* Hero Banner Carousel */}
           <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm h-[200px] sm:h-[240px] lg:h-[260px] flex flex-col justify-end p-5 sm:p-7 text-white select-none group w-full bg-gradient-to-br from-emerald-900 to-emerald-950">
-            {/* Background Slides with crossfade transition */}
+            {/* Background Slides */}
             {heroSlides.map((slide, idx) => {
               const isActive = idx === currentHeroSlide;
               return (
@@ -297,8 +223,8 @@ export const HomePage: React.FC = () => {
               );
             })}
 
-            {/* Sombra y gradiente para contraste limpio sobre fondos naturales */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
+            {/* Sombra y gradiente para contraste limpio */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent z-10" />
 
             {/* Slide Content */}
             <div className="relative z-20 space-y-2 max-w-lg">
@@ -404,6 +330,7 @@ export const HomePage: React.FC = () => {
                       type="button"
                       onClick={() => {
                         loginDemo(r.role as any);
+                        switchRole(r.role as any);
                         setShowRoleMenu(false);
                       }}
                       className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
@@ -487,14 +414,14 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Official Stores Section (Full Width Edge-to-Edge) */}
+      {/* Official Stores Section (Connected to catalogApi.stores()) */}
       <OfficialStoresSection />
 
-      {/* Big Stores Products & Deals Showcase (Full Width Edge-to-Edge with emerald-50/20) */}
+      {/* Big Stores Products & Deals Showcase (Connected to catalogApi.search()) */}
       <BigStoreProductsSection />
 
-      {/* Productos Destacados Section: Gastronomía & Tradición Tingalesa (Full Width Edge-to-Edge) */}
-      <section className="w-full bg-white border-y border-gray-150/70 py-8 sm:py-10 select-none">
+      {/* Featured Products Section: Platos y Productos de Tingo María */}
+      <section className="w-full bg-white border-y border-gray-150/70 py-8 sm:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100/80">
             <div className="flex items-center gap-2.5">
@@ -511,7 +438,7 @@ export const HomePage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-ink-light">
-                  Gastronomía amazónica tradicional y productos indispensables en Tingo María
+                  Gastronomía amazónica tradicional y productos de alta demanda en Leoncio Prado
                 </p>
               </div>
             </div>
@@ -524,251 +451,234 @@ export const HomePage: React.FC = () => {
             </Link>
           </div>
 
-          {/* 4 Cards Grid con feedback táctil inmediato y diseño unificado */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {featuredCards.map((item) => {
-              const itemProd = products.find((p) => p.id === item.id);
-              const itemStore = merchants.find(
-                (m) => m.id === itemProd?.merchantId || m.name.toLowerCase().includes(item.merchantName.toLowerCase())
-              );
-              const isJustAdded = addedFeaturedId === item.id;
+          {loadingFeatured ? (
+            <div className="py-12 flex items-center justify-center gap-2 text-xs text-ink-light">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span>Cargando productos recomendados...</span>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="py-8 text-center text-xs text-ink-light">
+              No hay productos destacados disponibles en este momento.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {featuredProducts.map((item) => {
+                const isJustAdded = addedFeaturedId === item.id;
+                const sku = item.skus[0];
+                const price = sku ? sku.priceCents : 0;
+                const hasStock = (sku?.availableStock || 0) > 0;
+                const productImg = item.images[0]?.url
+                  ? imageUrl(item.images[0].url)
+                  : 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
 
-              return (
-                <Link
-                  key={item.id}
-                  to={`/producto/${item.id}`}
-                  className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full"
-                >
-                  {/* Product Image: De esquina a esquina */}
-                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                      Envío rápido
-                    </span>
-                  </div>
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedProduct(item)}
+                    className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full cursor-pointer"
+                  >
+                    {/* Product Image */}
+                    <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
+                      <img
+                        src={productImg}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                        Envío rápido
+                      </span>
+                    </div>
 
-                  {/* Content Body */}
-                  <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                    <div>
-                      {/* Product Name */}
-                      <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
-                        {item.name}
-                      </h4>
+                    {/* Content Body */}
+                    <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+                      <div>
+                        {/* Product Name */}
+                        <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
+                          {item.name}
+                        </h4>
 
-                      {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
-                      <div className="flex items-center justify-between gap-1.5 mt-2">
-                        {/* Perfil de la tienda */}
-                        <div
-                          className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
-                          title={`${item.merchantName} • Tienda verificada`}
-                        >
-                          {itemStore?.logoUrl ? (
-                            <img
-                              src={itemStore.logoUrl}
-                              alt={item.merchantName}
-                              className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
+                        {/* Store badge & Stock */}
+                        <div className="flex items-center justify-between gap-1.5 mt-2">
+                          <div
+                            className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full min-w-0 max-w-[58%]"
+                            title={`${item.storeName} • Tienda verificada`}
+                          >
                             <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                          )}
-                          <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                            {item.merchantName
-                              .replace(/Supermercado\s+/i, 'Super ')
-                              .replace(/\s+Tingo María$/i, '')}
-                          </span>
-                          <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
-                        </div>
+                            <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
+                              {item.storeName}
+                            </span>
+                          </div>
 
-                        {/* Stock disponible */}
-                        <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0 animate-pulse" />
-                          <span>Stock disponible</span>
+                          <span className={`text-[10px] font-bold ${hasStock ? 'text-primary' : 'text-gray-400'}`}>
+                            {hasStock ? 'En stock' : 'Agotado'}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Bottom Row */}
-                    <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
-                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
-                        {formatCents(item.priceCents)}
-                      </span>
+                      {/* Price & Add to Cart button */}
+                      <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-gray-100/70">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-ink-light">Precio contado</span>
+                          <span className="font-black text-sm sm:text-base text-ink">
+                            {money(price)}
+                          </span>
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleAddFeatured(e, item)}
-                        title="Agregar al carrito"
-                        aria-label={`Agregar ${item.name} al carrito`}
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
-                          isJustAdded
-                            ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
-                            : 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
-                        }`}
-                      >
-                        {isJustAdded ? (
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        ) : (
-                          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        )}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAddFeatured(e, item)}
+                          disabled={!hasStock}
+                          className={`p-2 rounded-xl transition-all cursor-pointer ${
+                            isJustAdded
+                              ? 'bg-emerald-600 text-white scale-105'
+                              : hasStock
+                              ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
+                          aria-label={`Agregar ${item.name} al carrito`}
+                        >
+                          {isJustAdded ? (
+                            <Check className="w-4 h-4 stroke-[3]" />
+                          ) : (
+                            <ShoppingCart className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Bottom 3 Cards Row: Dirección de entrega | Estado de pedido dinámico | Mis pedidos */}
-      <section className="w-full bg-emerald-50/20 border-b border-emerald-100/50 py-8 sm:py-10 select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {/* Card 1: Dirección de entrega */}
+      {/* Information Cards: Cobertura, Entrega y Seguridad */}
+      <section className="w-full bg-emerald-50/30 py-8 sm:py-10 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="text-center max-w-xl mx-auto space-y-1">
+            <h3 className="text-lg sm:text-xl font-black text-ink">
+              Compras seguras en la Bella Durmiente
+            </h3>
+            <p className="text-xs text-ink-light">
+              Logística local transparente para comercios, repartidores y familias tingalesas.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Card 1: Dirección */}
             <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-ink">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span>Dirección de entrega</span>
-                </div>
+                <span className="font-bold text-ink">Direcciones guardadas</span>
                 <Link to="/cliente/direcciones" className="text-primary hover:underline font-semibold">
-                  Cambiar
+                  Gestionar <ArrowRight className="w-3 h-3 inline" />
                 </Link>
               </div>
 
-              <p className="text-xs text-ink font-medium">Jr. Amazonas 123, Tingo María (Zona Centro)</p>
-
-              {/* Stylized Schematic Mini Map */}
-              <div className="rounded-xl overflow-hidden border border-gray-100 relative h-32 bg-sky-50/50 flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 0 300 150" fill="none">
-                  <rect width="300" height="150" fill="#f8fafc" />
-                  <line x1="0" y1="75" x2="300" y2="75" stroke="#e2e8f0" strokeWidth="12" />
-                  <line x1="150" y1="0" x2="150" y2="150" stroke="#e2e8f0" strokeWidth="10" />
-                  <line x1="50" y1="0" x2="250" y2="150" stroke="#f1f5f9" strokeWidth="8" />
-                  <path
-                    d="M 230 0 Q 250 80 270 150"
-                    stroke="#bae6fd"
-                    strokeWidth="16"
-                    fill="none"
-                  />
-                </svg>
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="px-2 py-0.5 rounded-full bg-white shadow-subtle border border-gray-100 text-[10px] font-bold text-ink flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Río Huallaga • Centro
-                  </div>
-                  <MapPin className="w-5 h-5 text-primary fill-primary-100 -mt-0.5 animate-bounce" />
+              <div className="space-y-2 py-1 text-xs">
+                <p className="text-gray-600 leading-relaxed">
+                  Registra tus puntos de entrega frecuentes (casa, trabajo o negocio) con referencias
+                  claras de tu barrio en Tingo María.
+                </p>
+                <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[11px] text-ink flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="font-medium truncate">Centro, Castillo Grande, Supte San Jorge</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Estado del Pedido DINÁMICO (o Cobertura si no hay pedido activo) */}
+            {/* Card 2: Cobertura PostgreSQL */}
             <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-ink">
                   <Bike className="w-4 h-4 text-primary" />
-                  <span>{activePurchase ? 'Seguimiento de tu pedido' : 'Cobertura & Tarifas'}</span>
+                  <span>Cobertura & Tarifas de Entrega</span>
                 </div>
-                {activePurchase && (
-                  <span className="px-2 py-0.5 rounded-full bg-primary-50 text-primary font-bold text-[10px]">
-                    En curso
-                  </span>
-                )}
+                <span className="text-[10px] bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                  PostgreSQL
+                </span>
               </div>
 
-              {activePurchase ? (
-                <div className="space-y-3 py-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-ink">#{activePurchase.code}</span>
-                    <span className="text-primary font-bold tabular-nums">
-                      {formatCents(activePurchase.grandTotalCents)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-ink-light">
-                    {activePurchase.merchantOrders.length} comercio(s) preparan tu pedido.
-                  </p>
-                  <div className="p-2.5 bg-primary-50 rounded-xl flex items-center gap-2 text-xs text-primary font-semibold">
-                    <Truck className="w-4 h-4 flex-shrink-0 animate-pulse" />
-                    <span>Tiempo estimado: ~25 min</span>
-                  </div>
-                  <Link
-                    to={`/pedidos/${activePurchase.id}`}
-                    className="w-full py-2 px-3 rounded-xl bg-primary text-white text-xs font-bold text-center block hover:bg-primary-hover shadow-subtle transition-all"
-                  >
-                    Ver seguimiento en vivo →
-                  </Link>
+              <div className="space-y-2 py-1 text-xs">
+                <p className="text-[11px] text-ink-light leading-relaxed">
+                  Repartidores locales conectando todos los sectores de Tingo María:
+                </p>
+                <div className="space-y-1.5 text-[11px]">
+                  {zones.slice(0, 3).map((z) => (
+                    <div
+                      key={z.id}
+                      className="flex justify-between items-center py-1 border-b border-gray-50"
+                    >
+                      <span className="font-medium text-ink truncate max-w-[170px]">{z.name}</span>
+                      <span className="font-bold text-primary tabular-nums">
+                        {money(z.baseFeeCents)} • ~{z.estimatedMinutes} min
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="space-y-2 py-1 text-xs">
-                  <p className="text-[11px] text-ink-light leading-relaxed">
-                    Repartidores locales en moto y bici conectando todos los sectores de Tingo María:
-                  </p>
-                  <div className="space-y-1.5 text-[11px]">
-                    <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                      <span className="font-medium text-ink">Centro (Plaza de Armas / Raymondi)</span>
-                      <span className="font-bold text-primary tabular-nums">S/ 4.00 • 20 min</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                      <span className="font-medium text-ink">Rupa Rupa Norte / UNAS</span>
-                      <span className="font-bold text-primary tabular-nums">S/ 5.00 • 25 min</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                      <span className="font-medium text-ink">Castillo Grande (Puente Corpac)</span>
-                      <span className="font-bold text-primary tabular-nums">S/ 6.50 • 35 min</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* Card 3: Mis pedidos recientes */}
+            {/* Card 3: Mis compras */}
             <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-ink">Mis pedidos recientes</span>
+                <span className="font-bold text-ink">Tus pedidos y seguimiento</span>
                 <Link to="/cliente/pedidos" className="text-primary hover:underline font-semibold">
-                  Ver todos <ArrowRight className="w-3 h-3 inline" />
+                  Ver compras <ArrowRight className="w-3 h-3 inline" />
                 </Link>
               </div>
 
-              <div className="space-y-2 text-xs">
-                {purchases.slice(0, 3).map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/pedidos/${p.id}`}
-                    className="p-2.5 bg-gray-50 hover:bg-primary-50/50 rounded-xl flex items-center justify-between transition-colors block border border-gray-100"
-                  >
-                    <div>
-                      <span className="font-bold text-ink">#{p.code}</span>
-                      <p className="text-gray-600 font-semibold text-[11px] tabular-nums mt-0.5">
-                        {formatCents(p.grandTotalCents)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        {p.status === 'completado' ? 'Entregado' : 'Procesado'}
-                      </span>
-                      <p className="text-[10px] text-gray-500 mt-0.5 tabular-nums">
-                        {formatDate(p.createdAt)}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+              <div className="space-y-3 py-2 text-xs">
+                <p className="text-gray-600 leading-relaxed">
+                  Consulta el avance de tu orden en tiempo real, desde la aceptación del comercio
+                  hasta la entrega contra entrega en efectivo.
+                </p>
+                <Link
+                  to="/cliente/pedidos"
+                  className="w-full py-2.5 px-3 rounded-xl bg-primary text-white text-xs font-bold text-center block hover:bg-primary-hover shadow-subtle transition-all cursor-pointer"
+                >
+                  Ir al historial de pedidos →
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Affiliation Section: Tu negocio & Reparte */}
+      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid sm:grid-cols-2 gap-4">
+        <Link
+          to="/registro/comercio"
+          className="bg-primary text-white rounded-2xl p-6 space-y-3 hover:bg-primary-dark transition-colors shadow-sm"
+        >
+          <Store aria-hidden className="w-7 h-7" />
+          <h2 className="text-xl font-bold">Tu negocio en Quickly</h2>
+          <p className="text-xs sm:text-sm text-emerald-100">
+            Afilia tu restaurante, bodega o tienda de Tingo María y recibe comandas al instante.
+          </p>
+          <span className="inline-flex items-center gap-2 font-bold text-sm">
+            Afiliar mi negocio <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+
+        <Link
+          to="/registro/repartidor"
+          className="bg-surface-subtle border border-border rounded-2xl p-6 space-y-3 hover:border-primary-dark transition-colors shadow-sm"
+        >
+          <Bike aria-hidden className="w-7 h-7 text-primary" />
+          <h2 className="text-xl font-bold text-ink">Reparte en tu ciudad</h2>
+          <p className="text-xs sm:text-sm text-ink-light">
+            Genera ingresos entregando pedidos en moto, bicicleta o mototaxi en todo el valle.
+          </p>
+          <span className="inline-flex items-center gap-2 font-bold text-sm text-primary">
+            Solicitar afiliación como repartidor <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+      </section>
+
       {/* Footer matching Quickly Branding */}
-      <footer className="w-full bg-white border-t border-gray-200 py-6 select-none">
+      <footer className="w-full bg-white border-t border-gray-200 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-light">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center p-1 text-white shadow-subtle">
@@ -777,13 +687,13 @@ export const HomePage: React.FC = () => {
             <div>
               <span className="font-extrabold text-ink">Quickly Tingo María</span>
               <span className="text-[11px] text-primary ml-1.5 font-bold">
-                Plataforma de delivery de la Selva Alta
+                Plataforma de delivery y compras de la Selva Alta
               </span>
             </div>
           </div>
 
           <div className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
-            <span>Rupa Rupa • Castillo Grande • Leoncio Prado</span>
+            <span>Rupa Rupa • Castillo Grande • Naranjillo • Leoncio Prado</span>
           </div>
         </div>
       </footer>
@@ -791,10 +701,9 @@ export const HomePage: React.FC = () => {
       {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
-        merchant={merchants.find((m) => m.id === selectedProduct?.merchantId)}
         isOpen={Boolean(selectedProduct)}
         onClose={() => setSelectedProduct(null)}
       />
     </div>
   );
-};
+}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { operationsApi, Zone } from '../../services/api/operationsApi';
 import { formatCents } from '../../lib/currency';
-import { MapPin, ChevronDown, Check, Clock, Bike, X } from 'lucide-react';
+import { MapPin, ChevronDown, Check, Clock, Bike, X, Loader2 } from 'lucide-react';
 
 interface ZoneSelectorProps {
   className?: string;
@@ -14,14 +14,43 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
   variant = 'navbar',
   onChangeZone,
 }) => {
-  const { zones } = useDataStore();
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedZoneId, setSelectedZoneId] = useState<string>(() => {
-    return localStorage.getItem('quickly_selected_zone') || zones[0]?.id || 'z_centro';
+    return localStorage.getItem('quickly_selected_zone') || '';
   });
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('quickly_selected_zone', selectedZoneId);
+    let isMounted = true;
+    operationsApi
+      .zones()
+      .then((data) => {
+        if (isMounted) {
+          const activeZones = data.filter((z) => z.isActive);
+          setZones(activeZones);
+          setLoading(false);
+          const saved = localStorage.getItem('quickly_selected_zone');
+          if (saved && activeZones.some((z) => z.id === saved)) {
+            setSelectedZoneId(saved);
+          } else if (activeZones[0]) {
+            setSelectedZoneId(activeZones[0].id);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error cargando zonas de Tingo María:', err);
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedZoneId) {
+      localStorage.setItem('quickly_selected_zone', selectedZoneId);
+    }
   }, [selectedZoneId]);
 
   const currentZone = zones.find((z) => z.id === selectedZoneId) || zones[0];
@@ -125,19 +154,29 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
 
             {/* Zone List */}
             <div className="space-y-2.5 pt-1">
-              {zones.map((zone) => {
-                const isSelected = zone.id === selectedZoneId;
-                return (
-                  <button
-                    key={zone.id}
-                    type="button"
-                    onClick={() => handleSelect(zone.id)}
-                    className={`w-full min-h-[56px] p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-3 ${
-                      isSelected
-                        ? 'border-primary bg-primary-soft/60 shadow-subtle ring-2 ring-primary/20'
-                        : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50/80 bg-white'
-                    }`}
-                  >
+              {loading ? (
+                <div className="py-8 text-center text-xs text-gray-500 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <span>Cargando zonas de cobertura...</span>
+                </div>
+              ) : zones.length === 0 ? (
+                <div className="py-8 text-center text-xs text-gray-500">
+                  No se encontraron zonas de reparto activas.
+                </div>
+              ) : (
+                zones.map((zone) => {
+                  const isSelected = zone.id === selectedZoneId;
+                  return (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      onClick={() => handleSelect(zone.id)}
+                      className={`w-full min-h-[56px] p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-3 ${
+                        isSelected
+                          ? 'border-primary bg-primary-soft/60 shadow-subtle ring-2 ring-primary/20'
+                          : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50/80 bg-white'
+                      }`}
+                    >
                     <div className="space-y-1 flex-1 pr-2">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-ink">{zone.name}</span>
@@ -173,7 +212,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
                     </div>
                   </button>
                 );
-              })}
+              }))}
             </div>
 
             {/* Bottom info */}

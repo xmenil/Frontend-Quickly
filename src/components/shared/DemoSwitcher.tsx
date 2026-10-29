@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isDemoMode } from '../../config/appMode';
 import { useAuthStore } from '../../store/authStore';
 import { useDataStore } from '../../store/dataStore';
 import { useNavigate } from 'react-router-dom';
@@ -188,18 +189,20 @@ export const DemoSwitcher: React.FC = () => {
 
           <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
             <div className="text-[11px] text-gray-500 truncate max-w-[170px]">
-              Activo: <span className="text-ink font-bold">{currentUser?.name}</span>
+              Activo: <span className="text-ink font-bold">{currentUser?.name || 'Invitado'}</span>
             </div>
 
             {/* Reset Seed Button */}
-            <button
-              type="button"
-              onClick={() => setShowConfirmReset(true)}
-              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg flex items-center gap-1 text-[11px] font-medium transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Restaurar datos</span>
-            </button>
+            {isDemoMode && (
+              <button
+                type="button"
+                onClick={() => setShowConfirmReset(true)}
+                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg flex items-center gap-1 text-[11px] font-medium transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Restaurar datos</span>
+              </button>
+            )}
           </div>
 
           {/* Reset Confirmation Prompt */}
