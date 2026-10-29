@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export const CustomerProfilePage: React.FC = () => {
-  const { currentUser, updateProfile, logout } = useAuthStore();
+  const { currentUser, updateProfile, logout, roles } = useAuthStore();
   const orders = useCustomerOrders(); const addressResource = useCustomerAddresses();
   const favorites = useFavoriteRecords(); const notificationResource = useCustomerNotifications();
   const purchases = orders.data || []; const addresses = addressResource.data?.addresses || []; const zones = addressResource.data?.zones || [];
@@ -238,6 +238,28 @@ export const CustomerProfilePage: React.FC = () => {
       <div>
         <h2 className="text-base sm:text-lg font-bold text-ink mb-3.5">Accesos Rápidos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Link
+            to={roles?.includes('comercio') ? '/comercio/tienda' : '/registro/comercio'}
+            className="group bg-gradient-to-r from-emerald-50/70 to-green-50/70 p-4 rounded-2xl border border-emerald-100 hover:border-primary-200 shadow-subtle hover:shadow-md transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <Store className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-ink group-hover:text-primary transition-colors flex items-center gap-2">
+                  <span>{roles?.includes('comercio') ? 'Mi Tienda' : 'Afiliar mi Negocio'}</span>
+                  <span className="text-[10px] bg-primary text-white font-bold px-1.5 py-0.5 rounded-full">
+                    {roles?.includes('comercio') ? 'Panel Tienda' : 'Vender'}
+                  </span>
+                </div>
+                <p className="text-xs text-ink-light mt-0.5">
+                  {roles?.includes('comercio') ? 'Gestionar productos y comandas' : 'Envía tu solicitud para vender como tienda'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </Link>
           <Link
             to="/cliente/pedidos"
             className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-primary-200 shadow-subtle hover:shadow-md transition-all flex items-center justify-between"

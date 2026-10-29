@@ -73,11 +73,16 @@ export const AccessDeniedPage: React.FC = () => {
       <h1 className="text-2xl font-extrabold text-ink mb-2">Área Restringida</h1>
       <p className="text-xs sm:text-sm text-ink-light max-w-md mb-6 leading-relaxed">
         No tienes los permisos asignados para visualizar este módulo con tu perfil actual en Quickly Tingo María.
-        Accede con una cuenta que tenga los permisos asignados por la administración.
+        Si deseas registrar tu tienda y comenzar a vender, envía una solicitud de afiliación.
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
-        <Link to="/login">
+        <Link to="/registro/comercio">
           <Button variant="primary" size="md">
+            Solicitar Afiliación de Negocio
+          </Button>
+        </Link>
+        <Link to="/login">
+          <Button variant="outline" size="md">
             Cambiar de Perfil o Iniciar Sesión
           </Button>
         </Link>

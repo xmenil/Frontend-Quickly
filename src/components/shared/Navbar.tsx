@@ -33,7 +33,9 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { currentUser, activeRole, logout, isAuthenticated } = useAuthStore();
+  const { currentUser, activeRole, logout, isAuthenticated, roles } = useAuthStore();
+  const hasMerchantRole = roles?.includes('comercio');
+  const venderDestination = hasMerchantRole ? '/comercio/tienda' : '/registro/comercio';
   const cartCount = useRealCartStore((s) => s.items.reduce((acc, item) => acc + item.quantity, 0));
   const [logoutError, setLogoutError] = useState("");
   const notificationResource = useCustomerNotifications();
@@ -89,7 +91,7 @@ export const Navbar: React.FC = () => {
     location.pathname === '/negocios' &&
     !!fashionCategory && new URLSearchParams(location.search).get('categoriaProducto') === fashionCategory.id;
   const isPlayActive = showPlayModal || location.pathname === '/play';
-  const isVenderActive = location.pathname.startsWith('/comercio');
+  const isVenderActive = location.pathname.startsWith('/comercio') || location.pathname === '/registro/comercio';
   const isAyudaActive = location.pathname === '/cliente/ayuda';
 
   const isRegistroActive = location.pathname === '/registro';
@@ -138,7 +140,7 @@ export const Navbar: React.FC = () => {
             {/* Right Quick Actions & Role Badges */}
             <div className="flex items-center gap-1.5 sm:gap-3">
               {/* Role Switches */}
-              {activeRole === 'comercio' && (
+              {(activeRole === 'comercio' || roles?.includes('comercio')) && (
                 <Link
                   to="/comercio/tienda"
                   className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
@@ -147,7 +149,7 @@ export const Navbar: React.FC = () => {
                   Panel Proveedor
                 </Link>
               )}
-              {activeRole === 'repartidor' && (
+              {(activeRole === 'repartidor' || roles?.includes('repartidor')) && (
                 <Link
                   to="/repartidor/solicitudes"
                   className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
@@ -156,7 +158,7 @@ export const Navbar: React.FC = () => {
                   Panel Repartidor
                 </Link>
               )}
-              {activeRole === 'admin' && (
+              {(activeRole === 'admin' || roles?.includes('admin')) && (
                 <Link
                   to="/admin/resumen"
                   className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
@@ -287,6 +289,36 @@ export const Navbar: React.FC = () => {
                           <User className="w-4 h-4 text-gray-400" />
                           Mi Perfil
                         </Link>
+                        {roles?.includes('admin') && (
+                          <Link
+                            to="/admin/resumen"
+                            onClick={() => setShowProfileMenu(false)}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-purple-700" />
+                            Panel Administrador
+                          </Link>
+                        )}
+                        {roles?.includes('comercio') && (
+                          <Link
+                            to="/comercio/tienda"
+                            onClick={() => setShowProfileMenu(false)}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 text-primary hover:bg-emerald-100 font-bold"
+                          >
+                            <Store className="w-4 h-4 text-primary" />
+                            Panel Mi Tienda
+                          </Link>
+                        )}
+                        {!roles?.includes('comercio') && (
+                          <Link
+                            to="/registro/comercio"
+                            onClick={() => setShowProfileMenu(false)}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium text-primary"
+                          >
+                            <Store className="w-4 h-4 text-primary" />
+                            Afiliar mi Tienda (Vender)
+                          </Link>
+                        )}
                       </div>
 
                       <div className="pt-1 mt-1 border-t border-gray-100">
@@ -357,7 +389,7 @@ export const Navbar: React.FC = () => {
               </button>
 
               <Link
-                to="/comercio/tienda"
+                to={venderDestination}
                 className={getNavBtnClass(isVenderActive)}
               >
                 Vender
@@ -573,7 +605,7 @@ export const Navbar: React.FC = () => {
               )}
 
               {/* Acceso a Paneles según Rol */}
-              {activeRole === 'comercio' && (
+              {(activeRole === 'comercio' || roles?.includes('comercio')) && (
                 <Link
                   to="/comercio/tienda"
                   onClick={() => setShowMobileDrawer(false)}
@@ -583,7 +615,7 @@ export const Navbar: React.FC = () => {
                   <span>Panel Proveedor</span>
                 </Link>
               )}
-              {activeRole === 'repartidor' && (
+              {(activeRole === 'repartidor' || roles?.includes('repartidor')) && (
                 <Link
                   to="/repartidor/solicitudes"
                   onClick={() => setShowMobileDrawer(false)}
@@ -593,13 +625,13 @@ export const Navbar: React.FC = () => {
                   <span>Panel Repartidor</span>
                 </Link>
               )}
-              {activeRole === 'admin' && (
+              {(activeRole === 'admin' || roles?.includes('admin')) && (
                 <Link
                   to="/admin/resumen"
                   onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold"
                 >
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  <ShieldCheck className="w-4 h-4 text-purple-700" />
                   <span>Panel Admin</span>
                 </Link>
               )}
@@ -607,12 +639,12 @@ export const Navbar: React.FC = () => {
               <div className="pt-2 my-2 border-t border-gray-100" />
 
               <Link
-                to="/comercio/tienda"
+                to={venderDestination}
                 onClick={() => setShowMobileDrawer(false)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
               >
                 <Store className="w-4 h-4 text-gray-400" />
-                <span>Vender en Quickly</span>
+                <span>{hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}</span>
               </Link>
               <Link
                 to="/cliente/ayuda"
