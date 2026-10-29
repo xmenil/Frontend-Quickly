@@ -47,7 +47,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
       sessionStatus: 'ready', sessionError: null, busy: false });
     return currentUser;
   }
-  function acceptSession(session: Session) { setCsrfToken(session.csrfToken); return acceptProfile(session.user); }
+  function acceptSession(session: Session & { token?: string }) {
+    setCsrfToken(session.csrfToken);
+    if (session.token) {
+      setSessionToken(session.token);
+    }
+    return acceptProfile(session.user);
+  }
   return {
     ...emptyIdentity,
     ...(isDemoMode ? { currentUser: demo.getState().currentUser, activeRole: demo.getState().activeRole,
@@ -103,10 +109,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
       set({ busy: true });
       try {
         await identityApi.logout();
-        epoch++; resetApiSession(); set({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null });
+        epoch++; resetApiSession(); setSessionToken(null); set({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null });
         announce(); return { success: true };
       } catch (error) {
-        if (error instanceof ApiError && error.status === 401) return { success: true };
+        if (error instanceof ApiError && error.status === 401) {
+          epoch++; resetApiSession(); setSessionToken(null); set({ ...emptyIdentity, sessionStatus: 'ready', sessionError: null });
+          return { success: true };
+        }
         return { success: false, message: message(error) };
       } finally { set({ busy: false }); }
     },

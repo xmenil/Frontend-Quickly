@@ -1,4 +1,16 @@
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
+import { getBackendUrl, getSessionToken } from '../../lib/api';
+
+function getBaseApiUrl(): string {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+  }
+  const backend = getBackendUrl();
+  if (backend && (typeof window === 'undefined' || !backend.includes(window.location.host))) {
+    return `${backend.replace(/\/$/, '')}/api/v1`;
+  }
+  return '/api/v1';
+}
+
 let csrfToken: string | undefined;
 let generation = 0;
 let unauthorizedHandler: (() => void) | undefined;
@@ -34,12 +46,24 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   pending.add(controller);
   try {
     const method = options.method || 'GET';
-    const headers: Record<string, string> = { Accept: 'application/json',...options.headers };
+    const headers: Record<string, string> = { Accept: 'application/json', ...options.headers };
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
     if (csrfToken && method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
-    const response = await fetch(`${baseUrl}${path}`, {
-      method, headers, credentials: 'include', cache: 'no-store',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: controller.signal,
+
+    const token = getSessionToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const baseUrl = getBaseApiUrl();
+    const response = await fetch(`${baseUrl}${cleanPath}`, {
+      method,
+      headers,
+      credentials: 'include',
+      cache: 'no-store',
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: controller.signal,
     });
     if (requestGeneration !== generation) throw new ApiError('La solicitud pertenece a una sesión anterior.', 0, 'REQUEST_SUPERSEDED');
     if (response.status === 204) return undefined as T;
