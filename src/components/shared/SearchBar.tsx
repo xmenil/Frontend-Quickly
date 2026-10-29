@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Clock, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 import { catalogApi, CatalogProduct, money, imageUrl } from '../../services/api/catalogApi';
+import { catalogImage } from '../../lib/catalogImage';
 
 interface SearchBarProps {
   initialValue?: string;
@@ -224,7 +225,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
                       {product.images[0]?.url ? (
                         <img
-                          src={imageUrl(product.images[0].url)}
+                          src={catalogImage(product.images[0]?.url)}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useRealCartStore, CartIntent } from '../../store/realCartStore';
 import { useAuthStore } from '../../store/authStore';
 import { catalogApi, CatalogProduct, CatalogSku, imageUrl, money } from '../../services/api/catalogApi';
+import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
 import { ApiError } from '../../services/api/apiClient';
 import { RemoteState, useRemote } from '../operations/shared';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -253,7 +254,8 @@ export const CartPage: React.FC = () => {
                     const stockAvailable = sku?.availableStock ?? 0;
                     const hasStockError = sku !== undefined && intent.quantity > stockAvailable;
                     const unavailable = !product || !sku || !product.isActive || !sku.isActive || product.storeId !== intent.storeId;
-                    const imageUrlSrc = product?.images?.[0]?.url ? imageUrl(product.images[0].url) : '';
+                    const rawImg = product?.images?.[0]?.url;
+                    const imageUrlSrc = rawImg ? catalogImage(rawImg) : '';
 
                     return (
                       <li
@@ -284,6 +286,7 @@ export const CartPage: React.FC = () => {
                               src={imageUrlSrc}
                               alt={productName}
                               loading="lazy"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }}
                               className="h-16 w-16 shrink-0 rounded-xl border border-border bg-surface-subtle object-cover sm:h-20 sm:w-20"
                             />
                           ) : (

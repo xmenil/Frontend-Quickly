@@ -44,7 +44,7 @@ export function storefrontProduct(product: CatalogProduct, store?: StorefrontMer
     // Zero is only an internal sorting value when no SKU exists; views show "Sin presentaciones".
     priceCents: sku?.priceCents ?? 0, hasPrice: !!sku, stock: sku?.availableStock ?? 0,
     isAvailable: !!purchasableSku(product), imageUrl: catalogImage(product.images[0]?.url),
-    images: product.images.map(image => imageUrl(image.url)), brand: product.brand || undefined,
+    images: product.images.map(image => catalogImage(image.url)), brand: product.brand || undefined,
     hasVariants: product.skus.length > 1, sku: sku?.skuCode, barcode: sku?.barcode || undefined,
     variants: product.skus.map(row => ({ id: row.id, name: row.variantName,
       priceDifferenceCents: row.priceCents - (sku?.priceCents ?? row.priceCents), isAvailable: row.isActive && row.availableStock > 0 })),
