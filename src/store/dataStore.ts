@@ -32,7 +32,12 @@ import { canTransitionOrder, derivePurchaseStatus, calculateOrderRefund } from '
 import { safeJsonParse } from '../lib/utils';
 import { mergeCourierActivity } from '../mocks/courierActivityData';
 import { addExampleAddresses } from '../mocks/exampleAddresses';
-import { catalogApi } from '../services/api/catalogApi';
+import { catalogApi } from "../services/api/catalogApi";
+import {
+  syncCreateProductToBackend,
+  syncUpdateProductToBackend,
+  syncDeleteProductToBackend,
+} from "../lib/supabaseSync";
 
 interface DataState {
   addressExampleUserIds: string[];
@@ -613,15 +618,31 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   createProduct: (prod) => {
+    const tempId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newProduct: Product = {
       ...prod,
-      id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: tempId,
     };
     set((state) => {
       const nextState = { ...state, products: [newProduct, ...state.products] };
       saveToLocalStorage(nextState);
       return nextState;
     });
+
+    syncCreateProductToBackend(newProduct)
+      .then((res) => {
+        if (res && res.success && res.backendProductId) {
+          set((state) => {
+            const updated = state.products.map((p) =>
+              p.id === tempId ? { ...p, id: res.backendProductId! } : p
+            );
+            const nextState = { ...state, products: updated };
+            saveToLocalStorage(nextState);
+            return nextState;
+          });
+        }
+      })
+      .catch((err) => console.warn("Supabase product sync error:", err));
   },
 
   updateProduct: (productId: string, updates: Partial<Product>) => {
@@ -633,6 +654,10 @@ export const useDataStore = create<DataState>((set, get) => ({
       saveToLocalStorage(nextState);
       return nextState;
     });
+
+    syncUpdateProductToBackend(productId, updates).catch((err) =>
+      console.warn("Supabase product update sync error:", err)
+    );
   },
 
   deleteProduct: (productId: string) => {
@@ -642,17 +667,27 @@ export const useDataStore = create<DataState>((set, get) => ({
       saveToLocalStorage(nextState);
       return nextState;
     });
+
+    syncDeleteProductToBackend(productId).catch((err) =>
+      console.warn("Supabase product delete sync error:", err)
+    );
   },
 
   toggleProductAvailability: (productId: string) => {
+    const target = get().products.find((p) => p.id === productId);
+    const newAvailable = target ? !target.isAvailable : false;
     const updated = get().products.map((p) =>
-      p.id === productId ? { ...p, isAvailable: !p.isAvailable } : p
+      p.id === productId ? { ...p, isAvailable: newAvailable } : p
     );
     set((state) => {
       const nextState = { ...state, products: updated };
       saveToLocalStorage(nextState);
       return nextState;
     });
+
+    syncUpdateProductToBackend(productId, { isAvailable: newAvailable }).catch((err) =>
+      console.warn("Supabase toggle sync error:", err)
+    );
   },
 
   updateMerchantProfile: (merchantId: string, updates: Partial<Merchant>) => {
