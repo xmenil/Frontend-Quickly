@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CartPage } from '../features/cart/CartPage';
 import { useRealCartStore, CartIntent } from '../store/realCartStore';
 import { useAuthStore } from '../store/authStore';
+import { ApiError } from '../services/api/apiClient';
 import { catalogApi, CatalogProduct } from '../services/api/catalogApi';
 
 const mockProduct1: CatalogProduct = {
@@ -204,4 +205,26 @@ describe('Cart selection and checkout flow', () => {
     expect(useRealCartStore.getState().items).toHaveLength(0);
     expect(screen.getByText('Tu carrito está vacío')).toBeInTheDocument();
   });
+});
+
+it('un fallo de red bloquea la continuación, no reintenta en bucle y permite revalidar', async () => {
+  vi.mocked(catalogApi.product).mockRejectedValue(new ApiError('Catálogo no disponible', 503, 'UNAVAILABLE'));
+  await renderCart();
+  expect(await screen.findByText('Catálogo no disponible')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Continuar con la compra' })).toBeDisabled();
+  expect(catalogApi.product).toHaveBeenCalledTimes(2);
+  vi.mocked(catalogApi.product).mockImplementation(async id => id === mockProduct1.id ? mockProduct1 : mockProduct2);
+  fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  await screen.findByText(mockProduct1.name);
+  expect(screen.getByRole('button', { name: 'Continuar con la compra' })).not.toBeDisabled();
+});
+
+it.each(['sku-ausente', 'producto-inactivo', 'otra-tienda'])('el carrito bloquea referencias inválidas: %s', async kind => {
+  vi.mocked(catalogApi.product).mockImplementation(async id => {
+    if (id !== mockProduct1.id) return mockProduct2;
+    return { ...mockProduct1, ...(kind === 'sku-ausente' ? { skus: [] } : kind === 'producto-inactivo' ? { isActive: false } : { storeId: mockProduct2.storeId }) };
+  });
+  await renderCart();
+  expect(screen.getByRole('button', { name: 'Continuar con la compra' })).toBeDisabled();
+  expect(screen.getByText('Esta presentación no está disponible. Retírala o elígela nuevamente desde el catálogo.')).toBeInTheDocument();
 });

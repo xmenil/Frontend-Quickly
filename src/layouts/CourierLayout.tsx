@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { RoleSwitcher } from '../components/shared/RoleSwitcher';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useAuthStore } from '../store/authStore';
-import { useDataStore } from '../store/dataStore';
+import { courierChanged } from '../features/courier/courierModel';
+import { operationsApi } from '../services/api/operationsApi';
+import { useRemote, RemoteState } from '../features/operations/shared';
 import { ClipboardList, Navigation, History, DollarSign, User, MapPin, Power, AlertCircle } from 'lucide-react';
 
 export const CourierLayout: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuthStore();
-  const { couriers, toggleCourierAvailability } = useDataStore();
+  const { currentUser, isAuthenticated, roles, sessionStatus, sessionError, initialize } = useAuthStore();
+  const resource = useRemote('layout-courier:' + sessionStatus, signal => sessionStatus === 'ready' && isAuthenticated && roles.some(role => role === 'repartidor' || role === 'admin') ? operationsApi.courier(signal) : Promise.resolve(null));
+  React.useEffect(() => { window.addEventListener('quickly:courier-changed', resource.reload); return () => window.removeEventListener('quickly:courier-changed', resource.reload); }, [resource.reload]);
+  const profile = resource.data;
+  const currentCourier = profile ? { id: profile.id, isAvailable: profile.isOnline, currentZone: profile.zoneName } : null;
+  const [busy, setBusy] = useState(false); const lock = React.useRef(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [availabilityError, setAvailabilityError] = useState('');
   const location = useLocation();
 
+  if (sessionStatus !== "ready") return <RemoteState loading={sessionStatus === "checking"} error={sessionError || undefined} retry={() => void initialize()} />;
   if (!isAuthenticated || !currentUser) {
     return (
       <Navigate
@@ -28,30 +35,14 @@ export const CourierLayout: React.FC = () => {
     );
   }
 
-  if (currentUser.role !== 'repartidor' && currentUser.role !== 'admin') {
+  if (currentUser.status !== 'activo' || !roles.some(role => role === 'repartidor' || role === 'admin')) {
     return <Navigate to="/acceso-denegado" replace />;
   }
-  const currentCourier =
-    couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
-    couriers[0];
-
-  const handleToggleOnline = () => {
-    if (!currentCourier) return;
-    setAvailabilityMessage('');
-    setAvailabilityError('');
-    try {
-      toggleCourierAvailability(currentCourier.id);
-      const updated = useDataStore.getState().couriers.find((courier) => courier.id === currentCourier.id);
-      if (!updated || updated.isAvailable === currentCourier.isAvailable) {
-        setAvailabilityError('No se pudo cambiar tu disponibilidad. Inténtalo nuevamente.');
-        return;
-      }
-      setAvailabilityMessage(updated.isAvailable ? 'Disponibilidad activada.' : 'Disponibilidad pausada.');
-    } catch {
-      setAvailabilityError('No se pudo cambiar tu disponibilidad. Revisa tu estado antes de volver a intentarlo.');
-    }
+  const handleToggleOnline = async () => {
+    if (!currentCourier || lock.current || profile?.status !== 'active') return; lock.current = true; setBusy(true); setAvailabilityMessage(''); setAvailabilityError(''); const owner = currentUser.id;
+    try { const expected = !currentCourier.isAvailable; await operationsApi.availability(expected); const result = await operationsApi.courier(); if (!result || result.isOnline !== expected) throw new Error('No se pudo verificar la disponibilidad. Actualiza el perfil antes de reintentar.'); if (useAuthStore.getState().currentUser?.id !== owner) return; setAvailabilityMessage(result.isOnline ? 'Disponibilidad activada.' : 'Disponibilidad pausada.'); resource.reload(); courierChanged(); }
+    catch(e) { setAvailabilityError(e instanceof Error ? e.message : 'No se pudo actualizar la disponibilidad.'); } finally { lock.current = false; setBusy(false); resource.reload(); courierChanged(); }
   };
-
   const navItems = [
     { to: '/repartidor/solicitudes', label: 'Solicitudes', icon: ClipboardList },
     { to: '/repartidor/entrega-activa', label: 'Entrega', icon: Navigation },
@@ -86,7 +77,7 @@ export const CourierLayout: React.FC = () => {
           <p className="hidden text-sm font-medium text-ink-light md:block">Panel de repartidor</p>
           {currentCourier && (
             <Button type="button" variant={currentCourier.isAvailable ? 'outline' : 'primary'} size="sm"
-              className="gap-2" aria-label={currentCourier.isAvailable ? 'Pausar disponibilidad' : 'Activar disponibilidad'} onClick={handleToggleOnline}>
+              className="gap-2" aria-label={currentCourier.isAvailable ? 'Pausar disponibilidad' : 'Activar disponibilidad'} disabled={busy || resource.loading || !!resource.error || profile?.status !== "active"} onClick={handleToggleOnline}>
               <Power className="h-4 w-4" aria-hidden="true" />
               {currentCourier.isAvailable ? 'Pausar' : 'Activar'}
             </Button>
@@ -103,13 +94,14 @@ export const CourierLayout: React.FC = () => {
       </header>
       <main id="courier-content" tabIndex={-1} className="flex-1 overflow-y-auto scroll-smooth p-4 pb-32 sm:p-6 sm:pb-32 md:pb-12 lg:p-8 lg:pb-12">
         <div className="mx-auto w-full max-w-7xl">
+          <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
           {availabilityMessage && <p role="status" className="mb-4 rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{availabilityMessage}</p>}
           {availabilityError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{availabilityError}</p></div>}
-          {currentCourier ? <Outlet /> : <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />}
+          {currentCourier ? <Outlet key={currentUser.id} /> : <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />}
         </div>
       </main>
       {navigation(true)}
-      <DemoSwitcher />
+      <RoleSwitcher />
     </div>
   );
 };

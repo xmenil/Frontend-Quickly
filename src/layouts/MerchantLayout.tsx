@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { RoleSwitcher } from '../components/shared/RoleSwitcher';
 import { useAuthStore } from '../store/authStore';
-import { useDataStore } from '../store/dataStore';
+import { operationsApi } from '../services/api/operationsApi';
+import { mediaApi, mediaUrl } from '../services/api/mediaApi';
+import { orderingApi } from '../services/api/orderingApi';
+import { allPages } from '../features/customer/customerAccountModel';
+import { useRemote, RemoteState } from '../features/operations/shared';
 import {
   LayoutDashboard,
   Store,
@@ -21,13 +25,25 @@ import {
 } from 'lucide-react';
 
 export const MerchantLayout: React.FC = () => {
-  const { currentUser, isAuthenticated, logout, switchMerchant } = useAuthStore();
-  const { merchants, purchases } = useDataStore();
+  const { currentUser, isAuthenticated, logout, switchMerchant, roles, sessionStatus, sessionError, initialize } = useAuthStore();
+  const [logoutError, setLogoutError] = useState("");
+  const resource = useRemote('layout-owned-stores:' + sessionStatus, async signal => {
+    if (sessionStatus !== 'ready' || !isAuthenticated || !roles.some(role => role === 'comercio' || role === 'admin')) return [];
+    const stores = await allPages(cursor => operationsApi.ownStores({ cursor }, signal));
+    return Promise.all(stores.filter(store => store.status === 'active').map(async store => { const branding = await mediaApi.branding(store.id, signal); return { id: store.id, name: store.name, category: store.categoryCode, logoUrl: branding.logoUrl ? mediaUrl(branding.logoUrl) : undefined }; }));
+  });
+  const merchants = resource.data || [];
+  const currentMerchant = merchants.find(store => store.id === currentUser?.merchantId) || merchants[0];
+  React.useEffect(() => { if (currentMerchant && currentUser?.merchantId !== currentMerchant.id) switchMerchant(currentMerchant.id); }, [currentMerchant?.id, currentUser?.merchantId, switchMerchant]);
+  const orders = useRemote('layout-store-orders:' + currentMerchant?.id, signal => currentMerchant ? allPages(cursor => orderingApi.list('/merchant/stores/' + currentMerchant.id + '/order-feed', { cursor, limit: '50' }, signal)) : Promise.resolve([]));
+  React.useEffect(() => { window.addEventListener('quickly:merchant-orders-changed', orders.reload); return () => window.removeEventListener('quickly:merchant-orders-changed', orders.reload); }, [orders.reload]);
+  const pendingOrdersCount = orders.data?.filter(order => ['pending', 'confirmed', 'preparing'].includes(order.status)).length || 0;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
+  if (sessionStatus !== "ready") return <RemoteState loading={sessionStatus === "checking"} error={sessionError || undefined} retry={() => void initialize()} />;
   if (!isAuthenticated || !currentUser) {
     return (
       <Navigate
@@ -41,21 +57,11 @@ export const MerchantLayout: React.FC = () => {
     );
   }
 
-  if (currentUser.role !== 'comercio' && currentUser.role !== 'admin') {
+  if (currentUser.status !== 'activo' || !roles.some(role => role === 'comercio' || role === 'admin')) {
     return <Navigate to="/acceso-denegado" replace />;
   }
 
-  // Find merchant belonging to current user (prioritize explicit active merchantId)
-  const currentMerchant =
-    (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
-    merchants.find((m) => m.ownerUserId === currentUser?.id) ||
-    merchants[0];
-
-  // Calculate pending orders count for merchant
-  const pendingOrdersCount = purchases.reduce((acc, p) => {
-    const mo = p.merchantOrders.find((m) => m.merchantId === currentMerchant.id);
-    return mo && ['pendiente', 'confirmado', 'en_preparacion'].includes(mo.status) ? acc + 1 : acc;
-  }, 0);
+  if (!currentMerchant) return <div className="p-6 space-y-4"><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />{!resource.loading && !resource.error && <p>No tienes tiendas aprobadas disponibles.</p>}<Link to="/registro/comercio" className="text-primary">Consultar o solicitar afiliación</Link></div>;
 
   const navLinks = [
     { to: '/comercio/tienda', label: 'Panel principal', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -160,10 +166,7 @@ export const MerchantLayout: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
+            onClick={async () => { const result = await logout(); if (result.success) navigate('/login'); else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
             className="flex items-center gap-2 text-xs font-semibold text-destructive hover:bg-destructive-soft p-2 rounded-xl transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -270,11 +273,11 @@ export const MerchantLayout: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12 scroll-smooth">
-          <Outlet />
+          <>{logoutError && <p role="alert" className="text-sm text-destructive">{logoutError}</p>}<Outlet key={currentUser.id} /></>
         </main>
       </div>
 
-      <DemoSwitcher />
+      <RoleSwitcher />
     </div>
   );
 };

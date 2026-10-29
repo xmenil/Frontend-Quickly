@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-vi.mock('../config/appMode', () => ({ isDemoMode: false }));
 vi.mock('../services/api/identityApi', () => ({ identityApi: {
   session: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn(), updateProfile: vi.fn(),
 } }));
@@ -22,7 +21,6 @@ afterEach(() => vi.unstubAllGlobals());
 describe('Sesión real del frontend', () => {
   it('ignora identidades locales y accesos demo; un 401 mantiene estado invitado', async () => {
     localStorage.setItem('quickly_auth_v1', JSON.stringify({ id: 'forged', role: 'admin' }));
-    useAuthStore.getState().loginDemo('admin');
     useAuthStore.getState().switchRole('admin');
     vi.mocked(identityApi.session).mockRejectedValue(new ApiError('Sin sesión', 401, 'UNAUTHORIZED'));
     await useAuthStore.getState().initialize();

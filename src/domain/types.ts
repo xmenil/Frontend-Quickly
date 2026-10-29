@@ -155,6 +155,7 @@ export type ParentPurchaseStatus =
 export type PaymentMethod = 'efectivo' | 'yape_plin' | 'tarjeta';
 
 export type PaymentStatus =
+  | 'cancelado'
   | 'pendiente'
   | 'pagado'
   | 'fallido'

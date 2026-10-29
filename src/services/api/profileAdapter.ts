@@ -22,5 +22,5 @@ export function destinationForRole(role?: UserRole) {
 }
 export function safeReturnPath(path: unknown, fallback: string): string {
   return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') && !path.includes('\\')
-    && !path.startsWith('/login') && !path.startsWith('/registro') ? path : fallback;
+    && !path.startsWith('/login') && !/^\/registro(?:[?#]|$)/.test(path) ? path : fallback;
 }

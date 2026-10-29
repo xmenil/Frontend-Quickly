@@ -1,32 +1,40 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { operationsApi } from '../../services/api/operationsApi';
+import { orderingApi } from '../../services/api/orderingApi';
+import { allPages } from '../customer/customerAccountModel';
+import { loadAdminUsers, loadAdminStores, loadAdminCouriers, loadAdminTickets, useAdminResource } from './adminModel';
+import { RemoteState } from '../operations/shared';
 import { formatCents } from '../../lib/currency';
 import { Button } from '../../components/ui/Button';
 import { Users, Store, Bike, ShoppingBag, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const AdminOverviewPage: React.FC = () => {
-  const { users, merchants, couriers, purchases, tickets } = useDataStore();
   const navigate = useNavigate();
-
-  const pendingApprovalsCount = users.filter((u) => u.status === 'pendiente_aprobacion').length;
-  const activeOrdersCount = purchases.filter((p) =>
-    ['pendiente', 'en_proceso', 'entrega_parcial'].includes(p.status)
-  ).length;
-  const totalGMVCents = purchases.reduce((acc, p) => acc + p.grandTotalCents, 0);
-  const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;
-
+  const resource = useAdminResource('overview', async signal => {
+    const [overview, users, merchants, couriers, orders, tickets] = await Promise.all([operationsApi.overview(signal), loadAdminUsers(signal), loadAdminStores(signal), loadAdminCouriers(signal), allPages(cursor => orderingApi.list('/admin/orders', { cursor, limit: '50' }, signal)), loadAdminTickets(signal)]);
+    const total = orders.reduce((sum, order) => sum + order.totalCents, 0);
+    if (!Number.isSafeInteger(total)) throw new Error('El monto total excede el rango disponible. Consulta los reportes por período.');
+    return { overview, users, merchants, couriers, orders, tickets, total };
+  });
+  if (!resource.data || resource.error) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
+  const { overview, users, merchants, couriers, orders, tickets } = resource.data;
+  const pendingApprovalsCount = overview.pendingStores + overview.pendingCouriers + users.filter(user => user.status === 'pending').length;
+  const activeOrdersCount = orders.filter(order => !['delivered','cancelled','rejected'].includes(order.status)).length;
+  const totalGMVCents = resource.data.total;
+  const purchases = new Set(orders.map(order => order.purchaseId));
+  const openTicketsCount = tickets.filter(ticket => ticket.status !== 'resolved').length;
   const attentionItems = [
     {
       label: 'Pedidos en curso', count: activeOrdersCount, icon: ShoppingBag,
       to: '/admin/pedidos', action: 'Ver pedidos',
-      description: activeOrdersCount > 0 ? 'Compras pendientes, en proceso o con entrega parcial.' : 'No hay compras en curso.',
+      description: activeOrdersCount > 0 ? 'Pedidos pendientes, en preparación o en reparto.' : 'No hay pedidos en curso.',
       tone: 'bg-info-soft text-info-strong',
     },
     {
       label: 'Solicitudes pendientes', count: pendingApprovalsCount, icon: Users,
-      to: '/admin/usuarios', action: 'Ver solicitudes',
-      description: pendingApprovalsCount > 0 ? 'Cuentas que esperan aprobación.' : 'No hay cuentas pendientes de aprobación.',
+      to: overview.pendingStores > 0 ? '/admin/comercios' : overview.pendingCouriers > 0 ? '/admin/repartidores' : '/admin/usuarios', action: 'Ver solicitudes',
+      description: pendingApprovalsCount > 0 ? 'Cuentas y afiliaciones que esperan revisión.' : 'No hay cuentas ni afiliaciones pendientes.',
       tone: 'bg-warning-soft text-warning-strong',
     },
     {
@@ -44,7 +52,7 @@ export const AdminOverviewPage: React.FC = () => {
       empty: 'Aún no hay comercios registrados.', description: 'Disponibilidad registrada en la plataforma.',
     },
     {
-      label: 'Repartidores disponibles', count: couriers.filter((courier) => courier.isAvailable).length,
+      label: 'Repartidores conectados', count: couriers.filter((courier) => courier.isOnline).length,
       total: couriers.length, icon: Bike, to: '/admin/repartidores', action: 'Ver repartidores',
       empty: 'Aún no hay repartidores registrados.', description: 'Disponibilidad registrada por la flota.',
     },
@@ -65,6 +73,8 @@ export const AdminOverviewPage: React.FC = () => {
         </Button>
       </header>
 
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      <div className="flex flex-wrap gap-3"><Button variant="outline" size="sm" onClick={() => navigate('/admin/comercios')}>Comercios por revisar ({overview.pendingStores})</Button><Button variant="outline" size="sm" onClick={() => navigate('/admin/repartidores')}>Repartidores por revisar ({overview.pendingCouriers})</Button></div>
       <section aria-labelledby="admin-attention-heading" className="space-y-4">
         <div className="space-y-1">
           <h2 id="admin-attention-heading" className="text-base font-semibold text-ink">Atención pendiente</h2>
@@ -145,7 +155,7 @@ export const AdminOverviewPage: React.FC = () => {
                 <th scope="row" className="px-4 py-3 font-medium text-ink">Compras registradas
                   <p className="mt-1 text-xs font-normal text-ink-muted lg:hidden">Una compra puede incluir varios comercios.</p>
                 </th>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums text-ink">{purchases.length}</td>
+                <td className="px-4 py-3 text-right font-semibold tabular-nums text-ink">{purchases.size}</td>
                 <td className="hidden px-4 py-3 text-xs text-ink-muted lg:table-cell">Una compra puede incluir pedidos de varios comercios.</td>
               </tr>
               <tr>

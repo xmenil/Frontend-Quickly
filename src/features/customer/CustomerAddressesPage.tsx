@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { useCustomerAddresses } from './customerAddressModel';
+import { operationsApi } from '../../services/api/operationsApi';
+import { RemoteState } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
 import { Address } from '../../domain/types';
 import { AddressForm } from '../../components/shared/AddressForm';
@@ -21,16 +23,25 @@ import {
 } from 'lucide-react';
 
 export const CustomerAddressesPage: React.FC = () => {
-  const { addresses, deleteAddress, setDefaultAddress, zones, ensureExampleAddresses } = useDataStore();
+  const resource = useCustomerAddresses();
+  const addresses = resource.data?.addresses || [];
+  const zones = resource.data?.zones || [];
   const { currentUser } = useAuthStore();
-
-  useEffect(() => {
-    if (currentUser) ensureExampleAddresses(currentUser);
-  }, [currentUser, ensureExampleAddresses]);
-
+  const [actionError, setActionError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const busyRef = React.useRef(false);
+  async function action(work: () => Promise<unknown>, onSuccess?: () => void) {
+    if (busyRef.current) return;
+    busyRef.current = true; setBusy(true); setActionError('');
+    const owner = currentUser?.id;
+    try { await work(); if (useAuthStore.getState().currentUser?.id !== owner) return; onSuccess?.(); resource.reload(); } catch (error) { if (useAuthStore.getState().currentUser?.id === owner) setActionError(error instanceof Error ? error.message : 'No se pudo guardar el cambio.'); }
+    finally { busyRef.current = false; setBusy(false); }
+  }
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | undefined>(undefined);
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
+
+  useEffect(() => { setIsFormOpen(false); setEditingAddress(undefined); setAddressToDelete(null); setActionError(''); }, [currentUser?.id]);
 
   const userAddresses = addresses.filter((a) => a.userId === currentUser?.id);
 
@@ -46,8 +57,7 @@ export const CustomerAddressesPage: React.FC = () => {
 
   const handleConfirmDelete = () => {
     if (addressToDelete) {
-      deleteAddress(addressToDelete.id);
-      setAddressToDelete(null);
+      void action(() => operationsApi.archiveAddress(addressToDelete.id), () => setAddressToDelete(null));
     }
   };
 
@@ -79,9 +89,11 @@ export const CustomerAddressesPage: React.FC = () => {
         </Button>
       </div>
 
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/>
+      {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
       {/* Address List */}
       <div className="space-y-3.5">
-        {userAddresses.length === 0 ? (
+        {resource.loading || resource.error ? null : userAddresses.length === 0 ? (
           <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-4 shadow-subtle max-w-xl mx-auto">
             <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto shadow-sm">
               <MapPin className="w-8 h-8" />
@@ -130,6 +142,7 @@ export const CustomerAddressesPage: React.FC = () => {
                       </span>
                     ) : null}
 
+                    {(!addr.zoneActive || !zone?.isAvailable) && <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-800">Sin cobertura</span>}
                     {zone && (
                       <span className="text-[11px] text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-primary" />
@@ -171,7 +184,8 @@ export const CustomerAddressesPage: React.FC = () => {
                   {!addr.isDefault && currentUser && (
                     <button
                       type="button"
-                      onClick={() => setDefaultAddress(addr.id, currentUser.id)}
+                      disabled={busy}
+                      onClick={() => void action(() => operationsApi.defaultAddress(addr.id))}
                       className="touch-target inline-flex items-center gap-1 text-xs font-bold text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 px-3 py-2 rounded-xl transition-all min-h-[44px]"
                     >
                       <Star className="w-3.5 h-3.5 text-gray-400 hover:text-emerald-600" />
@@ -181,6 +195,7 @@ export const CustomerAddressesPage: React.FC = () => {
 
                   <button
                     type="button"
+                    disabled={busy}
                     onClick={() => handleOpenEdit(addr)}
                     className="touch-target p-2.5 text-gray-500 hover:text-ink hover:bg-gray-100 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-gray-100"
                     aria-label={`Editar dirección ${addr.label}`}
@@ -191,7 +206,8 @@ export const CustomerAddressesPage: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => setAddressToDelete(addr)}
+                    disabled={busy}
+                    onClick={() => { setActionError(''); setAddressToDelete(addr); }}
                     className="touch-target p-2.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-gray-100"
                     aria-label={`Eliminar dirección ${addr.label}`}
                     title="Eliminar dirección"
@@ -215,8 +231,8 @@ export const CustomerAddressesPage: React.FC = () => {
       >
         <AddressForm
           initialData={editingAddress}
-          userId={currentUser?.id || 'u_cliente_demo'}
-          onSuccess={() => setIsFormOpen(false)}
+          userId={currentUser?.id || ''}
+          onSuccess={() => { setIsFormOpen(false); resource.reload(); }}
           onCancel={() => setIsFormOpen(false)}
         />
       </Dialog>
@@ -224,11 +240,12 @@ export const CustomerAddressesPage: React.FC = () => {
       {/* Delete Confirmation Modal */}
       <Dialog
         isOpen={Boolean(addressToDelete)}
-        onClose={() => setAddressToDelete(null)}
+        onClose={() => { if (!busy) setAddressToDelete(null); }}
         title="¿Eliminar Dirección?"
         maxWidth="sm"
       >
         <div className="space-y-4 pt-1">
+          {actionError && <p role="alert" className="text-sm text-destructive">{actionError}</p>}
           <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div className="text-xs sm:text-sm text-red-900 leading-relaxed">
@@ -243,6 +260,7 @@ export const CustomerAddressesPage: React.FC = () => {
               type="button"
               variant="outline"
               size="md"
+              disabled={busy}
               onClick={() => setAddressToDelete(null)}
               className="min-h-[44px] px-4 font-semibold"
             >
@@ -252,6 +270,8 @@ export const CustomerAddressesPage: React.FC = () => {
               type="button"
               variant="danger"
               size="md"
+              disabled={busy}
+              isLoading={busy}
               onClick={handleConfirmDelete}
               className="min-h-[44px] px-5 font-bold shadow-sm"
             >

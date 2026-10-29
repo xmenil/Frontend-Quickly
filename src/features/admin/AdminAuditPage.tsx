@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { engagementApi } from '../../services/api/engagementApi';
+import { allPages } from '../customer/customerAccountModel';
+import { useAdminResource } from './adminModel';
+import { RemoteState } from '../operations/shared';
 import { formatDateTime } from '../../lib/date';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
@@ -10,14 +13,16 @@ import { FileText, Search } from 'lucide-react';
 import { UserRole } from '../../domain/types';
 
 export const AdminAuditPage: React.FC = () => {
-  const { auditLogs } = useDataStore();
+  const resource = useAdminResource('audit', async signal => (await allPages(cursor => engagementApi.audit(cursor, undefined, signal))).map(log => ({ ...log, timestamp: log.occurredAt, actor: log.actorUserId || 'Responsable no informado', actorRole: '', entity: log.entityType + ': ' + log.entityId, details: 'Solicitud: ' + log.requestId })));
+  const auditLogs = resource.data || [];
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const hasFilters = Boolean(searchQuery || roleFilter !== 'all');
-  const roleLabels = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
+  const roleLabels: Record<string, string> = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
   const filteredLogs = auditLogs.filter((log) => {
     const query = searchQuery.trim().toLowerCase();
-    return (roleFilter === 'all' || log.actorRole === roleFilter) &&
+    if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
+  return (roleFilter === 'all' || log.actorRole === roleFilter) &&
       (!query || [log.action, log.actor, log.entity, log.details || ''].some((value) => value.toLowerCase().includes(query)));
   });
   const clearFilters = () => { setSearchQuery(''); setRoleFilter('all'); };
@@ -34,7 +39,7 @@ export const AdminAuditPage: React.FC = () => {
           <Input id="admin-audit-search" label="Buscar actividad" type="search" className="md:text-sm"
             placeholder="Acción, responsable o registro afectado" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
             leftIcon={<Search className="h-5 w-5" aria-hidden="true" />} />
-          <Select id="admin-audit-role" label="Tipo de responsable" className="md:text-sm" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as UserRole | 'all')}>
+          <Select disabled id="admin-audit-role" label="Tipo de responsable" className="md:text-sm" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as UserRole | 'all')}>
             <option value="all">Todos los tipos</option>
             <option value="cliente">Clientes</option>
             <option value="comercio">Comercios</option>
@@ -42,9 +47,11 @@ export const AdminAuditPage: React.FC = () => {
             <option value="admin">Administradores</option>
           </Select>
         </div>
+        <p className="text-xs text-ink-muted">El historial no informa el rol del responsable; ese filtro no está disponible.</p>
         {hasFilters && <Button type="button" variant="outline" size="sm" onClick={clearFilters}>Limpiar filtros</Button>}
       </section>
 
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
       <section aria-labelledby="admin-audit-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="admin-audit-heading" className="text-base font-semibold text-ink">Movimientos registrados</h2>
@@ -80,12 +87,12 @@ export const AdminAuditPage: React.FC = () => {
                     </th>
                     <td className="block py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-top">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Responsable</p>
-                      <p className="mb-2 break-words text-sm text-ink-light">{log.actor}</p>
-                      <Badge>{roleLabels[log.actorRole]}</Badge>
+                      <p className="mb-2 break-all text-sm text-ink-light">{log.actor}</p>
+                      <Badge>{roleLabels[log.actorRole] || 'Rol no informado'}</Badge>
                     </td>
                     <td className="block py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-top">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Registro afectado</p>
-                      <p className="break-words text-xs text-ink-light">{log.entity}</p>
+                      <p className="break-all text-xs text-ink-light">{log.entity}</p>
                     </td>
                     <td className="block py-2 xl:table-cell xl:px-4 xl:py-3 xl:align-top">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Detalle</p>

@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '../../components/ui/Dialog';
 import { Button } from '../../components/ui/Button';
-import { useRealCartStore } from '../../store/realCartStore';
+import { catalogImage } from '../../lib/catalogImage';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { preferredSku } from '../../domain/catalogRules';
+import type { Product } from '../../domain/types';
 import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
-import { FavoriteButton } from '../engagement/RealEngagementPages';
-import { Plus, Minus, AlertCircle, ShoppingCart, Loader2, Store, Check } from 'lucide-react';
+import { useCatalogFavorite } from './useCatalogFavorite';
+import { Plus, Minus, AlertCircle, ShoppingCart, Loader2, Store, Check, Heart } from 'lucide-react';
 
 interface ProductDetailModalProps {
   productId?: string | null;
-  product?: CatalogProduct | any;
-  merchant?: any;
+  product?: CatalogProduct | Product | null;
+  merchant?: unknown;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -20,7 +23,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const add = useRealCartStore((s) => s.add);
 
   const [productData, setProductData] = useState<CatalogProduct | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
 
   const targetId = propProduct?.id || propProductId;
+  const favorite = useCatalogFavorite('product', targetId || '');
 
   useEffect(() => {
     if (!isOpen || !targetId) {
@@ -39,31 +42,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       return;
     }
 
-    if (propProduct && 'skus' in propProduct && Array.isArray(propProduct.skus) && propProduct.id === targetId) {
-      setProductData(propProduct as CatalogProduct);
-      setQuantity(1);
-      setNote('');
-      setErrorMessage('');
-      if (propProduct.skus.length > 0) {
-        setSelectedSkuId(propProduct.skus[0].id);
-      }
-      return;
-    }
-
     let isMounted = true;
+    const controller = new AbortController();
+    setProductData(null);
+    setSelectedSkuId('');
     setLoading(true);
     setErrorMessage('');
 
     catalogApi
-      .product(targetId)
+      .product(targetId, controller.signal)
       .then((data) => {
         if (isMounted) {
           setProductData(data);
           setQuantity(1);
           setNote('');
-          if (data.skus.length > 0) {
-            setSelectedSkuId(data.skus[0].id);
-          }
+          setSelectedSkuId(preferredSku(data)?.id || '');
           setLoading(false);
         }
       })
@@ -77,8 +70,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [isOpen, targetId, propProduct]);
+  }, [isOpen, targetId]);
 
   if (!isOpen) return null;
 
@@ -86,7 +80,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const activeSkus = currentProduct?.skus.filter((s) => s.isActive) || [];
   const selectedSku = activeSkus.find((s) => s.id === selectedSkuId) || activeSkus[0];
   const stock = selectedSku?.availableStock || 0;
-  const isOutOfStock = stock <= 0;
+  const isOutOfStock = !currentProduct?.isActive || stock <= 0;
   const unitPrice = selectedSku ? selectedSku.priceCents : 0;
   const totalPrice = unitPrice * quantity;
 
@@ -94,14 +88,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     if (!currentProduct || !selectedSku || isOutOfStock) return;
 
     try {
-      add(
-        {
-          skuId: selectedSku.id,
-          productId: currentProduct.id,
-          storeId: currentProduct.storeId,
-        },
-        quantity
-      );
+      addCatalogProduct(currentProduct, selectedSku.id, quantity, note);
 
       setAddedAnimation(true);
       setTimeout(() => {
@@ -113,9 +100,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }
   };
 
-  const primaryImage = currentProduct?.images[0]?.url
-    ? imageUrl(currentProduct.images[0].url)
-    : 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+  const primaryImage = catalogImage(currentProduct?.images[0]?.url);
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} maxWidth="md">
@@ -165,9 +150,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                 <span className="text-xl sm:text-2xl font-black text-primary whitespace-nowrap tabular-nums">
-                  {money(unitPrice)}
+                  {selectedSku ? money(unitPrice) : 'Sin presentaciones'}
                 </span>
-                <FavoriteButton kind="product" id={currentProduct.id} />
+                <button
+                  type="button"
+                  onClick={() => void favorite.toggle()}
+                  disabled={favorite.busy}
+                  aria-label={favorite.isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors ${
+                    favorite.isFavorite
+                      ? 'border-primary text-primary bg-primary/5'
+                      : 'border-border text-ink-light hover:text-ink hover:border-gray-400'
+                  }`}
+                >
+                  <Heart className={`w-3.5 h-3.5 ${favorite.isFavorite ? 'fill-primary text-primary' : ''}`} />
+                  <span>{favorite.isFavorite ? 'En favoritos' : 'Favorito'}</span>
+                </button>
               </div>
             </div>
 

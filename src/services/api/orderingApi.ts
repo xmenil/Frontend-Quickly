@@ -26,6 +26,7 @@ export const orderingApi={
   detail:async(id:string,signal?:AbortSignal)=>checked(detail,await apiRequest(`/orders/${id}`,{signal})),
   list:async(path:string,query:Record<string,string|undefined>={},signal?:AbortSignal)=>{const params=new URLSearchParams();Object.entries(query).forEach(([key,value])=>{if(value)params.set(key,value);});return checked(z.object({items:z.array(summary),nextCursor:uuid.nullable()}),await apiRequest(`${path}?${params}`,{signal}));},
   action:(path:string,body:unknown={})=>apiRequest(path,{method:'POST',body}),
+  merchantCouriers: async(signal?:AbortSignal)=>checked(z.array(z.object({courierUserId:uuid,fullName:z.string(),email:z.string(),phone:z.string(),vehicleType:z.enum(['motorcycle','bicycle','mototaxi']),plate:z.string().nullable(),isOnline:z.boolean(),currentZoneId:uuid.nullable(),zoneName:z.string().nullable()})),await apiRequest('/merchant/available-couriers',{signal})),
   couriers:async(storeId:string,signal?:AbortSignal)=>checked(z.array(z.object({userId:uuid,fullName:z.string()})),await apiRequest(`/admin/courier-options?storeId=${storeId}`,{signal})),
 };
 export function cashCents(value:string):number{if(!/^\d+(?:\.\d{1,2})?$/.test(value))throw new Error('Ingresa un importe con hasta dos decimales.');const[whole,fraction='']=value.split('.');const result=Number(whole)*100+Number(fraction.padEnd(2,'0'));if(!Number.isSafeInteger(result)||result<1||result>100000000000000)throw new Error('Importe fuera de rango.');return result;}

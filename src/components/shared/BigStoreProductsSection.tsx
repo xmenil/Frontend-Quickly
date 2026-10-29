@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useRealCartStore } from '../../store/realCartStore';
+import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { preferredSku, purchasableSku } from '../../domain/catalogRules';
+import { RemoteState, useRemote } from '../../features/operations/shared';
 import { catalogApi, CatalogProduct, PublicStore, imageUrl, money } from '../../services/api/catalogApi';
-import { INITIAL_MERCHANTS, INITIAL_PRODUCTS } from '../../mocks/initialData';
 import { ProductDetailModal } from '../../features/catalog/ProductDetailModal';
 import {
   ShoppingCart,
@@ -15,85 +17,19 @@ import {
 } from 'lucide-react';
 
 
-const FALLBACK_CATALOG_STORES: PublicStore[] = INITIAL_MERCHANTS.slice(0, 10).map((m) => ({
-  id: m.id,
-  name: m.name,
-  zone_id: 'be6c3773-7bf9-47cd-a530-8060e1dc9874',
-  zone_name: 'Centro de Tingo María',
-  category_code: m.category,
-  isOpen: m.isOpen,
-  accepting_orders: m.isOpen,
-  logoUrl: m.logoUrl,
-  bannerUrl: m.bannerUrl,
-}));
-
-const FALLBACK_CATALOG_PRODUCTS: CatalogProduct[] = INITIAL_PRODUCTS.slice(0, 15).map((p) => ({
-  id: p.id,
-  storeId: p.merchantId,
-  storeName: INITIAL_MERCHANTS.find((m) => m.id === p.merchantId)?.name || 'Comercio Local',
-  categoryId: 'c85594f9-080c-4b27-9e59-b93d8abcfdc8',
-  name: p.name,
-  description: p.description,
-  brand: null,
-  isActive: p.isAvailable ?? true,
-  position: 0,
-  skus: [
-    {
-      id: p.id,
-      skuCode: `SKU-${p.id}`,
-      variantName: 'Estándar',
-      priceCents: p.priceCents,
-      barcode: null,
-      isActive: true,
-      availableStock: p.stock,
-    },
-  ],
-  images: [
-    {
-      id: p.id,
-      url: p.imageUrl,
-      altText: p.name,
-      position: 0,
-    },
-  ],
-}));
-
 export const BigStoreProductsSection: React.FC = () => {
-  const add = useRealCartStore((s) => s.add);
-
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [stores, setStores] = useState<PublicStore[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
+  const resource = useRemote('catalog-showcase:' + selectedStoreId, async signal => {
+    const [products, stores] = await Promise.all([catalogApi.search({ limit: 15, ...(selectedStoreId === 'all' ? {} : { storeId: selectedStoreId }) }, signal), catalogApi.stores(signal)]);
+    return { products, stores };
+  });
+  const products = resource.data?.products.items || [];
+  const stores = resource.data?.stores || [];
+  const loading = resource.loading;
+  const [addError, setAddError] = useState('');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [selectedModalProduct, setSelectedModalProduct] = useState<CatalogProduct | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    Promise.all([
-      catalogApi.search({ limit: 15 }),
-      catalogApi.stores(),
-    ])
-      .then(([productsRes, storesRes]) => {
-        if (isMounted) {
-          setProducts(productsRes.items && productsRes.items.length > 0 ? productsRes.items : FALLBACK_CATALOG_PRODUCTS);
-          setStores(storesRes && storesRes.length > 0 ? storesRes : FALLBACK_CATALOG_STORES);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Error al cargar productos de tiendas:', err);
-        if (isMounted) {
-          setProducts(FALLBACK_CATALOG_PRODUCTS);
-          setStores(FALLBACK_CATALOG_STORES);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const storeFilters = [
     { id: 'all', name: 'Todos los productos' },
@@ -110,25 +46,19 @@ export const BigStoreProductsSection: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    const sku = product.skus.find((s) => s.isActive && s.availableStock > 0) || product.skus[0];
+    const sku = purchasableSku(product);
     if (!sku) return;
 
     try {
-      add(
-        {
-          skuId: sku.id,
-          productId: product.id,
-          storeId: product.storeId,
-        },
-        1
-      );
+      addCatalogProduct(product, sku.id, 1);
+      setAddError('');
 
       setAddedProductId(product.id);
       setTimeout(() => {
         setAddedProductId((curr) => (curr === product.id ? null : curr));
       }, 1500);
     } catch (err) {
-      console.error('Error al agregar producto:', err);
+      setAddError(err instanceof Error ? err.message : 'No se pudo agregar al carrito.');
     }
   };
 
@@ -147,11 +77,11 @@ export const BigStoreProductsSection: React.FC = () => {
                   Productos Destacados en Tingo María
                 </h2>
                 <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Stock Real PostgreSQL
+                  Catálogo disponible
                 </span>
               </div>
               <p className="text-xs text-ink-light">
-                Abarrotes, gastronomía, boticas y productos de la selva listos para entrega inmediata
+                Abarrotes, gastronomía, boticas y productos de la selva según disponibilidad de cada comercio
               </p>
             </div>
           </div>
@@ -190,7 +120,8 @@ export const BigStoreProductsSection: React.FC = () => {
         )}
 
         {/* 5-Column Products Grid */}
-        {loading ? (
+        {addError && <p role="alert" className="text-destructive">{addError}</p>}
+        {resource.error ? <RemoteState loading={false} error={resource.error} retry={resource.reload}/> : loading ? (
           <div className="py-16 flex items-center justify-center gap-2 text-xs text-ink-light">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
             <span>Cargando productos destacados...</span>
@@ -203,12 +134,11 @@ export const BigStoreProductsSection: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {displayedProducts.map((product) => {
               const isJustAdded = addedProductId === product.id;
-              const sku = product.skus[0];
+              const sku = preferredSku(product);
               const price = sku ? sku.priceCents : 0;
-              const hasStock = (sku?.availableStock || 0) > 0;
+              const hasStock = !!purchasableSku(product);
               const rawImg = product.images[0]?.url;
-              const resolvedImg = rawImg?.startsWith('http') ? rawImg : (rawImg ? imageUrl(rawImg) : '');
-              const productImg = resolvedImg || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+              const productImg = catalogImage(rawImg);
 
               return (
                 <div
@@ -218,7 +148,7 @@ export const BigStoreProductsSection: React.FC = () => {
                 >
                   {/* Product Image */}
                   <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                    <img src={productImg} alt={product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    <img src={productImg} alt={product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                       Envío local
                     </span>
@@ -258,7 +188,7 @@ export const BigStoreProductsSection: React.FC = () => {
                     {/* Bottom Row */}
                     <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
                       <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
-                        {money(price)}
+                        {sku ? money(price) : 'Sin presentaciones'}
                       </span>
 
                       <button

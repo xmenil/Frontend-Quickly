@@ -97,6 +97,7 @@ export const PURCHASE_STATUS_LABELS: Record<ParentPurchaseStatus, string> = {
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  cancelado: 'Cancelado',
   pendiente: 'Pendiente',
   pagado: 'Pagado',
   fallido: 'Pago fallido',

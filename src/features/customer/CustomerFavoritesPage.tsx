@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { useCustomerFavorites, accountChanged } from './customerAccountModel';
+import { RemoteState } from '../operations/shared';
+import { engagementApi } from '../../services/api/engagementApi';
+import type { StorefrontProduct } from '../catalog/storefrontModel';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { MerchantCard } from '../../components/shared/MerchantCard';
 import { ProductDetailModal } from '../catalog/ProductDetailModal';
@@ -9,20 +12,17 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Heart, Store, Package, Search, UtensilsCrossed, ArrowRight, Sparkles } from 'lucide-react';
 
 export const CustomerFavoritesPage: React.FC = () => {
-  const { merchants, products, favoriteMerchantIds, favoriteProductIds } = useDataStore();
+  const resource = useCustomerFavorites();
+  const merchants = resource.data?.merchants || [];
+  const favoriteMerchants = resource.data?.favoriteMerchants || [];
+  const favoriteProducts = resource.data?.products || [];
+  const [error, setError] = useState("");
+  const [removing, setRemoving] = useState(false);
+  const removeRef = React.useRef(false);
+  async function remove(kind: "product" | "store", id: string) { if (removeRef.current) return; removeRef.current = true; setRemoving(true); setError(""); try { await engagementApi.favorite(kind, id, false); accountChanged("favorites"); } catch (e) { setError(e instanceof Error ? e.message : "No se pudo quitar el favorito."); } finally { removeRef.current = false; setRemoving(false); } }
   const [tab, setTab] = useState<'products' | 'merchants'>('products');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const favoriteMerchants = useMemo(
-    () => merchants.filter((m) => favoriteMerchantIds.includes(m.id)),
-    [merchants, favoriteMerchantIds]
-  );
-
-  const favoriteProducts = useMemo(
-    () => products.filter((p) => favoriteProductIds.includes(p.id)),
-    [products, favoriteProductIds]
-  );
 
   // Search filtered products
   const filteredProducts = useMemo(() => {
@@ -57,7 +57,7 @@ export const CustomerFavoritesPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Mis Favoritos</h1>
             <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary-50 px-2.5 py-1 rounded-full border border-primary-100">
               <Heart className="w-3.5 h-3.5 fill-primary text-primary" />
-              <span>{favoriteProducts.length + favoriteMerchants.length} guardados</span>
+              <span>{resource.records.length} guardados</span>
             </span>
           </div>
           <p className="text-xs sm:text-sm text-ink-light mt-1">
@@ -98,7 +98,7 @@ export const CustomerFavoritesPage: React.FC = () => {
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>Platos y Productos ({favoriteProducts.length})</span>
+            <span>Platos y Productos ({resource.records.filter(item => item.kind === "product").length})</span>
           </button>
 
           <button
@@ -114,7 +114,7 @@ export const CustomerFavoritesPage: React.FC = () => {
             }`}
           >
             <Store className="w-4 h-4" />
-            <span>Comercios ({favoriteMerchants.length})</span>
+            <span>Comercios ({resource.records.filter(item => item.kind === "store").length})</span>
           </button>
         </div>
 
@@ -127,8 +127,11 @@ export const CustomerFavoritesPage: React.FC = () => {
         </Link>
       </div>
 
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {error && <p role="alert" className="text-destructive">{error}</p>}
+      {resource.data?.unavailable.filter(item => item.kind === (tab === "products" ? "product" : "store")).map(item => <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-subtle flex items-center justify-between gap-3"><div><p className="font-bold text-ink">{item.name}</p><span className="text-xs text-ink-light">No disponible en el catálogo actual</span></div><button type="button" disabled={removing} onClick={() => void remove(item.kind, item.id)} className="min-h-11 text-sm font-bold text-primary">Quitar favorito</button></div>)}
       {/* Products Tab Content */}
-      {tab === 'products' && (
+      {!resource.loading && !resource.error && tab === 'products' && (
         <section aria-label="Platos y productos favoritos">
           {favoriteProducts.length === 0 ? (
             <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-4 max-w-xl mx-auto my-6 shadow-subtle">
@@ -137,7 +140,7 @@ export const CustomerFavoritesPage: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h2 className="text-lg sm:text-xl font-bold text-ink">
-                  Aún no tienes productos favoritos
+                  {resource.records.some(item => item.kind === "product") ? "No hay productos favoritos disponibles" : "Aún no tienes productos favoritos"}
                 </h2>
                 <p className="text-xs sm:text-sm text-ink-light leading-relaxed max-w-md mx-auto">
                   ¿Se te antoja un tacacho con cecina, juane tradicional o café de Leoncio Prado?
@@ -187,7 +190,7 @@ export const CustomerFavoritesPage: React.FC = () => {
       )}
 
       {/* Merchants Tab Content */}
-      {tab === 'merchants' && (
+      {!resource.loading && !resource.error && tab === 'merchants' && (
         <section aria-label="Comercios favoritos">
           {favoriteMerchants.length === 0 ? (
             <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-4 max-w-xl mx-auto my-6 shadow-subtle">
@@ -196,7 +199,7 @@ export const CustomerFavoritesPage: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h2 className="text-lg sm:text-xl font-bold text-ink">
-                  Aún no tienes comercios favoritos
+                  {resource.records.some(item => item.kind === "store") ? "No hay comercios favoritos disponibles" : "Aún no tienes comercios favoritos"}
                 </h2>
                 <p className="text-xs sm:text-sm text-ink-light leading-relaxed max-w-md mx-auto">
                   Guarda tus restaurantes, boticas y bodegas preferidas de Tingo María para revisar
@@ -238,7 +241,7 @@ export const CustomerFavoritesPage: React.FC = () => {
 
       {/* Product Detail Modal for variants or customized notes */}
       <ProductDetailModal
-        product={selectedProduct}
+        productId={selectedProduct?.id}
         merchant={merchants.find((m) => m.id === selectedProduct?.merchantId)}
         isOpen={Boolean(selectedProduct)}
         onClose={() => setSelectedProduct(null)}

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { decisionsFor, decisionLabels, loadAdminStoreViews, setStoreReception, useAdminAction, useAdminResource } from './adminModel';
+import { AdminDecisionDialog } from './AdminDecisionDialog';
+import { RemoteState, statusLabels } from '../operations/shared';
+import type { Decision } from '../../services/api/operationsApi';
 import { formatCents } from '../../lib/currency';
 import { Power, Store, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -8,37 +11,27 @@ import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export const AdminMerchantsPage: React.FC = () => {
-  const { merchants, updateMerchantProfile } = useDataStore();
+  const resource = useAdminResource('merchants', loadAdminStoreViews);
+  const actions = useAdminAction(resource.reload, resource.loading || !!resource.error);
+  const merchants = resource.data || [];
+  const [decision, setDecision] = useState<{ id: string; name: string; decision: Decision['decision'] } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [failedLogos, setFailedLogos] = useState<string[]>([]);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
   const filteredMerchants = merchants.filter((merchant) => {
     const query = searchQuery.trim().toLowerCase();
     return !query || [merchant.name, merchant.category, merchant.address].some((value) => value.toLowerCase().includes(query));
   });
 
-  const toggleMerchant = (id: string, name: string, isOpen: boolean) => {
-    setNotice('');
-    setError('');
-    try {
-      updateMerchantProfile(id, { isOpen: !isOpen });
-      const updated = useDataStore.getState().merchants.find((merchant) => merchant.id === id);
-      if (!updated || updated.isOpen !== !isOpen) {
-        setError('No se pudo cambiar la disponibilidad. Revisa el comercio e inténtalo nuevamente.');
-        return;
-      }
-      setNotice(isOpen ? `Comercio pausado: ${name}.` : `Comercio abierto: ${name}.`);
-    } catch {
-      setError('No se pudo completar la acción. Revisa el estado del comercio antes de volver a intentarlo.');
-    }
+  const toggleMerchant = async (id: string, _name: string, acceptingOrders: boolean) => {
+    await actions.execute(() => setStoreReception(id, !acceptingOrders), 'Recepción de pedidos confirmada.');
   };
+  if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
 
   return (
     <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="text-xl font-bold text-ink sm:text-2xl">Comercios afiliados</h1>
-        <p className="text-sm text-ink-light">Consulta sus datos y controla su disponibilidad en Tingo María.</p>
+        <p className="text-sm text-ink-light">Revisa las afiliaciones y la recepción de pedidos de los comercios.</p>
       </header>
 
       <section aria-label="Búsqueda de comercios" className="rounded-2xl border border-border bg-surface p-4">
@@ -53,8 +46,11 @@ export const AdminMerchantsPage: React.FC = () => {
         </div>
       </section>
 
-      {notice && <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{notice}</p></div>}
-      {error && <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{error}</p></div>}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actions.notice && <p role="status" className="text-sm text-selva-strong">{actions.notice}</p>}
+      {actions.error && <p role="alert" className="text-sm text-destructive-strong">{actions.error}</p>}
+
+
 
       <section aria-labelledby="admin-merchants-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -94,17 +90,19 @@ export const AdminMerchantsPage: React.FC = () => {
                           <h3 className="break-words text-sm font-semibold text-ink">{merchant.name}</h3>
                           <p className="text-xs text-ink-light">{merchant.category}</p>
                           <p className="break-words text-xs text-ink-muted">{merchant.address}</p>
-                          <p className="text-xs tabular-nums text-ink-light"><span aria-hidden="true">★ </span>Calificación: {merchant.rating.toFixed(1)}</p>
+                          <p className="text-xs tabular-nums text-ink-light">Calificaciones no disponibles en esta consulta.</p>
                         </div>
                       </div>
                     </th>
                     <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                       <span className="text-xs text-ink-muted xl:hidden">Disponibilidad</span>
+                      <Badge>{statusLabels[merchant.status]}</Badge>
+                      {merchant.statusReason && <p className="mt-2 break-words text-xs text-ink-muted">{merchant.statusReason}</p>}
                       <Badge variant={merchant.isOpen ? 'success' : 'danger'}>{merchant.isOpen ? 'Abierto' : 'Cerrado'}</Badge>
                     </td>
                     <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:text-right xl:align-middle">
                       <span className="text-xs text-ink-muted xl:hidden">Tarifa de envío</span>
-                      <span className="font-medium tabular-nums text-ink">{formatCents(merchant.deliveryFeeCents)}</span>
+                      <span className="font-medium tabular-nums text-ink">{merchant.deliveryFeeCents === null ? 'No informada' : formatCents(merchant.deliveryFeeCents)}</span>
                     </td>
                     <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:text-right xl:align-middle">
                       <span className="text-xs text-ink-muted xl:hidden">Preparación</span>
@@ -112,11 +110,12 @@ export const AdminMerchantsPage: React.FC = () => {
                     </td>
                     <td className="block pt-3 xl:table-cell xl:px-4 xl:py-3 xl:align-middle">
                       <Button type="button" variant="outline" size="sm" className="w-full gap-2"
-                        aria-label={`${merchant.isOpen ? 'Pausar' : 'Abrir'} comercio: ${merchant.name}`}
-                        onClick={() => toggleMerchant(merchant.id, merchant.name, merchant.isOpen)}>
+                        aria-label={`${merchant.acceptingOrders ? 'Pausar' : 'Activar'} recepción: ${merchant.name}`} disabled={actions.busy || resource.loading || !!resource.error || merchant.status !== 'active'}
+                        onClick={() => toggleMerchant(merchant.id, merchant.name, merchant.acceptingOrders)}>
                         <Power className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {merchant.isOpen ? 'Pausar comercio' : 'Abrir comercio'}
+                        {merchant.acceptingOrders ? 'Pausar recepción' : 'Activar recepción'}
                       </Button>
+                      <div className="mt-2 flex flex-wrap gap-2">{decisionsFor(merchant.status).map(action => <Button key={action} type="button" variant="outline" size="sm" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => setDecision({ id: merchant.id, name: merchant.name, decision: action })}>{decisionLabels[action]}</Button>)}</div>
                     </td>
                   </tr>
                 ))}
@@ -125,6 +124,7 @@ export const AdminMerchantsPage: React.FC = () => {
           </div>
         )}
       </section>
+      {decision && <AdminDecisionDialog key={decision.id + decision.decision} kind="stores" item={decision} onClose={() => setDecision(null)} reload={resource.reload} blocked={resource.loading || !!resource.error} />}
     </div>
   );
 };

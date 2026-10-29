@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { allPages } from './customerAccountModel';
+import { engagementApi } from '../../services/api/engagementApi';
+import { orderingApi } from '../../services/api/orderingApi';
+import { useRemote, RemoteState } from '../operations/shared';
+import { TicketConversation } from './TicketConversation';
 import { useAuthStore } from '../../store/authStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -29,46 +33,20 @@ interface FaqItem {
 }
 
 const FAQ_DATA: FaqItem[] = [
-  {
-    id: 'f1',
-    category: 'Pedidos',
-    q: '¿Cómo funciona la compra en múltiples comercios de Tingo María a la vez?',
-    a: 'Quickly te permite armar un único carrito combinando platos de restaurantes amazónicos, productos de boticas o bodegas tingalesas. Al confirmar la compra se genera una orden global; el sistema despacha a cada comercio con su repartidor asignado para que tus alimentos lleguen calientes y a tiempo.',
-  },
-  {
-    id: 'f2',
-    category: 'Cancelación',
-    q: '¿Hasta qué momento puedo cancelar un pedido sin recargo?',
-    a: 'Puedes solicitar la cancelación de inmediato y sin ningún cobro mientras el restaurante mantenga el pedido en estado "Pendiente" o "Confirmado". En cuanto la cocina cambia a "En preparación", no es posible cancelarlo directamente para proteger el costo de los insumos del negocio local.',
-  },
-  {
-    id: 'f3',
-    category: 'Cobertura',
-    q: '¿Qué zonas de Tingo María tienen cobertura y cómo varían las tarifas?',
-    a: 'Llegamos a Centro de Tingo María (S/ 4.00, ~20 min), Rupa Rupa Norte / Campus UNAS (S/ 5.00, ~25 min), Rupa Rupa Sur / Afilador (S/ 5.50, ~30 min) y Castillo Grande cruzando el Puente Corpac (S/ 6.50, ~35 min). Puedes seleccionar tu zona en el menú superior para ver tarifas actualizadas.',
-  },
-  {
-    id: 'f4',
-    category: 'Pagos',
-    q: '¿Cómo pago con Yape o Plin sin comisión?',
-    a: 'Selecciona "Yape / Plin" en el checkout. Al confirmar tu compra verás el número de celular y código QR oficial del comercio para realizar tu transferencia desde tu aplicación bancaria. No cobramos comisiones adicionales por pagos digitales.',
-  },
-  {
-    id: 'f5',
-    category: 'Clima',
-    q: '¿Qué pasa en días de lluvia tropical intensa o crecida del río Huallaga?',
-    a: 'Nuestros repartidores en moto y mototaxi continúan operando con equipamiento impermeable. Por seguridad vial y tráfico en el Puente Corpac, el tiempo estimado de entrega puede incrementarse entre 10 y 15 minutos, lo cual se notifica en el seguimiento de tu pedido.',
-  },
-  {
-    id: 'f6',
-    category: 'Reembolsos',
-    q: '¿Cómo se procesan los reembolsos si un comercio no tiene stock?',
-    a: 'Si un producto se agota o cancelas a tiempo, la simulación de Quickly registra el reembolso íntegro de inmediato a tu método de pago registrado (Yape, Plin o saldo en plataforma).',
-  },
+ { id: 'f1', category: 'Pedidos', q: '¿Cómo funciona una compra en varias tiendas?', a: 'Cada tienda genera su propio pedido, envío y cobro. Revisa el desglose de la cotización antes de confirmar.' },
+ { id: 'f2', category: 'Cancelación', q: '¿Cuándo puedo cancelar?', a: 'Puedes solicitar la cancelación de un pedido pendiente o confirmado. La API valida su estado actual antes de confirmarla.' },
+ { id: 'f3', category: 'Cobertura', q: '¿Qué zonas tienen cobertura?', a: 'Consulta las zonas disponibles al guardar tu dirección. El importe final se muestra en la cotización del checkout.' },
+ { id: 'f4', category: 'Pagos', q: '¿Qué medios de pago están disponibles?', a: 'Actualmente se permite efectivo contra entrega cuando el checkout lo habilita. Yape, Plin y tarjeta todavía no están disponibles.' },
+ { id: 'f5', category: 'Seguimiento', q: '¿Cómo consulto mi entrega?', a: 'Abre Mis Pedidos para consultar los estados registrados. El mapa es referencial y no muestra una ubicación GPS en vivo.' },
+ { id: 'f6', category: 'Soporte', q: '¿Cómo consulto un problema de pago?', a: 'Crea un ticket asociado a tu pedido y consulta sus mensajes aquí. No se prometen reembolsos digitales automáticos.' },
 ];
 
 export const CustomerHelpPage: React.FC = () => {
-  const { tickets, createSupportTicket, purchases } = useDataStore();
+  const resource = useRemote('customer-tickets', signal => allPages(cursor => engagementApi.tickets(false, cursor, signal)));
+  const orderResource = useRemote('support-order-options', signal => allPages(cursor => orderingApi.list('/me/orders', { cursor, limit: '50' }, signal)));
+  const userPurchases = orderResource.data || [];
+  const userTickets = (resource.data || []).map(ticket => ({ ...ticket, status: ({ open: 'abierto', in_review: 'en_revision', resolved: 'resuelto' } as const)[ticket.status], description: '', response: '' }));
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const lock = React.useRef(false);
   const { currentUser } = useAuthStore();
 
   const [subject, setSubject] = useState('');
@@ -79,21 +57,6 @@ export const CustomerHelpPage: React.FC = () => {
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
-
-  // User's recent orders for quick autocomplete
-  const userPurchases = useMemo(
-    () => purchases.filter((p) => p.customerId === currentUser?.id),
-    [purchases, currentUser]
-  );
-
-  // User's previous support tickets
-  const userTickets = useMemo(
-    () =>
-      tickets
-        .filter((t) => t.userId === currentUser?.id)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [tickets, currentUser]
-  );
 
   // Filtered FAQs
   const filteredFaqs = useMemo(() => {
@@ -107,34 +70,20 @@ export const CustomerHelpPage: React.FC = () => {
     );
   }, [searchQuery]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!subject.trim() || !description.trim()) return;
-
-    createSupportTicket({
-      userId: currentUser?.id || 'u_cliente_demo',
-      userName: currentUser?.name || 'Cliente Quickly',
-      userRole: 'cliente',
-      orderId: orderCode.trim() || undefined,
-      subject: `[${category.toUpperCase()}] ${subject.trim()}`,
-      description: description.trim(),
-      priority: category === 'demora' || category === 'pedido' ? 'alta' : 'media',
-    });
-
-    const fakeId = `tkt_${Date.now().toString().slice(-4)}`;
-    setCreatedTicketId(fakeId);
-    setIsSuccess(true);
-    setSubject('');
-    setDescription('');
-    setOrderCode('');
-
-    setTimeout(() => {
-      setIsSuccess(false);
-    }, 6000);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); if (lock.current || !subject.trim() || !description.trim() || !currentUser) return;
+    const selected = userPurchases.find(order => order.id === orderCode.trim() || order.code === orderCode.trim());
+    if (orderCode.trim() && !selected) { setError('Selecciona un pedido de tu cuenta o deja el código vacío.'); return; }
+    lock.current = true; setBusy(true); setError(''); setIsSuccess(false); const owner = currentUser.id;
+    try { const ticket = await engagementApi.createTicket({ subject: '[' + category.toUpperCase() + '] ' + subject.trim(), body: description.trim(), ...(selected ? { orderId: selected.id } : {}) });
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      setCreatedTicketId(ticket.id); setIsSuccess(true); setSubject(''); setDescription(''); setOrderCode(''); resource.reload();
+    } catch(e) { setError(e instanceof Error ? e.message : 'No se pudo enviar el ticket.'); } finally { lock.current = false; setBusy(false); }
   };
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 sm:pb-8">
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      <RemoteState loading={orderResource.loading} error={orderResource.error} retry={orderResource.reload} />
       {/* Title & Headline */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Centro de Ayuda y Soporte</h1>
@@ -152,14 +101,14 @@ export const CustomerHelpPage: React.FC = () => {
             <span className="text-xs font-extrabold uppercase tracking-wide">Tiempo de Respuesta</span>
           </div>
           <div className="my-3">
-            <div className="text-2xl font-extrabold text-ink">&lt; 2 horas</div>
+            <div className="text-2xl font-extrabold text-ink">Por confirmar</div>
             <p className="text-xs text-ink-light mt-0.5">
-              Horario de atención: <strong>8:00 AM a 10:00 PM</strong> todos los días
+              Horario de atención no informado
             </p>
           </div>
           <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 w-fit">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>Equipo en línea en Tingo María</span>
+            <span>Seguimiento mediante tickets</span>
           </div>
         </div>
 
@@ -172,11 +121,11 @@ export const CustomerHelpPage: React.FC = () => {
           <div className="my-3">
             <div className="text-lg font-bold text-ink">Atención por WhatsApp</div>
             <p className="text-xs text-ink-light mt-0.5">
-              Atención ágil para cambios de dirección urgente o coordinaciones en ruta
+              Canal pendiente de configuración. Usa el formulario de soporte.
             </p>
           </div>
           <a
-            href="https://wa.me/51962123456?text=Hola%20Quickly%20Tingo%20Mar%C3%ADa%2C%20necesito%20ayuda%20con%20mi%20pedido"
+            aria-disabled="true" tabIndex={-1}
             target="_blank"
             rel="noopener noreferrer"
             className="touch-target inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-subtle min-h-[44px]"
@@ -193,13 +142,13 @@ export const CustomerHelpPage: React.FC = () => {
             <span className="text-xs font-extrabold uppercase tracking-wide">Central Telefónica</span>
           </div>
           <div className="my-3">
-            <div className="text-lg font-bold text-ink">(062) 562-111</div>
+            <div className="text-lg font-bold text-ink">No configurada</div>
             <p className="text-xs text-ink-light mt-0.5">
-              Línea fija local para comercios afiliados y emergencias en despachos
+              Canal pendiente de configuración. Usa el formulario de soporte.
             </p>
           </div>
           <a
-            href="tel:+5162562111"
+            aria-disabled="true" tabIndex={-1}
             className="touch-target inline-flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-ink font-bold text-xs px-4 py-2.5 rounded-xl transition-all min-h-[44px]"
           >
             <Phone className="w-4 h-4 text-gray-500" />
@@ -287,10 +236,11 @@ export const CustomerHelpPage: React.FC = () => {
           </div>
           <p className="text-xs sm:text-sm text-ink-light mt-0.5">
             Describe tu consulta o inconveniente. Nuestro equipo administrativo revisará tu caso de
-            inmediato.
+            mediante este ticket.
           </p>
         </div>
 
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {isSuccess && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs sm:text-sm text-emerald-800 font-bold flex items-start gap-3 animate-fadeIn">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -315,7 +265,7 @@ export const CustomerHelpPage: React.FC = () => {
               >
                 <option value="pedido">Inconveniente con mi pedido</option>
                 <option value="demora">Demora en el tiempo de entrega</option>
-                <option value="pago">Consulta sobre pago (Yape / Plin / Efectivo)</option>
+                <option value="pago">Consulta sobre pago</option>
                 <option value="cuenta">Dirección o datos de cuenta</option>
                 <option value="otro">Otro motivo general</option>
               </select>
@@ -342,7 +292,7 @@ export const CustomerHelpPage: React.FC = () => {
                       Recientes
                     </option>
                     {userPurchases.slice(0, 3).map((p) => (
-                      <option key={p.id} value={p.code}>
+                      <option key={p.id} value={p.id}>
                         {p.code}
                       </option>
                     ))}
@@ -355,6 +305,7 @@ export const CustomerHelpPage: React.FC = () => {
           <Input
             label="Asunto o Título breve"
             placeholder="Ej: El repartidor aún no llega con mi pedido de La Selva Gourmet"
+            maxLength={130}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             required
@@ -364,6 +315,7 @@ export const CustomerHelpPage: React.FC = () => {
           <div className="space-y-1">
             <label className="text-xs font-bold text-ink block">Detalle de la Incidencia</label>
             <textarea
+              maxLength={3000}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Explícanos con detalle qué ocurrió, dirección afectada o referencia para ayudarte rápidamente..."
@@ -376,11 +328,13 @@ export const CustomerHelpPage: React.FC = () => {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-[11px] text-gray-500 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>Priorizamos casos con pedidos activos en ruta en Tingo María.</span>
+              <span>Tu consulta quedará registrada para su seguimiento.</span>
             </span>
 
             <Button
               type="submit"
+              isLoading={busy}
+              disabled={busy}
               variant="primary"
               size="md"
               className="w-full sm:w-auto min-h-[44px] px-6 font-bold shadow-subtle"
@@ -434,7 +388,7 @@ export const CustomerHelpPage: React.FC = () => {
                   </div>
                 </div>
 
-                <p className="text-xs text-ink-light leading-relaxed">{ticket.description}</p>
+                <TicketConversation id={ticket.id} />
 
                 {ticket.response && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-ink space-y-1">

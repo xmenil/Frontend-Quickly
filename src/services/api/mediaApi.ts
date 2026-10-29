@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { components } from './contracts/schema';
 import { apiRequest, ApiError } from './apiClient';
+import { resolveApiUrl } from '../../lib/api';
 const avatarSchema: z.ZodType<components['schemas']['AvatarDto']> = z.object({url:z.string().nullable()});
 const brandingSchema: z.ZodType<components['schemas']['StoreBrandingDto']> = z.object({logoUrl:z.string().nullable(),bannerUrl:z.string().nullable()});
 function checked<T>(schema: z.ZodType<T>, data: unknown): T {
@@ -17,7 +18,6 @@ export const mediaApi = {
   removeBranding: async (id: string, kind: 'logo'|'banner') => checked(brandingSchema,await apiRequest(`/merchant/stores/${id}/branding/${kind}`,{method:'DELETE'})),
 };
 export function mediaUrl(url: string): string {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/,'');
   return /^\/api\/v1\/(?:me\/avatar\/|(?:merchant\/)?stores\/[0-9a-f-]+\/branding\/(?:logo|banner)\/|media\/|merchant\/products\/[0-9a-f-]+\/media\/)[0-9a-f-]+\.png$/.test(url)
-    ? `${base}/${url.slice('/api/v1/'.length)}` : '';
+    ? resolveApiUrl(url) : '';
 }

@@ -15,9 +15,9 @@ export const PlayModal: React.FC<PlayModalProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="bg-[#00a650] text-white text-[10px] font-black px-1.5 py-0.5 rounded uppercase">
-              GRATIS
+              PLAY
             </span>
-            <h3 className="font-extrabold text-base text-ink">Mercado Play en Quickly</h3>
+            <h3 className="font-extrabold text-base text-ink">Quickly Play</h3>
           </div>
           <button
             type="button"
@@ -31,24 +31,19 @@ export const PlayModal: React.FC<PlayModalProps> = ({ isOpen, onClose }) => {
 
         {/* Video Preview Card */}
         <div className="relative aspect-video rounded-2xl overflow-hidden bg-neutral-900 flex items-center justify-center shadow-inner group">
-          <img
-            src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=800&auto=format&fit=crop&q=80"
-            alt="Quickly Play Selva"
-            className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
-          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
           <div className="absolute flex flex-col items-center gap-2">
             <div className="w-14 h-14 rounded-full bg-primary/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
               <Play className="w-6 h-6 ml-1 fill-white" />
             </div>
             <span className="text-white text-xs font-bold drop-shadow">
-              Documental: La Bella Durmiente y el Cacao Nativo
+              Reproducción no disponible
             </span>
           </div>
         </div>
 
         <p className="text-xs text-gray-600 leading-relaxed">
-          Disfruta de películas, tutoriales de gastronomía amazónica y documentales de la selva central sin pagar ninguna suscripción.
+          El contenido de Play aún no está habilitado. No hay videos disponibles para reproducir.
         </p>
 
         <div className="flex justify-end gap-2 pt-2">
@@ -62,9 +57,9 @@ export const PlayModal: React.FC<PlayModalProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm"
+            disabled className="opacity-50 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm"
           >
-            Ver ahora gratis
+            Contenido no disponible
           </button>
         </div>
       </div>

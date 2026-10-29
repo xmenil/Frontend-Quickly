@@ -7,7 +7,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthLiveDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21,7 +28,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReadyDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -36,7 +50,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReadyDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -44,10 +65,108 @@
         ]
       }
     },
+    "/api/v1/auth/verification-code/send": {
+      "post": {
+        "operationId": "AuthController_sendVerificationCode",
+        "summary": "Enviar código de verificación de 6 dígitos al correo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendVerificationCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "devCode": {
+                      "type": "string",
+                      "description": "Solo transporte de prueba explícito; nunca en producción"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ]
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "operationId": "AuthController_register",
-        "summary": "Registrar nueva cuenta de cliente",
+        "summary": "Registrar nueva cuenta de cliente con validación de código",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -61,6 +180,88 @@
         },
         "responses": {
           "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Autenticación e Identidad"
+        ]
+      }
+    },
+    "/api/v1/auth/google": {
+      "post": {
+        "operationId": "AuthController_google",
+        "summary": "Iniciar sesión o registrarse con Google",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -976,7 +1177,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicStoreDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1000,7 +1211,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStoreDetailDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2174,6 +2392,32 @@
             "cookie": []
           }
         ]
+      },
+      "delete": {
+        "operationId": "CatalogManagementController_deleteProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Catálogo e inventario"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
       }
     },
     "/api/v1/merchant/products/{id}/skus": {
@@ -2885,7 +3129,124 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "purchaseId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "purchaseNumber": {
+                      "type": "string"
+                    },
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "storeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "storeName": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "deliveryFeeCents": {
+                      "type": "integer"
+                    },
+                    "itemsSubtotalCents": {
+                      "oneOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?[0-9]+$"
+                        }
+                      ]
+                    },
+                    "totalCents": {
+                      "oneOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?[0-9]+$"
+                        }
+                      ]
+                    },
+                    "paymentMethod": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "product_name_at_sale": {
+                            "type": "string"
+                          },
+                          "unit_price_cents": {
+                            "type": "integer"
+                          },
+                          "quantity": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "product_name_at_sale",
+                          "unit_price_cents",
+                          "quantity"
+                        ]
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "acceptanceExpiresAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "cashTenderCents": {
+                      "type": "integer"
+                    },
+                    "cashChangeCents": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "purchaseId",
+                    "purchaseNumber",
+                    "orderId",
+                    "storeId",
+                    "storeName",
+                    "statusCode",
+                    "deliveryFeeCents",
+                    "itemsSubtotalCents",
+                    "totalCents",
+                    "paymentMethod",
+                    "items",
+                    "createdAt",
+                    "acceptanceExpiresAt",
+                    "cashTenderCents",
+                    "cashChangeCents"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2905,7 +3266,137 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "code": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "overall_status": {
+                        "type": "string"
+                      },
+                      "subtotal_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "delivery_fee_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "total_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "recipient_name": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "street": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "street_number": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "store_orders": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "orderId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "storeId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "storeName": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "deliveryFeeCents": {
+                              "type": "integer"
+                            },
+                            "acceptanceExpiresAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "orderId",
+                            "storeId",
+                            "storeName",
+                            "status",
+                            "deliveryFeeCents",
+                            "acceptanceExpiresAt"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "code",
+                      "created_at",
+                      "overall_status",
+                      "subtotal_cents",
+                      "delivery_fee_cents",
+                      "total_cents",
+                      "recipient_name",
+                      "street",
+                      "street_number",
+                      "store_orders"
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2944,7 +3435,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "orderId",
+                    "status",
+                    "message"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2973,7 +3488,162 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "status_code": {
+                        "type": "string"
+                      },
+                      "delivery_fee_cents": {
+                        "type": "integer"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "acceptanceExpiresAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                      },
+                      "subtotal_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "total_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      },
+                      "recipient_name": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "phone": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "street": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "street_number": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "reference": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "assignment_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                      },
+                      "courierUserId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                      },
+                      "assignmentStatus": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "courierName": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "courierPhone": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "itemId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "productName": {
+                              "type": "string"
+                            },
+                            "variantName": {
+                              "type": "string"
+                            },
+                            "unitPriceCents": {
+                              "type": "integer"
+                            },
+                            "quantity": {
+                              "type": "integer"
+                            },
+                            "note": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "itemId",
+                            "productName",
+                            "variantName",
+                            "unitPriceCents",
+                            "quantity",
+                            "note"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "order_id",
+                      "status_code",
+                      "delivery_fee_cents",
+                      "created_at",
+                      "version",
+                      "acceptanceExpiresAt",
+                      "subtotal_cents",
+                      "total_cents",
+                      "recipient_name",
+                      "phone",
+                      "street",
+                      "street_number",
+                      "reference",
+                      "assignment_id",
+                      "courierUserId",
+                      "assignmentStatus",
+                      "courierName",
+                      "courierPhone",
+                      "items"
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3012,7 +3682,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "previousStatus": {
+                      "type": "string"
+                    },
+                    "currentStatus": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "orderId",
+                    "previousStatus",
+                    "currentStatus"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3051,7 +3745,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "previousStatus": {
+                      "type": "string"
+                    },
+                    "currentStatus": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "orderId",
+                    "previousStatus",
+                    "currentStatus"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3090,7 +3808,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "previousStatus": {
+                      "type": "string"
+                    },
+                    "currentStatus": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "orderId",
+                    "previousStatus",
+                    "currentStatus"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3621,7 +4363,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "orderId",
+                    "status",
+                    "message"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3881,7 +4647,64 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivery_fee_cents": {
+                        "type": "integer"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "store_name": {
+                        "type": "string"
+                      },
+                      "store_address": {
+                        "type": "string"
+                      },
+                      "store_phone": {
+                        "type": "string"
+                      },
+                      "total_cents": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+$"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "order_id",
+                      "store_id",
+                      "delivery_fee_cents",
+                      "created_at",
+                      "store_name",
+                      "store_address",
+                      "store_phone",
+                      "total_cents"
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3901,7 +4724,97 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assignment_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "merchant_order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "agreed_fee_cents": {
+                      "type": "integer"
+                    },
+                    "assignment_status": {
+                      "type": "string"
+                    },
+                    "accepted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "order_status": {
+                      "type": "string"
+                    },
+                    "store_name": {
+                      "type": "string"
+                    },
+                    "store_address": {
+                      "type": "string"
+                    },
+                    "store_phone": {
+                      "type": "string"
+                    },
+                    "recipient_name": {
+                      "type": "string"
+                    },
+                    "recipient_phone": {
+                      "type": "string"
+                    },
+                    "dest_street": {
+                      "type": "string"
+                    },
+                    "dest_number": {
+                      "type": "string"
+                    },
+                    "dest_reference": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "total_cents": {
+                      "oneOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?[0-9]+$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "assignment_id",
+                    "merchant_order_id",
+                    "agreed_fee_cents",
+                    "assignment_status",
+                    "accepted_at",
+                    "picked_up_at",
+                    "order_status",
+                    "store_name",
+                    "store_address",
+                    "store_phone",
+                    "recipient_name",
+                    "recipient_phone",
+                    "dest_street",
+                    "dest_number",
+                    "dest_reference",
+                    "total_cents"
+                  ],
+                  "nullable": true
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3940,7 +4853,36 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "agreed_fee_cents": {
+                      "type": "integer"
+                    },
+                    "accepted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "agreed_fee_cents",
+                    "accepted_at"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3979,7 +4921,31 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assignmentId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "orderStatus": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "assignmentId",
+                    "status",
+                    "orderStatus"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4018,7 +4984,35 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assignmentId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "orderStatus": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "assignmentId",
+                    "status",
+                    "orderStatus",
+                    "message"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4056,7 +5050,23 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "orderId"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4094,7 +5104,28 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ticketId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "ticketId"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4132,7 +5163,36 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "agreed_fee_cents": {
+                      "type": "integer"
+                    },
+                    "accepted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "agreed_fee_cents",
+                    "accepted_at"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4170,11 +5230,170 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "orderId"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
           "Intervención de reparto"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/available-couriers": {
+      "get": {
+        "operationId": "MerchantDeliveryController_listAvailableCouriers",
+        "summary": "Listar repartidores disponibles para asignar pedido",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "courierUserId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "vehicleType": {
+                        "type": "string"
+                      },
+                      "plate": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "isOnline": {
+                        "type": "boolean"
+                      },
+                      "currentZoneId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                      },
+                      "zoneName": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "courierUserId",
+                      "fullName",
+                      "email",
+                      "phone",
+                      "vehicleType",
+                      "plate",
+                      "isOnline",
+                      "currentZoneId",
+                      "zoneName"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Asignación de reparto por comercio"
+        ],
+        "security": [
+          {
+            "cookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/orders/{id}/assign-courier": {
+      "post": {
+        "operationId": "MerchantDeliveryController_assignCourier",
+        "summary": "Comercio asigna un repartidor a su orden",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignCourierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "agreed_fee_cents": {
+                      "type": "integer"
+                    },
+                    "accepted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "agreed_fee_cents",
+                    "accepted_at"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Asignación de reparto por comercio"
         ],
         "security": [
           {
@@ -4521,7 +5740,54 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string"
+                      },
+                      "relative_url": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "read_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "message",
+                      "kind",
+                      "relative_url",
+                      "read_at",
+                      "created_at"
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5318,6 +6584,58 @@
       }
     },
     "schemas": {
+      "HealthLiveDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service"
+        ]
+      },
+      "HealthReadyDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "connected"
+            ]
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "timestamp",
+          "database",
+          "version"
+        ]
+      },
       "ErrorResponseDto": {
         "type": "object",
         "properties": {
@@ -5365,6 +6683,18 @@
           "path"
         ]
       },
+      "SendVerificationCodeDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -5385,6 +6715,11 @@
             "type": "string",
             "example": "Password123!",
             "minLength": 6
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "123456",
+            "description": "Código de verificación de 6 dígitos enviado al correo"
           }
         },
         "required": [
@@ -5503,6 +6838,10 @@
             "type": "string",
             "description": "Protección CSRF; conservar solo en memoria"
           },
+          "token": {
+            "type": "string",
+            "description": "Token de sesión Bearer para clientes móviles y cross-origin"
+          },
           "expiresAt": {
             "type": "string",
             "format": "date-time"
@@ -5512,6 +6851,23 @@
           "user",
           "csrfToken",
           "expiresAt"
+        ]
+      },
+      "GoogleAuthDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "Google ID Token (credential JWT)"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+51962123456",
+            "description": "Teléfono opcional si el usuario es nuevo"
+          }
+        },
+        "required": [
+          "idToken"
         ]
       },
       "LoginDto": {
@@ -5930,6 +7286,198 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "PublicStoreDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category_code": {
+            "type": "string"
+          },
+          "zone_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zone_name": {
+            "type": "string"
+          },
+          "address_text": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "accepting_orders": {
+            "type": "boolean"
+          },
+          "isOpen": {
+            "type": "boolean"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bannerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating_average": {
+            "type": "number",
+            "nullable": true
+          },
+          "rating_count": {
+            "type": "number"
+          },
+          "preparation_minutes": {
+            "type": "number"
+          },
+          "minimum_order_cents": {
+            "type": "number",
+            "description": "Pedido mínimo del comercio, en céntimos PEN"
+          },
+          "base_fee_cents": {
+            "type": "number",
+            "description": "Tarifa base de la zona del comercio; el envío final se cotiza según destino"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category_code",
+          "zone_id",
+          "zone_name",
+          "address_text",
+          "phone",
+          "description",
+          "accepting_orders",
+          "isOpen",
+          "logoUrl",
+          "bannerUrl",
+          "rating_average",
+          "rating_count",
+          "preparation_minutes",
+          "minimum_order_cents",
+          "base_fee_cents"
+        ]
+      },
+      "PublicOpeningIntervalDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "opens_at": {
+            "type": "string"
+          },
+          "closes_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekday",
+          "opens_at",
+          "closes_at"
+        ]
+      },
+      "PublicStoreDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category_code": {
+            "type": "string"
+          },
+          "zone_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zone_name": {
+            "type": "string"
+          },
+          "address_text": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "accepting_orders": {
+            "type": "boolean"
+          },
+          "isOpen": {
+            "type": "boolean"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bannerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating_average": {
+            "type": "number",
+            "nullable": true
+          },
+          "rating_count": {
+            "type": "number"
+          },
+          "preparation_minutes": {
+            "type": "number"
+          },
+          "minimum_order_cents": {
+            "type": "number",
+            "description": "Pedido mínimo del comercio, en céntimos PEN"
+          },
+          "base_fee_cents": {
+            "type": "number",
+            "description": "Tarifa base de la zona del comercio; el envío final se cotiza según destino"
+          },
+          "openingIntervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOpeningIntervalDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category_code",
+          "zone_id",
+          "zone_name",
+          "address_text",
+          "phone",
+          "description",
+          "accepting_orders",
+          "isOpen",
+          "logoUrl",
+          "bannerUrl",
+          "rating_average",
+          "rating_count",
+          "preparation_minutes",
+          "minimum_order_cents",
+          "base_fee_cents",
+          "openingIntervals"
         ]
       },
       "StoreCategoryDto": {

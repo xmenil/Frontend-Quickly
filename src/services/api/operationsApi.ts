@@ -44,7 +44,7 @@ const query = (params: { cursor?: string; status?: string; limit?: number } = {}
   return search.size ? `?${search}` : '';
 };
 export const operationsApi = {
-  zones: async (signal?: AbortSignal) => checked(z.array(zoneSchema), await apiRequest('/geography/zones', { signal })),
+  zones: async (signal?: AbortSignal) => checked(z.array(zoneSchema), await apiRequest('/geography/zones', { signal, publicRequest: true, sessionIndependent: true })),
   categories: async (signal?: AbortSignal) => checked(z.array(z.object({ code: z.string(), label: z.string() })), await apiRequest('/merchant/categories', { signal })),
   addresses: async (signal?: AbortSignal) => checked(z.array(addressSchema), await apiRequest('/me/addresses', { signal })),
   saveAddress: async (body: AddressInput, id?: string) => checked(addressSchema, await apiRequest(id ? `/me/addresses/${id}` : '/me/addresses', { method: id ? 'PATCH' : 'POST', body })),

@@ -11,12 +11,12 @@ const report=z.object({from:date,to:date,currency:z.literal('PEN'),definition:z.
 const audit=z.object({id:z.string().regex(/^\d+$/),actorUserId:uuid.nullable(),action:z.string(),entityType:z.string(),entityId:uuid,requestId:uuid,occurredAt:date});
 const page=<T extends z.ZodTypeAny>(item:T)=>z.object({items:z.array(item),nextCursor:z.string().nullable()});
 function checked<T>(schema:z.ZodType<T>,value:unknown):T{const result=schema.safeParse(value);if(!result.success)throw new ApiError('No se pudo validar la respuesta del servidor.',502,'INVALID_RESPONSE');return result.data;}
-async function get<T>(path:string,schema:z.ZodType<T>,signal?:AbortSignal){return checked(schema,await apiRequest(path,{signal}));}
+async function get<T>(path:string,schema:z.ZodType<T>,signal?:AbortSignal,sessionIndependent=false){return checked(schema,await apiRequest(path,{signal,sessionIndependent,publicRequest:sessionIndependent}));}
 const query=(cursor?:string)=>cursor?`?cursor=${encodeURIComponent(cursor)}`:'';
 export const engagementApi={
  favorites:(cursor?:string,signal?:AbortSignal)=>get('/me/favorites'+query(cursor),page(favorite),signal),
  favorite:(kind:'product'|'store',id:string,enabled:boolean)=>apiRequest(`/me/favorites/${kind==='product'?'products':'stores'}/${id}`,{method:enabled?'PUT':'DELETE'}),
- reviews:(id:string,cursor?:string,signal?:AbortSignal)=>get(`/stores/${id}/reviews`+query(cursor),page(review).extend({count:z.number().int(),average:z.number().nullable()}),signal),
+ reviews:(id:string,cursor?:string,signal?:AbortSignal)=>get(`/stores/${id}/reviews`+query(cursor),page(review).extend({count:z.number().int(),average:z.number().nullable()}),signal,true),
  review:(id:string,body:components['schemas']['ReviewInput'])=>apiRequest(`/orders/${id}/reviews`,{method:'POST',body}),
  notifications:(cursor?:string,signal?:AbortSignal)=>get('/me/notifications'+query(cursor),page(notification).extend({unreadCount:z.number().int()}),signal),
  read:(id?:string)=>apiRequest(id?`/me/notifications/${id}/read`:'/me/notifications/read-all',{method:'PATCH'}),

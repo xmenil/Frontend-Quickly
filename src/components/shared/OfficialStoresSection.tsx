@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { catalogPlaceholder, catalogImage } from '../../lib/catalogImage';
 import { catalogApi, PublicStore, imageUrl } from '../../services/api/catalogApi';
-import { INITIAL_MERCHANTS } from '../../mocks/initialData';
+import { RemoteState, useRemote } from '../../features/operations/shared';
 import {
   Building2,
   Clock,
@@ -14,55 +15,15 @@ import {
   MapPin,
 } from 'lucide-react';
 
-const FALLBACK_BANNERS = [
-  'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
-];
-const FALLBACK_STORES: PublicStore[] = INITIAL_MERCHANTS.slice(0, 10).map((m) => ({
-  id: m.id,
-  name: m.name,
-  zone_id: 'be6c3773-7bf9-47cd-a530-8060e1dc9874',
-  zone_name: 'Centro de Tingo María',
-  category_code: m.category,
-  isOpen: m.isOpen,
-  accepting_orders: m.isOpen,
-  logoUrl: m.logoUrl,
-  bannerUrl: m.bannerUrl,
-}));
-
-
+const FALLBACK_BANNERS = [catalogPlaceholder];
 export const OfficialStoresSection: React.FC = () => {
-  const [stores, setStores] = useState<PublicStore[]>([]);
-  const [loading, setLoading] = useState(true);
+  const resource = useRemote('official-stores', signal => catalogApi.stores(signal));
+  const stores = resource.data || [];
+  const loading = resource.loading;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    catalogApi
-      .stores()
-      .then((data) => {
-        if (isMounted) {
-          setStores(data && data.length > 0 ? data : FALLBACK_STORES);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Error al cargar tiendas oficiales:', err);
-        if (isMounted) {
-          setStores(FALLBACK_STORES);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const checkScroll = () => {
     if (scrollContainerRef.current) {
@@ -102,7 +63,7 @@ export const OfficialStoresSection: React.FC = () => {
                   Tiendas y Comercios de Tingo María
                 </h2>
                 <span className="hidden sm:inline-flex text-[9px] uppercase font-extrabold bg-primary-50 text-primary border border-primary-100 px-2 py-0.5 rounded-full">
-                  Locales Verificados
+                  Comercios locales
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-ink-light">
@@ -146,7 +107,7 @@ export const OfficialStoresSection: React.FC = () => {
 
         {/* Horizontal Slider: Comercios reales de PostgreSQL */}
         <div className="relative group">
-          {loading ? (
+          {resource.error ? <RemoteState loading={false} error={resource.error} retry={resource.reload}/> : loading ? (
             <div className="py-12 flex items-center justify-center gap-2 text-xs text-ink-light">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
               <span>Cargando comercios de Tingo María...</span>
@@ -162,7 +123,7 @@ export const OfficialStoresSection: React.FC = () => {
               className="flex items-stretch gap-3 sm:gap-3.5 overflow-x-auto scrollbar-none scroll-smooth pb-2 pt-1 px-0.5"
             >
               {stores.map((store, idx) => {
-                const bannerSrc = (store.bannerUrl && store.bannerUrl.startsWith('http')) ? store.bannerUrl : (store.bannerUrl ? imageUrl(store.bannerUrl) : '') || FALLBACK_BANNERS[idx % FALLBACK_BANNERS.length];
+                const bannerSrc = catalogImage(store.bannerUrl);
 
                 return (
                   <Link
@@ -185,7 +146,7 @@ export const OfficialStoresSection: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                         <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-ink text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                           <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
-                          <span>Verificado</span>
+                          <span>Comercio local</span>
                         </span>
                       </div>
 
@@ -195,12 +156,12 @@ export const OfficialStoresSection: React.FC = () => {
                         <div className="w-11 h-11 rounded-xl bg-white shadow-sm border border-gray-100 p-0.5 flex items-center justify-center -mt-5 mb-1.5 relative z-10 overflow-hidden">
                           {store.logoUrl ? (
                             <img
-                              src={(store.logoUrl && store.logoUrl.startsWith('http')) ? store.logoUrl : (store.logoUrl ? imageUrl(store.logoUrl) : '') || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80'}
+                              src={(store.logoUrl && store.logoUrl.startsWith('http')) ? store.logoUrl : (store.logoUrl ? imageUrl(store.logoUrl) : '') || catalogPlaceholder}
                               alt={store.name}
                               className="w-full h-full object-contain rounded-lg"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80';
+                                  catalogPlaceholder;
                               }}
                             />
                           ) : (
@@ -235,7 +196,7 @@ export const OfficialStoresSection: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-1 text-gray-500 text-[11px]">
                             <Clock className="w-3 h-3 text-primary" />
-                            <span>Entrega rápida</span>
+                            <span>Entrega por tienda</span>
                           </div>
                         </div>
                       </div>

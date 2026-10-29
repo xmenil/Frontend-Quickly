@@ -1,102 +1,66 @@
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CourierActiveDeliveryPage } from '../features/courier/CourierActiveDeliveryPage';
 import { CourierHistoryPage } from '../features/courier/CourierHistoryPage';
-import { useDataStore } from '../store/dataStore';
+import { orderingApi } from '../services/api/orderingApi';
 import { useAuthStore } from '../store/authStore';
-import { Purchase } from '../domain/types';
-
-const originalData = useDataStore.getState();
-const originalAuth = useAuthStore.getState();
-const courier = originalData.couriers[0];
-const purchase: Purchase = {
-  ...originalData.purchases[0],
-  merchantOrders: [{
-    ...originalData.purchases[0].merchantOrders[0],
-    id: 'ui_active', courierId: courier.id, status: 'en_camino',
-  }],
-};
-const advance = vi.fn();
-const report = vi.fn();
-
-beforeEach(() => {
-  advance.mockReset();
-  report.mockReset();
-  advance.mockReturnValue({ success: false, message: 'No se puede avanzar este pedido.' });
-  useDataStore.setState({ purchases: [purchase], couriers: [courier], tickets: [], courierAdvanceDelivery: advance, courierReportIncident: report });
-  useAuthStore.setState({ currentUser: null });
+import { setupCourier, accepted, picked, delivered, courier } from './courierApiFixtures';
+const original = useAuthStore.getState();
+let current = accepted;
+beforeEach(() => { setupCourier(); current = accepted;
+ vi.mocked(orderingApi.list).mockImplementation(async (_p, query) => ({ items: query?.scope === 'history' ? (current.assignment?.status === 'delivered' || current.assignment?.status === 'cancelled' ? [current] : []) : current.assignment?.status === 'accepted' || current.assignment?.status === 'picked_up' ? [current] : [], nextCursor: null }));
+ vi.mocked(orderingApi.detail).mockImplementation(async () => current);
 });
-afterEach(() => {
-  cleanup();
-  useDataStore.setState(originalData);
-  useAuthStore.setState(originalAuth);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); useAuthStore.setState(original); });
+function view(path = '/') { render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/" element={<CourierActiveDeliveryPage />} /><Route path="/repartidor/historial" element={<CourierHistoryPage />} /><Route path="/repartidor/solicitudes" element={<h1>Solicitudes</h1>} /></Routes></MemoryRouter>); }
+it('recupera la asignación y envía assignmentId y su versión en recojo', async () => {
+ vi.mocked(orderingApi.action).mockImplementation(async () => { current = picked; return {}; });
+ view(); fireEvent.click(await screen.findByRole('button', { name: 'Confirmar recojo' }));
+ expect(await screen.findByText('Recojo confirmado. Continúa con la entrega al cliente.')).toBeInTheDocument();
+ expect(orderingApi.action).toHaveBeenCalledWith('/courier/assignments/' + accepted.assignment!.id + '/pickup', { expectedVersion: 4, cashReceivedCents: undefined });
+ expect(await screen.findByRole('heading', { name: 'Entregar al cliente' })).toBeInTheDocument();
 });
-
-const renderDelivery = (path = '/repartidor/entrega-activa') => render(
-  <MemoryRouter initialEntries={[path]}>
-    <Routes>
-      <Route path="/repartidor/entrega-activa" element={<CourierActiveDeliveryPage />} />
-      <Route path="/repartidor/historial" element={<CourierHistoryPage />} />
-    </Routes>
-  </MemoryRouter>
-);
-
-describe('Courier delivery and history interface', () => {
-  it('shows a pickup error without leaving the active delivery', () => {
-    useDataStore.setState({ purchases: [{ ...purchase, merchantOrders: [{ ...purchase.merchantOrders[0], status: 'listo_recoger' }] }] });
-    renderDelivery();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar recojo' }));
-    expect(advance).toHaveBeenCalledWith('ui_active', courier.id, 'pickup', 'Pedido retirado de la tienda');
-    expect(screen.getByRole('alert')).toHaveTextContent('No se puede avanzar este pedido.');
-    expect(screen.getByRole('heading', { name: 'Recoger en el comercio' })).toBeInTheDocument();
-  });
-
-  it('requires confirmation and retains the dialog if completing delivery fails', () => {
-    renderDelivery();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar entrega' }));
-    expect(advance).not.toHaveBeenCalled();
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Finalizar entrega' }));
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('No se puede avanzar este pedido.');
-    expect(screen.queryByRole('heading', { name: 'Historial de entregas' })).not.toBeInTheDocument();
-  });
-
-  it('shows the delivery confirmation in history after success', () => {
-    advance.mockImplementation(() => {
-      useDataStore.setState({ purchases: [{ ...purchase, merchantOrders: [{ ...purchase.merchantOrders[0], status: 'entregado' }] }] });
-      return { success: true };
-    });
-    renderDelivery();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar entrega' }));
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Finalizar entrega' }));
-    expect(screen.getByRole('heading', { name: 'Historial de entregas' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(`Entrega ${purchase.code} confirmada.`);
-  });
-
-  it('retains the comment and shows an error if the incident was not saved', () => {
-    renderDelivery();
-    fireEvent.click(screen.getByRole('button', { name: 'Reportar incidencia' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('Comentario adicional (opcional)'), { target: { value: 'Necesito ayuda para ubicar la dirección.' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Enviar incidencia' }));
-    expect(report).toHaveBeenCalledWith('ui_active', courier.id, 'Lluvia intensa en Tingo María', 'Necesito ayuda para ubicar la dirección.');
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('No se pudo enviar la incidencia.');
-    expect(within(dialog).getByLabelText('Comentario adicional (opcional)')).toHaveValue('Necesito ayuda para ubicar la dirección.');
-  });
-
-  it('expands and collapses the complete history details', () => {
-    useDataStore.setState({ purchases: [{ ...purchase, merchantOrders: [{ ...purchase.merchantOrders[0], status: 'entregado' }] }] });
-    renderDelivery('/repartidor/historial');
-    const button = screen.getByRole('button', { name: /Ver detalle de/ });
-    const detail = document.getElementById(button.getAttribute('aria-controls')!);
-    expect(detail).not.toBeVisible();
-    fireEvent.click(button);
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(detail).toBeVisible();
-    expect(within(detail!).getByText(purchase.merchantOrders[0].merchantAddress)).toBeInTheDocument();
-    fireEvent.click(button);
-    expect(detail).not.toBeVisible();
-  });
+it('no entrega sin efectivo y conserva el diálogo si la respuesta es ambigua', async () => {
+ current = picked; vi.mocked(orderingApi.action).mockRejectedValue(new Error('Conexión perdida'));
+ view(); fireEvent.click(await screen.findByRole('button', { name: 'Confirmar entrega' }));
+ const dialog = screen.getByRole('dialog'); const finish = within(dialog).getByRole('button', { name: 'Finalizar entrega' });
+ expect(finish).toBeDisabled(); fireEvent.change(within(dialog).getByLabelText('Efectivo recibido (S/)'), { target: { value: '50.00' } });
+ fireEvent.click(finish);
+ expect(await within(dialog).findByRole('alert')).toHaveTextContent('Conexión perdida');
+ expect(within(dialog).getByLabelText('Efectivo recibido (S/)')).toHaveValue('50.00');
+ expect(orderingApi.action).toHaveBeenCalledTimes(1);
+});
+it('confirma cobro y entrega con GET antes de mostrar historial', async () => {
+ current = picked; vi.mocked(orderingApi.action).mockImplementation(async () => { current = delivered; return {}; });
+ view(); fireEvent.click(await screen.findByRole('button', { name: 'Confirmar entrega' }));
+ fireEvent.change(screen.getByLabelText('Efectivo recibido (S/)'), { target: { value: '50' } });
+ fireEvent.click(screen.getByRole('button', { name: 'Finalizar entrega' }));
+ expect(await screen.findByRole('heading', { name: 'Historial de entregas' })).toBeInTheDocument();
+ expect(await screen.findByText('Entrega ' + delivered.code + ' confirmada.')).toBeInTheDocument();
+ expect(orderingApi.action).toHaveBeenCalledWith('/courier/assignments/' + picked.assignment!.id + '/deliver', { expectedVersion: 5, cashReceivedCents: 5000 });
+});
+it('conserva comentario de incidencia si GET no confirma el registro', async () => {
+ view(); fireEvent.click(await screen.findByRole('button', { name: 'Reportar incidencia' }));
+ const dialog = screen.getByRole('dialog'); fireEvent.change(within(dialog).getByLabelText('Comentario adicional (opcional)'), { target: { value: 'Necesito ayuda' } });
+ fireEvent.click(within(dialog).getByRole('button', { name: 'Enviar incidencia' }));
+ await waitFor(() => expect(screen.getAllByRole('alert')[0]).toHaveTextContent('No se pudo verificar'));
+ expect(within(dialog).getByLabelText('Comentario adicional (opcional)')).toHaveValue('Necesito ayuda');
+ expect(screen.queryByText('Incidencia enviada a soporte.')).not.toBeInTheDocument();
+});
+it('libera antes de recojo y verifica la asignación cancelada en history', async () => {
+ vi.mocked(orderingApi.action).mockImplementation(async () => { current = { ...accepted, assignment: { ...accepted.assignment!, status: 'cancelled', version: 5 } }; return {}; });
+ view(); fireEvent.click(await screen.findByRole('button', { name: 'Liberar asignación' }));
+ fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Avería' } });
+ fireEvent.click(screen.getByRole('button', { name: 'Confirmar liberación' }));
+ expect(await screen.findByRole('heading', { name: 'Solicitudes' })).toBeInTheDocument();
+ expect(orderingApi.action).toHaveBeenCalledWith('/courier/assignments/' + accepted.assignment!.id + '/release', { expectedVersion: 4, reason: 'Avería' });
+});
+it('muestra historial entregado sin reconstruir datos personales ocultos', async () => {
+ current = delivered; view('/repartidor/historial');
+ const button = await screen.findByRole('button', { name: /Ver detalle de/ });
+ fireEvent.click(button); expect(button).toHaveAttribute('aria-expanded', 'true');
+ expect(screen.getByText('Destinatario no disponible')).toBeInTheDocument();
+ expect(screen.queryByText(courier.phone)).not.toBeInTheDocument();
 });

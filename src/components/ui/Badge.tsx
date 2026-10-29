@@ -144,6 +144,8 @@ export const PaymentStatusBadge: React.FC<{ status: PaymentStatus; method?: stri
           Pagado
         </Badge>
       );
+    case 'cancelado':
+      return <Badge variant="danger" icon={<XCircle className="w-3.5 h-3.5" />}>Cobro cancelado</Badge>;
     case 'pendiente':
       return (
         <Badge variant="warning" icon={<Banknote className="w-3.5 h-3.5" />}>

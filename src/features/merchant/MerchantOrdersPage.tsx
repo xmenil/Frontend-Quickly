@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { useMerchantOrders, useMerchantWorkspace, useMerchantActions, AcceptanceDeadline, type MerchantOrderView } from './merchantOrdersModel';
+import { useRemote, RemoteState } from '../operations/shared';
+import { orderingApi } from '../../services/api/orderingApi';
 import { useAuthStore } from '../../store/authStore';
 import { OrderStatusBadge, PaymentStatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -37,53 +39,12 @@ const QUICK_REJECTION_REASONS = [
   'Dirección no accesible',
 ];
 
-interface SuborderExtended extends MerchantOrder {
-  purchaseId: string;
-  purchaseCode: string;
-  customerName: string;
-  customerPhone: string;
-  addressSnapshot: {
-    street: string;
-    number: string;
-    reference: string;
-    zoneId: string;
-  };
-  paymentMethod: 'efectivo' | 'yape_plin' | 'tarjeta';
-  cashPaid?: number;
-  changeDue?: number;
-}
+type SuborderExtended = MerchantOrderView;
 
 export const MerchantOrdersPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
-  const { merchants, purchases, couriers, updateMerchantOrderStatus, adminAssignCourier } = useDataStore();
-
-  const currentMerchant = useMemo(() => {
-    return (
-      (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
-      merchants.find((m) => m.ownerUserId === currentUser?.id) ||
-      merchants[0]
-    );
-  }, [merchants, currentUser]);
-
-  // Filtrar los pedidos del comercio
-  const subordersWithPurchase: SuborderExtended[] = useMemo(() => {
-    return purchases.flatMap((p) =>
-      p.merchantOrders
-        .filter((mo) => mo.merchantId === currentMerchant.id)
-        .map((mo) => ({
-          ...mo,
-          purchaseId: p.id,
-          purchaseCode: p.code,
-          customerName: p.customerName,
-          customerPhone: p.customerPhone,
-          addressSnapshot: p.addressSnapshot,
-          paymentMethod: p.paymentMethod,
-          cashPaid: p.cashAmountPaidCents,
-          changeDue: p.changeDueCents,
-        }))
-    );
-  }, [purchases, currentMerchant.id]);
-
+  const resource = useMerchantOrders(); const workspace = useMerchantWorkspace(); const actions = useMerchantActions(resource);
+  const currentMerchant = workspace.data?.merchant;
+  const subordersWithPurchase = resource.data || [];
   const [activeTab, setActiveTab] = useState<'pendientes' | 'cocina' | 'listos' | 'finalizados'>('pendientes');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -92,26 +53,22 @@ export const MerchantOrdersPage: React.FC = () => {
   const [rejectReason, setRejectReason] = useState(QUICK_REJECTION_REASONS[0]);
 
   // Modal detalle de entrega del repartidor
-  const [deliveryDetailOrder, setDeliveryDetailOrder] = useState<SuborderExtended | null>(null);
+  const [deliveryDetailSelection, setDeliveryDetailOrder] = useState<SuborderExtended | null>(null);
 
   // Modal selección y asignación de repartidor
   const [assignCourierOrderId, setAssignCourierOrderId] = useState<string | null>(null);
 
+  const deliveryDetailOrder = subordersWithPurchase.find(order => order.id === deliveryDetailSelection?.id) || null;
+  const courierResource = useRemote('merchant-couriers:' + resource.storeId + ':' + assignCourierOrderId, signal => assignCourierOrderId ? orderingApi.merchantCouriers(signal) : Promise.resolve([]));
+  const couriers = (courierResource.data || []).filter(c => c.isOnline).map(c => ({ ...c, id: c.courierUserId, name: c.fullName, vehicleType: c.vehicleType === 'motorcycle' ? 'moto' : c.vehicleType === 'bicycle' ? 'bicicleta' : 'mototaxi' }));
+  React.useEffect(() => { setRejectOrderId(null); setAssignCourierOrderId(null); setDeliveryDetailOrder(null); }, [resource.storeId]);
   // Alerta feedback
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  const showNotice = (msg: string) => {
-    setActionNotice(msg);
-    setTimeout(() => setActionNotice(null), 3500);
+  const handleAssignCourier = async (orderId: string, courierId: string) => {
+    if (courierResource.loading || courierResource.error || !couriers.some(c => c.id === courierId)) return;
+    if (await actions.assign(orderId, courierId)) setAssignCourierOrderId(null); else courierResource.reload();
   };
-
-  const handleAssignCourier = (orderId: string, courierId: string) => {
-    const courier = couriers.find((c) => c.id === courierId);
-    adminAssignCourier(orderId, courierId);
-    showNotice(`Repartidor ${courier?.name || 'seleccionado'} asignado exitosamente al pedido.`);
-    setAssignCourierOrderId(null);
-  };
-
   // Contadores reactivos
   const counts = useMemo(() => {
     const pendientes = subordersWithPurchase.filter((o) => o.status === 'pendiente').length;
@@ -165,57 +122,24 @@ export const MerchantOrdersPage: React.FC = () => {
     });
   }, [subordersWithPurchase, activeTab, searchQuery]);
 
-  const handleAdvanceStatus = (orderId: string, nextStatus: OrderStatus, reason?: string) => {
-    const targetOrder = subordersWithPurchase.find((o) => o.id === orderId);
-    updateMerchantOrderStatus(
-      orderId,
-      nextStatus,
-      currentMerchant.name,
-      'comercio',
-      reason
-    );
-
-    if (targetOrder) {
-      if (nextStatus === 'confirmado') {
-        showNotice(`Pedido ${targetOrder.purchaseCode} aceptado. Pasó a "En Preparación".`);
-        setActiveTab('cocina');
-      } else if (nextStatus === 'en_preparacion') {
-        showNotice(`Pedido ${targetOrder.purchaseCode} en preparación activa.`);
-      } else if (nextStatus === 'listo_recoger') {
-        showNotice(`Pedido ${targetOrder.purchaseCode} marcado como Listo para Repartidor.`);
-        setActiveTab('listos');
-      } else if (nextStatus === 'en_camino') {
-        showNotice(`Entrega confirmada a ${targetOrder.courierName || 'repartidor'}. En ruta.`);
-      } else if (nextStatus === 'entregado') {
-        showNotice(`Pedido ${targetOrder.purchaseCode} confirmado como entregado exitosamente.`);
-        setActiveTab('finalizados');
-      } else if (nextStatus === 'rechazado') {
-        showNotice(`Pedido ${targetOrder.purchaseCode} rechazado.`);
-      }
-    }
+  const handleAdvanceStatus = async (id: string, next: OrderStatus, reason?: string) => {
+    const ok = await actions.transition(id, next, reason);
+    if (ok && (next === 'confirmado' || next === 'en_preparacion')) setActiveTab('cocina');
+    if (ok && next === 'listo_recoger') setActiveTab('listos');
+    return ok;
   };
-
-  const handleAssignSampleCourier = (orderId: string) => {
-    const availableCourier = couriers.find((c) => c.isAvailable) || couriers[0];
-    if (availableCourier) {
-      adminAssignCourier(orderId, availableCourier.id);
-      showNotice(`Repartidor ${availableCourier.name} asignado al pedido.`);
-    }
-  };
-
   const handleOpenReject = (orderId: string) => {
     setRejectOrderId(orderId);
     setRejectReason(QUICK_REJECTION_REASONS[0]);
   };
 
-  const handleConfirmReject = () => {
-    if (!rejectOrderId) return;
-    handleAdvanceStatus(rejectOrderId, 'rechazado', rejectReason);
-    setRejectOrderId(null);
-  };
-
+  const handleConfirmReject = async () => { if (!rejectOrderId || !rejectReason.trim()) return; if (await handleAdvanceStatus(rejectOrderId, 'rechazado', rejectReason)) setRejectOrderId(null); };
+  if (!currentMerchant) return <div className="max-w-5xl mx-auto space-y-4"><RemoteState loading={workspace.loading} error={workspace.error} retry={workspace.reload} />{!workspace.loading && !workspace.error && <p>Selecciona una tienda autorizada.</p>}</div>;
   return (
     <div className="max-w-5xl mx-auto space-y-4 pb-20 sm:pb-8">
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actions.error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{actions.error}</p>}
+      {actions.notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{actions.notice}</p>}
       {/* Cabecera Compacta */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -365,7 +289,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
       {/* Lista de Pedidos Compactos */}
       <div className="space-y-3">
-        {filteredOrders.length === 0 ? (
+        {!resource.data ? null : filteredOrders.length === 0 ? (
           <div className="p-8 text-center bg-surface rounded-2xl border border-border shadow-xs flex flex-col items-center justify-center space-y-2">
             <div className="w-10 h-10 rounded-xl bg-surface-subtle flex items-center justify-center text-ink-muted">
               {activeTab === 'pendientes' && <Clock className="w-5 h-5 text-primary" />}
@@ -415,7 +339,9 @@ export const MerchantOrdersPage: React.FC = () => {
                       {order.purchaseCode}
                     </span>
                     <OrderStatusBadge status={order.status} />
+                    {order.status === "pendiente" && <span className="text-xs text-amber-800"><AcceptanceDeadline expiresAt={order.acceptanceExpiresAt} /></span>}
                     <PaymentStatusBadge status={order.paymentStatus} />
+                    <button type="button" onClick={() => setDeliveryDetailOrder(order)} className="min-h-11 px-2 text-xs font-bold text-primary">Ver detalle</button>
                   </div>
 
                   <div className="flex items-center gap-3 text-xs">
@@ -493,7 +419,7 @@ export const MerchantOrdersPage: React.FC = () => {
                             <ShieldCheck className="w-3.5 h-3.5 text-selva" />
                           </p>
                           <p className="text-[11px] text-ink-muted">
-                            Repartidor: <strong className="text-ink">{order.courierName || 'Repartidor Quickly'}</strong>
+                            Repartidor: <strong className="text-ink">{order.courierName || 'Contacto no informado'}</strong>
                             {order.courierPhone ? ` (${order.courierPhone})` : ''}
                           </p>
                         </div>
@@ -518,7 +444,7 @@ export const MerchantOrdersPage: React.FC = () => {
                             En camino a entregar al comensal
                           </p>
                           <p className="text-[11px] text-ink-muted truncate">
-                            Repartidor asignado: <strong className="text-ink">{order.courierName || 'Motorizado'}</strong>
+                            Repartidor asignado: <strong className="text-ink">{order.courierName || 'Contacto no informado'}</strong>
                           </p>
                         </div>
                       </div>
@@ -535,15 +461,16 @@ export const MerchantOrdersPage: React.FC = () => {
                           </a>
                         )}
                         <Button
+                            disabled={true}
                           type="button"
                           variant="selva"
                           size="sm"
-                          onClick={() => handleAdvanceStatus(order.id, 'entregado')}
+                          onClick={() => undefined}
                           className="min-h-[30px] px-2.5 py-1 text-[11px] font-bold rounded-lg"
-                          title="Confirmar que el pedido ya fue entregado al comensal"
+                          title="La entrega y el cobro se confirman desde la cuenta del repartidor"
                         >
                           <CheckCircle2 className="w-3 h-3 mr-1" />
-                          <span>Confirmar Entregado</span>
+                          <span>Entrega confirmada por repartidor</span>
                         </Button>
                       </div>
                     </div>
@@ -567,8 +494,9 @@ export const MerchantOrdersPage: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-1.5 self-end sm:self-auto flex-shrink-0">
-                        {!order.courierName ? (
+                        {!order.hasAssignment ? (
                           <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
                             type="button"
                             variant="outline"
                             size="sm"
@@ -584,11 +512,12 @@ export const MerchantOrdersPage: React.FC = () => {
                             type="button"
                             variant="selva"
                             size="sm"
-                            onClick={() => handleAdvanceStatus(order.id, 'en_camino')}
+                            disabled={true}
+                            onClick={() => undefined}
                             className="min-h-[30px] px-2.5 py-1 text-[11px] font-bold rounded-lg"
                           >
                             <Bike className="w-3 h-3 mr-1" />
-                            <span>Entregar a Repartidor</span>
+                            <span>Recojo confirmado por repartidor</span>
                           </Button>
                         )}
                       </div>
@@ -602,9 +531,11 @@ export const MerchantOrdersPage: React.FC = () => {
                     {isPending && (
                       <>
                         <Button
+
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={actions.busy || resource.loading || !!resource.error || order.status === "en_preparacion"}
                           onClick={() => handleOpenReject(order.id)}
                           className="min-h-[32px] px-3 py-1 text-xs font-semibold text-destructive border-destructive-border hover:bg-destructive-soft rounded-lg"
                         >
@@ -612,6 +543,7 @@ export const MerchantOrdersPage: React.FC = () => {
                           <span>Rechazar</span>
                         </Button>
                         <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
                           type="button"
                           variant="selva"
                           size="sm"
@@ -626,6 +558,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
                     {order.status === 'confirmado' && (
                       <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
                         type="button"
                         variant="primary"
                         size="sm"
@@ -639,6 +572,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
                     {order.status === 'en_preparacion' && (
                       <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
                         type="button"
                         variant="selva"
                         size="sm"
@@ -660,12 +594,13 @@ export const MerchantOrdersPage: React.FC = () => {
       {/* Modal Rechazo de Pedido */}
       <Dialog
         isOpen={Boolean(rejectOrderId)}
-        onClose={() => setRejectOrderId(null)}
+        onClose={() => { if (!actions.busy) setRejectOrderId(null); }}
         title="Rechazar Pedido"
         description="Indica el motivo. El cliente será notificado."
         maxWidth="sm"
       >
         <div className="space-y-3 pt-1">
+          {actions.error && <p role="alert" className="text-sm text-destructive">{actions.error}</p>}
           <div className="flex flex-wrap gap-1.5">
             {QUICK_REJECTION_REASONS.map((reason) => (
               <button
@@ -685,7 +620,8 @@ export const MerchantOrdersPage: React.FC = () => {
 
           <Input
             label="Detalle del motivo"
-            value={rejectReason}
+            maxLength={500}
+              value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Especifica el motivo..."
             required
@@ -693,6 +629,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
               type="button"
               variant="outline"
               size="sm"
@@ -702,6 +639,7 @@ export const MerchantOrdersPage: React.FC = () => {
               Cancelar
             </Button>
             <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
               type="button"
               variant="danger"
               size="sm"
@@ -718,7 +656,7 @@ export const MerchantOrdersPage: React.FC = () => {
       <Dialog
         isOpen={Boolean(deliveryDetailOrder)}
         onClose={() => setDeliveryDetailOrder(null)}
-        title="Comprobante de Entrega del Repartidor"
+        title="Detalle del pedido y reparto"
         description={`Pedido ${deliveryDetailOrder?.purchaseCode} en Tingo María`}
         maxWidth="md"
       >
@@ -728,10 +666,10 @@ export const MerchantOrdersPage: React.FC = () => {
               <CheckCircle2 className="w-5 h-5 text-selva flex-shrink-0" />
               <div>
                 <p className="font-extrabold text-selva-strong text-xs">
-                  Entrega Confirmada Exitosamente
+                  <OrderStatusBadge status={deliveryDetailOrder.status} />
                 </p>
                 <p className="text-[11px] text-ink-muted">
-                  El pedido fue entregado en el domicilio del cliente sin incidencias reportadas.
+                  Estado registrado en el servidor. Consulta el historial y las incidencias disponibles.
                 </p>
               </div>
             </div>
@@ -739,11 +677,11 @@ export const MerchantOrdersPage: React.FC = () => {
             <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-2">
               <div className="flex justify-between pb-1.5 border-b border-border">
                 <span className="text-ink-muted">Repartidor Asignado:</span>
-                <span className="font-bold text-ink">{deliveryDetailOrder.courierName || 'Repartidor Autorizado'}</span>
+                <span className="font-bold text-ink">{deliveryDetailOrder.hasAssignment ? 'Asignado; contacto no informado' : 'Sin asignación'}</span>
               </div>
               <div className="flex justify-between pb-1.5 border-b border-border">
                 <span className="text-ink-muted">Teléfono de Contacto:</span>
-                <span className="font-bold text-primary">{deliveryDetailOrder.courierPhone || '962 123 456'}</span>
+                <span className="font-bold text-primary">{deliveryDetailOrder.courierPhone || 'No informado'}</span>
               </div>
               <div className="flex justify-between pb-1.5 border-b border-border">
                 <span className="text-ink-muted">Cliente:</span>
@@ -756,11 +694,13 @@ export const MerchantOrdersPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-ink-muted">Monto Pagado:</span>
+                <span className="text-ink-muted">Total del pedido:</span>
                 <span className="font-extrabold text-ink tabular-nums">{formatCents(deliveryDetailOrder.totalCents)}</span>
               </div>
             </div>
 
+            <PaymentStatusBadge status={deliveryDetailOrder.paymentStatus} method={deliveryDetailOrder.paymentMethod} />
+            {deliveryDetailOrder.source.incidents?.map(incident => <p key={incident.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3">Incidencia: {incident.description} · {formatDateTime(incident.createdAt)}</p>)}
             {/* Timeline del pedido */}
             {deliveryDetailOrder.timeline && deliveryDetailOrder.timeline.length > 0 && (
               <div className="space-y-1.5">
@@ -781,6 +721,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
             <div className="flex justify-end pt-2 border-t border-border">
               <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
                 type="button"
                 variant="outline"
                 size="sm"
@@ -797,7 +738,7 @@ export const MerchantOrdersPage: React.FC = () => {
       {/* Modal Asignar Repartidor a Pedido */}
       <Dialog
         isOpen={Boolean(assignCourierOrderId)}
-        onClose={() => setAssignCourierOrderId(null)}
+        onClose={() => { if (!actions.busy) setAssignCourierOrderId(null); }}
         title="Asignar Repartidor a la Orden"
       >
         <div className="space-y-4">
@@ -805,6 +746,9 @@ export const MerchantOrdersPage: React.FC = () => {
             Selecciona un repartidor activo en Tingo María para retirar y despachar el pedido:
           </p>
 
+          <RemoteState loading={courierResource.loading} error={courierResource.error} retry={courierResource.reload} />
+          {actions.error && <p role="alert" className="text-sm text-destructive">{actions.error}</p>}
+          {!courierResource.loading && !courierResource.error && !couriers.length && <p className="text-sm text-ink-light">No hay repartidores disponibles.</p>}
           <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
             {couriers.map((c) => (
               <div
@@ -823,15 +767,16 @@ export const MerchantOrdersPage: React.FC = () => {
                       </span>
                     </h4>
                     <p className="text-[11px] text-ink-muted mt-0.5">
-                      {c.vehicleType === 'moto' ? 'Moto lineal' : c.vehicleType === 'bicicleta' ? 'Bicicleta' : 'Mototaxi'} • Placa: <strong className="text-ink">{c.plate || '4521-7B'}</strong>
+                      {c.vehicleType === 'moto' ? 'Moto lineal' : c.vehicleType === 'bicicleta' ? 'Bicicleta' : 'Mototaxi'} • Placa: <strong className="text-ink">{c.plate || 'No informada'}</strong>
                     </p>
                     <p className="text-[10px] text-ink-light">
-                      Zona: Centro de Tingo María • Cel: {c.phone}
+                      Zona: {c.zoneName || "No informada"} • Cel: {c.phone}
                     </p>
                   </div>
                 </div>
 
                 <Button
+                            disabled={actions.busy || resource.loading || !!resource.error || courierResource.loading || !!courierResource.error}
                   type="button"
                   size="sm"
                   variant="primary"
@@ -846,6 +791,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
           <div className="flex justify-end pt-3 border-t border-border">
             <Button
+                            disabled={actions.busy || resource.loading || !!resource.error}
               type="button"
               variant="outline"
               size="sm"

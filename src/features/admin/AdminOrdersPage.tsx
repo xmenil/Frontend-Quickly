@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { assignAdminOrder, loadAdminOrders, releaseAdminAssignment, useAdminAction, useAdminResource } from './adminModel';
+import { orderingApi } from '../../services/api/orderingApi';
+import { RemoteState } from '../operations/shared';
 import { OrderStatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -11,29 +13,25 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Bike, Search, ShoppingBag, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const AdminOrdersPage: React.FC = () => {
-  const { purchases, couriers, adminAssignCourier } = useDataStore();
+  const resource = useAdminResource('orders', loadAdminOrders);
+  const actions = useAdminAction(resource.reload, resource.loading || !!resource.error);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [releaseId, setReleaseId] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [assignModal, setAssignModal] = useState<{ suborderId: string; merchantName: string } | null>(
     null
   );
-  const [selectedCourierId, setSelectedCourierId] = useState(couriers[0]?.id || '');
+  const [selectedCourierId, setSelectedCourierId] = useState('');
 
-  const [assignmentError, setAssignmentError] = useState('');
-  const [assignmentNotice, setAssignmentNotice] = useState('');
 
-  // Flatten all suborders with purchase details
-  const allSuborders = purchases.flatMap((p) =>
-    p.merchantOrders.map((mo) => ({
-      ...mo,
-      parentCode: p.code,
-      customerName: p.customerName,
-      customerPhone: p.customerPhone,
-      addressSnapshot: p.addressSnapshot,
-      paymentMethod: p.paymentMethod,
-    }))
-  );
-
+  const allSuborders = resource.data || [];
+  const selectedOrder = allSuborders.find(order => order.id === assignModal?.suborderId);
+  const options = useAdminResource('courier-options:' + (assignModal?.suborderId || ''), signal => selectedOrder ? orderingApi.couriers(selectedOrder.source.storeId, signal) : Promise.resolve([]));
+  const couriers = (options.data || []).map(courier => ({ id: courier.userId, name: courier.fullName }));
+  const detail = allSuborders.find(order => order.id === detailId);
+  const releasing = allSuborders.find(order => order.id === releaseId);
   const filteredSuborders = allSuborders.filter((o) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -48,24 +46,15 @@ export const AdminOrdersPage: React.FC = () => {
     return true;
   });
 
-  const handleConfirmAssign = () => {
-    if (!assignModal || !selectedCourierId) return;
-    setAssignmentError('');
-    try {
-      adminAssignCourier(assignModal.suborderId, selectedCourierId);
-      const updatedOrder = useDataStore.getState().purchases
-        .flatMap((purchase) => purchase.merchantOrders)
-        .find((order) => order.id === assignModal.suborderId);
-      if (updatedOrder?.courierId !== selectedCourierId) {
-        setAssignmentError('No se pudo completar la asignación. Revisa el estado del pedido e inténtalo nuevamente.');
-        return;
-      }
-      setAssignmentNotice(`Repartidor asignado al pedido de ${assignModal.merchantName}.`);
-      setAssignModal(null);
-    } catch {
-      setAssignmentError('No se pudo completar la asignación. Revisa el pedido antes de volver a intentarlo.');
-    }
+  const handleConfirmAssign = async () => {
+    if (!selectedOrder || !selectedCourierId || !couriers.some(courier => courier.id === selectedCourierId) || reason.trim().length < 3 || options.loading || options.error) return;
+    if (await actions.execute(() => assignAdminOrder(selectedOrder.source, selectedCourierId, reason.trim()), 'Asignación confirmada.')) setAssignModal(null);
   };
+  const handleRelease = async () => {
+    if (!releasing || reason.trim().length < 3) return;
+    if (await actions.execute(() => releaseAdminAssignment(releasing.source, reason.trim()), 'Asignación liberada.')) setReleaseId(null);
+  };
+  if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
 
   return (
     <div className="space-y-6">
@@ -102,12 +91,10 @@ export const AdminOrdersPage: React.FC = () => {
         </p>
       </section>
 
-      {assignmentNotice && (
-        <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">
-          <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <p>{assignmentNotice}</p>
-        </div>
-      )}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actions.notice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">{actions.notice}</p>}
+      {actions.error && !assignModal && !releaseId && <p role="alert" className="text-sm text-destructive-strong">{actions.error}</p>}
+
 
       <section aria-labelledby="admin-orders-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -148,6 +135,7 @@ export const AdminOrdersPage: React.FC = () => {
                         <h3 className="break-words text-sm font-bold text-ink">{order.parentCode}</h3>
                         <p className="break-words text-xs font-medium text-ink-light">{order.merchantName}</p>
                         <OrderStatusBadge status={order.status} />
+                        <Button type="button" variant="outline" size="sm" onClick={() => setDetailId(order.id)}>Ver detalle</Button>
                         <time dateTime={order.createdAt} className="block text-xs tabular-nums text-ink-muted">{formatDateTime(order.createdAt)}</time>
                       </div>
                     </th>
@@ -158,18 +146,19 @@ export const AdminOrdersPage: React.FC = () => {
                     </td>
                     <td className="block py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-top">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Dirección de entrega</p>
-                      <p className="break-words text-sm text-ink">{order.addressSnapshot.street} #{order.addressSnapshot.number}</p>
+                      <p className="break-words text-sm text-ink">{order.addressSnapshot.street}{order.addressSnapshot.number ? ' #' + order.addressSnapshot.number : ''}</p>
                       {order.addressSnapshot.reference && <p className="mt-1 break-words text-xs text-ink-light">Referencia: {order.addressSnapshot.reference}</p>}
                     </td>
                     <td className="block py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-top">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Repartidor</p>
                       <p className="break-words text-sm text-ink">{order.courierName || 'Sin asignar'}</p>
+                      {order.source.assignment?.status === 'accepted' && order.source.status === 'ready' && <Button type="button" variant="outline" size="sm" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => { actions.clear(); setReason(''); setReleaseId(order.id); }}>Liberar asignación</Button>}
                       {order.courierPhone && <p className="mt-1 text-xs tabular-nums text-ink-light">{order.courierPhone}</p>}
-                      {order.status === 'listo_recoger' && (
+                      {order.status === 'listo_recoger' && !order.hasAssignment && (
                         <Button type="button" variant="outline" size="sm" className="mt-2 w-full gap-2"
-                          onClick={() => {
-                            setAssignmentError('');
-                            setAssignmentNotice('');
+                          disabled={actions.busy || resource.loading || !!resource.error} onClick={() => {
+                            actions.clear(); setSelectedCourierId(''); setReason('');
+
                             setAssignModal({ suborderId: order.id, merchantName: order.merchantName });
                           }}>
                           <Bike className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -191,12 +180,14 @@ export const AdminOrdersPage: React.FC = () => {
 
       <Dialog
         isOpen={Boolean(assignModal)}
-        onClose={() => setAssignModal(null)}
+        onClose={() => { if (!actions.busy) setAssignModal(null); }}
         title="Asignar repartidor"
         description={`Selecciona quién recogerá el pedido de ${assignModal?.merchantName || 'este comercio'}.`}
         maxWidth="md"
       >
         <div className="space-y-6">
+          <RemoteState loading={options.loading} error={options.error} retry={options.reload} />
+          <Input id="admin-assignment-reason" label="Motivo de la asignación" required minLength={3} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} />
           {couriers.length > 0 ? (
             <>
               <Select
@@ -206,39 +197,39 @@ export const AdminOrdersPage: React.FC = () => {
                 value={selectedCourierId}
                 onChange={(event) => {
                   setSelectedCourierId(event.target.value);
-                  setAssignmentError('');
+
                 }}
                 aria-describedby="admin-courier-help"
               >
                 <option value="" disabled>Selecciona un repartidor</option>
                 {couriers.map((courier) => (
                   <option key={courier.id} value={courier.id}>
-                    {courier.name} ({courier.vehicleType}) · {courier.isAvailable ? 'Disponible' : 'No disponible'}
+                    {courier.name}
                   </option>
                 ))}
               </Select>
               <p id="admin-courier-help" className="text-sm text-ink-light">
-                Revisa la disponibilidad antes de confirmar. La lista muestra a toda la flota.
+                La lista muestra repartidores elegibles para la zona y sin asignación activa.
               </p>
             </>
           ) : (
             <p className="rounded-xl bg-surface-subtle p-4 text-sm text-ink-light">
-              Aún no hay repartidores registrados. Podrás asignar este pedido cuando haya repartidores en la flota.
+              No hay repartidores elegibles para este pedido en la consulta actual.
             </p>
           )}
-          {assignmentError && (
-            <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong">
-              <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <p>{assignmentError}</p>
-            </div>
-          )}
+          {actions.error && <p role="alert" className="text-sm text-destructive-strong">{actions.error}</p>}
+
           <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setAssignModal(null)}>Cancelar</Button>
-            <Button type="button" variant="primary" disabled={!selectedCourierId || couriers.length === 0} onClick={handleConfirmAssign}>
+            <Button type="button" variant="outline" disabled={actions.busy} onClick={() => setAssignModal(null)}>Cancelar</Button>
+            <Button type="button" variant="primary" disabled={!selectedCourierId || couriers.length === 0 || reason.trim().length < 3 || actions.busy || resource.loading || !!resource.error || options.loading || !!options.error} onClick={handleConfirmAssign}>
               Confirmar asignación
             </Button>
           </div>
         </div>
+      </Dialog>
+      <Dialog isOpen={Boolean(releaseId)} onClose={() => { if (!actions.busy) setReleaseId(null); }} title="Liberar asignación" description={releasing?.parentCode} maxWidth="md"><div className="space-y-6"><Input id="admin-release-reason" label="Motivo de la liberación" required minLength={3} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} />{actions.error && <p role="alert" className="text-sm text-destructive-strong">{actions.error}</p>}<Button disabled={actions.busy || resource.loading || !!resource.error || reason.trim().length < 3} onClick={handleRelease}>Confirmar liberación</Button></div></Dialog>
+      <Dialog isOpen={Boolean(detailId)} onClose={() => setDetailId(null)} title="Detalle del pedido" description={detail?.parentCode} maxWidth="md">
+        {detail && <div className="space-y-4 text-sm"><OrderStatusBadge status={detail.status} /><p className="font-semibold">{detail.merchantName} · {detail.customerName}</p><p>{detail.addressSnapshot.street} {detail.addressSnapshot.number}</p><p>Estado de pago: {detail.source.paymentStatus} · Total: {formatCents(detail.totalCents)}</p><p>Efectivo recibido: {detail.source.cashReceivedCents === null ? 'Sin confirmar' : formatCents(detail.source.cashReceivedCents)}</p><ul className="divide-y divide-border">{detail.items.map((item, index) => <li key={item.productId || index} className="py-2">{item.quantity} × {item.productName}</li>)}</ul><h3 className="font-semibold">Historial del pedido</h3>{detail.source.events.map((event, index) => <p key={index} className="break-words text-ink-light">{formatDateTime(event.occurredAt)} · {event.reason || event.status}</p>)}{detail.source.incidents?.map(incident => <p key={incident.id} className="break-words text-warning-strong">{incident.description}</p>)}</div>}
       </Dialog>
     </div>
   );

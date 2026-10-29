@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useCustomerPurchase } from './customerOrderModel';
+import { RemoteState } from '../operations/shared';
 import { SchematicMap } from '../../components/shared/SchematicMap';
 import { OrderTimeline } from '../../components/shared/OrderTimeline';
 import { OrderStatusBadge } from '../../components/ui/Badge';
@@ -8,12 +9,13 @@ import { ChevronLeft, Store, Bike, Phone, Clock, ArrowRight } from 'lucide-react
 
 export const TrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { purchases, zones } = useDataStore();
-
-  const purchase = purchases.find((p) => p.id === id);
+  const [search] = useSearchParams();
+  const resource = useCustomerPurchase(id || '', search.get('grupo') === '1');
+  const purchase = resource.data;
 
   const [selectedSuborderIndex, setSelectedSuborderIndex] = useState(0);
 
+  if (!purchase && (resource.loading || resource.error)) return <div className="max-w-4xl mx-auto"><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} /></div>;
   if (!purchase) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4">
@@ -31,14 +33,15 @@ export const TrackingPage: React.FC = () => {
 
   const activeSuborder =
     purchase.merchantOrders[selectedSuborderIndex] || purchase.merchantOrders[0];
-  const targetZone = zones.find((z) => z.id === purchase.addressSnapshot.zoneId);
+
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-24 sm:pb-12">
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
       {/* Top Header */}
       <div>
         <Link
-          to={`/cliente/pedidos/${purchase.id}`}
+          to={purchase.detailPath}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary mb-1 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -48,14 +51,14 @@ export const TrackingPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">
-                Seguimiento en Vivo
+                Seguimiento del Pedido
               </h1>
               <span className="text-sm font-black text-primary bg-primary-soft px-3 py-1 rounded-full border border-primary/20 tabular-nums">
                 {purchase.code}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              Ruta esquemática y despacho en tiempo real en Tingo María
+              Ruta referencial. Estados actualizados desde el pedido cada 15 segundos.
             </p>
           </div>
           <OrderStatusBadge status={activeSuborder.status} />
@@ -101,7 +104,7 @@ export const TrackingPage: React.FC = () => {
             merchantName={activeSuborder.merchantName}
             merchantAddress={activeSuborder.merchantAddress}
             customerAddress={`${purchase.addressSnapshot.street} #${purchase.addressSnapshot.number}`}
-            zoneName={targetZone?.name}
+            zoneName="Destino registrado"
             courierName={activeSuborder.courierName}
             courierPhone={activeSuborder.courierPhone}
           />
@@ -123,7 +126,7 @@ export const TrackingPage: React.FC = () => {
                       <strong className="text-ink">{activeSuborder.courierName}</strong>
                     </>
                   ) : (
-                    'Esperando asignación de repartidor'
+                    purchase.sources.find(order => order.id === activeSuborder.id)?.assignment ? 'Repartidor asignado; datos de contacto no disponibles' : 'Sin repartidor asignado'
                   )}
                 </p>
               </div>
@@ -141,7 +144,7 @@ export const TrackingPage: React.FC = () => {
               )}
 
               <Link
-                to={`/cliente/pedidos/${purchase.id}`}
+                to={purchase.detailPath}
                 className="min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-ink font-bold text-xs transition-colors"
               >
                 <span>Ver Comanda</span>
@@ -159,7 +162,7 @@ export const TrackingPage: React.FC = () => {
               <span>Progreso de Entrega</span>
             </h2>
             <span className="text-[11px] font-bold text-primary bg-primary-soft px-2.5 py-0.5 rounded-full">
-              En tiempo real
+              Estado del pedido
             </span>
           </div>
           <OrderTimeline events={activeSuborder.timeline} />

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { claimCourierOrder, useCourierAction, useCourierOrders, useCourierProfile } from './courierModel';
+import { RemoteState } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
 import { formatCents } from '../../lib/currency';
 import { Button } from '../../components/ui/Button';
@@ -9,45 +10,22 @@ import { Badge } from '../../components/ui/Badge';
 import { Store, MapPin, AlertCircle, Bike, Check } from 'lucide-react';
 
 export const CourierRequestsPage: React.FC = () => {
-  const { purchases, couriers, courierAcceptOrder } = useDataStore();
   const { currentUser } = useAuthStore();
   const navigate = useNavigate();
-  const [acceptError, setAcceptError] = useState<{ orderId: string; message: string } | null>(null);
-
-  const currentCourier =
-    couriers.find((c) => c.ownerUserId === currentUser?.id || c.id === currentUser?.courierId) ||
-    couriers[0];
-  const hasActiveDelivery = purchases.some((purchase) => purchase.merchantOrders.some((order) =>
-    order.courierId === currentCourier?.id && Boolean(currentCourier) && ['listo_recoger', 'en_camino'].includes(order.status)));
-
-  const availableDeliveries = purchases.flatMap((p) =>
-    p.merchantOrders
-      .filter((mo) => mo.status === 'listo_recoger' && !mo.courierId)
-      .map((mo) => ({
-        ...mo,
-        purchaseCode: p.code,
-        customerName: p.customerName,
-        customerPhone: p.customerPhone,
-        addressSnapshot: p.addressSnapshot,
-        paymentMethod: p.paymentMethod,
-      }))
-  );
-
-  const handleAccept = (suborderId: string) => {
-    if (!currentCourier || !currentCourier.isAvailable || hasActiveDelivery) return;
-    setAcceptError(null);
-    try {
-      const result = courierAcceptOrder(suborderId, currentCourier.id);
-      if (result.success) navigate('/repartidor/entrega-activa');
-      else setAcceptError({ orderId: suborderId, message: result.message || 'No se pudo aceptar la entrega. Revisa la solicitud e inténtalo nuevamente.' });
-    } catch {
-      setAcceptError({ orderId: suborderId, message: 'No se pudo completar la acción. Revisa si la entrega quedó asignada antes de volver a intentarlo.' });
-    }
+  const profile = useCourierProfile();
+  const resource = useCourierOrders('available');
+  const active = useCourierOrders('active');
+  const actions = useCourierAction(resource.reload, resource.loading || !!resource.error || active.loading || !!active.error || profile.loading || !!profile.error);
+  const currentCourier = profile.data;
+  const hasActiveDelivery = Boolean(active.data?.length);
+  const availableDeliveries = resource.data || [];
+  const handleAccept = async (orderId: string) => {
+    const order = availableDeliveries.find(row => row.id === orderId);
+    if (!order || !currentUser || currentCourier?.status !== 'active' || !currentCourier.isOnline || hasActiveDelivery) return;
+    if (await actions.execute(() => claimCourierOrder(order.source, currentUser.id))) navigate('/repartidor/entrega-activa');
   };
-
-  if (!currentCourier) {
-    return <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />;
-  }
+  if (profile.loading || profile.error || resource.loading || resource.error || active.loading || active.error) return <RemoteState loading={profile.loading || resource.loading || active.loading} error={profile.error || resource.error || active.error} retry={() => { profile.reload(); resource.reload(); active.reload(); }} />;
+  if (!currentCourier) return <EmptyState title="No hay un perfil de repartidor disponible" description="Consulta tu estado de aprobación para continuar." />;
 
   return (
     <div className="space-y-6">
@@ -56,6 +34,7 @@ export const CourierRequestsPage: React.FC = () => {
         <p className="text-sm text-ink-light">Revisa el recojo, destino y tarifa antes de aceptar una entrega.</p>
       </header>
 
+      {actions.error && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong">{actions.error}</p>}
       {hasActiveDelivery && (
         <div className="flex flex-col gap-3 rounded-xl border border-info-border bg-info-soft p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-info-strong">Tienes una entrega en curso. Complétala antes de aceptar otra solicitud.</p>
@@ -63,7 +42,8 @@ export const CourierRequestsPage: React.FC = () => {
         </div>
       )}
 
-      {!currentCourier.isAvailable && (
+      {currentCourier.status !== 'active' && <p role="status" className="rounded-xl border border-warning-border bg-warning-soft p-4 text-sm text-warning-strong">Tu perfil no está habilitado para tomar pedidos. {currentCourier.statusReason}</p>}
+      {!currentCourier.isOnline && (
         <div className="flex items-start gap-3 rounded-xl border border-warning-border bg-warning-soft p-4 text-sm text-warning-strong">
           <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
           <p>Estás en pausa. Activa tu disponibilidad desde la cabecera para aceptar pedidos.</p>
@@ -108,25 +88,20 @@ export const CourierRequestsPage: React.FC = () => {
                     <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-ink-light">2</span>
                     <div className="min-w-0 space-y-1">
                       <dt className="font-semibold text-ink">Entrega al cliente</dt>
-                      <dd className="break-words text-ink-light">{delivery.addressSnapshot.street} #{delivery.addressSnapshot.number}</dd>
+                      <dd className="break-words text-ink-light">{delivery.addressSnapshot.street}{delivery.addressSnapshot.number ? ' #' + delivery.addressSnapshot.number : ''}</dd>
                       <dd className="flex items-start gap-2 break-words text-xs text-ink-muted"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">Referencia: {delivery.addressSnapshot.reference || 'Sin referencia registrada'}</span></dd>
                     </div>
                   </div>
                 </dl>
 
                 <div className="space-y-2 border-t border-border pt-4 text-xs">
-                  <p className="tabular-nums text-ink-light">{delivery.items.reduce((acc, item) => acc + item.quantity, 0)} productos · Cliente: {delivery.customerName}</p>
+                  <p className="tabular-nums text-ink-light">Contenido disponible al aceptar · Cliente: {delivery.customerName}</p>
                   <p className={delivery.paymentMethod === 'efectivo' ? 'font-medium text-warning' : 'text-ink-light'}>
                     {delivery.paymentMethod === 'efectivo' ? 'Método de pago: efectivo. Revisa el cobro en la entrega activa.' : `Método de pago: ${delivery.paymentMethod}. Revisa el estado de pago antes de entregar.`}
                   </p>
                 </div>
 
-                {acceptError?.orderId === delivery.id && (
-                  <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong">
-                    <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{acceptError.message}</p>
-                  </div>
-                )}
-                <Button type="button" variant="primary" className="min-h-12 w-full gap-2 text-sm" onClick={() => handleAccept(delivery.id)} disabled={!currentCourier.isAvailable || hasActiveDelivery}
+                <Button type="button" variant="primary" className="min-h-12 w-full gap-2 text-sm" onClick={() => handleAccept(delivery.id)} disabled={actions.busy || currentCourier.status !== 'active' || !currentCourier.isOnline || hasActiveDelivery}
                   aria-label={`Aceptar entrega ${delivery.purchaseCode} de ${delivery.merchantName}`}>
                   <Check className="h-5 w-5" aria-hidden="true" />Aceptar entrega
                 </Button>

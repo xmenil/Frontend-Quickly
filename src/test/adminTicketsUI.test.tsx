@@ -1,56 +1,27 @@
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { AdminTicketsPage } from '../features/admin/AdminTicketsPage';
-import { useDataStore } from '../store/dataStore';
-import { SupportTicket } from '../domain/types';
-
-const originalState = useDataStore.getState();
-const ticket: SupportTicket = {
-  id: 'ui_case', userId: 'ui_customer', userName: 'Ana María', userRole: 'cliente',
-  subject: 'Entrega incompleta', description: 'Faltó un producto en el pedido.',
-  status: 'abierto', priority: 'alta', createdAt: '2026-10-01T12:00:00Z',
-};
-const resolve = vi.fn();
-
-beforeEach(() => {
-  resolve.mockReset();
-  useDataStore.setState({ tickets: [ticket], resolveSupportTicket: resolve });
+import { useAuthStore } from '../store/authStore';
+import { engagementApi } from '../services/api/engagementApi';
+import { setupAdmin, ticket, admin, uid } from './adminApiFixtures';
+const original = useAuthStore.getState(); beforeEach(setupAdmin);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); useAuthStore.setState(original); });
+async function open() { render(<AdminTicketsPage />); fireEvent.click(await screen.findByRole('button', { name: 'Resolver incidencia: ' + ticket.subject })); await screen.findByLabelText(/Respuesta del caso/); return screen.getByRole('dialog'); }
+it('consulta conversación autorizada sin inventar solicitante ni rol', async () => {
+ const dialog = await open(); expect(within(dialog).getAllByText('Faltó un producto').length).toBeGreaterThan(0);
+ expect(within(dialog).getByText(/Solicitante no informado/)).toBeInTheDocument(); expect(within(dialog).getByRole('button', { name: 'Guardar respuesta y estado' })).toBeDisabled();
+ expect(engagementApi.ticket).toHaveBeenCalledWith(true, ticket.id, expect.any(AbortSignal));
 });
-afterEach(() => {
-  cleanup();
-  useDataStore.setState(originalState);
+it('conserva respuesta si POST no se refleja en GET', async () => {
+ const dialog = await open(); fireEvent.change(within(dialog).getByLabelText(/Respuesta del caso/), { target: { value: 'Revisión del caso' } }); fireEvent.click(within(dialog).getByRole('button', { name: 'Guardar respuesta y estado' }));
+ expect(await within(dialog).findByRole('alert')).toHaveTextContent('No se pudo verificar'); expect(within(dialog).getByLabelText(/Respuesta del caso/)).toHaveValue('Revisión del caso');
+ expect(engagementApi.decide).toHaveBeenCalledWith(ticket.id, { expectedVersion: 7, status: 'resolved', priority: 'high', body: 'Revisión del caso' });
 });
-
-describe('Admin tickets interface', () => {
-  it('blocks a whitespace-only response and retains the dialog', () => {
-    render(<AdminTicketsPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Resolver incidencia: Entrega incompleta' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText(/Respuesta de resolución/), { target: { value: '   ' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Resolver incidencia' }));
-    expect(resolve).not.toHaveBeenCalled();
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Escribe cómo se resolvió la incidencia');
-  });
-
-  it('retains the response when the action does not save a resolution', () => {
-    render(<AdminTicketsPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Resolver incidencia: Entrega incompleta' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText(/Respuesta de resolución/), { target: { value: 'Se entregó el producto faltante.' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Resolver incidencia' }));
-    expect(resolve).toHaveBeenCalledWith(ticket.id, 'Se entregó el producto faltante.');
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('No se pudo guardar la resolución.');
-    expect(within(dialog).getByLabelText(/Respuesta de resolución/)).toHaveValue('Se entregó el producto faltante.');
-  });
-
-  it('allows reading a resolved case without submitting another resolution', () => {
-    useDataStore.setState({ tickets: [{ ...ticket, status: 'resuelto', response: 'Se entregó el producto faltante.' }] });
-    render(<AdminTicketsPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Ver caso: Entrega incompleta' }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Se entregó el producto faltante.')).toBeInTheDocument();
-    expect(within(dialog).queryByRole('button', { name: 'Resolver incidencia' })).not.toBeInTheDocument();
-    expect(resolve).not.toHaveBeenCalled();
-  });
+it('guarda mensaje, prioridad y estado con versión y verificación', async () => {
+ vi.mocked(engagementApi.decide).mockImplementation(async (_id, body) => { vi.mocked(engagementApi.ticket).mockResolvedValue({ ...ticket, status: body.status as 'resolved', priority: body.priority as 'normal', version: 8, messages: [...ticket.messages, { id: uid(130), authorUserId: admin.id, body: body.body, createdAt: ticket.createdAt }] }); });
+ const dialog = await open(); fireEvent.change(within(dialog).getByLabelText('Nuevo estado'), { target: { value: 'in_review' } }); fireEvent.change(within(dialog).getByLabelText('Prioridad del caso'), { target: { value: 'normal' } });
+ fireEvent.change(within(dialog).getByLabelText(/Respuesta del caso/), { target: { value: 'Revisión del caso' } }); fireEvent.click(within(dialog).getByRole('button', { name: 'Guardar respuesta y estado' }));
+ expect(await screen.findByText('Respuesta y estado del caso confirmados.')).toBeInTheDocument(); expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(engagementApi.decide).toHaveBeenCalledWith(ticket.id, { expectedVersion: 7, status: 'in_review', priority: 'normal', body: 'Revisión del caso' });
 });

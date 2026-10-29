@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useAuthStore } from '../../store/authStore';
+import { useCustomerOrders } from './customerOrderModel';
+import { RemoteState } from '../operations/shared';
+
 import { PurchaseStatusBadge, OrderStatusBadge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatDateTime } from '../../lib/date';
@@ -18,13 +19,13 @@ import {
 } from 'lucide-react';
 
 export const CustomerOrdersPage: React.FC = () => {
-  const { purchases } = useDataStore();
-  const { currentUser } = useAuthStore();
+  const resource = useCustomerOrders();
+  const purchases = resource.data || [];
   const navigate = useNavigate();
 
   const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
 
-  const userPurchases = purchases.filter((p) => p.customerId === currentUser?.id);
+  const userPurchases = purchases;
 
   const activePurchasesCount = userPurchases.filter(
     (p) => p.status === 'pendiente' || p.status === 'en_proceso' || p.status === 'entrega_parcial'
@@ -111,7 +112,8 @@ export const CustomerOrdersPage: React.FC = () => {
         </div>
       </div>
 
-      {filteredPurchases.length === 0 ? (
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {resource.loading || resource.error ? null : filteredPurchases.length === 0 ? (
         <div className="space-y-6">
           <EmptyState
             icon={<ShoppingBag className="w-12 h-12 text-primary" />}
@@ -128,7 +130,7 @@ export const CustomerOrdersPage: React.FC = () => {
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 type="button"
-                onClick={() => navigate('/negocios?categoria=restaurante')}
+                onClick={() => navigate('/negocios?categoria=restaurantes')}
                 className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs transition-colors border border-amber-200"
               >
                 <UtensilsCrossed className="w-4 h-4 text-amber-600" />
@@ -136,7 +138,7 @@ export const CustomerOrdersPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/negocios?categoria=farmacia')}
+                onClick={() => navigate('/negocios?categoria=farmacias')}
                 className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs transition-colors border border-emerald-200"
               >
                 <Pill className="w-4 h-4 text-emerald-600" />
@@ -183,8 +185,7 @@ export const CustomerOrdersPage: React.FC = () => {
                           {mo.merchantName}
                         </span>
                         <span className="text-gray-500 font-medium tabular-nums">
-                          ({mo.items.reduce((a, b) => a + b.quantity, 0)}{' '}
-                          {mo.items.length === 1 ? 'producto' : 'productos'})
+                          Ver productos en el detalle
                         </span>
                       </div>
                       <div className="flex items-center gap-3 self-end sm:self-auto">
@@ -209,16 +210,16 @@ export const CustomerOrdersPage: React.FC = () => {
                   <div className="flex items-center gap-2.5">
                     {isActive && (
                       <Link
-                        to={`/cliente/seguimiento/${purchase.id}`}
+                        to={`/cliente/seguimiento/${purchase.id}${purchase.isGroup ? "?grupo=1" : ""}`}
                         className="min-h-[44px] bg-primary text-white hover:bg-primary-hover px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
                       >
                         <Navigation className="w-4 h-4" />
-                        <span>Seguimiento en Vivo</span>
+                        <span>Seguimiento</span>
                       </Link>
                     )}
 
                     <Link
-                      to={`/cliente/pedidos/${purchase.id}`}
+                      to={purchase.detailPath}
                       className="min-h-[44px] bg-gray-100 hover:bg-gray-200 text-ink px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
                     >
                       <span>Ver Detalle</span>

@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
+import { PaymentHistory } from '../customer/PaymentHistory';
+import { useCustomerPurchase } from './customerOrderModel';
+import { RemoteState } from '../operations/shared';
+import { orderingApi } from '../../services/api/orderingApi';
+import { engagementApi } from '../../services/api/engagementApi';
+import { loadCatalogProducts } from '../catalog/useStorefront';
+import { addCatalogProduct, useRealCartStore } from '../../store/realCartStore';
 import { useAuthStore } from '../../store/authStore';
 import { OrderStatusBadge, PurchaseStatusBadge, PaymentStatusBadge } from '../../components/ui/Badge';
 import { OrderTimeline } from '../../components/shared/OrderTimeline';
@@ -30,15 +35,18 @@ import {
   Smartphone,
 } from 'lucide-react';
 
-export const OrderDetailPage: React.FC = () => {
+export const OrderDetailPage: React.FC<{ group?: boolean }> = ({ group = false }) => {
   const { id } = useParams<{ id: string }>();
-  const { purchases, cancelMerchantOrderAsCustomer, addReview, products } = useDataStore();
-  const { addItem } = useCartStore();
+  const resource = useCustomerPurchase(id || '', group);
+  const [actionError, setActionError] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reorderBusy, setReorderBusy] = useState(false);
+  const actionRef = useRef(false);
   const { currentUser } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const purchase = purchases.find((p) => p.id === id);
+  const purchase = resource.data;
 
   // Modal states
   const [cancelModalSuborderId, setCancelModalSuborderId] = useState<string | null>(null);
@@ -55,6 +63,7 @@ export const OrderDetailPage: React.FC = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
+  if (!purchase && (resource.loading || resource.error)) return <div className="max-w-4xl mx-auto space-y-4"><Link to="/cliente/pedidos">Volver a Mis Pedidos</Link><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} /></div>;
   if (!purchase) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4">
@@ -72,55 +81,47 @@ export const OrderDetailPage: React.FC = () => {
 
   const isOrderActive = ['pendiente', 'en_proceso', 'entrega_parcial'].includes(purchase.status);
 
-  const handleCancelSuborder = () => {
-    if (!cancelModalSuborderId) return;
-    setIsCancelling(true);
-    setTimeout(() => {
-      cancelMerchantOrderAsCustomer(cancelModalSuborderId, cancelReason);
-      setIsCancelling(false);
-      setCancelModalSuborderId(null);
-    }, 400);
+  const handleCancelSuborder = async () => {
+    const source = purchase.sources.find(order => order.id === cancelModalSuborderId);
+    if (!source || actionRef.current || resource.loading || resource.error || !cancelReason.trim()) return;
+    actionRef.current = true; setIsCancelling(true); setActionError('');
+    const owner = currentUser?.id;
+    try {
+      await orderingApi.action('/orders/' + source.id + '/cancellations', { expectedVersion: source.version, reason: cancelReason.trim() });
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      setCancelModalSuborderId(null); resource.reload();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo cancelar el pedido.'); resource.reload(); }
+    finally { actionRef.current = false; setIsCancelling(false); }
   };
-
-  const handleSubmitReview = () => {
-    if (!reviewModalSuborder) return;
-    addReview({
-      merchantId: reviewModalSuborder.merchantId,
-      merchantOrderId: reviewModalSuborder.suborderId,
-      customerId: currentUser?.id || 'u_cliente_demo',
-      customerName: currentUser?.name || 'Cliente Demo',
-      rating,
-      comment: reviewComment,
-    });
-    setReviewSuccess(true);
-    setTimeout(() => {
-      setReviewSuccess(false);
-      setReviewModalSuborder(null);
-    }, 1200);
+  const handleSubmitReview = async () => {
+    if (!reviewModalSuborder || actionRef.current || resource.loading || resource.error) return;
+    actionRef.current = true; setReviewBusy(true); setActionError('');
+    const owner = currentUser?.id;
+    try {
+      await engagementApi.review(reviewModalSuborder.suborderId, { rating, comment: reviewComment.trim() });
+      if (useAuthStore.getState().currentUser?.id === owner) setReviewSuccess(true);
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo guardar tu valoración.'); }
+    finally { actionRef.current = false; setReviewBusy(false); }
   };
-
-  const handleReorder = () => {
-    let addedCount = 0;
-    purchase.merchantOrders.forEach((mo) => {
-      mo.items.forEach((it) => {
-        const prod = products.find((p) => p.id === it.productId);
-        if (prod && prod.isAvailable && prod.stock > 0) {
-          addItem({
-            productId: it.productId,
-            merchantId: mo.merchantId,
-            quantity: it.quantity,
-            selectedVariantName: it.variantName,
-            note: it.note,
-            unitPriceCents: prod.priceCents,
-          });
-          addedCount++;
-        }
-      });
-    });
-
-    if (addedCount > 0) {
+  const handleReorder = async () => {
+    if (actionRef.current || resource.loading || resource.error) return;
+    actionRef.current = true; setReorderBusy(true); setActionError('');
+    const owner = currentUser?.id;
+    try {
+      const catalogs = await Promise.all(purchase.sources.map(order => loadCatalogProducts({ storeId: order.storeId })));
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      const lines = purchase.sources.flatMap((order, index) => order.items.map(line => {
+        const product = catalogs[index].find(product => product.skus.some(sku => sku.id === line.skuId));
+        const sku = product?.skus.find(sku => sku.id === line.skuId);
+        const existing = useRealCartStore.getState().items.filter(item => item.skuId === line.skuId).reduce((total, item) => total + item.quantity, 0);
+        if (!product?.isActive || !sku?.isActive || sku.availableStock < existing + line.quantity)
+          throw new Error(line.productName + ' ya no tiene disponibilidad suficiente. Revisa el catálogo antes de volver a pedir.');
+        return { product, line };
+      }));
+      lines.forEach(({ product, line }) => addCatalogProduct(product, line.skuId, line.quantity, line.note));
       navigate('/carrito');
-    }
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo preparar el carrito.'); }
+    finally { actionRef.current = false; setReorderBusy(false); }
   };
 
   return (
@@ -132,6 +133,8 @@ export const OrderDetailPage: React.FC = () => {
           {purchase.paymentStatus === 'pendiente' && <p className="text-xs">{purchase.paymentMethod === 'efectivo' ? 'El pago se realizará contra entrega.' : 'El pago digital sigue pendiente de verificación.'}</p>}
         </section>
       )}
+      {actionError && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{actionError}</p>}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
       {/* Top Breadcrumb & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -157,7 +160,7 @@ export const OrderDetailPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           {isOrderActive && (
             <Link
-              to={`/cliente/seguimiento/${purchase.id}`}
+              to={`/cliente/seguimiento/${purchase.id}${purchase.isGroup ? "?grupo=1" : ""}`}
               className="min-h-[44px] bg-primary text-white hover:bg-primary-hover px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-md transition-all"
             >
               <Navigation className="w-4 h-4" />
@@ -170,6 +173,8 @@ export const OrderDetailPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={handleReorder}
+            isLoading={reorderBusy}
+            disabled={resource.loading || !!resource.error}
             className="min-h-[44px] font-bold"
           >
             <RotateCcw className="w-4 h-4 mr-1.5" />
@@ -193,7 +198,7 @@ export const OrderDetailPage: React.FC = () => {
             </div>
           </div>
           <Link
-            to={`/cliente/seguimiento/${purchase.id}`}
+            to={`/cliente/seguimiento/${purchase.id}${purchase.isGroup ? "?grupo=1" : ""}`}
             className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 flex-shrink-0 transition-colors shadow-sm"
           >
             <Navigation className="w-3.5 h-3.5" />
@@ -250,6 +255,7 @@ export const OrderDetailPage: React.FC = () => {
             </span>
           </div>
 
+          <PaymentHistory ids={purchase.sources.map(order => order.purchaseId)} />
           {purchase.cashAmountPaidCents && (
             <p className="text-gray-600 font-medium pt-1 border-t border-gray-50 tabular-nums">
               Paga con: <strong>{formatCents(purchase.cashAmountPaidCents)}</strong> • Vuelto a entregar:{' '}
@@ -300,7 +306,8 @@ export const OrderDetailPage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       className="min-h-[40px] text-red-600 border-red-200 hover:bg-red-50 font-bold"
-                      onClick={() => setCancelModalSuborderId(mo.id)}
+                      disabled={resource.loading || !!resource.error}
+                      onClick={() => { setActionError(""); setCancelModalSuborderId(mo.id); }}
                     >
                       Cancelar
                     </Button>
@@ -313,12 +320,13 @@ export const OrderDetailPage: React.FC = () => {
                       variant="secondary"
                       size="sm"
                       className="min-h-[40px] font-bold"
-                      onClick={() =>
+                      disabled={resource.loading || !!resource.error}
+                      onClick={() => { setActionError(""); setReviewSuccess(false);
                         setReviewModalSuborder({
                           merchantId: mo.merchantId,
                           suborderId: mo.id,
                           merchantName: mo.merchantName,
-                        })
+                        }); }
                       }
                     >
                       <Star className="w-3.5 h-3.5 mr-1 fill-amber-400 text-amber-400" />
@@ -366,7 +374,7 @@ export const OrderDetailPage: React.FC = () => {
                     {mo.refundCents && mo.refundCents > 0 && (
                       <p className="mt-1.5 text-emerald-800 font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Reembolso simulado de {formatCents(mo.refundCents)} registrado con éxito.</span>
+                        <span>Reembolso de {formatCents(mo.refundCents)} registrado con éxito.</span>
                       </p>
                     )}
                   </div>
@@ -381,7 +389,7 @@ export const OrderDetailPage: React.FC = () => {
                   {mo.refundCents && mo.refundCents > 0 && (
                     <p className="text-emerald-800 font-bold flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Reembolso simulado de {formatCents(mo.refundCents)} registrado con éxito.</span>
+                      <span>Reembolso de {formatCents(mo.refundCents)} registrado con éxito.</span>
                     </p>
                   )}
                 </div>
@@ -457,27 +465,29 @@ export const OrderDetailPage: React.FC = () => {
       {/* Cancel Confirmation Dialog */}
       <Dialog
         isOpen={Boolean(cancelModalSuborderId)}
-        onClose={() => setCancelModalSuborderId(null)}
+        onClose={() => { if (!isCancelling) setCancelModalSuborderId(null); }}
         title="¿Deseas cancelar este pedido?"
         description="Esta regla solo se permite antes de que la cocina inicie la preparación."
         maxWidth="sm"
       >
         <div className="space-y-4 pt-2">
+          {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}
           <Input
             label="Motivo de la cancelación"
             value={cancelReason}
+            maxLength={500}
             onChange={(e) => setCancelReason(e.target.value)}
             placeholder="Ej: Me equivoqué de dirección o producto..."
           />
           <p className="text-xs text-gray-600 leading-relaxed">
-            Se restaurará el inventario reservado en la tienda y se calculará el reembolso simulado
-            automáticamente si pagaste con billetera digital o tarjeta.
+            La cancelación se confirmará con la tienda y liberará el inventario reservado.
           </p>
           <div className="flex justify-end gap-2.5 pt-2">
             <Button
               type="button"
               variant="outline"
               className="min-h-[44px]"
+              disabled={isCancelling}
               onClick={() => setCancelModalSuborderId(null)}
             >
               Volver
@@ -498,7 +508,7 @@ export const OrderDetailPage: React.FC = () => {
       {/* Review Dialog */}
       <Dialog
         isOpen={Boolean(reviewModalSuborder)}
-        onClose={() => setReviewModalSuborder(null)}
+        onClose={() => { if (!reviewBusy) { setReviewModalSuborder(null); setReviewSuccess(false); } }}
         title={`Valorar a ${reviewModalSuborder?.merchantName}`}
         description="Comparte tu experiencia tras la entrega para ayudar a otros clientes de Tingo María"
         maxWidth="sm"
@@ -511,6 +521,7 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4 pt-2">
+          {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}
             <div className="flex items-center justify-center gap-3 py-3">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button
@@ -535,6 +546,7 @@ export const OrderDetailPage: React.FC = () => {
               </label>
               <textarea
                 value={reviewComment}
+                maxLength={1000}
                 onChange={(e) => setReviewComment(e.target.value)}
                 placeholder="La comida estuvo caliente, la cecina muy rica y el repartidor llegó rápido..."
                 rows={3}
@@ -547,6 +559,7 @@ export const OrderDetailPage: React.FC = () => {
                 type="button"
                 variant="outline"
                 className="min-h-[44px]"
+                disabled={reviewBusy}
                 onClick={() => setReviewModalSuborder(null)}
               >
                 Omitir
@@ -556,6 +569,7 @@ export const OrderDetailPage: React.FC = () => {
                 variant="primary"
                 className="min-h-[44px] font-bold"
                 onClick={handleSubmitReview}
+                isLoading={reviewBusy}
               >
                 Publicar Valoración
               </Button>

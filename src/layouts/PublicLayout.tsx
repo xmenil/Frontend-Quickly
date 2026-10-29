@@ -2,9 +2,8 @@ import React, { useEffect } from 'react';
 import { Outlet, useLocation, ScrollRestoration, Link } from 'react-router-dom';
 import { Navbar } from '../components/shared/Navbar';
 import { MobileNav } from '../components/shared/MobileNav';
-import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { RoleSwitcher } from '../components/shared/RoleSwitcher';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import { isDemoMode } from '../config/appMode';
 
 export const PublicLayout: React.FC = () => {
   const { pathname } = useLocation();
@@ -22,7 +21,7 @@ export const PublicLayout: React.FC = () => {
         <Outlet />
       </main>
       <MobileNav />
-      {!isCheckoutFlow && <DemoSwitcher />}
+      {!isCheckoutFlow && <RoleSwitcher />}
 
       {/* Footer */}
       <footer className="bg-white border-t border-border pt-10 pb-24 md:pb-10 mt-auto">
@@ -42,7 +41,7 @@ export const PublicLayout: React.FC = () => {
             </div>
             <div className="text-xs text-ink-light text-center md:text-right">
               <p>Quickly Delivery © 2026</p>
-              <p className="text-[11px] text-ink-light mt-0.5">{isDemoMode ? 'Demostración frontend simulada' : 'Pago en efectivo · Envío por tienda'}</p>
+              <p className="text-[11px] text-ink-light mt-0.5">Pago en efectivo · Envío por tienda</p>
             </div>
           </div>
         </div>

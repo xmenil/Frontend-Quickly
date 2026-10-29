@@ -1,10 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { Outlet, NavLink, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { RoleSwitcher } from '../components/shared/RoleSwitcher';
 import { Button } from '../components/ui/Button';
 import { useAuthStore } from '../store/authStore';
-import { useDataStore } from '../store/dataStore';
+import { operationsApi } from '../services/api/operationsApi';
+import { engagementApi } from '../services/api/engagementApi';
+import { allPages } from '../features/customer/customerAccountModel';
+import { useRemote, RemoteState } from '../features/operations/shared';
 import {
   LayoutDashboard,
   Users,
@@ -22,14 +25,21 @@ import {
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
-  const { currentUser, isAuthenticated, logout } = useAuthStore();
-  const { users, tickets } = useDataStore();
+  const { currentUser, isAuthenticated, logout, roles, sessionStatus, sessionError, initialize } = useAuthStore();
+  const [logoutError, setLogoutError] = useState("");
+  const resource = useRemote('admin-layout-counts:' + sessionStatus, async signal => {
+    if (sessionStatus !== 'ready' || !isAuthenticated || !roles.includes('admin')) return null;
+    const [overview, tickets, users] = await Promise.all([operationsApi.overview(signal), allPages(cursor => engagementApi.tickets(true, cursor, signal)), allPages(cursor => operationsApi.adminUsers({ cursor }, signal))]);
+    return { pending: users.filter(user => user.status === 'pending').length, stores: overview.pendingStores, couriers: overview.pendingCouriers, open: tickets.filter(ticket => ticket.status !== 'resolved').length };
+  });
+  React.useEffect(() => { window.addEventListener('quickly:admin-changed', resource.reload); return () => window.removeEventListener('quickly:admin-changed', resource.reload); }, [resource.reload]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  if (sessionStatus !== "ready") return <RemoteState loading={sessionStatus === "checking"} error={sessionError || undefined} retry={() => void initialize()} />;
   if (!isAuthenticated || !currentUser) {
     return (
       <Navigate
@@ -43,18 +53,19 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  if (currentUser.role !== 'admin') {
+  if (currentUser.status !== 'activo' || !roles.includes('admin')) {
     return <Navigate to="/acceso-denegado" replace />;
   }
 
-  const pendingApprovalsCount = users.filter((u) => u.status === 'pendiente_aprobacion').length;
-  const openTicketsCount = tickets.filter((t) => t.status === 'abierto' || t.status === 'en_revision').length;
+  const pendingApprovalsCount = resource.error ? 0 : resource.data?.pending || 0;
+  const openTicketsCount = resource.error ? 0 : resource.data?.open || 0;
 
   const navGroups = [
     {
       label: 'Operación',
       links: [
         { to: '/admin/resumen', label: 'Resumen', icon: LayoutDashboard, count: 0 },
+        { to: '/admin/operacion', label: 'Estado operativo', icon: ShieldCheck, count: 0 },
         { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag, count: 0 },
         { to: '/admin/incidencias', label: 'Soporte e incidencias', icon: AlertTriangle, count: openTicketsCount },
       ],
@@ -63,8 +74,8 @@ export const AdminLayout: React.FC = () => {
       label: 'Gestión',
       links: [
         { to: '/admin/usuarios', label: 'Usuarios y solicitudes', icon: Users, count: pendingApprovalsCount },
-        { to: '/admin/comercios', label: 'Comercios', icon: Store, count: 0 },
-        { to: '/admin/repartidores', label: 'Repartidores', icon: Bike, count: 0 },
+        { to: '/admin/comercios', label: 'Comercios', icon: Store, count: resource.error ? 0 : resource.data?.stores || 0 },
+        { to: '/admin/repartidores', label: 'Repartidores', icon: Bike, count: resource.error ? 0 : resource.data?.couriers || 0 },
         { to: '/admin/zonas', label: 'Zonas y tarifas', icon: MapPin, count: 0 },
       ],
     },
@@ -135,10 +146,7 @@ export const AdminLayout: React.FC = () => {
         type="button"
         variant="ghost"
         className="min-h-11 w-full justify-start gap-3 px-3 text-sm text-ink-light hover:bg-surface-subtle active:bg-surface-subtle"
-        onClick={() => {
-          logout();
-          navigate('/login');
-        }}
+        onClick={async () => { const result = await logout(); if (result.success) navigate('/login'); else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
       >
         <LogOut className="h-5 w-5" aria-hidden="true" />
         Cerrar sesión
@@ -239,12 +247,12 @@ export const AdminLayout: React.FC = () => {
           className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-24 scroll-smooth"
         >
           <div className="mx-auto w-full max-w-7xl">
-            <Outlet />
+            <><RemoteState loading={false} error={resource.error} retry={resource.reload} />{logoutError && <p role="alert" className="text-sm text-destructive">{logoutError}</p>}<Outlet key={currentUser.id} /></>
           </div>
         </main>
       </div>
 
-      <DemoSwitcher />
+      <RoleSwitcher />
     </div>
   );
 };

@@ -1,59 +1,37 @@
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { AdminUsersPage } from '../features/admin/AdminUsersPage';
-import { useDataStore } from '../store/dataStore';
-import { User } from '../domain/types';
-
-const originalState = useDataStore.getState();
-const pendingUser: User = {
-  id: 'ui_pending', name: 'Ana María', email: 'ana@example.test', phone: '962123456',
-  role: 'comercio', status: 'pendiente_aprobacion', createdAt: '2026-10-01T12:00:00Z',
-};
-const rejectUser = vi.fn();
-
-beforeEach(() => {
-  rejectUser.mockReset();
-  useDataStore.setState({
-    users: [pendingUser],
-    adminRejectUser: rejectUser,
-  });
+import { useAuthStore } from '../store/authStore';
+import { operationsApi } from '../services/api/operationsApi';
+import { ApiError } from '../services/api/apiClient';
+import { setupAdmin, targetUser } from './adminApiFixtures';
+const original = useAuthStore.getState(); beforeEach(setupAdmin);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); useAuthStore.setState(original); });
+it('filtra por cualquier rol real de una cuenta sin conceder roles', async () => {
+ render(<AdminUsersPage />); await screen.findByText(targetUser.fullName);
+ fireEvent.change(screen.getByLabelText('Tipo de cuenta'), { target: { value: 'comercio' } });
+ expect(screen.getByText(targetUser.fullName)).toBeInTheDocument(); expect(operationsApi.userStatus).not.toHaveBeenCalled();
 });
-
-afterEach(() => {
-  cleanup();
-  useDataStore.setState(originalState);
+it('valida motivo y conserva el diálogo ante conflicto 409', async () => {
+ vi.mocked(operationsApi.userStatus).mockRejectedValue(new ApiError('Cuenta con entregas activas', 409, 'CONFLICT'));
+ render(<AdminUsersPage />); fireEvent.click(await screen.findByRole('button', { name: 'Suspender' })); const dialog = screen.getByRole('dialog');
+ fireEvent.change(within(dialog).getByLabelText(/Motivo de la decisión/), { target: { value: '  ' } });
+ fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cambio' }));
+ expect(within(dialog).getByRole('alert')).toHaveTextContent('al menos 3'); expect(operationsApi.userStatus).not.toHaveBeenCalled();
+ fireEvent.change(within(dialog).getByLabelText(/Motivo de la decisión/), { target: { value: 'Revisión de acceso' } });
+ fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cambio' }));
+ expect(await within(dialog).findByRole('alert')).toHaveTextContent('entregas activas');
+ expect(within(dialog).getByLabelText(/Motivo de la decisión/)).toHaveValue('Revisión de acceso'); expect(operationsApi.userStatus).toHaveBeenCalledTimes(1);
 });
-
-describe('Admin users interface', () => {
-  it('keeps the dialog open and blocks a whitespace-only reason', () => {
-    render(<AdminUsersPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText(/Motivo de la decisión/), { target: { value: '   ' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar rechazo' }));
-    expect(rejectUser).not.toHaveBeenCalled();
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Escribe el motivo antes de continuar.');
-    expect(within(dialog).getByLabelText(/Motivo de la decisión/)).toHaveAttribute('aria-invalid', 'true');
-  });
-
-  it('keeps the reason if the existing action does not update the account', () => {
-    render(<AdminUsersPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText(/Motivo de la decisión/), { target: { value: 'Falta documentación.' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar rechazo' }));
-    expect(rejectUser).toHaveBeenCalledWith(pendingUser.id, 'Falta documentación.');
-    expect(within(dialog).getByLabelText(/Motivo de la decisión/)).toHaveValue('Falta documentación.');
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('No se pudo completar la acción.');
-  });
-
-  it('recovers from an empty search by clearing the filters', () => {
-    render(<AdminUsersPage />);
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar usuarios' }), { target: { value: 'sin coincidencias' } });
-    expect(screen.getByText('No encontramos usuarios con estos filtros')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Limpiar filtros' })[0]);
-    expect(screen.getByRole('heading', { name: 'Ana María' })).toBeInTheDocument();
-    expect(screen.getByRole('searchbox')).toHaveValue('');
-  });
+it('comprueba con GET el estado y motivo antes de cerrar', async () => {
+ vi.mocked(operationsApi.userStatus).mockImplementation(async (_id, body) => { vi.mocked(operationsApi.adminUsers).mockResolvedValue({ items: [{ ...targetUser, status: body.status, statusReason: body.reason }], nextCursor: null }); });
+ render(<AdminUsersPage />); fireEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
+ fireEvent.change(screen.getByLabelText(/Motivo de la decisión/), { target: { value: 'Revisión de acceso' } }); fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+ expect(await screen.findByText('Estado de cuenta confirmado.')).toBeInTheDocument(); expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(operationsApi.userStatus).toHaveBeenCalledWith(targetUser.id, { status: 'suspended', reason: 'Revisión de acceso' });
+});
+it('un 403 se muestra sin cuentas mock', async () => {
+ vi.mocked(operationsApi.adminUsers).mockRejectedValue(new ApiError('Solo administración', 403, 'FORBIDDEN'));
+ render(<AdminUsersPage />); expect(await screen.findByRole('alert')).toHaveTextContent('Solo administración'); expect(screen.queryByText(targetUser.fullName)).not.toBeInTheDocument();
 });

@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Merchant } from '../../domain/types';
+import type { StorefrontMerchant as Merchant } from '../../features/catalog/storefrontModel';
+import { useCatalogFavorite } from '../../features/catalog/useCatalogFavorite';
 import { formatCents } from '../../lib/currency';
 import { getMerchantFallbackBanner } from '../../lib/imageFallback';
 import { Star, Clock, Bike, Heart, Store } from 'lucide-react';
-import { useDataStore } from '../../store/dataStore';
 
 interface MerchantCardProps {
   merchant: Merchant;
 }
 
 export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
-  const { favoriteMerchantIds, toggleFavoriteMerchant } = useDataStore();
+  const favorite = useCatalogFavorite('store', merchant.id);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const isFavorite = favoriteMerchantIds.includes(merchant.id);
+  const isFavorite = favorite.isFavorite;
 
   return (
     <Link
@@ -67,9 +67,11 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleFavoriteMerchant(merchant.id);
+            void favorite.toggle();
           }}
           className="absolute top-2.5 right-2.5 touch-target w-9 h-9 rounded-full bg-white/95 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-600 hover:text-primary transition-colors z-10"
+          disabled={favorite.busy}
+          aria-pressed={isFavorite}
           aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
         >
           <Heart
@@ -93,13 +95,14 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
             </span>
             <div className="bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-bold text-ink flex items-center gap-1 shadow-subtle">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="tabular-nums">{merchant.rating.toFixed(1)}</span>
+              <span className="tabular-nums">{merchant.rating == null ? 'Sin valoraciones' : merchant.rating.toFixed(1)}</span>
               <span className="text-gray-500 font-medium tabular-nums">({merchant.ratingCount})</span>
             </div>
           </div>
         )}
       </div>
 
+      {favorite.error && <p role="alert" className="px-4 text-xs text-destructive">{favorite.error}</p>}
       {/* Info Section */}
       <div className="p-4 flex flex-col flex-1 justify-between space-y-3">
         <div>
@@ -118,11 +121,11 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
         <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 text-xs text-gray-600">
           <div className="flex items-center gap-1.5 font-medium">
             <Clock className="w-3.5 h-3.5 text-gray-500" />
-            <span className="tabular-nums">{merchant.prepTimeMinutes + 5}-{merchant.prepTimeMinutes + 20} min</span>
+            <span className="tabular-nums">{merchant.prepTimeMinutes === undefined ? 'Consultar tiempo' : `${merchant.prepTimeMinutes} min de preparación`}</span>
           </div>
           <div className="flex items-center gap-1.5 font-bold text-ink">
             <Bike className="w-3.5 h-3.5 text-primary" />
-            <span className="tabular-nums">Envío: {formatCents(merchant.deliveryFeeCents)}</span>
+            <span className="tabular-nums">{merchant.deliveryFeeCents === undefined ? 'Envío en checkout' : `Envío desde ${formatCents(merchant.deliveryFeeCents)}`}</span>
           </div>
         </div>
       </div>

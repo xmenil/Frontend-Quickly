@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+
+import { useAuthStore } from '../../store/authStore';
+import { operationsApi } from '../../services/api/operationsApi';
+import { allPages } from '../customer/customerAccountModel';
+import { normalizePhone } from '../../services/api/profileAdapter';
+import { useRemote, RemoteState } from '../operations/shared';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
@@ -8,20 +13,45 @@ import { Store, CheckCircle2, Clock } from 'lucide-react';
 import { MerchantCategory } from '../../domain/types';
 
 export const RegisterMerchantPage: React.FC = () => {
-  const { zones } = useDataStore();
+
   const navigate = useNavigate();
+  const auth = useAuthStore();
+  const resource = useRemote('application-Merchant', async signal => {
+    if (!auth.isAuthenticated || auth.sessionStatus !== 'ready') return null;
+    return { zones: await operationsApi.zones(signal), categories: await operationsApi.categories(signal), requests: await allPages(cursor => operationsApi.ownStores({ cursor }, signal)) };
+  });
+  const zones = resource.data?.zones || [];
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [resultStatus, setResultStatus] = useState('');
+  const submitRef = React.useRef(false);
+
 
   const [businessName, setBusinessName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [category, setCategory] = useState<MerchantCategory>('restaurantes');
+  const [ownerName, setOwnerName] = useState(auth.currentUser?.name || '');
+  const [category, setCategory] = useState('');
   const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('962 ');
-  const [zoneId, setZoneId] = useState(zones[0]?.id || 'z_centro');
+  const [phone, setPhone] = useState(auth.currentUser?.phone || '');
+  const [zoneId, setZoneId] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => { setOwnerName(auth.currentUser?.name || ''); setPhone(auth.currentUser?.phone || ''); setIsSubmitted(false); setError(''); setBusinessName(''); setAddress(''); setCategory(''); setZoneId(''); }, [auth.currentUser?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    if (submitRef.current) return;
+    if (!auth.isAuthenticated || !auth.currentUser) { setError('Inicia sesión antes de enviar la solicitud.'); return; }
+    if (!zones.some(zone => zone.id === zoneId && zone.isActive)) { setError('Selecciona una zona activa.'); return; }
+    submitRef.current = true; setBusy(true); setError(''); const owner = auth.currentUser.id;
+    try {
+      const profile = await auth.updateProfile({ name: ownerName.trim() });
+      if (!profile.success) throw new Error(profile.message);
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      const result = await operationsApi.applyStore({ name: businessName.trim(), categoryCode: category, zoneId, addressText: address.trim(), phone: normalizePhone(phone) });
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      setResultStatus(result.status); setIsSubmitted(true); await auth.initialize(true);
+    } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo registrar la solicitud.'); }
+    finally { submitRef.current = false; setBusy(false); }
   };
 
   return (
@@ -36,29 +66,33 @@ export const RegisterMerchantPage: React.FC = () => {
         </p>
       </div>
 
+      <RemoteState loading={resource.loading || auth.sessionStatus === "checking"} error={resource.error || auth.sessionError || undefined} retry={() => { void auth.initialize(); resource.reload(); }} />
+      {!auth.isAuthenticated && auth.sessionStatus === "ready" && <Link to="/login" state={{ from: "/registro/comercio" }} className="inline-flex min-h-11 items-center font-bold text-primary">Iniciar sesión para enviar la solicitud</Link>}
+      {resource.data?.requests.map(request => <p key={request.id} className="rounded-xl border border-primary-100 bg-primary-50 p-3 text-xs">{request.name}: {({ pending: "Pendiente de aprobación", active: "Aprobada", rejected: "Rechazada", suspended: "Suspendida" } as const)[request.status]}{request.statusReason && " · " + request.statusReason}</p>)}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {isSubmitted ? (
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3 animate-in fade-in">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-subtle">
             <Clock className="w-7 h-7" />
           </div>
-          <h2 className="text-base font-bold text-amber-950">Solicitud Enviada con Éxito</h2>
+          <h2 className="text-base font-bold text-amber-950">Solicitud registrada</h2>
           <p className="text-xs text-amber-900 leading-relaxed max-w-xs mx-auto">
             Tu negocio <strong>{businessName}</strong> ha quedado registrado como{' '}
-            <span className="font-semibold text-amber-950">pendiente de aprobación</span> por la administración de Quickly Tingo María.
+            <span className="font-semibold text-amber-950">{resultStatus === "active" ? "aprobada" : resultStatus === "rejected" ? "rechazada" : resultStatus === "suspended" ? "suspendida" : "pendiente de aprobación"}</span> por la administración de Quickly Tingo María.
           </p>
           <div className="p-3 bg-white/90 rounded-xl border border-amber-200 text-xs text-gray-700 flex items-start gap-2 text-left">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <span>
-              En este prototipo interactivo, puedes cambiar al rol de <strong>Admin</strong> desde el menú flotante para aprobar tu negocio al instante.
+              La administración revisará tu solicitud. Los permisos se habilitan únicamente después de su aprobación.
             </span>
           </div>
           <Button
             variant="primary"
             size="md"
             className="w-full mt-2"
-            onClick={() => navigate('/admin/usuarios')}
+            onClick={() => navigate('/cliente/perfil')}
           >
-            Ir al Panel Admin para Aprobar Solicitud
+            Volver a mi cuenta
           </Button>
         </div>
       ) : (
@@ -81,13 +115,10 @@ export const RegisterMerchantPage: React.FC = () => {
           <Select
             label="Categoría"
             value={category}
-            onChange={(e) => setCategory(e.target.value as MerchantCategory)}
+            onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="restaurantes">Restaurantes y Comida</option>
-            <option value="farmacias">Farmacias y Salud</option>
-            <option value="bodegas">Bodegas y Minimarkets</option>
-            <option value="ropa">Ropa y Calzado</option>
-            <option value="emprendedores">Emprendimientos Locales</option>
+            <option value="">Selecciona una categoría</option>
+            {resource.data?.categories.map(entry => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
           </Select>
           <Input
             label="Dirección del local físico"
@@ -101,7 +132,8 @@ export const RegisterMerchantPage: React.FC = () => {
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
           >
-            {zones.map((z) => (
+            <option value="">Selecciona una zona</option>
+            {zones.filter(zone => zone.isActive).map((z) => (
               <option key={z.id} value={z.id}>
                 {z.name}
               </option>
@@ -115,7 +147,7 @@ export const RegisterMerchantPage: React.FC = () => {
             required
           />
 
-          <Button type="submit" variant="primary" size="lg" className="w-full">
+          <Button type="submit" isLoading={busy} disabled={!auth.isAuthenticated || auth.sessionStatus !== "ready" || resource.loading || !!resource.error} variant="primary" size="lg" className="w-full">
             Enviar Solicitud de Comercio
           </Button>
         </form>

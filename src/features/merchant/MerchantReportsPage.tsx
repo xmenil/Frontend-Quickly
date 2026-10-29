@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { useMerchantOrders, useMerchantWorkspace, useMerchantReport } from './merchantOrdersModel';
+import { RemoteState } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
 import { formatCents } from '../../lib/currency';
 import { formatDateTime } from '../../lib/date';
@@ -26,180 +27,23 @@ import {
 type PeriodFilter = 'semana' | 'mes' | 'historico';
 
 export const MerchantReportsPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
-  const { merchants, purchases } = useDataStore();
-
-  const currentMerchant = useMemo(() => {
-    return (
-      (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
-      merchants.find((m) => m.ownerUserId === currentUser?.id) ||
-      merchants[0]
-    );
-  }, [merchants, currentUser]);
-
-  const [period, setPeriod] = useState<PeriodFilter>('semana');
-  const [historySearch, setHistorySearch] = useState('');
-
-  // Todas las órdenes asociadas a este comercio
-  const mySuborders = useMemo(() => {
-    return purchases.flatMap((p) =>
-      p.merchantOrders
-        .filter((mo) => mo.merchantId === currentMerchant.id)
-        .map((mo) => ({
-          ...mo,
-          purchaseCode: p.code,
-          customerName: p.customerName,
-          customerPhone: p.customerPhone,
-          paymentMethod: p.paymentMethod,
-          createdAt: p.createdAt,
-        }))
-    );
-  }, [purchases, currentMerchant.id]);
-
-  // Subpedidos según el filtro de período
-  const filteredSuborders = useMemo(() => {
-    const now = new Date();
-    return mySuborders.filter((order) => {
-      const orderDate = new Date(order.createdAt);
-      if (period === 'semana') {
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return orderDate >= sevenDaysAgo;
-      }
-      if (period === 'mes') {
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return orderDate >= thirtyDaysAgo;
-      }
-      return true; // histórico completo
-    });
-  }, [mySuborders, period]);
-
-  const completedOrders = useMemo(
-    () => filteredSuborders.filter((o) => o.status === 'entregado'),
-    [filteredSuborders]
-  );
-
-  const cancelledOrders = useMemo(
-    () => filteredSuborders.filter((o) => o.status === 'cancelado' || o.status === 'rechazado'),
-    [filteredSuborders]
-  );
-
-  // Ingresos entregados reales (o valor representativo para demo si aún no hay suficientes ventas)
-  const totalRevenueCents = useMemo(() => {
-    const actual = completedOrders.reduce((acc, o) => acc + o.subtotalCents, 0);
-    return actual;
-  }, [completedOrders]);
-
-  const averageTicketCents = useMemo(() => {
-    if (completedOrders.length === 0) return 0;
-    return Math.round(totalRevenueCents / completedOrders.length);
-  }, [totalRevenueCents, completedOrders.length]);
-
-  const deliverySuccessRate = useMemo(() => {
-    if (filteredSuborders.length === 0) return 100;
-    return Math.round((completedOrders.length / filteredSuborders.length) * 100);
-  }, [completedOrders.length, filteredSuborders.length]);
-
-  // Desglose por método de pago (Yape/Plin vs Efectivo vs Tarjeta)
-  const paymentBreakdown = useMemo(() => {
-    let yapeCount = 0;
-    let yapeCents = 0;
-    let cashCount = 0;
-    let cashCents = 0;
-    let cardCount = 0;
-    let cardCents = 0;
-
-    filteredSuborders.forEach((o) => {
-      if (o.paymentMethod === 'yape_plin') {
-        yapeCount += 1;
-        yapeCents += o.subtotalCents;
-      } else if (o.paymentMethod === 'tarjeta') {
-        cardCount += 1;
-        cardCents += o.subtotalCents;
-      } else {
-        cashCount += 1;
-        cashCents += o.subtotalCents;
-      }
-    });
-
-    const totalOrders = filteredSuborders.length || 1;
-    return {
-      yape: {
-        count: yapeCount,
-        cents: yapeCents,
-        pct: Math.round((yapeCount / totalOrders) * 100),
-      },
-      cash: {
-        count: cashCount,
-        cents: cashCents,
-        pct: Math.round((cashCount / totalOrders) * 100),
-      },
-      card: {
-        count: cardCount,
-        cents: cardCents,
-        pct: Math.round((cardCount / totalOrders) * 100),
-      },
-    };
-  }, [filteredSuborders]);
-
-  // Ranking de platos más solicitados
-  const topProducts = useMemo(() => {
-    const map = new Map<string, { name: string; quantity: number; revenueCents: number }>();
-    completedOrders.forEach((o) => {
-      o.items.forEach((item) => {
-        const existing = map.get(item.productId) || {
-          name: item.productName,
-          quantity: 0,
-          revenueCents: 0,
-        };
-        map.set(item.productId, {
-          name: item.productName,
-          quantity: existing.quantity + item.quantity,
-          revenueCents: existing.revenueCents + item.subtotalCents,
-        });
-      });
-    });
-
-    // Si aún hay pocos datos reales en la sesión, complementar con especialidades de carta
-    if (map.size === 0) {
-      map.set('demo_1', {
-        name: 'Tacacho con Cecina y Chorizo Amazónico',
-        quantity: 18,
-        revenueCents: 50400,
-      });
-      map.set('demo_2', {
-        name: 'Juane Tradicional de Gallina de Chacra',
-        quantity: 14,
-        revenueCents: 37100,
-      });
-      map.set('demo_3', {
-        name: 'Costillitas de Cerdo Ahumadas en Salsa de Cocona',
-        quantity: 9,
-        revenueCents: 27900,
-      });
-      map.set('demo_4', {
-        name: 'Refresco Natural de Camu Camu 1L',
-        quantity: 12,
-        revenueCents: 12000,
-      });
-    }
-
-    return Array.from(map.values()).sort((a, b) => b.quantity - a.quantity);
-  }, [completedOrders]);
-
-  // Datos de distribución semanal interactiva (Lunes a Domingo)
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(4); // Viernes por defecto
-
-  const weeklyData = [
-    { day: 'Lun', label: 'Lunes', amountCents: 12000, orders: 4 },
-    { day: 'Mar', label: 'Martes', amountCents: 18500, orders: 6 },
-    { day: 'Mié', label: 'Miércoles', amountCents: 16000, orders: 5 },
-    { day: 'Jue', label: 'Jueves', amountCents: 22000, orders: 8 },
-    { day: 'Vie', label: 'Viernes', amountCents: 34500, orders: 12 },
-    { day: 'Sáb', label: 'Sábado', amountCents: 41000, orders: 15 },
-    { day: 'Dom', label: 'Domingo', amountCents: 38000, orders: 14 },
-  ];
-
-  const maxWeeklyAmount = Math.max(...weeklyData.map((d) => d.amountCents));
+  const workspace = useMerchantWorkspace(); const resource = useMerchantOrders();
+  const currentMerchant = workspace.data?.merchant;
+  const [period, setPeriod] = useState<PeriodFilter>('semana'); const [historySearch, setHistorySearch] = useState('');
+  const report = useMerchantReport(period); const mySuborders = resource.data || [];
+  const filteredSuborders = mySuborders.filter(order => Date.parse(order.createdAt) >= Date.parse(report.range.from) && Date.parse(order.createdAt) < Date.parse(report.range.to));
+  const completedOrders = filteredSuborders.filter(order => order.status === 'entregado');
+  const cancelledOrders = filteredSuborders.filter(order => ['cancelado', 'rechazado'].includes(order.status));
+  const totalRevenueCents = report.data?.deliveredSalesCents ?? 0;
+  const averageTicketCents = report.data?.delivered ? Math.round(report.data.deliveredSalesCents / report.data.delivered) : 0;
+  const deliverySuccessRate = report.data?.orders ? Math.round(report.data.delivered * 100 / report.data.orders) : null;
+  const cashOrders = filteredSuborders.filter(order => order.source.paymentStatus === 'succeeded');
+  const paymentBreakdown = { yape: { count: 0, cents: 0, pct: 0 }, card: { count: 0, cents: 0, pct: 0 },
+    cash: { count: cashOrders.length, cents: report.data?.cashCollectedCents ?? 0, pct: cashOrders.length ? 100 : 0 } };
+  const topProducts: { name: string; quantity: number; revenueCents: number }[] = [];
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const weeklyData: { day: string; label: string; amountCents: number; orders: number }[] = [];
+  const maxWeeklyAmount = 1;
 
   // Historial de transacciones con buscador
   const transactionHistory = useMemo(() => {
@@ -216,6 +60,7 @@ export const MerchantReportsPage: React.FC = () => {
 
   // Exportación oficial a CSV con UTF-8 BOM
   const handleExportCSV = () => {
+    if (resource.loading || resource.error || !currentMerchant) return;
     const headers = [
       'Codigo_Comanda',
       'Fecha_Registro',
@@ -229,16 +74,16 @@ export const MerchantReportsPage: React.FC = () => {
       'Total_Soles',
     ];
 
-    const rows = filteredSuborders.map((o) => {
+    const rows = transactionHistory.map((o) => {
       const itemsList = o.items.map((i) => `${i.quantity}x ${i.productName}`).join('; ');
       return [
         o.purchaseCode,
         formatDateTime(o.createdAt),
-        `"${o.customerName}"`,
-        `"${o.customerPhone}"`,
+        o.customerName,
+        o.customerPhone,
         o.status,
         o.paymentMethod,
-        `"${itemsList}"`,
+        itemsList,
         (o.subtotalCents / 100).toFixed(2),
         (o.deliveryFeeCents / 100).toFixed(2),
         (o.totalCents / 100).toFixed(2),
@@ -246,7 +91,11 @@ export const MerchantReportsPage: React.FC = () => {
     });
 
     const csvString =
-      '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+      '\uFEFF' + [headers.join(','), ...rows.map(row => row.map(value => {
+        const text = String(value);
+        const literal = /^[\s]*[=+@-]/.test(text) ? "'" + text : text;
+        return '"' + literal.split('"').join('""') + '"';
+      }).join(','))].join('\r\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -264,12 +113,18 @@ export const MerchantReportsPage: React.FC = () => {
     [weeklyData]
   );
   const weeklyAvgAmount = useMemo(
-    () => Math.round(weeklyTotalAmount / weeklyData.length),
+    () => weeklyData.length ? Math.round(weeklyTotalAmount / weeklyData.length) : 0,
     [weeklyTotalAmount, weeklyData]
   );
 
+  if (!currentMerchant) return <div className="space-y-4"><RemoteState loading={workspace.loading} error={workspace.error} retry={workspace.reload} />{!workspace.loading && !workspace.error && <p>Selecciona una tienda autorizada.</p>}</div>;
+
   return (
     <div className="max-w-6xl mx-auto space-y-5 pb-20 sm:pb-8">
+      <RemoteState loading={workspace.loading} error={workspace.error} retry={workspace.reload} />
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      <RemoteState loading={report.loading} error={report.error} retry={report.reload} />
+      {report.data && <p className="rounded-xl border border-border bg-surface-subtle p-3 text-xs text-ink-light">{report.data.definition}<br />Efectivo confirmado: {formatCents(report.data.cashCollectedCents)} · Tarifas de reparto: {formatCents(report.data.courierFeesCents)}</p>}
       {/* BLOQUE 1: Cabecera Estilo Power BI, Segmentador de Período y Botón Exportar */}
       <div className="bg-surface border border-border rounded-xl p-4 sm:p-5 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -325,12 +180,13 @@ export const MerchantReportsPage: React.FC = () => {
                   : 'text-ink-light hover:bg-surface-subtle hover:text-ink'
               }`}
             >
-              Histórico
+              Últimos 366 días
             </button>
           </div>
 
           <button
             type="button"
+            disabled={resource.loading || !!resource.error}
             onClick={handleExportCSV}
             className="w-full sm:w-auto h-7.5 sm:h-8 px-3.5 rounded-lg font-bold text-xs bg-primary text-white hover:bg-primary-hover border border-primary transition-all flex items-center justify-center gap-1.5 shadow-subtle select-none active:scale-[0.99]"
           >
@@ -342,7 +198,7 @@ export const MerchantReportsPage: React.FC = () => {
 
       {/* BLOQUE 2: 4 Tarjetas KPI Básicas, Simples y Compactas (Sin muchos colores) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* KPI 1: Ingresos Entregados */}
+        {/* KPI 1: Ventas Entregadas */}
         <div className="bg-surface p-3 sm:p-3.5 rounded-xl border border-border shadow-subtle space-y-1">
           <div className="flex items-center justify-between text-ink-light">
             <span className="text-xs font-semibold text-ink-light">
@@ -351,10 +207,10 @@ export const MerchantReportsPage: React.FC = () => {
             <Receipt className="w-4 h-4 text-ink-muted" />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl font-black text-ink tabular-nums tracking-tight">
-            {formatCents(totalRevenueCents > 0 ? totalRevenueCents : 182000)}
+            {report.loading || report.error ? "—" : formatCents(totalRevenueCents)}
           </p>
           <div className="text-[11px] text-ink-muted pt-0.5">
-            <span>▲ +14.2% vs periodo anterior</span>
+            <span>Ventas entregadas, incluido envío</span>
           </div>
         </div>
 
@@ -367,10 +223,10 @@ export const MerchantReportsPage: React.FC = () => {
             <ShoppingBag className="w-4 h-4 text-ink-muted" />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl font-black text-ink tabular-nums tracking-tight">
-            {formatCents(averageTicketCents > 0 ? averageTicketCents : 2650)}
+            {report.loading || report.error ? "—" : formatCents(averageTicketCents)}
           </p>
           <div className="text-[11px] text-ink-muted pt-0.5">
-            <span>▲ +4.8% por comanda</span>
+            <span>Promedio de pedidos entregados</span>
           </div>
         </div>
 
@@ -383,10 +239,10 @@ export const MerchantReportsPage: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-ink-muted" />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl font-black text-ink tabular-nums tracking-tight">
-            {deliverySuccessRate}%
+            {report.loading || report.error || deliverySuccessRate == null ? "—" : deliverySuccessRate + "%"}
           </p>
           <div className="text-[11px] text-ink-muted pt-0.5">
-            <span>{completedOrders.length > 0 ? completedOrders.length : 1} entregas finalizadas</span>
+            <span>{report.loading || report.error ? "—" : report.data?.delivered ?? 0} entregas finalizadas</span>
           </div>
         </div>
 
@@ -399,10 +255,10 @@ export const MerchantReportsPage: React.FC = () => {
             <Clock className="w-4 h-4 text-ink-muted" />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl font-black text-ink tabular-nums tracking-tight">
-            12:30 - 2:00 PM
+            No disponible
           </p>
           <div className="text-[11px] text-ink-muted pt-0.5">
-            <span>Horario de almuerzo local</span>
+            <span>Sin agregado de hora pico en la API</span>
           </div>
         </div>
       </div>
@@ -424,7 +280,7 @@ export const MerchantReportsPage: React.FC = () => {
           </div>
 
           {/* Tarjeta de Drill-down / Selección Power BI con Bordes Suaves */}
-          {selectedDayIndex !== null && (
+          {selectedDayIndex !== null && weeklyData[selectedDayIndex] && (
             <div className="bg-slate-50 border border-border rounded-lg px-2.5 sm:px-3 py-1.5 text-xs self-start sm:self-auto flex flex-wrap items-center gap-1.5 sm:gap-2 shadow-xs max-w-full">
               <span className="font-extrabold text-primary uppercase text-[10px] sm:text-[11px]">
                 {weeklyData[selectedDayIndex].label}:
@@ -453,7 +309,7 @@ export const MerchantReportsPage: React.FC = () => {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="w-4 h-0.5 bg-amber-500 border-t border-dashed border-amber-600 inline-block"></span>
-              <span className="font-semibold text-amber-700">Línea Promedio: {formatCents(weeklyAvgAmount)}</span>
+              <span className="font-semibold text-amber-700">Línea Promedio: —</span>
             </span>
           </div>
           <span className="text-[10px] text-ink-muted">
@@ -482,19 +338,20 @@ export const MerchantReportsPage: React.FC = () => {
             {/* Etiqueta de la línea de promedio con bordes suaves sin tapar ninguna columna */}
             <rect x="52" y="100" width="94" height="15" rx="3" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1" />
             <text x="99" y="111" textAnchor="middle" fontSize="8.5" fill="#92400E" fontWeight="bold" fontFamily="monospace">
-              PROM: S/ 260.00
+              PROM: —
             </text>
 
             {/* Eje X Línea Base (Baseline) */}
             <line x1="50" y1="195" x2="690" y2="195" stroke="#94A3B8" strokeWidth="1.5" />
 
             {/* Etiquetas del eje Y (Power BI Axis Labels) */}
-            <text x="44" y="49" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">S/ 450</text>
-            <text x="44" y="99" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">S/ 300</text>
-            <text x="44" y="149" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">S/ 150</text>
-            <text x="44" y="199" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">S/ 0</text>
+            <text x="44" y="49" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">—</text>
+            <text x="44" y="99" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">—</text>
+            <text x="44" y="149" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">—</text>
+            <text x="44" y="199" textAnchor="end" fontSize="10" fill="#64748B" fontWeight="bold" fontFamily="monospace">—</text>
 
             {/* Columnas Power BI con bordes rectos sutiles (rx="2" bordes no exagerados) y Data Labels superiores */}
+            {!weeklyData.length && <text x="370" y="145" textAnchor="middle" fontSize="12" fill="#64748b">Serie semanal no disponible en la API</text>}
             {weeklyData.map((item, idx) => {
               const barWidth = 52;
               const x = 65 + idx * 88;
@@ -607,6 +464,7 @@ export const MerchantReportsPage: React.FC = () => {
           </div>
 
           <div className="space-y-3">
+            {!topProducts.length && <p className="text-sm text-ink-light">El ranking de productos no está disponible en el contrato actual.</p>}
             {topProducts.slice(0, 4).map((p, idx) => {
               const maxQty = topProducts[0].quantity || 1;
               const pct = Math.round((p.quantity / maxQty) * 100);
@@ -679,10 +537,10 @@ export const MerchantReportsPage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="font-black text-ink tabular-nums font-mono text-xs sm:text-sm">
-                    {paymentBreakdown.yape.pct || 65}%
+                    {paymentBreakdown.yape.pct}%
                   </span>
                   <span className="text-[11px] text-ink-muted block tabular-nums font-mono">
-                    {paymentBreakdown.yape.count} tx ({formatCents(paymentBreakdown.yape.cents || 118300)})
+                    {paymentBreakdown.yape.count} tx ({formatCents(paymentBreakdown.yape.cents)})
                   </span>
                 </div>
               </div>
@@ -690,7 +548,7 @@ export const MerchantReportsPage: React.FC = () => {
               <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-md relative overflow-hidden">
                 <div
                   className="bg-primary h-full rounded-md transition-all duration-300"
-                  style={{ width: `${paymentBreakdown.yape.pct || 65}%` }}
+                  style={{ width: `${paymentBreakdown.yape.pct}%` }}
                 />
               </div>
             </div>
@@ -706,10 +564,10 @@ export const MerchantReportsPage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="font-black text-ink tabular-nums font-mono text-xs sm:text-sm">
-                    {paymentBreakdown.cash.pct || 30}%
+                    {report.loading || report.error || resource.loading || resource.error ? "—" : paymentBreakdown.cash.pct + "%"}
                   </span>
                   <span className="text-[11px] text-ink-muted block tabular-nums font-mono">
-                    {paymentBreakdown.cash.count} tx ({formatCents(paymentBreakdown.cash.cents || 54600)})
+                    {report.loading || report.error || resource.loading || resource.error ? "Sin datos confirmados" : paymentBreakdown.cash.count + " tx (" + formatCents(paymentBreakdown.cash.cents) + ")"}
                   </span>
                 </div>
               </div>
@@ -717,7 +575,7 @@ export const MerchantReportsPage: React.FC = () => {
               <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-md relative overflow-hidden">
                 <div
                   className="bg-selva h-full rounded-md transition-all duration-300"
-                  style={{ width: `${paymentBreakdown.cash.pct || 30}%` }}
+                  style={{ width: `${paymentBreakdown.cash.pct}%` }}
                 />
               </div>
             </div>
@@ -729,14 +587,14 @@ export const MerchantReportsPage: React.FC = () => {
                   <span className="p-1 rounded-md bg-info-soft text-info border border-info-border">
                     <CreditCard className="w-3.5 h-3.5" />
                   </span>
-                  <span>Tarjeta Débito / Crédito</span>
+                  <span>Tarjeta Débito / Crédito (no habilitada)</span>
                 </div>
                 <div className="text-right">
                   <span className="font-black text-ink tabular-nums font-mono text-xs sm:text-sm">
-                    {paymentBreakdown.card.pct || 5}%
+                    {paymentBreakdown.card.pct}%
                   </span>
                   <span className="text-[11px] text-ink-muted block tabular-nums font-mono">
-                    {paymentBreakdown.card.count} tx ({formatCents(paymentBreakdown.card.cents || 9100)})
+                    {paymentBreakdown.card.count} tx ({formatCents(paymentBreakdown.card.cents)})
                   </span>
                 </div>
               </div>
@@ -744,7 +602,7 @@ export const MerchantReportsPage: React.FC = () => {
               <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-md relative overflow-hidden">
                 <div
                   className="bg-info h-full rounded-md transition-all duration-300"
-                  style={{ width: `${paymentBreakdown.card.pct || 5}%` }}
+                  style={{ width: `${paymentBreakdown.card.pct}%` }}
                 />
               </div>
             </div>

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { adminTicket, decideAdminTicket, loadAdminTickets, useAdminAction, useAdminResource } from './adminModel';
+import { engagementApi } from '../../services/api/engagementApi';
+import { useAuthStore } from '../../store/authStore';
+import { RemoteState } from '../operations/shared';
 import { formatDateTime } from '../../lib/date';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -10,19 +13,24 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { AlertCircle, CheckCircle2, MessageSquare, Search } from 'lucide-react';
 
 export const AdminTicketsPage: React.FC = () => {
-  const { tickets, resolveSupportTicket } = useDataStore();
+  const owner = useAuthStore(state => state.currentUser?.id || '');
+  const resource = useAdminResource('tickets', async signal => (await loadAdminTickets(signal)).map(adminTicket));
+  const tickets = resource.data || [];
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [responseMsg, setResponseMsg] = useState('');
   const [responseError, setResponseError] = useState('');
-  const [actionError, setActionError] = useState('');
-  const [notice, setNotice] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId);
+  const detail = useAdminResource('ticket:' + (selectedTicketId || ''), signal => selectedTicketId ? engagementApi.ticket(true, selectedTicketId, signal) : Promise.resolve(null));
+  const selectedTicket = detail.data ? adminTicket(detail.data) : undefined;
+  const actions = useAdminAction(() => { resource.reload(); detail.reload(); }, resource.loading || !!resource.error || detail.loading || !!detail.error);
+  const [nextStatus, setNextStatus] = useState<'open' | 'in_review' | 'resolved'>('resolved');
+  const [nextPriority, setNextPriority] = useState<'low' | 'normal' | 'high'>('normal');
+  const [reopen, setReopen] = useState(false);
   const hasFilters = Boolean(searchQuery || statusFilter !== 'all');
-  const statusLabels = { abierto: 'Abierto', en_revision: 'En revisión', resuelto: 'Resuelto' };
-  const roleLabels = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
-  const priorityLabels = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+  const statusLabels: Record<string, string> = { abierto: 'Abierto', en_revision: 'En revisión', resuelto: 'Resuelto' };
+  const roleLabels: Record<string, string> = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
+  const priorityLabels: Record<string, string> = { baja: 'Baja', media: 'Media', alta: 'Alta' };
   const filteredTickets = tickets.filter((ticket) => {
     const query = searchQuery.trim().toLowerCase();
     return (statusFilter === 'all' || ticket.status === statusFilter) &&
@@ -33,33 +41,19 @@ export const AdminTicketsPage: React.FC = () => {
   const openTicket = (id: string) => {
     setResponseMsg('');
     setResponseError('');
-    setActionError('');
-    setNotice('');
+
+
+    actions.clear(); setReopen(false); setNextStatus('resolved'); setNextPriority(tickets.find(ticket => ticket.id === id)?.source.priority || 'normal');
     setSelectedTicketId(id);
   };
 
-  const handleResolve = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!selectedTicket || selectedTicket.status === 'resuelto') return;
-    if (!responseMsg.trim()) {
-      setResponseError('Escribe cómo se resolvió la incidencia antes de continuar.');
-      return;
-    }
+  const handleResolve = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (!detail.data || !owner) return;
+    if (!responseMsg.trim()) { setResponseError('Escribe una respuesta antes de continuar.'); return; }
     setResponseError('');
-    setActionError('');
-    try {
-      resolveSupportTicket(selectedTicket.id, responseMsg);
-      const updated = useDataStore.getState().tickets.find((ticket) => ticket.id === selectedTicket.id);
-      if (updated?.status !== 'resuelto' || updated.response !== responseMsg) {
-        setActionError('No se pudo guardar la resolución. Revisa el caso e inténtalo nuevamente.');
-        return;
-      }
-      setNotice(`Incidencia resuelta: ${selectedTicket.subject}.`);
-      setSelectedTicketId(null);
-    } catch {
-      setActionError('No se pudo completar la acción. Revisa el caso antes de volver a intentarlo.');
-    }
+    if (await actions.execute(() => decideAdminTicket(detail.data!, { status: nextStatus, priority: nextPriority, body: responseMsg.trim() }, owner), 'Respuesta y estado del caso confirmados.')) setSelectedTicketId(null);
   };
+  if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
 
   return (
     <div className="space-y-6">
@@ -82,7 +76,9 @@ export const AdminTicketsPage: React.FC = () => {
         {hasFilters && <Button type="button" variant="outline" size="sm" onClick={clearFilters}>Limpiar filtros</Button>}
       </section>
 
-      {notice && <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{notice}</p></div>}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actions.notice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">{actions.notice}</p>}
+
 
       <section aria-labelledby="admin-tickets-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -118,7 +114,7 @@ export const AdminTicketsPage: React.FC = () => {
                     <td className="block py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                       <p className="mb-1 text-xs text-ink-muted xl:hidden">Usuario</p>
                       <p className="break-words text-sm text-ink">{ticket.userName}</p>
-                      <p className="mt-1 text-xs text-ink-muted">{roleLabels[ticket.userRole]}</p>
+                      <p className="mt-1 text-xs text-ink-muted">{roleLabels[ticket.userRole] || 'Rol no informado'}</p>
                     </td>
                     <td className="flex items-start justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                       <span className="text-xs text-ink-muted xl:hidden">Estado y prioridad</span>
@@ -145,37 +141,42 @@ export const AdminTicketsPage: React.FC = () => {
         )}
       </section>
 
-      <Dialog isOpen={Boolean(selectedTicketId)} onClose={() => setSelectedTicketId(null)} title={selectedTicket?.status === 'resuelto' ? 'Detalle de la incidencia' : 'Resolver incidencia'} description={selectedTicket?.subject} maxWidth="md">
+      <Dialog isOpen={Boolean(selectedTicketId)} onClose={() => { if (!actions.busy) setSelectedTicketId(null); }} title={selectedTicket?.status === 'resuelto' ? 'Detalle de la incidencia' : 'Resolver incidencia'} description={selectedTicket?.subject} maxWidth="md">
+        <RemoteState loading={detail.loading} error={detail.error} retry={detail.reload} />
         {selectedTicket && (
           <div className="space-y-6">
             <div className="space-y-2 text-sm">
-              <p className="break-words font-semibold text-ink">{selectedTicket.userName} · {roleLabels[selectedTicket.userRole]}</p>
+              <p className="break-words font-semibold text-ink">{selectedTicket.userName} · {roleLabels[selectedTicket.userRole] || 'Rol no informado'}</p>
               <p className="break-words whitespace-pre-wrap text-ink-light">{selectedTicket.description}</p>
               {selectedTicket.orderId && <p className="break-all text-xs text-ink-muted">Referencia de pedido: {selectedTicket.orderId}</p>}
             </div>
-            {selectedTicket.status === 'resuelto' ? (
+            <div className="space-y-3">{detail.data?.messages.map(message => <div key={message.id} className="rounded-xl border border-border bg-surface-subtle p-3 text-sm"><p className="break-all text-xs text-ink-muted">{message.authorUserId === owner ? 'Tú' : message.authorUserId} · {formatDateTime(message.createdAt)}</p><p className="whitespace-pre-wrap break-words text-ink-light">{message.body}</p></div>)}</div>
+            {selectedTicket.status === 'resuelto' && !reopen ? (
               <>
                 <div className="space-y-2 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">
                   <h3 className="font-semibold">Respuesta de resolución</h3>
                   <p className="break-words whitespace-pre-wrap">{selectedTicket.response || 'No hay una respuesta registrada.'}</p>
                   {selectedTicket.resolvedAt && <p className="text-xs tabular-nums">Resuelta: {formatDateTime(selectedTicket.resolvedAt)}</p>}
                 </div>
+                <Button type="button" variant="outline" disabled={actions.busy || detail.loading || !!detail.error} onClick={() => { setReopen(true); setNextStatus('open'); }}>Reabrir caso</Button>
                 <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedTicketId(null)}>Cerrar</Button>
               </>
             ) : (
               <form noValidate onSubmit={handleResolve} className="space-y-6">
+                <Select id="admin-ticket-next-status" label="Nuevo estado" value={nextStatus} onChange={event => setNextStatus(event.target.value as typeof nextStatus)}><option value="open">Abierto</option><option value="in_review">En revisión</option><option value="resolved">Resuelto</option></Select>
+                <Select id="admin-ticket-priority" label="Prioridad del caso" value={nextPriority} onChange={event => setNextPriority(event.target.value as typeof nextPriority)}><option value="low">Baja</option><option value="normal">Media</option><option value="high">Alta</option></Select>
                 <div className="space-y-2">
-                  <label htmlFor="admin-ticket-response" className="block text-sm font-semibold text-ink">Respuesta de resolución <span className="text-primary">*</span></label>
+                  <label htmlFor="admin-ticket-response" className="block text-sm font-semibold text-ink">Respuesta del caso <span className="text-primary">*</span></label>
                   <textarea id="admin-ticket-response" value={responseMsg} onChange={(event) => { setResponseMsg(event.target.value); setResponseError(''); }}
-                    rows={4} required aria-invalid={Boolean(responseError)} aria-describedby={responseError ? 'admin-ticket-response-error' : 'admin-ticket-response-help'}
+                    rows={4} maxLength={3000} required aria-invalid={Boolean(responseError)} aria-describedby={responseError ? 'admin-ticket-response-error' : 'admin-ticket-response-help'}
                     placeholder="Explica cómo se resolvió la incidencia"
                     className={`w-full min-h-11 rounded-xl border bg-surface p-3 text-base text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary md:text-sm ${responseError ? 'border-destructive' : 'border-field'}`} />
                   {responseError ? <p id="admin-ticket-response-error" role="alert" className="text-xs text-destructive">{responseError}</p> : <p id="admin-ticket-response-help" className="text-xs text-ink-muted">La respuesta quedará registrada en el caso.</p>}
                 </div>
-                {actionError && <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{actionError}</p></div>}
+                {actions.error && <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{actions.error}</p></div>}
                 <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setSelectedTicketId(null)}>Cancelar</Button>
-                  <Button type="submit" variant="primary" size="sm">Resolver incidencia</Button>
+                  <Button type="button" variant="outline" size="sm" disabled={actions.busy} onClick={() => setSelectedTicketId(null)}>Cancelar</Button>
+                  <Button type="submit" variant="primary" size="sm" disabled={actions.busy || resource.loading || !!resource.error || detail.loading || !!detail.error || !responseMsg.trim()}>Guardar respuesta y estado</Button>
                 </div>
               </form>
             )}

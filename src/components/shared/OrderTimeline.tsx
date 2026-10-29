@@ -93,7 +93,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
                       {isLatest && (
                         <span className="inline-flex items-center gap-1 text-[10px] bg-primary text-white font-bold px-2 py-0.5 rounded-full shadow-xs shrink-0">
                           <Radio className="w-2.5 h-2.5 animate-pulse" />
-                          <span>En curso</span>
+                          <span>{['entregado', 'cancelado', 'rechazado'].includes(event.status) ? 'Estado final' : 'Último estado'}</span>
                         </span>
                       )}
                     </div>
@@ -135,13 +135,13 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
               {/* Event Footer / Responsible Actor */}
               <div className="mt-3 pt-2.5 border-t border-gray-100 text-[11px] text-gray-500 flex flex-wrap items-center justify-between gap-2 pl-9.5 sm:pl-10.5">
                 <span>
-                  Responsable: <strong className="text-ink font-semibold">{event.actor}</strong>
+                  Responsable: <strong className="text-ink font-semibold">{event.actor || 'No informado'}</strong>
                 </span>
 
                 {isLatest && event.status === 'en_camino' && (
                   <span className="text-primary font-bold flex items-center gap-1 shrink-0">
                     <Bike className="w-3.5 h-3.5" />
-                    <span>Llegada estimada en moto: 10-15 min</span>
+                    <span>Pedido en camino a tu dirección</span>
                   </span>
                 )}
               </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { BrandLogo } from '../components/shared/BrandLogo';
-import { DemoSwitcher } from '../components/shared/DemoSwitcher';
+import { RoleSwitcher } from '../components/shared/RoleSwitcher';
 import { ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export const AuthLayout: React.FC = () => {
@@ -62,7 +62,7 @@ export const AuthLayout: React.FC = () => {
         </div>
       </footer>
 
-      <DemoSwitcher />
+      <RoleSwitcher />
     </div>
   );
 };

@@ -1,13 +1,13 @@
 import React from 'react';
-import { formatCents } from '../../lib/currency';
-import { MerchantCartGroup } from '../../domain/pricingRules';
+import { formatCents as formatMoney } from '../../lib/currency';
+const formatCents = (amount: number | null) => amount === null ? 'Por cotizar' : formatMoney(amount);
 import { Store } from 'lucide-react';
 
 interface PriceSummaryProps {
-  groups: MerchantCartGroup[];
-  itemsSubtotalCents: number;
-  totalDeliveryFeeCents: number;
-  grandTotalCents: number;
+  groups: { merchant: { id: string; name: string }; subtotalCents: number | null; deliveryFeeCents: number }[];
+  itemsSubtotalCents: number | null;
+  totalDeliveryFeeCents: number | null;
+  grandTotalCents: number | null;
   showBreakdown?: boolean;
   deliveryIsEstimate?: boolean;
 }

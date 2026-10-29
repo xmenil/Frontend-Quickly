@@ -1,17 +1,4 @@
-import { getBackendUrl, getSessionToken } from '../../lib/api';
-
-function getBaseApiUrl(): string {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
-  }
-  const backend = getBackendUrl();
-  if (backend && (typeof window === 'undefined' || !backend.includes(window.location.host))) {
-    return `${backend.replace(/\/$/, '')}/api/v1`;
-  }
-  return '/api/v1';
-}
-
-let csrfToken: string | undefined;
+import { getCsrfToken, resolveApiUrl, setCsrfToken as storeCsrfToken } from '../../lib/api';
 let generation = 0;
 let unauthorizedHandler: (() => void) | undefined;
 const pending = new Set<AbortController>();
@@ -19,11 +6,11 @@ const pending = new Set<AbortController>();
 export class ApiError extends Error {
   constructor(message: string, public status: number, public code: string, public requestId?: string) { super(message); }
 }
-export function setCsrfToken(token?: string) { csrfToken = token; }
+export function setCsrfToken(token?: string) { storeCsrfToken(token ?? null); }
 export function onUnauthorized(handler: () => void) { unauthorizedHandler = handler; }
 export function resetApiSession() {
   generation++;
-  csrfToken = undefined;
+  storeCsrfToken(null);
   for (const controller of pending) controller.abort();
   pending.clear();
 }
@@ -35,6 +22,8 @@ interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   publicRequest?: boolean;
+  // Public catalog data remains valid when a session is restored or closed.
+  sessionIndependent?: boolean;
 }
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
@@ -43,21 +32,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.signal?.aborted) abort();
   options.signal?.addEventListener('abort', abort, { once: true });
   const timer = setTimeout(abort, options.timeoutMs ?? 15000);
-  pending.add(controller);
+  if (!options.sessionIndependent) pending.add(controller);
   try {
     const method = options.method || 'GET';
     const headers: Record<string, string> = { Accept: 'application/json', ...options.headers };
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+    const csrfToken = getCsrfToken();
     if (csrfToken && method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
 
-    const token = getSessionToken();
-    if (token && !headers['Authorization']) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    const baseUrl = getBaseApiUrl();
-    const response = await fetch(`${baseUrl}${cleanPath}`, {
+    const response = await fetch(resolveApiUrl(path), {
       method,
       headers,
       credentials: 'include',
@@ -65,10 +48,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: controller.signal,
     });
-    if (requestGeneration !== generation) throw new ApiError('La solicitud pertenece a una sesión anterior.', 0, 'REQUEST_SUPERSEDED');
+    if (!options.sessionIndependent && requestGeneration !== generation) throw new ApiError('La solicitud pertenece a una sesión anterior.', 0, 'REQUEST_SUPERSEDED');
     if (response.status === 204) return undefined as T;
     const payload = await response.json().catch(() => null);
-    if (requestGeneration !== generation) throw new ApiError('La solicitud pertenece a una sesión anterior.', 0, 'REQUEST_SUPERSEDED');
+    if (!options.sessionIndependent && requestGeneration !== generation) throw new ApiError('La solicitud pertenece a una sesión anterior.', 0, 'REQUEST_SUPERSEDED');
     if (!response.ok) {
       const message = Array.isArray(payload?.message) ? payload.message.join('. ') : payload?.message;
       const error = new ApiError(message || 'No se pudo completar la solicitud.', response.status, payload?.code || 'HTTP_ERROR', payload?.requestId);

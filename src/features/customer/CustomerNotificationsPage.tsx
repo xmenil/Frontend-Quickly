@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { useCustomerNotifications, accountChanged } from './customerAccountModel';
+import { engagementApi } from '../../services/api/engagementApi';
+import { RemoteState } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
 import { formatDateTime } from '../../lib/date';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -19,16 +21,14 @@ import {
 } from 'lucide-react';
 
 export const CustomerNotificationsPage: React.FC = () => {
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useDataStore();
+  const resource = useCustomerNotifications();
+  const userNotifications = resource.data || [];
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const busyRef = React.useRef(false);
+  async function markNotificationAsRead(id?: string) { if (busyRef.current) return; busyRef.current = true; setBusy(true); setActionError(""); const owner = currentUser?.id; try { await engagementApi.read(id); if (useAuthStore.getState().currentUser?.id === owner) accountChanged("notifications"); } catch (e) { setActionError(e instanceof Error ? e.message : "No se pudo marcar la notificación."); } finally { busyRef.current = false; setBusy(false); } }
   const { currentUser } = useAuthStore();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-
-  // Filter notifications for this user (or fallback to demo user if not explicitly assigned)
-  const userNotifications = useMemo(() => {
-    return notifications
-      .filter((n) => (currentUser ? n.userId === currentUser.id : true))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [notifications, currentUser]);
 
   const unreadCount = useMemo(
     () => userNotifications.filter((n) => !n.isRead).length,
@@ -87,14 +87,15 @@ export const CustomerNotificationsPage: React.FC = () => {
             )}
           </div>
           <p className="text-xs sm:text-sm text-ink-light mt-1">
-            Actualizaciones en tiempo real de tus pedidos en Tingo María y avisos de la plataforma
+            Actualizaciones de tus pedidos en Tingo María y avisos de la plataforma
           </p>
         </div>
 
         {unreadCount > 0 && (
           <button
             type="button"
-            onClick={() => markAllNotificationsAsRead(currentUser?.id)}
+            disabled={busy}
+            onClick={() => void markNotificationAsRead()}
             className="touch-target inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover bg-primary-50/70 hover:bg-primary-50 border border-primary-100 px-3.5 py-2 rounded-xl transition-all self-start sm:self-center"
           >
             <CheckCheck className="w-4 h-4 text-primary" />
@@ -129,8 +130,10 @@ export const CustomerNotificationsPage: React.FC = () => {
         </button>
       </div>
 
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
       {/* Notifications List */}
-      {displayedNotifications.length === 0 ? (
+      {resource.loading || resource.error ? null : displayedNotifications.length === 0 ? (
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-3 shadow-subtle">
           <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
             <Bell className="w-7 h-7" />
@@ -238,7 +241,8 @@ export const CustomerNotificationsPage: React.FC = () => {
                   <div className="self-end sm:self-center pl-6 sm:pl-0 flex-shrink-0">
                     <button
                       type="button"
-                      onClick={() => markNotificationAsRead(notif.id)}
+                      disabled={busy}
+                      onClick={() => void markNotificationAsRead(notif.id)}
                       className="touch-target inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary bg-white hover:bg-primary-50 border border-gray-200 hover:border-primary-200 px-3 py-2 rounded-xl transition-all shadow-subtle min-h-[44px]"
                       aria-label="Marcar como leída"
                     >

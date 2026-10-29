@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { useRealCartStore } from '../../store/realCartStore';
+import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { preferredSku, purchasableSku } from '../../domain/catalogRules';
+import { RemoteState, useRemote } from '../operations/shared';
 import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
-import { INITIAL_PRODUCTS, INITIAL_MERCHANTS } from '../../mocks/initialData';
-import { operationsApi, Zone } from '../../services/api/operationsApi';
+import { operationsApi } from '../../services/api/operationsApi';
 import { ProductDetailModal } from './ProductDetailModal';
 import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
 import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
@@ -33,45 +35,16 @@ import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
 import heroSmartphoneView from '../../assets/img/image copy 4.png';
 
 
-const FALLBACK_FEATURED_PRODUCTS: CatalogProduct[] = INITIAL_PRODUCTS.slice(0, 8).map((p) => ({
-  id: p.id,
-  storeId: p.merchantId,
-  storeName: INITIAL_MERCHANTS.find((m) => m.id === p.merchantId)?.name || "Comercio Local",
-  categoryId: "c85594f9-080c-4b27-9e59-b93d8abcfdc8",
-  name: p.name,
-  description: p.description,
-  brand: null,
-  isActive: p.isAvailable ?? true,
-  position: 0,
-  skus: [
-    {
-      id: p.id,
-      skuCode: `SKU-${p.id}`,
-      variantName: "Estándar",
-      priceCents: p.priceCents,
-      barcode: null,
-      isActive: true,
-      availableStock: p.stock,
-    },
-  ],
-  images: [
-    {
-      id: p.id,
-      url: p.imageUrl,
-      altText: p.name,
-      position: 0,
-    },
-  ],
-}));
-
 export function HomePage() {
-  const { isAuthenticated, currentUser, activeRole, switchRole, loginDemo } = useAuthStore();
-  const add = useRealCartStore((s) => s.add);
+  const { isAuthenticated, currentUser, activeRole, switchRole, roles } = useAuthStore();
   const navigate = useNavigate();
 
-  const [featuredProducts, setFeaturedProducts] = useState<CatalogProduct[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const categoriesResource = useRemote('home-categories', signal => catalogApi.categories(signal));
+  const featured = useRemote('home-featured', signal => catalogApi.search({ limit: 4 }, signal));
+  const coverage = useRemote('home-zones', signal => operationsApi.zones(signal));
+  const featuredProducts = featured.data?.items || [];
+  const zones = coverage.data?.filter(zone => zone.isActive) || [];
+  const [addError, setAddError] = useState('');
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
@@ -97,7 +70,7 @@ export function HomePage() {
       badge: 'Restaurantes, Bodegas, Farmacias y más',
       title: 'Todo lo que necesitas, en un solo lugar',
       description:
-        'Comida típica, abarrotes de Minisol, medicamentos y productos de la selva al instante.',
+        'Explora los productos publicados por los comercios disponibles en tu zona.',
       ctaText: 'Ver categorías',
       ctaLink: '/negocios',
     },
@@ -105,16 +78,16 @@ export function HomePage() {
       id: 2,
       image: heroMotorcycleDelivery,
       badge: 'Envíos Express Tingo María',
-      title: 'Pollería Rubén & Sabores de la Selva',
+      title: 'Descubre sabores y comercios locales',
       description:
-        'Pollo a la brasa con papas nativas, tacacho con cecina y comidas calientes en 20-35 min.',
+        'Consulta precios, disponibilidad y condiciones de entrega antes de pedir.',
       ctaText: 'Pedir comida caliente',
-      ctaLink: '/negocios?categoria=restaurantes',
+      ctaLink: '/negocios',
     },
     {
       id: 3,
       image: heroSmartphoneView,
-      badge: 'Supermercado Minisol & Farmacias',
+      badge: 'Productos para tu día a día',
       title: 'Tus compras del hogar directo a tu puerta',
       description:
         'Abarrotes frescos, boticas y productos locales con entrega rápida y pago contra entrega en efectivo.',
@@ -132,105 +105,41 @@ export function HomePage() {
   }, [heroSlides.length]);
 
   // 5 Categorías destacadas del prototipo v2 (Restaurantes, Bodegas, Farmacias, Ropa, Emprendedores)
-  const mainCategoryCards = [
-    {
-      id: 'restaurantes',
-      name: 'Restaurantes',
-      icon: <UtensilsCrossed className="w-6 h-6 text-primary stroke-[2.2]" />,
-      link: '/negocios?categoria=restaurantes',
-    },
-    {
-      id: 'bodegas',
-      name: 'Bodegas',
-      icon: <ShoppingCart className="w-6 h-6 text-primary stroke-[2.2]" />,
-      link: '/negocios?categoria=bodegas',
-    },
-    {
-      id: 'farmacias',
-      name: 'Farmacias',
-      icon: <PlusCircle className="w-6 h-6 text-primary stroke-[2.2]" />,
-      link: '/negocios?categoria=farmacias',
-    },
-    {
-      id: 'ropa',
-      name: 'Ropa',
-      icon: <Shirt className="w-6 h-6 text-primary stroke-[2.2]" />,
-      link: '/negocios?categoria=ropa',
-    },
-    {
-      id: 'emprendedores',
-      name: 'Emprendedores',
-      icon: <Sprout className="w-6 h-6 text-primary stroke-[2.2]" />,
-      link: '/negocios?categoria=emprendedores',
-    },
-  ];
-
-  // Load real featured products and zones from PostgreSQL
-  useEffect(() => {
-    let isMounted = true;
-
-    Promise.all([
-      catalogApi.search({ limit: 4 }),
-      operationsApi.zones(),
-    ])
-      .then(([prodRes, zonesRes]) => {
-        if (isMounted) {
-          setFeaturedProducts(prodRes.items && prodRes.items.length > 0 ? prodRes.items : FALLBACK_FEATURED_PRODUCTS);
-          setZones(zonesRes.filter((z) => z.isActive));
-          setLoadingFeatured(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Error al cargar datos de portada:', err);
-        if (isMounted) {
-          setFeaturedProducts(FALLBACK_FEATURED_PRODUCTS);
-          setLoadingFeatured(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const categoryIcons = [UtensilsCrossed, ShoppingCart, PlusCircle, Shirt, Sprout];
+  const mainCategoryCards = (categoriesResource.error ? [] : categoriesResource.data || []).slice(0, 5).map((category, index) => { const Icon = categoryIcons[index]; return { id: category.id, name: category.name, icon: <Icon className="w-6 h-6 text-primary stroke-[2.2]" />, link: '/negocios?categoriaProducto=' + encodeURIComponent(category.id) }; });
 
   const handleAddFeatured = (e: React.MouseEvent, product: CatalogProduct) => {
     e.stopPropagation();
     e.preventDefault();
 
-    const sku = product.skus.find((s) => s.isActive && s.availableStock > 0) || product.skus[0];
+    const sku = purchasableSku(product);
     if (!sku) return;
 
     try {
-      add(
-        {
-          skuId: sku.id,
-          productId: product.id,
-          storeId: product.storeId,
-        },
-        1
-      );
+      addCatalogProduct(product, sku.id, 1);
+      setAddError('');
 
       setAddedFeaturedId(product.id);
       setTimeout(() => {
         setAddedFeaturedId((curr) => (curr === product.id ? null : curr));
       }, 1500);
     } catch (err) {
-      console.error(err);
+      setAddError(err instanceof Error ? err.message : 'No se pudo agregar al carrito.');
     }
   };
 
   return (
     <div className="w-full flex flex-col bg-white select-none">
-      {/* Indicador de Entrega: Despachos en 20 - 35 min */}
+      {/* Indicador de Entrega: Envíos por tienda */}
       <div className="w-full bg-white pt-2.5 pb-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs sm:text-sm">
           <div className="inline-flex items-center gap-2 text-ink font-bold">
             <Clock className="w-4 h-4 text-ink flex-shrink-0 stroke-[2.2]" />
-            <span>Despachos en 20 - 35 min</span>
+            <span>Consulta cobertura y tiempos de tu zona</span>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-ink-light">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Repartidores activos en Leoncio Prado</span>
+            <span>Pago en efectivo contra entrega</span>
           </div>
         </div>
       </div>
@@ -308,6 +217,7 @@ export function HomePage() {
 
           {/* 5 Main Category Cards directly below banner (exacto a prototipo v2) */}
           <div className="grid grid-cols-5 gap-2 sm:gap-3">
+            <RemoteState loading={categoriesResource.loading} error={categoriesResource.error} retry={categoriesResource.reload} />
             {mainCategoryCards.map((cat) => (
               <Link
                 key={cat.id}
@@ -360,13 +270,12 @@ export function HomePage() {
                     { role: 'comercio', label: 'Comercio', desc: 'Panel de tienda y menú' },
                     { role: 'repartidor', label: 'Repartidor', desc: 'Rutas y entregas' },
                     { role: 'admin', label: 'Admin', desc: 'Supervisión y zonas' },
-                  ].map((r) => (
+                  ].filter(r => roles.includes(r.role as typeof activeRole)).map((r) => (
                     <button
                       key={r.role}
                       type="button"
                       onClick={() => {
-                        loginDemo(r.role as any);
-                        switchRole(r.role as any);
+                        switchRole(r.role as typeof activeRole);
                         setShowRoleMenu(false);
                       }}
                       className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
@@ -388,7 +297,7 @@ export function HomePage() {
           {/* 4 Action Pills (exacto a prototipo v2) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Link
-              to="/negocios?q=oferta"
+              to="/negocios" aria-disabled="true" title="Ofertas no disponibles" onClick={event => event.preventDefault()}
               className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
             >
               <div className="flex items-center gap-2">
@@ -467,14 +376,14 @@ export function HomePage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base sm:text-xl font-black text-ink tracking-tight">
-                    Platos y productos más pedidos
+                    Productos del catálogo
                   </h2>
                   <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
                     100% Selva Alta
                   </span>
                 </div>
                 <p className="text-xs text-ink-light">
-                  Gastronomía amazónica tradicional y productos de alta demanda en Leoncio Prado
+                  Productos disponibles de los comercios de tu ciudad
                 </p>
               </div>
             </div>
@@ -487,7 +396,8 @@ export function HomePage() {
             </Link>
           </div>
 
-          {loadingFeatured ? (
+          {addError && <p role="alert" className="text-destructive">{addError}</p>}
+          {featured.error ? <RemoteState loading={false} error={featured.error} retry={featured.reload}/> : featured.loading ? (
             <div className="py-12 flex items-center justify-center gap-2 text-xs text-ink-light">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
               <span>Cargando productos recomendados...</span>
@@ -500,12 +410,11 @@ export function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {featuredProducts.map((item) => {
                 const isJustAdded = addedFeaturedId === item.id;
-                const sku = item.skus[0];
+                const sku = preferredSku(item);
                 const price = sku ? sku.priceCents : 0;
-                const hasStock = (sku?.availableStock || 0) > 0;
+                const hasStock = !!purchasableSku(item);
                 const rawImg = item.images[0]?.url;
-                const resolvedImg = rawImg?.startsWith('http') ? rawImg : (rawImg ? imageUrl(rawImg) : '');
-                const productImg = resolvedImg || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+                const productImg = catalogImage(rawImg);
 
                 return (
                   <div
@@ -515,9 +424,9 @@ export function HomePage() {
                   >
                     {/* Product Image */}
                     <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                      <img src={productImg} alt={item.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      <img src={productImg} alt={item.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                       <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                        Envío rápido
+                        Envío local
                       </span>
                     </div>
 
@@ -552,7 +461,7 @@ export function HomePage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-ink-light">Precio contado</span>
                           <span className="font-black text-sm sm:text-base text-ink">
-                            {money(price)}
+                            {sku ? money(price) : 'Sin presentaciones'}
                           </span>
                         </div>
 
@@ -614,7 +523,7 @@ export function HomePage() {
                 </p>
                 <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[11px] text-ink flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="font-medium truncate">Centro, Castillo Grande, Supte San Jorge</span>
+                  <span className="font-medium truncate">Direcciones de tu cuenta</span>
                 </div>
               </div>
             </div>
@@ -627,13 +536,13 @@ export function HomePage() {
                   <span>Cobertura & Tarifas de Entrega</span>
                 </div>
                 <span className="text-[10px] bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  PostgreSQL
+                  Cobertura
                 </span>
               </div>
 
               <div className="space-y-2 py-1 text-xs">
                 <p className="text-[11px] text-ink-light leading-relaxed">
-                  Repartidores locales conectando todos los sectores de Tingo María:
+                  Consulta las zonas de entrega disponibles:
                 </p>
                 <div className="space-y-1.5 text-[11px]">
                   {zones.slice(0, 3).map((z) => (
@@ -662,7 +571,7 @@ export function HomePage() {
 
               <div className="space-y-3 py-2 text-xs">
                 <p className="text-gray-600 leading-relaxed">
-                  Consulta el avance de tu orden en tiempo real, desde la aceptación del comercio
+                  Consulta el estado de tu orden, desde la aceptación del comercio
                   hasta la entrega contra entrega en efectivo.
                 </p>
                 <Link

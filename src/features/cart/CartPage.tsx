@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useRealCartStore, CartIntent } from '../../store/realCartStore';
 import { useAuthStore } from '../../store/authStore';
 import { catalogApi, CatalogProduct, CatalogSku, imageUrl, money } from '../../services/api/catalogApi';
-import { formatCents } from '../../lib/currency';
+import { ApiError } from '../../services/api/apiClient';
+import { RemoteState, useRemote } from '../operations/shared';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -39,51 +40,27 @@ export const CartPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
-  const [productsMap, setProductsMap] = useState<Record<string, CatalogProduct>>({});
-  const [loadingProducts, setLoadingProducts] = useState(false);
+
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [actionError, setActionError] = useState('');
 
-  // Cargar detalles de catálogo de los productos en el carrito
+  const productIds = [...new Set(items.map(item => item.productId))].sort().join(',');
+  const catalog = useRemote(`cart-products:${productIds}`, async signal => {
+    const entries = await Promise.all(productIds.split(',').filter(Boolean).map(async id => {
+      try { return [id, await catalogApi.product(id, signal)] as const; }
+      catch (error) {
+        if (error instanceof ApiError && error.status === 404) return [id, null] as const;
+        throw error;
+      }
+    }));
+    return Object.fromEntries(entries) as Record<string, CatalogProduct | null>;
+  });
+  const productsMap = catalog.data || {};
+  const loadingProducts = catalog.loading;
   useEffect(() => {
-    if (items.length === 0) return;
-
-    const uniqueProductIds = Array.from(new Set(items.map((i) => i.productId)));
-    const missingIds = uniqueProductIds.filter((id) => !productsMap[id]);
-
-    if (missingIds.length === 0) return;
-
-    let isMounted = true;
-    setLoadingProducts(true);
-
-    Promise.all(
-      missingIds.map(async (id) => {
-        try {
-          const product = await catalogApi.product(id);
-          return { id, product };
-        } catch {
-          return { id, product: null };
-        }
-      })
-    )
-      .then((results) => {
-        if (!isMounted) return;
-        setProductsMap((prev) => {
-          const updated = { ...prev };
-          results.forEach(({ id, product }) => {
-            if (product) updated[id] = product;
-          });
-          return updated;
-        });
-      })
-      .finally(() => {
-        if (isMounted) setLoadingProducts(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [items, productsMap]);
+    window.addEventListener('focus', catalog.reload);
+    return () => window.removeEventListener('focus', catalog.reload);
+  }, [catalog.reload]);
 
   // Agrupar items por tienda
   const storeGroups = useMemo<StoreGroup[]>(() => {
@@ -105,7 +82,7 @@ export const CartPage: React.FC = () => {
 
       groups.get(storeId)!.items.push({
         intent: item,
-        product,
+        product: product || undefined,
         sku,
       });
     });
@@ -133,7 +110,9 @@ export const CartPage: React.FC = () => {
     selectedItems.forEach((item) => {
       const product = productsMap[item.productId];
       const sku = product?.skus?.find((s) => s.id === item.skuId);
-      if (sku && sku.availableStock < item.quantity) {
+      if (!product || !sku || !product.isActive || !sku.isActive || product.storeId !== item.storeId) {
+        errors.push('Un producto o presentación seleccionada ya no está disponible. Retíralo o vuelve a seleccionarlo desde el catálogo.');
+      } else if (sku.availableStock < item.quantity) {
         errors.push(
           `"${product?.name || 'Producto'} (${sku.variantName})": solo quedan ${sku.availableStock} unidades.`
         );
@@ -145,7 +124,7 @@ export const CartPage: React.FC = () => {
   const canProceed =
     selectedItems.length > 0 &&
     stockErrors.length === 0 &&
-    !loadingProducts;
+    !loadingProducts && !catalog.error;
 
   const handleProceed = () => {
     if (!canProceed) return;
@@ -222,6 +201,8 @@ export const CartPage: React.FC = () => {
         </div>
       )}
 
+      <RemoteState loading={loadingProducts} error={catalog.error} retry={catalog.reload}/>
+      <Button type="button" variant="outline" onClick={catalog.reload}>Actualizar disponibilidad</Button>
       {/* Grid principal: Items a la izquierda, Resumen a la derecha */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
@@ -267,10 +248,11 @@ export const CartPage: React.FC = () => {
                 <ul className="divide-y divide-border">
                   {group.items.map(({ intent, product, sku }) => {
                     const included = intent.selected !== false;
-                    const productName = product?.name || 'Cargando producto...';
+                    const productName = product?.name || (loadingProducts ? 'Cargando producto...' : 'Producto no disponible');
                     const unitPriceCents = sku?.priceCents || 0;
                     const stockAvailable = sku?.availableStock ?? 0;
                     const hasStockError = sku !== undefined && intent.quantity > stockAvailable;
+                    const unavailable = !product || !sku || !product.isActive || !sku.isActive || product.storeId !== intent.storeId;
                     const imageUrlSrc = product?.images?.[0]?.url ? imageUrl(product.images[0].url) : '';
 
                     return (
@@ -330,7 +312,7 @@ export const CartPage: React.FC = () => {
 
                             <div className="flex flex-wrap items-center gap-2 text-xs">
                               <span className="font-semibold tabular-nums text-primary">
-                                {money(unitPriceCents)} c/u
+                                {sku ? money(unitPriceCents) + ' c/u' : 'Precio por verificar'}
                               </span>
                               {sku && (
                                 <span className="tabular-nums text-ink-muted">
@@ -354,6 +336,7 @@ export const CartPage: React.FC = () => {
                         </div>
 
                         {/* Alerta de stock insuficiente */}
+                        {unavailable && !loadingProducts && <p role="alert" className="text-sm text-destructive">Esta presentación no está disponible. Retírala o elígela nuevamente desde el catálogo.</p>}
                         {hasStockError && (
                           <div className="flex items-start gap-2 rounded-xl border border-warning-border bg-warning-soft p-3 text-xs text-warning-strong">
                             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -387,7 +370,7 @@ export const CartPage: React.FC = () => {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              disabled={Boolean(sku && intent.quantity >= stockAvailable)}
+                              disabled={unavailable || intent.quantity >= stockAvailable || intent.quantity >= 10000}
                               aria-label={`Aumentar cantidad de ${productName}`}
                               onClick={() => update(intent.skuId, { quantity: intent.quantity + 1 })}
                             >
@@ -397,7 +380,7 @@ export const CartPage: React.FC = () => {
 
                           <div className="flex items-center gap-4">
                             <p className="text-base font-bold tabular-nums text-ink" aria-label={`Subtotal de ${productName}`}>
-                              {money(unitPriceCents * intent.quantity)}
+                              {sku ? money(unitPriceCents * intent.quantity) : 'Por verificar'}
                             </p>
                             <Button
                               type="button"
@@ -428,7 +411,7 @@ export const CartPage: React.FC = () => {
             <dl className="space-y-3 border-t border-border pt-4 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-ink-light">Productos seleccionados</dt>
-                <dd className="font-semibold tabular-nums text-ink">{money(selectedSubtotalCents)}</dd>
+                <dd className="font-semibold tabular-nums text-ink">{loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}</dd>
               </div>
 
               <div className="flex justify-between gap-4 text-xs text-ink-muted">
@@ -438,7 +421,7 @@ export const CartPage: React.FC = () => {
 
               <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-3">
                 <dt className="text-base font-bold text-ink">Subtotal estimado</dt>
-                <dd className="text-xl font-bold tabular-nums text-primary">{money(selectedSubtotalCents)}</dd>
+                <dd className="text-xl font-bold tabular-nums text-primary">{loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}</dd>
               </div>
             </dl>
 

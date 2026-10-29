@@ -49,6 +49,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/verification-code/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enviar código de verificación de 6 dígitos al correo */
+        post: operations["AuthController_sendVerificationCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -58,8 +75,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Registrar nueva cuenta de cliente */
+        /** Registrar nueva cuenta de cliente con validación de código */
         post: operations["AuthController_register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Iniciar sesión o registrarse con Google */
+        post: operations["AuthController_google"];
         delete?: never;
         options?: never;
         head?: never;
@@ -627,7 +661,7 @@ export interface paths {
         get: operations["CatalogManagementController_ownDetail"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["CatalogManagementController_deleteProduct"];
         options?: never;
         head?: never;
         patch: operations["CatalogManagementController_update"];
@@ -1317,6 +1351,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchant/available-couriers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar repartidores disponibles para asignar pedido */
+        get: operations["MerchantDeliveryController_listAvailableCouriers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchant/orders/{id}/assign-courier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Comercio asigna un repartidor a su orden */
+        post: operations["MerchantDeliveryController_assignCourier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/courier/profile": {
         parameters: {
             query?: never;
@@ -1771,6 +1839,21 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        HealthLiveDto: {
+            /** @enum {string} */
+            status: "ok";
+            service: string;
+        };
+        HealthReadyDto: {
+            /** @enum {string} */
+            status: "ok";
+            service: string;
+            /** Format: date-time */
+            timestamp: string;
+            /** @enum {string} */
+            database: "connected";
+            version: string;
+        };
         ErrorResponseDto: {
             statusCode: number;
             error: string;
@@ -1781,6 +1864,10 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
             path: string;
+        };
+        SendVerificationCodeDto: {
+            /** @example juan.perez@example.com */
+            email: string;
         };
         RegisterDto: {
             /** @example Juan Pérez */
@@ -1794,6 +1881,11 @@ export interface components {
             phone: string;
             /** @example Password123! */
             password: string;
+            /**
+             * @description Código de verificación de 6 dígitos enviado al correo
+             * @example 123456
+             */
+            verificationCode?: string;
         };
         MembershipDto: {
             /** Format: uuid */
@@ -1823,8 +1915,19 @@ export interface components {
             user: components["schemas"]["UserProfileDto"];
             /** @description Protección CSRF; conservar solo en memoria */
             csrfToken: string;
+            /** @description Token de sesión Bearer para clientes móviles y cross-origin */
+            token?: string;
             /** Format: date-time */
             expiresAt: string;
+        };
+        GoogleAuthDto: {
+            /** @description Google ID Token (credential JWT) */
+            idToken: string;
+            /**
+             * @description Teléfono opcional si el usuario es nuevo
+             * @example +51962123456
+             */
+            phone?: string;
         };
         LoginDto: {
             /** @example juan.perez@example.com */
@@ -1940,6 +2043,58 @@ export interface components {
             estimatedMinutes?: number;
             isActive?: boolean;
             reason: string;
+        };
+        PublicStoreDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            category_code: string;
+            /** Format: uuid */
+            zone_id: string;
+            zone_name: string;
+            address_text: string;
+            phone: string;
+            description: string;
+            accepting_orders: boolean;
+            isOpen: boolean;
+            logoUrl: string | null;
+            bannerUrl: string | null;
+            rating_average: number | null;
+            rating_count: number;
+            preparation_minutes: number;
+            /** @description Pedido mínimo del comercio, en céntimos PEN */
+            minimum_order_cents: number;
+            /** @description Tarifa base de la zona del comercio; el envío final se cotiza según destino */
+            base_fee_cents: number;
+        };
+        PublicOpeningIntervalDto: {
+            weekday: number;
+            opens_at: string;
+            closes_at: string;
+        };
+        PublicStoreDetailDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            category_code: string;
+            /** Format: uuid */
+            zone_id: string;
+            zone_name: string;
+            address_text: string;
+            phone: string;
+            description: string;
+            accepting_orders: boolean;
+            isOpen: boolean;
+            logoUrl: string | null;
+            bannerUrl: string | null;
+            rating_average: number | null;
+            rating_count: number;
+            preparation_minutes: number;
+            /** @description Pedido mínimo del comercio, en céntimos PEN */
+            minimum_order_cents: number;
+            /** @description Tarifa base de la zona del comercio; el envío final se cotiza según destino */
+            base_fee_cents: number;
+            openingIntervals: components["schemas"]["PublicOpeningIntervalDto"][];
         };
         StoreCategoryDto: {
             code: string;
@@ -2567,7 +2722,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthLiveDto"];
+                };
             };
         };
     };
@@ -2584,7 +2741,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthReadyDto"];
+                };
             };
         };
     };
@@ -2601,7 +2760,77 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthReadyDto"];
+                };
+            };
+        };
+    };
+    AuthController_sendVerificationCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendVerificationCodeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        message: string;
+                        /** @description Solo transporte de prueba explícito; nunca en producción */
+                        devCode?: string;
+                    };
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
             };
         };
     };
@@ -2619,6 +2848,69 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponseDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_google: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleAuthDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3245,7 +3537,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicStoreDto"][];
+                };
             };
         };
     };
@@ -3264,7 +3558,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicStoreDetailDto"];
+                };
             };
         };
     };
@@ -3825,6 +4121,25 @@ export interface operations {
             };
         };
     };
+    CatalogManagementController_deleteProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CatalogManagementController_update: {
         parameters: {
             query?: never;
@@ -4216,7 +4531,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        purchaseId: string;
+                        purchaseNumber: string;
+                        /** Format: uuid */
+                        orderId: string;
+                        /** Format: uuid */
+                        storeId: string;
+                        storeName: string;
+                        statusCode: string;
+                        deliveryFeeCents: number;
+                        itemsSubtotalCents: number | string;
+                        totalCents: number | string;
+                        paymentMethod: string;
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            product_name_at_sale: string;
+                            unit_price_cents: number;
+                            quantity: number;
+                        }[];
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        acceptanceExpiresAt: string | null;
+                        cashTenderCents: number;
+                        cashChangeCents: number;
+                    };
+                };
             };
         };
     };
@@ -4233,7 +4577,33 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        code: number | string;
+                        /** Format: date-time */
+                        created_at: string;
+                        overall_status: string;
+                        subtotal_cents: number | string;
+                        delivery_fee_cents: number | string;
+                        total_cents: number | string;
+                        recipient_name: string | null;
+                        street: string | null;
+                        street_number: string | null;
+                        store_orders: {
+                            /** Format: uuid */
+                            orderId: string;
+                            /** Format: uuid */
+                            storeId: string;
+                            storeName: string;
+                            status: string;
+                            deliveryFeeCents: number;
+                            /** Format: date-time */
+                            acceptanceExpiresAt: string | null;
+                        }[];
+                    }[];
+                };
             };
         };
     };
@@ -4256,7 +4626,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        status: string;
+                        message: string;
+                    };
+                };
             };
         };
     };
@@ -4275,7 +4652,42 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        order_id: string;
+                        status_code: string;
+                        delivery_fee_cents: number;
+                        /** Format: date-time */
+                        created_at: string;
+                        version: number;
+                        /** Format: date-time */
+                        acceptanceExpiresAt: string | null;
+                        subtotal_cents: number | string;
+                        total_cents: number | string;
+                        recipient_name: string | null;
+                        phone: string | null;
+                        street: string | null;
+                        street_number: string | null;
+                        reference: string | null;
+                        /** Format: uuid */
+                        assignment_id: string | null;
+                        /** Format: uuid */
+                        courierUserId: string | null;
+                        assignmentStatus: string | null;
+                        courierName: string | null;
+                        courierPhone: string | null;
+                        items: {
+                            /** Format: uuid */
+                            itemId: string;
+                            productName: string;
+                            variantName: string;
+                            unitPriceCents: number;
+                            quantity: number;
+                            note: string | null;
+                        }[];
+                    }[];
+                };
             };
         };
     };
@@ -4298,7 +4710,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        previousStatus: string;
+                        currentStatus: string;
+                    };
+                };
             };
         };
     };
@@ -4321,7 +4740,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        previousStatus: string;
+                        currentStatus: string;
+                    };
+                };
             };
         };
     };
@@ -4344,7 +4770,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        previousStatus: string;
+                        currentStatus: string;
+                    };
+                };
             };
         };
     };
@@ -4555,7 +4988,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        status: string;
+                        message: string;
+                    };
+                };
             };
         };
     };
@@ -4687,7 +5127,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        delivery_fee_cents: number;
+                        /** Format: date-time */
+                        created_at: string;
+                        store_name: string;
+                        store_address: string;
+                        store_phone: string;
+                        total_cents: number | string;
+                    }[];
+                };
             };
         };
     };
@@ -4704,7 +5158,30 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        assignment_id: string;
+                        /** Format: uuid */
+                        merchant_order_id: string;
+                        agreed_fee_cents: number;
+                        assignment_status: string;
+                        /** Format: date-time */
+                        accepted_at: string;
+                        /** Format: date-time */
+                        picked_up_at: string | null;
+                        order_status: string;
+                        store_name: string;
+                        store_address: string;
+                        store_phone: string;
+                        recipient_name: string;
+                        recipient_phone: string;
+                        dest_street: string;
+                        dest_number: string;
+                        dest_reference: string | null;
+                        total_cents: number | string;
+                    } | null;
+                };
             };
         };
     };
@@ -4727,7 +5204,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        status: string;
+                        agreed_fee_cents: number;
+                        /** Format: date-time */
+                        accepted_at: string;
+                    };
+                };
             };
         };
     };
@@ -4750,7 +5236,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        assignmentId: string;
+                        status: string;
+                        orderStatus: string;
+                    };
+                };
             };
         };
     };
@@ -4773,7 +5266,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        assignmentId: string;
+                        status: string;
+                        orderStatus: string;
+                        message: string;
+                    };
+                };
             };
         };
     };
@@ -4796,7 +5297,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                    };
+                };
             };
         };
     };
@@ -4819,7 +5325,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        ticketId: string;
+                    };
+                };
             };
         };
     };
@@ -4842,7 +5355,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        status: string;
+                        agreed_fee_cents: number;
+                        /** Format: date-time */
+                        accepted_at: string;
+                    };
+                };
             };
         };
     };
@@ -4865,7 +5387,75 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                    };
+                };
+            };
+        };
+    };
+    MerchantDeliveryController_listAvailableCouriers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        courierUserId: string;
+                        fullName: string;
+                        email: string;
+                        phone: string;
+                        vehicleType: string;
+                        plate: string | null;
+                        isOnline: boolean;
+                        /** Format: uuid */
+                        currentZoneId: string | null;
+                        zoneName: string | null;
+                    }[];
+                };
+            };
+        };
+    };
+    MerchantDeliveryController_assignCourier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignCourierDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        status: string;
+                        agreed_fee_cents: number;
+                        /** Format: date-time */
+                        accepted_at: string;
+                    };
+                };
             };
         };
     };
@@ -5074,7 +5664,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        title: string;
+                        message: string;
+                        kind: string;
+                        relative_url: string | null;
+                        /** Format: date-time */
+                        read_at: string | null;
+                        /** Format: date-time */
+                        created_at: string;
+                    }[];
+                };
             };
         };
     };

@@ -1,32 +1,30 @@
-import React, { useMemo } from 'react';
-import { useDataStore } from '../../store/dataStore';
-import { useAuthStore } from '../../store/authStore';
+import React, { useMemo, useState } from 'react';
+import { useCourierOrders } from './courierModel';
+import { useRemote, RemoteState } from '../operations/shared';
+import { engagementApi } from '../../services/api/engagementApi';
+import { reportRange } from '../merchant/merchantOrdersModel';
+import { Select } from '../../components/ui/Select';
 import { formatCents } from '../../lib/currency';
 import { formatDateTime } from '../../lib/date';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { DollarSign } from 'lucide-react';
 
 export const CourierEarningsPage: React.FC = () => {
-  const { purchases, couriers } = useDataStore();
-  const { currentUser } = useAuthStore();
-  const currentCourier = couriers.find((courier) => courier.ownerUserId === currentUser?.id || courier.id === currentUser?.courierId) || couriers[0];
-  const deliveredOrders = useMemo(() => {
-    if (!currentCourier) return [];
-    return purchases.flatMap((purchase) =>
-      purchase.merchantOrders
-        .filter((order) => order.courierId === currentCourier.id && order.status === 'entregado')
-        .map((order) => ({ ...order, purchaseCode: purchase.code, customerName: purchase.customerName }))
-    ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [purchases, currentCourier]);
-  const totalEarningsCents = deliveredOrders.reduce((total, order) => total + order.deliveryFeeCents, 0);
-  const averagePerTripCents = deliveredOrders.length > 0 ? Math.round(totalEarningsCents / deliveredOrders.length) : 0;
+  const [period, setPeriod] = useState<'semana' | 'mes' | 'historico'>('mes');
+  const range = useMemo(() => reportRange(period), [period]);
+  const report = useRemote('courier-earnings:' + JSON.stringify(range), signal => engagementApi.report('/courier/earnings', range, signal));
+  const history = useCourierOrders('history');
+  const deliveredOrders = (history.data || []).filter(order => order.source.assignment?.status === 'delivered' && order.source.status === 'delivered' && order.source.createdAt >= range.from && order.source.createdAt < range.to);
+  const totalEarningsCents = report.data?.courierFeesCents || 0;
+  const count = report.data?.delivered || 0;
+  const averagePerTripCents = count ? Math.round(totalEarningsCents / count) : 0;
   const indicators = [
-    { label: 'Tarifas acumuladas', value: formatCents(totalEarningsCents), detail: 'Suma de tarifas de tus entregas completadas.' },
-    { label: 'Entregas completadas', value: deliveredOrders.length, detail: 'Pedidos registrados como entregados.' },
+    { label: 'Tarifas acumuladas', value: formatCents(totalEarningsCents), detail: 'Tarifas registradas en el período.' },
+    { label: 'Entregas completadas', value: count, detail: 'Pedidos registrados como entregados.' },
     { label: 'Promedio por entrega', value: formatCents(averagePerTripCents), detail: 'Tarifa media de las entregas registradas.' },
   ];
 
-  if (!currentCourier) return <EmptyState title="No hay un perfil de repartidor disponible" description="Revisa que exista una cuenta de repartidor registrada para continuar." />;
+  if (report.loading || report.error || history.loading || history.error) return <RemoteState loading={report.loading || history.loading} error={report.error || history.error} retry={() => { report.reload(); history.reload(); }} />;
 
   return (
     <div className="space-y-6">
@@ -34,6 +32,7 @@ export const CourierEarningsPage: React.FC = () => {
         <h1 className="text-xl font-bold text-ink sm:text-2xl">Mis ganancias</h1>
         <p className="text-sm text-ink-light">Consulta las tarifas registradas de tus entregas completadas.</p>
       </header>
+      <Select id="courier-earnings-period" label="Período" value={period} onChange={event => setPeriod(event.target.value as typeof period)}><option value="semana">Últimos 7 días</option><option value="mes">Últimos 30 días</option><option value="historico">Últimos 366 días</option></Select>
       <section aria-labelledby="courier-earnings-totals" className="space-y-4">
         <h2 id="courier-earnings-totals" className="text-base font-semibold text-ink">Resumen de tarifas</h2>
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -45,21 +44,22 @@ export const CourierEarningsPage: React.FC = () => {
             </div>
           ))}
         </dl>
-        <p className="text-xs text-ink-muted">Incluye todo el historial disponible. Las tarifas registradas no confirman una liquidación ni un pago recibido.</p>
+        <p className="text-xs text-ink-muted">Incluye el período seleccionado. Las tarifas registradas no confirman una liquidación ni un pago recibido.</p>
       </section>
 
+      <p className="text-xs text-ink-muted">Pedidos creados durante el período, según su estado actual. Efectivo confirmado: {formatCents(report.data?.cashCollectedCents || 0)}.</p>
       <section aria-labelledby="courier-earnings-detail" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="courier-earnings-detail" className="text-base font-semibold text-ink">Desglose por entrega</h2>
           <p className="text-sm tabular-nums text-ink-muted">{deliveredOrders.length} {deliveredOrders.length === 1 ? 'registro' : 'registros'}</p>
         </div>
         {deliveredOrders.length === 0 ? (
-          <EmptyState icon={<DollarSign className="h-8 w-8" aria-hidden="true" />} title="Aún no hay tarifas de entregas completadas"
-            description={`Tus tarifas aparecerán aquí al completar entregas. Por ahora, el total registrado es ${formatCents(0)}.`} />
+          <EmptyState icon={<DollarSign className="h-8 w-8" aria-hidden="true" />} title="No hay entregas detalladas para este período"
+            description="El desglose usa las asignaciones disponibles en tu historial y el período seleccionado." />
         ) : (
           <div className="rounded-2xl border border-border bg-surface shadow-subtle">
             <table className="block w-full text-left text-sm lg:table lg:table-fixed">
-              <caption className="sr-only">Tarifas de entregas completadas, sin filtro de fecha.</caption>
+              <caption className="sr-only">Tarifas de entregas completadas, en el período seleccionado.</caption>
               <thead className="sr-only bg-surface-subtle text-xs text-ink-light lg:not-sr-only lg:table-header-group">
                 <tr>
                   <th scope="col" className="w-1/3 rounded-tl-2xl px-4 py-3 font-semibold">Pedido y comercio</th>

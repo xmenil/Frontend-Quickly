@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { useMerchantOrders, useMerchantWorkspace, useMerchantActions, useMerchantReport, AcceptanceDeadline } from './merchantOrdersModel';
+import { operationsApi } from '../../services/api/operationsApi';
+import { catalogApi } from '../../services/api/catalogApi';
+import { catalogImage } from '../../lib/catalogImage';
+import { RemoteState } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
 import { formatCents } from '../../lib/currency';
 import { formatDateTime } from '../../lib/date';
@@ -32,48 +36,10 @@ import {
 } from 'lucide-react';
 
 export const MerchantDashboardPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
-  const {
-    merchants,
-    products,
-    purchases,
-    updateMerchantProfile,
-    updateMerchantOrderStatus,
-    toggleProductAvailability,
-  } = useDataStore();
-
-  const currentMerchant = useMemo(() => {
-    return (
-      (currentUser?.merchantId ? merchants.find((m) => m.id === currentUser.merchantId) : null) ||
-      merchants.find((m) => m.ownerUserId === currentUser?.id) ||
-      merchants[0]
-    );
-  }, [merchants, currentUser]);
-
-  // Real merchant products
-  const merchantProducts = useMemo(() => {
-    return products.filter((p) => p.merchantId === currentMerchant.id);
-  }, [products, currentMerchant.id]);
-
-  // Real suborders belonging to this merchant
-  const merchantSuborders = useMemo(() => {
-    return purchases
-      .flatMap((p) =>
-        p.merchantOrders
-          .filter((mo) => mo.merchantId === currentMerchant.id)
-          .map((mo) => ({
-            ...mo,
-            purchaseCode: p.code,
-            customerName: p.customerName,
-            customerPhone: p.customerPhone,
-            addressSnapshot: p.addressSnapshot,
-            paymentMethod: p.paymentMethod,
-            purchaseCreatedAt: p.createdAt,
-          }))
-      )
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [purchases, currentMerchant.id]);
-
+  const workspace = useMerchantWorkspace(true); const resource = useMerchantOrders(); const actions = useMerchantActions(resource); const report = useMerchantReport('mes');
+  const currentMerchant = workspace.data?.merchant;
+  const merchantProducts = workspace.data?.products || [];
+  const merchantSuborders = resource.data || [];
   const pendingOrders = useMemo(
     () => merchantSuborders.filter((o) => o.status === 'pendiente'),
     [merchantSuborders]
@@ -97,9 +63,7 @@ export const MerchantDashboardPage: React.FC = () => {
   );
 
   // Real KPIs calculations
-  const totalMonthRevenueCents = useMemo(() => {
-    return completedOrders.reduce((sum, o) => sum + o.subtotalCents, 0);
-  }, [completedOrders]);
+  const totalMonthRevenueCents = report.data?.deliveredSalesCents;
 
   const activeStockCount = useMemo(() => {
     return merchantProducts.filter((p) => p.isAvailable && p.stock > 0).length;
@@ -107,7 +71,7 @@ export const MerchantDashboardPage: React.FC = () => {
 
   // Toggle Open/Close states
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
-  const [pauseDuration, setPauseDuration] = useState<'30' | '60' | 'rest_of_day'>('30');
+  const [pauseDuration, setPauseDuration] = useState<'30' | '60' | 'rest_of_day'>('rest_of_day');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [ordersTab, setOrdersTab] = useState<'activas' | 'historial'>('activas');
 
@@ -120,70 +84,22 @@ export const MerchantDashboardPage: React.FC = () => {
     [merchantSuborders]
   );
 
-  // Timer simulation for pending order confirmation (3:45 minutes countdown)
-  const [countdownSeconds, setCountdownSeconds] = useState(225); // 3m 45s
-
-  useEffect(() => {
-    if (pendingOrders.length === 0) return;
-    const timer = setInterval(() => {
-      setCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 240));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [pendingOrders.length]);
-
-  const formatCountdown = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
+  const handleToggleOpen = async () => {
+    if (!currentMerchant || !workspace.data?.canManage) return;
+    if (currentMerchant.isOpen) { setIsPauseModalOpen(true); return; }
+    if (await actions.execute(() => operationsApi.updateStore(currentMerchant.id, { acceptingOrders: true }), 'Recepción activada. Los horarios y el backend determinan si se puede comprar.')) workspace.reload();
   };
-
-  const handleToggleOpen = () => {
-    if (currentMerchant.isOpen) {
-      // If closing/pausing, open confirmation dialog
-      setIsPauseModalOpen(true);
-    } else {
-      // Re-opening immediately
-      updateMerchantProfile(currentMerchant.id, { isOpen: true });
-      showFeedback('¡Comercio abierto! Ya puedes recibir pedidos en Tingo María.');
-    }
+  const handleConfirmPause = async () => {
+    if (!currentMerchant || !workspace.data?.canManage) return;
+    if (await actions.execute(() => operationsApi.updateStore(currentMerchant.id, { acceptingOrders: false }), 'Recepción pausada hasta que la reactives manualmente.')) { workspace.reload(); setIsPauseModalOpen(false); }
   };
-
-  const handleConfirmPause = () => {
-    updateMerchantProfile(currentMerchant.id, { isOpen: false });
-    setIsPauseModalOpen(false);
-    showFeedback(
-      pauseDuration === 'rest_of_day'
-        ? 'Recepción pausada hasta el día de mañana.'
-        : `Recepción pausada por ${pauseDuration} minutos.`
-    );
+  const handleAcceptOrder = async (id: string) => { await actions.transition(id, 'confirmado'); };
+  const handleMarkReady = async (id: string) => { const order = merchantSuborders.find(order => order.id === id); if (order?.status === 'confirmado') await actions.transition(id, 'en_preparacion'); else await actions.transition(id, 'listo_recoger'); };
+  const handleRejectOrder = async (id: string) => { await actions.transition(id, 'rechazado', 'Sin disponibilidad de cocina en este momento'); };
+  const toggleProductAvailability = async (id: string) => {
+    const product = merchantProducts.find(product => product.id === id); if (!product?.source || !workspace.data?.canManage) return;
+    if (await actions.execute(() => catalogApi.update(id, { isActive: !product.source!.isActive }), 'Disponibilidad del producto actualizada.')) workspace.reload();
   };
-
-  const handleAcceptOrder = (orderId: string) => {
-    updateMerchantOrderStatus(orderId, 'confirmado', currentMerchant.name, 'comercio');
-    showFeedback('Pedido confirmado y enviado a comanda de cocina.');
-  };
-
-  const handleMarkReady = (orderId: string) => {
-    updateMerchantOrderStatus(orderId, 'listo_recoger', currentMerchant.name, 'comercio');
-    showFeedback('Comanda lista para entrega al repartidor.');
-  };
-
-  const handleRejectOrder = (orderId: string) => {
-    updateMerchantOrderStatus(
-      orderId,
-      'rechazado',
-      currentMerchant.name,
-      'comercio',
-      'Sin disponibilidad de cocina en este momento'
-    );
-    showFeedback('El pedido fue rechazado.');
-  };
-
-  const showFeedback = (msg: string) => {
-    setActionFeedback(msg);
-    setTimeout(() => setActionFeedback(null), 3000);
-  };
-
   // Status badge styling helper
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -213,8 +129,15 @@ export const MerchantDashboardPage: React.FC = () => {
   // Latest active order for Stepper visualization
   const activeFollowOrder = activeOrders[0] || merchantSuborders[0];
 
+  if (!currentMerchant) return <div className="space-y-4"><RemoteState loading={workspace.loading} error={workspace.error} retry={workspace.reload} />{!workspace.loading && !workspace.error && <p>Selecciona una tienda autorizada.</p>}</div>;
+
   return (
     <div className="space-y-6 pb-20 sm:pb-8">
+      <RemoteState loading={workspace.loading} error={workspace.error} retry={workspace.reload} />
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      <RemoteState loading={report.loading} error={report.error} retry={report.reload} />
+      {actions.error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{actions.error}</p>}
+      {actions.notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{actions.notice}</p>}
       {/* Toast Feedback */}
       {actionFeedback && (
         <div className="fixed top-20 right-4 sm:right-8 z-50 p-4 bg-ink text-white rounded-2xl shadow-xl flex items-center gap-2.5 animate-fadeIn">
@@ -228,7 +151,7 @@ export const MerchantDashboardPage: React.FC = () => {
         <div className="flex items-start sm:items-center gap-4">
           <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-surface-subtle border border-border flex-shrink-0 shadow-sm">
             <img
-              src={currentMerchant.logoUrl}
+              src={currentMerchant.logoUrl || catalogImage("")}
               alt={currentMerchant.name}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -255,7 +178,7 @@ export const MerchantDashboardPage: React.FC = () => {
                     currentMerchant.isOpen ? 'bg-selva animate-pulse' : 'bg-destructive'
                   }`}
                 />
-                <span>{currentMerchant.isOpen ? 'Abierto ahora' : 'Recepción en pausa'}</span>
+                <span>{currentMerchant.isOpen ? 'Recepción activada' : 'Recepción en pausa'}</span>
               </span>
             </div>
 
@@ -299,12 +222,13 @@ export const MerchantDashboardPage: React.FC = () => {
               {currentMerchant.isOpen ? 'Recepción de pedidos' : 'Recepción pausada'}
             </span>
             <span className="text-[11px] text-ink-muted">
-              {currentMerchant.isOpen ? 'Aceptando comandas en Tingo María' : 'Catálogo en modo solo vista'}
+              {currentMerchant.isOpen ? 'Según horario y disponibilidad de la tienda' : 'Catálogo en modo solo vista'}
             </span>
           </div>
 
           <button
             type="button"
+            disabled={actions.busy || !workspace.data?.canManage || workspace.loading || !!workspace.error}
             onClick={handleToggleOpen}
             className={`touch-target relative inline-flex h-9 w-16 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               currentMerchant.isOpen ? 'bg-selva' : 'bg-gray-300'
@@ -327,11 +251,10 @@ export const MerchantDashboardPage: React.FC = () => {
           <div className="space-y-1">
             <span className="text-xs font-semibold text-ink-light">Ventas completadas</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {formatCents(totalMonthRevenueCents || 5900)}
+              {report.loading || report.error || totalMonthRevenueCents == null ? "—" : formatCents(totalMonthRevenueCents)}
             </p>
             <div className="flex items-center gap-1.5 text-[11px]">
-              <span className="font-bold text-selva">↑ 12%</span>
-              <span className="text-ink-muted">vs. mes anterior</span>
+              <span className="text-ink-muted">Facturación confirmada del período</span>
             </div>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -344,7 +267,7 @@ export const MerchantDashboardPage: React.FC = () => {
           <div className="space-y-1">
             <span className="text-xs font-semibold text-ink-light">Comandas registradas</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {merchantSuborders.length}{' '}
+              {resource.error || !resource.data ? "—" : merchantSuborders.length}{' '}
               <span className="text-xs font-medium text-ink-muted">
                 {merchantSuborders.length === 1 ? 'pedido' : 'pedidos'}
               </span>
@@ -371,7 +294,7 @@ export const MerchantDashboardPage: React.FC = () => {
           <div className="space-y-1">
             <span className="text-xs font-semibold text-ink-light">Disponibilidad de productos</span>
             <p className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {activeStockCount}{' '}
+              {workspace.error || !workspace.data ? "—" : activeStockCount}{' '}
               <span className="text-xs font-medium text-ink-muted">
                 de {merchantProducts.length} productos activos
               </span>
@@ -383,7 +306,7 @@ export const MerchantDashboardPage: React.FC = () => {
                 </span>
               ) : (
                 <span className="font-semibold text-selva">
-                  100% de platos disponibles
+                  Sin productos agotados en el catálogo consultado
                 </span>
               )}
             </div>
@@ -452,7 +375,7 @@ export const MerchantDashboardPage: React.FC = () => {
                     {/* Countdown Timer */}
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warning-strong bg-warning-soft px-2.5 py-0.5 rounded-full border border-warning-border">
                       <Timer className="w-3.5 h-3.5" />
-                      <span>Confirmar en: {formatCountdown(countdownSeconds)}</span>
+                      <span>Confirmar en: <AcceptanceDeadline expiresAt={order.acceptanceExpiresAt} /></span>
                     </span>
                   </div>
 
@@ -479,6 +402,7 @@ export const MerchantDashboardPage: React.FC = () => {
                 {/* Accept / Reject Buttons */}
                 <div className="flex items-center gap-2.5 self-end md:self-center flex-shrink-0">
                   <Button
+            disabled={actions.busy || resource.loading || !!resource.error}
                     type="button"
                     variant="outline"
                     size="sm"
@@ -558,7 +482,7 @@ export const MerchantDashboardPage: React.FC = () => {
                                   onClick={() => handleMarkReady(order.id)}
                                   className="min-h-[44px] touch-target px-3 py-1.5 rounded-xl bg-selva text-white hover:bg-selva-strong text-xs font-bold transition-colors shadow-sm"
                                 >
-                                  Listo para entrega
+                                  {order.status === "confirmado" ? "Iniciar preparación" : "Listo para entrega"}
                                 </button>
                               )}
                               <Link to="/comercio/pedidos">
@@ -685,7 +609,7 @@ export const MerchantDashboardPage: React.FC = () => {
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" fill="%23ECFDF5"><rect width="300" height="225" fill="%23ECFDF5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="16">Plato Amazónico</text></svg>';
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" fill="%23ECFDF5"><rect width="300" height="225" fill="%23ECFDF5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2300A859" font-family="sans-serif" font-weight="bold" font-size="16">Sin imagen</text></svg>';
                   }}
                 />
                 {!p.isAvailable && (
@@ -721,11 +645,12 @@ export const MerchantDashboardPage: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => toggleProductAvailability(p.id)}
+                    disabled={actions.busy || resource.loading || !!resource.error || !workspace.data?.canManage}
+                    onClick={() => void toggleProductAvailability(p.id)}
                     className="touch-target min-h-[38px] px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-border text-ink-light hover:text-primary hover:border-primary transition-colors"
                     title="Alternar disponibilidad de plato"
                   >
-                    {p.isAvailable ? 'Agotar' : 'Activar'}
+                    {p.source?.isActive ? 'Pausar' : 'Publicar'}
                   </button>
                 </div>
               </div>
@@ -742,11 +667,11 @@ export const MerchantDashboardPage: React.FC = () => {
             <h3 className="text-sm font-bold text-ink">
               Seguimiento de comanda reciente{' '}
               <span className="text-primary font-extrabold">
-                {activeFollowOrder ? activeFollowOrder.purchaseCode : '#QK-914238'}
+                {activeFollowOrder ? activeFollowOrder.purchaseCode : 'Sin pedidos'}
               </span>
             </h3>
             <span className="text-xs text-ink-muted font-medium">
-              Cliente: {activeFollowOrder ? activeFollowOrder.customerName : 'Nilver Valdivia'}
+              Cliente: {activeFollowOrder ? activeFollowOrder.customerName : 'Sin destinatario'}
             </span>
           </div>
 
@@ -850,19 +775,21 @@ export const MerchantDashboardPage: React.FC = () => {
       {/* Confirmation Dialog for Pausing Store (F-1) */}
       <Dialog
         isOpen={isPauseModalOpen}
-        onClose={() => setIsPauseModalOpen(false)}
+        onClose={() => { if (!actions.busy) setIsPauseModalOpen(false); }}
         title="¿Pausar recepción de pedidos?"
         description="Los clientes verán tu negocio como no disponible temporalmente en el catálogo."
         maxWidth="sm"
       >
         <div className="space-y-4 pt-2">
+          {actions.error && <p role="alert" className="text-sm text-destructive">{actions.error}</p>}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-ink block">Selecciona duración de la pausa:</label>
+            <label className="text-xs font-bold text-ink block">La recepción permanecerá pausada hasta reactivarla:</label>
             <div className="space-y-2">
               <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
-                <span className="text-xs font-bold text-ink">Pausar 30 minutos (Cocina saturada)</span>
+                <span className="text-xs font-bold text-ink">Pausa de 30 minutos no disponible (Cocina saturada)</span>
                 <input
                   type="radio"
+                  disabled
                   name="pauseDuration"
                   value="30"
                   checked={pauseDuration === '30'}
@@ -871,10 +798,11 @@ export const MerchantDashboardPage: React.FC = () => {
                 />
               </label>
               <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
-                <span className="text-xs font-bold text-ink">Pausar 1 hora</span>
+                <span className="text-xs font-bold text-ink">Pausa de 1 hora no disponible</span>
                 <input
                   type="radio"
                   name="pauseDuration"
+                  disabled
                   value="60"
                   checked={pauseDuration === '60'}
                   onChange={() => setPauseDuration('60')}
@@ -882,7 +810,7 @@ export const MerchantDashboardPage: React.FC = () => {
                 />
               </label>
               <label className="p-3 rounded-xl border border-border flex items-center justify-between cursor-pointer hover:bg-surface-subtle transition-colors">
-                <span className="text-xs font-bold text-ink">Cerrar por hoy (Hasta mañana)</span>
+                <span className="text-xs font-bold text-ink">Hasta reactivar manualmente</span>
                 <input
                   type="radio"
                   name="pauseDuration"

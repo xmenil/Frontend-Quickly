@@ -1,252 +1,131 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { CheckoutPage } from '../features/checkout/CheckoutPage';
-import { OrderDetailPage } from '../features/orders/OrderDetailPage';
-import { useDataStore } from '../store/dataStore';
+import { parseCashCents } from '../features/checkout/checkoutFlow';
+import { checkoutJournalKey, pendingFor, saveCheckoutIntent } from '../features/checkout/checkoutIntent';
+import { orderingApi } from '../services/api/orderingApi';
+import { billingApi } from '../services/api/billingApi';
+import { ApiError } from '../services/api/apiClient';
+import { useRealCartStore } from '../store/realCartStore';
 import { useAuthStore } from '../store/authStore';
-import { useCartStore } from '../store/cartStore';
-import { checkoutSnapshot, parseCashCents, validateCheckoutContext, CheckoutContext } from '../features/checkout/checkoutFlow';
-import { CartItem } from '../domain/types';
-
-const originalData = useDataStore.getState();
-const originalAuth = useAuthStore.getState();
-const originalCart = useCartStore.getState();
-const customer = originalData.users.find((user) => user.role === 'cliente')!;
-const merchant = { ...originalData.merchants[0], isOpen: true, status: 'activo' as const, minOrderCents: 0 };
-const product = { ...originalData.products.find((item) => item.merchantId === merchant.id)!, isAvailable: true, stock: 20 };
-const address = originalData.addresses.find((item) => item.userId === customer.id)!;
-const zone = { ...originalData.zones.find((item) => item.id === address.zoneId)!, isAvailable: true };
-const cartItem: CartItem = { id: 'checkout_item', productId: product.id, merchantId: merchant.id, quantity: 1, unitPriceCents: product.priceCents, selected: true };
-const create = vi.fn();
-
-const context = (): CheckoutContext => ({ userId: customer.id, addressId: address.id, items: [cartItem], addresses: [address], zones: [zone], merchants: [merchant], products: [product] });
-
-beforeEach(() => {
-  create.mockReset();
-  create.mockReturnValue({ success: true });
-  useDataStore.setState({ ...originalData, merchants: [merchant], products: [product], addresses: [address], zones: [zone], createPurchase: create });
-  useAuthStore.setState({ currentUser: customer, isAuthenticated: true, activeRole: 'cliente' });
-  useCartStore.setState({ items: [cartItem] });
-});
-afterEach(() => {
-  cleanup();
-  useDataStore.setState(originalData);
-  useAuthStore.setState(originalAuth);
-  useCartStore.setState(originalCart);
-  localStorage.clear();
-});
-
-const renderCheckout = () => render(
-  <MemoryRouter initialEntries={['/checkout']}>
-    <Routes>
-      <Route path="/checkout" element={<CheckoutPage />} />
-      <Route path="/cliente/pedidos/:id" element={<h1>Pedido registrado</h1>} />
-      <Route path="/carrito" element={<h1>Carrito</h1>} />
-      <Route path="/login" element={<h1>Iniciar sesión</h1>} />
-    </Routes>
-  </MemoryRouter>
-);
-
-const chooseCash = () => {
-  fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-  fireEvent.click(screen.getByRole('radio', { name: /Efectivo contra entrega/ }));
-  fireEvent.change(screen.getByLabelText('Monto con el que pagarás'), { target: { value: '1000' } });
+import { customer, item, order, quote, uid, setupCheckout } from './checkoutFixtures';
+const originalAuth = useAuthStore.getState(); const originalCart = useRealCartStore.getState();
+beforeEach(setupCheckout);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); useAuthStore.setState(originalAuth); useRealCartStore.setState(originalCart); sessionStorage.clear(); localStorage.clear(); });
+function renderCheckout() { return render(<MemoryRouter initialEntries={['/checkout']}><Routes>
+ <Route path="/checkout" element={<CheckoutPage />} /><Route path="/cliente/pedidos/:id" element={<h1>Pedido registrado</h1>} />
+ <Route path="/cliente/compras/:id" element={<h1>Compra registrada</h1>} /><Route path="/carrito" element={<h1>Carrito</h1>} /><Route path="/login" element={<h1>Iniciar sesión</h1>} />
+</Routes></MemoryRouter>); }
+async function payment() {
+ await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar al pago' })).toBeEnabled());
+ fireEvent.click(screen.getByRole('button', { name: 'Continuar al pago' }));
+ await waitFor(() => expect(screen.getByRole('radio', { name: 'Efectivo contra entrega' })).toBeEnabled());
+ fireEvent.click(screen.getByRole('radio', { name: 'Efectivo contra entrega' }));
+ if (!screen.getByLabelText('Monto con el que pagarás').hasAttribute('disabled')) fireEvent.change(screen.getByLabelText('Monto con el que pagarás'), { target: { value: '50' } });
+}
+async function review() { await payment(); fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido' })); await screen.findByRole('button', { name: /Confirmar pedido/ }); }
+const confirm = () => fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
+describe('Checkout original con API', () => {
+ it('rechaza una cotización con productos o sumas inconsistentes', async () => {
+  vi.mocked(orderingApi.quote).mockResolvedValue({ ...quote, totalCents: 1 });
+  renderCheckout(); await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('La cotización no coincide'));
+  expect(screen.getByRole('button', { name: 'Continuar al pago' })).toBeDisabled(); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
+ it('respeta la indisponibilidad de efectivo informada por la API', async () => {
+  vi.mocked(billingApi.methods).mockResolvedValue([{ code: 'cash', label: 'Efectivo', available: false, unavailableReason: 'No disponible' }]);
+  renderCheckout(); await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar al pago' })).toBeEnabled());
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar al pago' }));
+  expect(screen.getByRole('radio', { name: 'Efectivo contra entrega' })).toBeDisabled(); expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
+ });
+ it('un rechazo comercial libera el intento y obliga a una nueva revisión', async () => {
+  vi.mocked(orderingApi.create).mockRejectedValue(new ApiError('El precio cambió', 409, 'PRICE_CHANGED'));
+  renderCheckout(); await review(); confirm();
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('El precio cambió'));
+  expect(pendingFor(customer.id)).toBeNull(); expect(useRealCartStore.getState().items).toHaveLength(1);
+  expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
+ });
+ it('recupera una confirmación de grupo conservando el tipo de intento', async () => {
+  saveCheckoutIntent(customer.id, { key: uid(65), group: true, body: { addressId: uid(2), paymentMethod: 'cash', items: [{ skuId: item.skuId, quantity: 2, note: item.note }], cashTenderCents: null, expectedTotalCents: 2350 }, snapshot: [item] });
+  const attempt = vi.spyOn(orderingApi, 'groupAttempt').mockResolvedValue({ id: uid(66), createdAt: customer.createdAt, subtotalCents: 2000, deliveryFeeCents: 350, totalCents: 2350, orders: [] });
+  const create = vi.spyOn(orderingApi, 'groupCreate'); renderCheckout();
+  fireEvent.click(await screen.findByRole('button', { name: 'Recuperar o reintentar confirmación' })); await screen.findByRole('heading', { name: 'Compra registrada' });
+  expect(attempt).toHaveBeenCalledWith(uid(65)); expect(create).not.toHaveBeenCalled(); expect(orderingApi.attempt).not.toHaveBeenCalled();
+ });
+ it('valida el efectivo sin aceptar precisión inválida', () => {
+  expect(parseCashCents('50,25')).toBe(5025);
+  for (const value of ['', '50abc', '1e3', '-5', '0', '10.999']) expect(parseCashCents(value)).toBeNull();
+ });
+ it('bloquea pasos futuros y conserva tarjetas digitales deshabilitadas', async () => {
+  renderCheckout(); expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
+  await payment(); expect(screen.getByRole('radio', { name: 'Yape / Plin' })).toBeDisabled();
+  expect(screen.getByRole('radio', { name: 'Tarjeta de débito o crédito' })).toBeDisabled(); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
+ it('envía intención y total del servidor, sin precios locales', async () => {
+  renderCheckout(); await review(); confirm(); await screen.findByRole('heading', { name: 'Pedido registrado' });
+  expect(orderingApi.create).toHaveBeenCalledTimes(1);
+  const [body, key] = vi.mocked(orderingApi.create).mock.calls[0];
+  expect(body).toEqual({ addressId: uid(2), paymentMethod: 'cash', cashTenderCents: 5000, expectedTotalCents: 2350, items: [{ skuId: item.skuId, quantity: 2, note: item.note }] });
+  expect(key).toMatch(/^[a-f0-9-]{36}$/); expect(useRealCartStore.getState().items).toEqual([]); expect(pendingFor(customer.id)).toBeNull();
+ });
+ it('exige revisar otra vez si el servidor cambia precios', async () => {
+  renderCheckout(); await payment();
+  vi.mocked(orderingApi.quote).mockResolvedValue({ ...quote, items: [{ ...quote.items[0], unitPriceCents: 1100 }], subtotalCents: 2200, totalCents: 2550 });
   fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido' }));
-};
-
-describe('Checkout validation', () => {
-  it('accepts a valid context and rejects a foreign address or unavailable zone', () => {
-    expect(validateCheckoutContext(context())).toBeNull();
-    expect(validateCheckoutContext({ ...context(), addresses: [{ ...address, userId: 'other_user' }] })).toMatch(/tu cuenta/);
-    expect(validateCheckoutContext({ ...context(), zones: [{ ...zone, isAvailable: false }] })).toMatch(/fuera de cobertura/);
-  });
-
-  it('rejects a closed store, insufficient aggregate stock and outdated prices', () => {
-    expect(validateCheckoutContext({ ...context(), merchants: [{ ...merchant, isOpen: false }] })).toMatch(/comercio/);
-    expect(validateCheckoutContext({ ...context(), products: [{ ...product, stock: 1 }], items: [cartItem, { ...cartItem, id: 'second_item' }] })).toMatch(/stock/);
-    expect(validateCheckoutContext({ ...context(), products: [{ ...product, priceCents: product.priceCents + 100 }] })).toMatch(/precio/);
-  });
-
-  it('changes the review key when address, total or products change', () => {
-    const initial = checkoutSnapshot(context()).key;
-    expect(checkoutSnapshot({ ...context(), zones: [{ ...zone, baseFeeCents: zone.baseFeeCents + 100 }] }).key).not.toBe(initial);
-    expect(checkoutSnapshot({ ...context(), addresses: [{ ...address, reference: 'Otra referencia' }] }).key).not.toBe(initial);
-    expect(checkoutSnapshot({ ...context(), items: [{ ...cartItem, quantity: 2 }] }).key).not.toBe(initial);
-  });
-
-  it('parses cash amounts without accepting incomplete strings or invalid precision', () => {
-    expect(parseCashCents('50,25')).toBe(5025);
-    expect(parseCashCents(' 50.25 ')).toBe(5025);
-    for (const value of ['', '50abc', '1e3', '-5', '0', '10.999']) expect(parseCashCents(value)).toBeNull();
-  });
-});
-
-describe('Checkout step protection', () => {
-  it('locks future steps and requires explicit payment selection', () => {
-    renderCheckout();
-    expect(screen.getByRole('button', { name: 'Paso 2: Pago' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Paso 3: Revisión' }));
-    expect(screen.queryByRole('button', { name: /Confirmar pedido/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
-    expect(create).not.toHaveBeenCalled();
-  });
-
-  it('invalidates review when the selected products change', () => {
-    renderCheckout();
-    chooseCash();
-    expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeEnabled();
-    act(() => useCartStore.setState({ items: [{ ...cartItem, quantity: 2 }] }));
-    expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent('Los datos del pedido cambiaron.');
-    expect(create).not.toHaveBeenCalled();
-  });
-
-  it('requires another payment review after changing the method', () => {
-    renderCheckout();
-    chooseCash();
-    fireEvent.click(screen.getByRole('button', { name: 'Volver a pago' }));
-    fireEvent.click(screen.getByRole('radio', { name: /Yape.*Plin/ }));
-    expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('checkbox', { name: /Entiendo que el pago quedará pendiente/ }));
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeEnabled();
-  });
-
-  it('blocks duplicate confirmations and registers digital payments as pending', async () => {
-    renderCheckout();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    fireEvent.click(screen.getByRole('radio', { name: /Yape.*Plin/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /Entiendo que el pago quedará pendiente/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido' }));
-    const confirm = screen.getByRole('button', { name: /Confirmar pedido/ });
-    fireEvent.click(confirm);
-    fireEvent.click(confirm);
-    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
-    const purchase = create.mock.calls[0][0];
-    expect(purchase.paymentStatus).toBe('pendiente');
-    expect(purchase.merchantOrders[0].paymentStatus).toBe('pendiente');
-    expect(purchase.cardLastFour).toBeUndefined();
-    expect(screen.getByRole('heading', { name: 'Pedido registrado' })).toBeInTheDocument();
-  });
-
-  it('revalidates commerce availability before the delayed submission runs', async () => {
-    renderCheckout();
-    chooseCash();
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
-    act(() => useDataStore.setState({ merchants: [{ ...merchant, isOpen: false }] }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/comercio|datos del pedido/));
-    expect(create).not.toHaveBeenCalled();
-    expect(useCartStore.getState().items).toHaveLength(1);
-  });
-
-  it('accepts comma decimals but blocks insufficient or malformed cash amounts', () => {
-    renderCheckout();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Efectivo contra entrega' }));
-    const input = screen.getByLabelText('Monto con el que pagarás');
-    fireEvent.change(input, { target: { value: '1,00' } });
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
-    expect(input).toHaveAttribute('aria-invalid', 'true');
-    fireEvent.change(input, { target: { value: '50abc' } });
-    expect(screen.getByRole('alert')).toHaveTextContent('Ingresa un monto válido en soles');
-    fireEvent.change(input, { target: { value: '1000,25' } });
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeEnabled();
-  });
-
-  it('uses the exact cash amount and records no change due', () => {
-    renderCheckout();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Efectivo contra entrega' }));
-    fireEvent.click(screen.getByRole('button', { name: /^Monto exacto/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('Pagarás el monto exacto, sin vuelto.');
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeEnabled();
-  });
-
-  it('does not offer preset bills below the order total', () => {
-    useDataStore.setState({ products: [{ ...product, priceCents: 30000 }] });
-    useCartStore.setState({ items: [{ ...cartItem, unitPriceCents: 30000 }] });
-    renderCheckout();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Efectivo contra entrega' }));
-    const group = screen.getByRole('group', { name: 'Montos rápidos de efectivo' });
-    expect(group.querySelectorAll('button')).toHaveLength(1);
-    expect(group).toHaveTextContent('Monto exacto');
-  });
-
-  it('does not collect card details or claim a charge when selecting a card', async () => {
-    renderCheckout();
-    fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Tarjeta de débito o crédito' }));
-    expect(screen.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
-    expect(screen.queryByText(/4242|Número oficial|Escanea QR/)).not.toBeInTheDocument();
-    expect(screen.getByText(/No ingreses datos de tu tarjeta/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox', { name: /Entiendo que el pago quedará pendiente/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido' }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
-    await waitFor(() => expect(create).toHaveBeenCalledOnce());
-    expect(create.mock.calls[0][0]).toMatchObject({ paymentMethod: 'tarjeta', paymentStatus: 'pendiente' });
-    expect(create.mock.calls[0][0].cardLastFour).toBeUndefined();
-  });
-  it('shows selected products and links to correct the address and payment in review', () => {
-    useCartStore.setState({ items: [cartItem, { ...cartItem, id: 'saved_item', productId: 'saved_product', selected: false }] });
-    renderCheckout();
-    chooseCash();
-    const productsRegion = screen.getByRole('region', { name: 'Productos seleccionados' });
-    expect(within(productsRegion).getByText(product.name)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Cambiar dirección' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Cambiar pago' })).toBeEnabled();
-    expect(screen.getByRole('link', { name: 'Cambiar productos' })).toHaveAttribute('href', '/carrito');
-    expect(screen.getByText(/Los productos que dejaste sin seleccionar seguirán/)).toBeInTheDocument();
-  });
-
-  it('keeps the cart and unlocks confirmation when registering the order fails', async () => {
-    create.mockReturnValue({ success: false, message: 'No se puede registrar este pedido.' });
-    renderCheckout();
-    chooseCash();
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No se puede registrar este pedido.'));
-    expect(useCartStore.getState().items).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /Confirmar pedido/ })).toBeEnabled();
-    expect(create).toHaveBeenCalledOnce();
-  });
-
-  it('offers recovery without another confirmation if the order is saved but cart cleanup fails', async () => {
-    useDataStore.setState({ createPurchase: originalData.createPurchase });
-    useCartStore.setState({ removeItems: () => { throw new Error('Storage unavailable'); } });
-    renderCheckout();
-    chooseCash();
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Tu pedido ya está registrado'));
-    expect(screen.getByRole('link', { name: 'Ver pedido registrado' })).toHaveAttribute('href', expect.stringMatching(/^\/cliente\/pedidos\/pur_/));
-    expect(screen.getByRole('button', { name: /^Pedido registrado/ })).toBeDisabled();
-    expect(useCartStore.getState().items).toHaveLength(1);
-  });
-
-  it('completes a real store purchase, keeps unselected items and displays the registration confirmation', async () => {
-    useDataStore.setState({ createPurchase: originalData.createPurchase });
-    useCartStore.setState({ items: [cartItem, { ...cartItem, id: 'saved_item', productId: 'saved_product', selected: false }] });
-    render(
-      <MemoryRouter initialEntries={['/checkout']}>
-        <Routes>
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/cliente/pedidos/:id" element={<OrderDetailPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-    chooseCash();
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/ }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Pedido registrado' })).toBeInTheDocument());
-    expect(screen.getByRole('status')).toHaveTextContent('El comercio revisará tu pedido.');
-    expect(useCartStore.getState().items).toEqual([expect.objectContaining({ id: 'saved_item', selected: false })]);
-    const purchase = useDataStore.getState().purchases[0];
-    expect(purchase.customerId).toBe(customer.id);
-    expect(purchase.merchantOrders[0].items[0].productId).toBe(product.id);
-    expect(purchase.grandTotalCents).toBe(product.priceCents + zone.baseFeeCents);
-  });
-
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Los importes cambiaron'));
+  expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled(); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
+ it('invalida revisión al cambiar el carrito', async () => {
+  renderCheckout(); await review(); act(() => useRealCartStore.getState().update(item.skuId, { quantity: 1 }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Paso 3: Revisión' })).toBeDisabled()); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
+ it('bloquea doble confirmación y conserva líneas nuevas y no seleccionadas', async () => {
+  let resolve!: (value: { orderId: string; purchaseId: string }) => void;
+  vi.mocked(orderingApi.create).mockImplementation(() => new Promise(done => { resolve = done; }));
+  renderCheckout(); await review(); const button = screen.getByRole('button', { name: /Confirmar pedido/ }); fireEvent.click(button); fireEvent.click(button);
+  await waitFor(() => expect(orderingApi.create).toHaveBeenCalledTimes(1));
+  act(() => useRealCartStore.setState({ items: [{ ...item, revision: uid(20), quantity: 3 }, { ...item, skuId: uid(21), selected: false }] }));
+  await act(async () => resolve({ orderId: order.id, purchaseId: order.purchaseId }));
+  await screen.findByRole('heading', { name: 'Pedido registrado' }); expect(useRealCartStore.getState().items).toHaveLength(2);
+ });
+ it('recupera respuesta perdida tras recargar sin otra creación', async () => {
+  vi.mocked(orderingApi.create).mockRejectedValue(new ApiError('Conexión interrumpida', 0, 'NETWORK_ERROR'));
+  const view = renderCheckout(); await review(); confirm(); await screen.findByRole('button', { name: 'Recuperar o reintentar confirmación' });
+  const pending = pendingFor(customer.id); expect(pending).not.toBeNull(); expect(useRealCartStore.getState().items).toHaveLength(1);
+  view.unmount(); renderCheckout(); fireEvent.click(await screen.findByRole('button', { name: 'Recuperar o reintentar confirmación' }));
+  await screen.findByRole('heading', { name: 'Pedido registrado' });
+  expect(orderingApi.attempt).toHaveBeenCalledWith((pending as { key: string }).key); expect(orderingApi.create).toHaveBeenCalledTimes(1);
+ });
+ it('reenvía cuerpo y clave idénticos si el intento aún no existe', async () => {
+  const pending = saveCheckoutIntent(customer.id, { key: uid(30), group: false, body: { addressId: uid(2), paymentMethod: 'cash', cashTenderCents: 5000, expectedTotalCents: 2350, items: [{ skuId: item.skuId, quantity: 2, note: item.note }] }, snapshot: [item] });
+  vi.mocked(orderingApi.attempt).mockRejectedValue(new ApiError('Sin intento', 404, 'NOT_FOUND'));
+  renderCheckout(); fireEvent.click(await screen.findByRole('button', { name: 'Recuperar o reintentar confirmación' }));
+  await screen.findByRole('heading', { name: 'Pedido registrado' }); expect(orderingApi.create).toHaveBeenCalledWith(pending.body, pending.key);
+ });
+ it('conserva intento ante conflicto de idempotencia', async () => {
+  vi.mocked(orderingApi.create).mockRejectedValue(new ApiError('Clave en conflicto', 409, 'IDEMPOTENCY_CONFLICT'));
+  renderCheckout(); await review(); confirm(); await screen.findByRole('button', { name: 'Recuperar o reintentar confirmación' });
+  expect(pendingFor(customer.id)).not.toBeNull(); expect(screen.getByRole('link', { name: 'Consultar mis pedidos' })).toBeInTheDocument();
+ });
+ it('no compra si no puede guardar antes el intento', async () => {
+  renderCheckout(); await review(); vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Almacenamiento bloqueado'); });
+  confirm(); await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Almacenamiento bloqueado')); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
+ it('no consume carrito si cambia la cuenta durante confirmación', async () => {
+  let resolve!: (value: { orderId: string; purchaseId: string }) => void;
+  vi.mocked(orderingApi.create).mockImplementation(() => new Promise(done => { resolve = done; }));
+  renderCheckout(); await review(); confirm(); act(() => useAuthStore.setState({ currentUser: { ...customer, id: uid(40) } }));
+  await act(async () => resolve({ orderId: order.id, purchaseId: order.purchaseId }));
+  expect(useRealCartStore.getState().items).toHaveLength(1); expect(sessionStorage.getItem(checkoutJournalKey(customer.id))).not.toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Pedido registrado' })).not.toBeInTheDocument();
+ });
+ it('usa grupo con efectivo exacto por entrega para dos tiendas', async () => {
+  const second = { ...quote, storeId: uid(50), storeName: 'Segunda tienda', items: [{ ...quote.items[0], skuId: uid(51) }] };
+  useRealCartStore.setState({ items: [item, { ...item, storeId: second.storeId, skuId: uid(51), productId: uid(52) }] });
+  vi.spyOn(orderingApi, 'groupQuote').mockResolvedValue({ stores: [quote, second], subtotalCents: 4000, deliveryFeeCents: 700, totalCents: 4700 });
+  vi.spyOn(orderingApi, 'groupCreate').mockResolvedValue({ id: uid(53), createdAt: customer.createdAt, subtotalCents: 4000, deliveryFeeCents: 700, totalCents: 4700, orders: [] });
+  renderCheckout(); await review(); confirm(); await screen.findByRole('heading', { name: 'Compra registrada' });
+  expect(orderingApi.groupCreate).toHaveBeenCalledWith(expect.objectContaining({ cashTenderCents: null, expectedTotalCents: 4700 }), expect.any(String)); expect(orderingApi.create).not.toHaveBeenCalled();
+ });
 });

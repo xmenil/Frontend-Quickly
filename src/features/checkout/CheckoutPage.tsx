@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useCartStore } from '../../store/cartStore';
-import { useDataStore } from '../../store/dataStore';
-import { useAuthStore } from '../../store/authStore';
-import { validateCashPayment } from '../../domain/pricingRules';
-import { generateOrderNumber } from '../../lib/utils';
-import { formatCents, centsToSoles } from '../../lib/currency';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { formatCents as formatMoney, centsToSoles } from '../../lib/currency';
 import { PriceSummary } from '../../components/shared/PriceSummary';
 import { AddressForm } from '../../components/shared/AddressForm';
 import { Dialog } from '../../components/ui/Dialog';
@@ -13,326 +8,21 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Badge } from '../../components/ui/Badge';
-import { PaymentMethod, Purchase, MerchantOrder, TrackingEvent } from '../../domain/types';
-import {
-  MapPin,
-  CreditCard,
-  Banknote,
-  Smartphone,
-  AlertCircle,
-  Plus,
-  ChevronLeft,
-  Store,
-  Check,
-} from 'lucide-react';
-
-import { checkoutSnapshot, validateCheckoutContext, parseCashCents } from './checkoutFlow';
+import { MapPin, AlertCircle, Plus, ChevronLeft, Store, Check } from 'lucide-react';
+import { RemoteState } from '../operations/shared';
+import { useCheckout } from './useCheckout';
+const formatCents = (value: number | null | undefined) => value == null ? 'Por cotizar' : formatMoney(value);
 
 export const CheckoutPage: React.FC = () => {
-  const { items, removeItems } = useCartStore();
-  const { merchants, products, addresses, zones, createPurchase, ensureExampleAddresses } = useDataStore();
-  const { currentUser, isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const userAddresses = addresses.filter((address) => address.userId === currentUser?.id);
-  const [selectedAddressId, setSelectedAddressId] = useState(userAddresses.find((address) => address.isDefault && zones.some((zone) => zone.id === address.zoneId && zone.isAvailable))?.id || userAddresses.find((address) => zones.some((zone) => zone.id === address.zoneId && zone.isAvailable))?.id || '');
-  const [showNewAddressDialog, setShowNewAddressDialog] = useState(false);
-  const [addressNotice, setAddressNotice] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [cashAmountGivenSoles, setCashAmountGivenSoles] = useState('');
-  const [cashTouched, setCashTouched] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [recordedPurchaseId, setRecordedPurchaseId] = useState<string | null>(null);
-  const checkoutLocked = isSubmitting || Boolean(recordedPurchaseId);
-  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
-  const previousStepRef = useRef<1 | 2 | 3>(1);
-  const [orderError, setOrderError] = useState<string | null>(null);
-  const [acceptedAddressKey, setAcceptedAddressKey] = useState('');
-  const [reviewedPaymentKey, setReviewedPaymentKey] = useState('');
-  const [digitalAcknowledgementKey, setDigitalAcknowledgementKey] = useState('');
-  const submissionRef = useRef(false);
-  const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const context = { userId: currentUser?.id || '', addressId: selectedAddressId, items, addresses, zones, merchants, products };
-  const snapshot = checkoutSnapshot(context);
-  const { selectedAddress, selectedZone, selectedItems, calculations: cartCalculations, key: contextKey } = snapshot;
-  const contextError = validateCheckoutContext(context);
-  const parsedCashCents = parseCashCents(cashAmountGivenSoles);
-  const cashGivenCents = parsedCashCents || 0;
-  const cashValidation = validateCashPayment(cashGivenCents, cartCalculations.grandTotalCents);
-  const digitalKey = JSON.stringify([contextKey, paymentMethod]);
-  const digitalAcknowledged = digitalAcknowledgementKey === digitalKey;
-  const paymentReady = Boolean(paymentMethod) && (paymentMethod === 'efectivo'
-    ? parsedCashCents !== null && cashValidation.isValid
-    : digitalAcknowledged);
-  const paymentKey = JSON.stringify([contextKey, paymentMethod, paymentMethod === 'efectivo' ? cashGivenCents : digitalAcknowledged]);
-  const addressCompleted = acceptedAddressKey === contextKey && !contextError;
-  const paymentCompleted = addressCompleted && paymentReady && reviewedPaymentKey === paymentKey;
-  const previousContextKey = useRef(contextKey);
-
-  useEffect(() => {
-    if (isAuthenticated && currentUser) ensureExampleAddresses(currentUser);
-  }, [isAuthenticated, currentUser, ensureExampleAddresses]);
-
-  useEffect(() => {
-    if (selectedAddressId || submissionRef.current) return;
-    const available = userAddresses.filter((address) => zones.some((zone) => zone.id === address.zoneId && zone.isAvailable));
-    const preferred = available.find((address) => address.isDefault) || available[0];
-    if (preferred) setSelectedAddressId(preferred.id);
-  }, [userAddresses, zones, selectedAddressId]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !currentUser) {
-      navigate('/login', { state: { from: '/checkout', message: 'Inicia sesión para finalizar tu pedido.' }, replace: true });
-    } else if (!selectedItems.length && !submissionRef.current) {
-      navigate('/carrito', { replace: true });
-    }
-  }, [isAuthenticated, currentUser, selectedItems.length, navigate, isSubmitting]);
-
-  useEffect(() => {
-    if (submissionRef.current) return;
-    if (previousContextKey.current !== contextKey) {
-      if (acceptedAddressKey) {
-        setOrderError('Los datos del pedido cambiaron. Revisa la dirección, el total y el pago antes de continuar.');
-        setCurrentStep(1);
-      }
-      setAcceptedAddressKey('');
-      setReviewedPaymentKey('');
-      setDigitalAcknowledgementKey('');
-      previousContextKey.current = contextKey;
-    }
-  }, [contextKey, acceptedAddressKey, isSubmitting]);
-
-  useEffect(() => {
-    setReviewedPaymentKey('');
-  }, [contextKey, paymentMethod, cashAmountGivenSoles, digitalAcknowledgementKey]);
-
-  useEffect(() => {
-    if (submissionRef.current) return;
-    if (currentStep > 1 && !addressCompleted) setCurrentStep(1);
-    else if (currentStep === 3 && !paymentCompleted) setCurrentStep(2);
-  }, [currentStep, addressCompleted, paymentCompleted, isSubmitting]);
-
-  useEffect(() => {
-    if (previousStepRef.current !== currentStep) {
-      stepHeadingRef.current?.focus();
-      previousStepRef.current = currentStep;
-    }
-  }, [currentStep]);
-
-  useEffect(() => () => {
-    if (submitTimerRef.current !== null) clearTimeout(submitTimerRef.current);
-  }, []);
-
-  const liveContext = () => {
-    const data = useDataStore.getState();
-    return { userId: useAuthStore.getState().currentUser?.id || '', addressId: selectedAddressId,
-      items: useCartStore.getState().items, addresses: data.addresses, zones: data.zones, merchants: data.merchants, products: data.products };
-  };
-
-  const goToStep = (step: 1 | 2 | 3) => {
-    if (submissionRef.current) return;
-    if (step === 1 || step === 2 && addressCompleted || step === 3 && paymentCompleted) {
-      setOrderError(null);
-      setCurrentStep(step);
-    }
-  };
-
-  const chooseAddress = (id: string) => {
-    if (submissionRef.current) return;
-    setSelectedAddressId(id);
-    setAcceptedAddressKey('');
-    setReviewedPaymentKey('');
-    setDigitalAcknowledgementKey('');
-    setOrderError(null);
-    setAddressNotice('');
-    setCurrentStep(1);
-  };
-
-  const continueToPayment = () => {
-    if (submissionRef.current) return;
-    const fresh = liveContext();
-    const error = validateCheckoutContext(fresh);
-    if (error) { setOrderError(error); return; }
-    setOrderError(null);
-    setAcceptedAddressKey(checkoutSnapshot(fresh).key);
-    setCurrentStep(2);
-  };
-
-  const selectPaymentMethod = (method: PaymentMethod) => {
-    if (submissionRef.current || method === paymentMethod) return;
-    setPaymentMethod(method);
-    setCashTouched(false);
-    setDigitalAcknowledgementKey('');
-    setReviewedPaymentKey('');
-    setOrderError(null);
-  };
-
-  const continueToReview = () => {
-    if (submissionRef.current) return;
-    const fresh = liveContext();
-    const error = validateCheckoutContext(fresh);
-    if (error || checkoutSnapshot(fresh).key !== acceptedAddressKey) {
-      setOrderError(error || 'Revisa la dirección y el total antes de continuar.');
-      setCurrentStep(1);
-      return;
-    }
-    if (!paymentReady) {
-      setOrderError(!paymentMethod ? 'Selecciona un método de pago.' :
-        paymentMethod === 'efectivo' ? 'Ingresa un monto válido y suficiente para pagar el pedido.' :
-        'Revisa las condiciones del método de pago antes de continuar.');
-      return;
-    }
-    setOrderError(null);
-    setReviewedPaymentKey(paymentKey);
-    setCurrentStep(3);
-  };
-
-  const grandTotalSoles = centsToSoles(cartCalculations.grandTotalCents);
-  const setCashAmount = (value: string) => {
-    setCashTouched(true);
-    setCashAmountGivenSoles(value);
-    setOrderError(null);
-  };
-  const handleSetExactCash = () => setCashAmount(String(grandTotalSoles));
-  const cashInputError = cashTouched
-    ? parsedCashCents === null ? 'Ingresa un monto válido en soles, con hasta dos decimales.'
-      : !cashValidation.isValid ? `El monto debe cubrir el total de ${formatCents(cartCalculations.grandTotalCents)}.` : undefined
-    : undefined;
-  const cashBills = [2000, 5000, 10000, 20000].filter((amount) => amount > cartCalculations.grandTotalCents);
-  const paymentOptions: { method: PaymentMethod; label: string; description: string; icon: typeof Banknote }[] = [
-    { method: 'yape_plin', label: 'Yape / Plin', description: 'Billetera digital; el pago requiere verificación.', icon: Smartphone },
-    { method: 'efectivo', label: 'Efectivo contra entrega', description: 'Indica con cuánto pagarás al recibir el pedido.', icon: Banknote },
-    { method: 'tarjeta', label: 'Tarjeta de débito o crédito', description: 'El pago requiere confirmación del servicio de cobro.', icon: CreditCard },
-  ];
-
-
-  const handleConfirmOrder = () => {
-    if (submissionRef.current) return;
-    const fresh = liveContext();
-    const error = validateCheckoutContext(fresh);
-    if (error || checkoutSnapshot(fresh).key !== acceptedAddressKey) {
-      setOrderError(error || 'Los datos del pedido cambiaron. Revisa la dirección y el total.');
-      setCurrentStep(1);
-      return;
-    }
-    if (currentStep !== 3 || !paymentCompleted || !paymentMethod || !selectedAddress) {
-      setOrderError('Completa el paso de pago antes de confirmar el pedido.');
-      setCurrentStep(2);
-      return;
-    }
-    submissionRef.current = true;
-    setIsSubmitting(true);
-    setOrderError(null);
-    // Build suborders for each merchant
-    const merchantOrders: MerchantOrder[] = cartCalculations.groups.map((grp, idx) => {
-      const orderLines = grp.items.map((it) => {
-        const prod = products.find((p) => p.id === it.productId);
-        const unitPrice = it.unitPriceCents + (it.variantPriceDifferenceCents || 0);
-        return {
-          productId: it.productId,
-          productName: prod?.name || 'Producto',
-          productImage: prod?.imageUrl || '',
-          quantity: it.quantity,
-          unitPriceCents: unitPrice,
-          variantName: it.selectedVariantName,
-          note: it.note,
-          subtotalCents: unitPrice * it.quantity,
-        };
-      });
-
-      const initialTimeline: TrackingEvent[] = [
-        {
-          id: `tr_${Date.now()}_${idx}`,
-          timestamp: new Date().toISOString(),
-          status: 'pendiente',
-          title: 'Pedido registrado',
-          description: `Esperando confirmación de ${grp.merchant.name}`,
-          actor: currentUser?.name || 'Cliente',
-        },
-      ];
-
-      return {
-        id: `mo_${Date.now()}_${idx}`,
-        purchaseId: '', // populated below
-        merchantId: grp.merchant.id,
-        merchantName: grp.merchant.name,
-        merchantPhone: grp.merchant.phone,
-        merchantAddress: grp.merchant.address,
-        status: 'pendiente',
-        items: orderLines,
-        subtotalCents: grp.subtotalCents,
-        deliveryFeeCents: grp.deliveryFeeCents,
-        totalCents: grp.totalCents,
-        paymentStatus: 'pendiente',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        timeline: initialTimeline,
-      };
-    });
-
-    const purchaseId = `pur_${Date.now()}`;
-    const purchaseCode = generateOrderNumber();
-
-    merchantOrders.forEach((mo) => (mo.purchaseId = purchaseId));
-
-    const newPurchase: Purchase = {
-      id: purchaseId,
-      code: purchaseCode,
-      customerId: currentUser?.id || 'u_cliente_demo',
-      customerName: currentUser?.name || 'Cliente Demo',
-      customerPhone: selectedAddress.phone,
-      addressSnapshot: selectedAddress,
-      paymentMethod,
-      paymentStatus: 'pendiente',
-      subtotalCents: cartCalculations.itemsSubtotalCents,
-      totalDeliveryFeeCents: cartCalculations.totalDeliveryFeeCents,
-      grandTotalCents: cartCalculations.grandTotalCents,
-      merchantOrders,
-      createdAt: new Date().toISOString(),
-      status: 'pendiente',
-      cashAmountPaidCents: paymentMethod === 'efectivo' ? cashGivenCents : undefined,
-      changeDueCents: paymentMethod === 'efectivo' ? cashValidation.changeDueCents : undefined,
-    };
-
-    submitTimerRef.current = setTimeout(() => {
-      let created = false;
-      try {
-        const fresh = liveContext();
-        const error = validateCheckoutContext(fresh);
-        if (!useAuthStore.getState().isAuthenticated || !useAuthStore.getState().currentUser) {
-          setOrderError('Tu sesión cambió. Inicia sesión antes de confirmar el pedido.');
-          return;
-        }
-        if (error || checkoutSnapshot(fresh).key !== contextKey) {
-          setOrderError(error || 'El pedido cambió durante la confirmación. Revisa los datos antes de continuar.');
-          setAcceptedAddressKey('');
-          setReviewedPaymentKey('');
-          setCurrentStep(1);
-          return;
-        }
-        const result = createPurchase(newPurchase);
-        if (result.success) {
-          created = true;
-          setRecordedPurchaseId(purchaseId);
-          removeItems(selectedItems.map((item) => item.id));
-          navigate(`/cliente/pedidos/${purchaseId}`, { state: { isNewOrder: true } });
-        } else {
-          setOrderError(result.message || 'No se pudo registrar el pedido. Tus productos siguen en el carrito.');
-        }
-      } catch {
-        setOrderError(created ? 'El pedido ya se registró. Revisa tus pedidos antes de volver a intentarlo.' :
-          'No se pudo registrar el pedido. Revisa tus pedidos antes de volver a intentarlo.');
-      } finally {
-        submitTimerRef.current = null;
-        if (!created) submissionRef.current = false;
-        setIsSubmitting(false);
-      }
-    }, 450);
-  };
-
-  if (!isAuthenticated || !currentUser || !selectedItems.length) return null;
-
+  const { currentUser, isAuthenticated, sessionStatus, sessionError, initialize, currentStep, userAddresses, zones,
+    selectedAddressId, selectedAddress, selectedZone, showNewAddressDialog, setShowNewAddressDialog, addressNotice, setAddressNotice,
+    paymentMethod, cashAmountGivenSoles, isSubmitting, recordedPurchaseId, recordedDestination, checkoutLocked, stepHeadingRef,
+    orderError, items, selectedItems, products, cartCalculations, contextError, parsedCashCents, cashGivenCents, cashValidation,
+    paymentReady, addressCompleted, paymentCompleted, chooseAddress, goToStep, continueToPayment, selectPaymentMethod, continueToReview,
+    setCashAmount, setCashTouched, handleSetExactCash, cashInputError, cashBills, paymentOptions, handleConfirmOrder, recover, pending, invalidIntent,
+    multi, quote, reviewBusy, addressesResource, baseQuote, methods, refreshAddresses } = useCheckout();
+  if (sessionStatus === 'checking' || sessionStatus === 'error') return <div className="mx-auto max-w-7xl px-4 py-6"><RemoteState loading={sessionStatus === 'checking'} error={sessionError || undefined} retry={() => void initialize()}/></div>;
+  if (!isAuthenticated || !currentUser || (!selectedItems.length && !pending && !invalidIntent && !recordedPurchaseId)) return null;
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 pb-32 sm:px-6 lg:px-8">
       <Link to="/carrito" aria-disabled={checkoutLocked} onClick={(event) => { if (checkoutLocked) event.preventDefault(); }}
@@ -367,10 +57,16 @@ export const CheckoutPage: React.FC = () => {
       {orderError && (
         <div role="alert" className={`space-y-3 rounded-xl border p-4 text-sm ${recordedPurchaseId ? 'border-info-border bg-info-soft text-info-strong' : 'border-destructive-border bg-destructive-soft text-destructive-strong'}`}>
           <div className="flex items-start gap-3"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><div className="min-w-0 space-y-1"><p className="font-semibold">{recordedPurchaseId ? 'Tu pedido ya está registrado' : 'Revisa los datos del pedido'}</p><p>{orderError}</p></div></div>
-          {recordedPurchaseId && <Link className="inline-flex min-h-11 items-center rounded-xl border border-info px-4 py-2 font-medium" to={`/cliente/pedidos/${recordedPurchaseId}`}>Ver pedido registrado</Link>}
+          {recordedPurchaseId && <Link className="inline-flex min-h-11 items-center rounded-xl border border-info px-4 py-2 font-medium" to={recordedDestination}>Ver pedido registrado</Link>}
         </div>
       )}
 
+      {(pending || invalidIntent) && !recordedPurchaseId && <section role="status" className="space-y-3 rounded-xl border border-info-border bg-info-soft p-4 text-sm text-info-strong">
+        <h2 className="font-semibold">{invalidIntent ? 'No se pudo recuperar la confirmación guardada' : 'Tu confirmación necesita comprobarse'}</h2>
+        <p>{invalidIntent ? 'Revisa tus pedidos antes de iniciar otra compra. No enviaremos una solicitud nueva con estos datos dañados.' : 'Conservamos la misma solicitud para consultar si el pedido se registró. Si aún no existe, podrás reintentarlo sin duplicar la compra.'}</p>
+        {pending && <Button type="button" disabled={isSubmitting} isLoading={isSubmitting} onClick={recover}>Recuperar o reintentar confirmación</Button>}
+        <Link to="/cliente/pedidos" className="inline-flex min-h-11 items-center px-3 font-semibold">Consultar mis pedidos</Link>
+      </section>}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column (Interactive Steps) */}
         <fieldset disabled={checkoutLocked} aria-busy={isSubmitting} className="min-w-0 lg:col-span-2 space-y-6">
@@ -388,14 +84,16 @@ export const CheckoutPage: React.FC = () => {
                 </Button>
               </header>
               {addressNotice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-3 text-sm text-selva-strong">{addressNotice}</p>}
-              {userAddresses.length === 0 ? (
+              <RemoteState loading={addressesResource.loading} error={addressesResource.error} retry={addressesResource.reload}/>
+              <RemoteState loading={baseQuote.loading && !!selectedAddress} error={baseQuote.error} retry={baseQuote.reload}/>
+              {addressesResource.loading || addressesResource.error ? null : userAddresses.length === 0 ? (
                 <EmptyState icon={<MapPin className="h-8 w-8" aria-hidden="true" />} title="No tienes direcciones guardadas" description="Agrega una dirección para calcular el envío y continuar con el pago." />
               ) : (
                 <fieldset className="space-y-3">
                   <legend className="sr-only">Elige una dirección de entrega</legend>
                   {userAddresses.map((address) => {
                     const zone = zones.find((entry) => entry.id === address.zoneId);
-                    const available = Boolean(zone?.isAvailable);
+                    const available = address.zoneActive && Boolean(zone?.isAvailable);
                     const selected = selectedAddressId === address.id;
                     return (
                       <label key={address.id} className={`flex min-h-11 items-start gap-3 rounded-xl border p-4 ${selected ? 'border-primary bg-primary-50' : 'border-border'} ${available ? 'cursor-pointer hover:border-field' : 'bg-surface-subtle'}`}>
@@ -407,7 +105,7 @@ export const CheckoutPage: React.FC = () => {
                           <p className="break-words text-sm font-medium text-ink">{address.street} #{address.number}</p>
                           <p className="break-words text-xs text-ink-light">Referencia: {address.reference}</p>
                           <p className="break-words text-xs text-ink-muted">Recibe: {address.recipientName} · <span className="tabular-nums">{address.phone}</span></p>
-                          {available && zone ? <div className="flex flex-wrap justify-between gap-2 border-t border-border pt-2 text-xs text-ink-light"><span>{zone.name}</span><span className="tabular-nums">Envío: <strong>{formatCents(zone.baseFeeCents)}</strong> · {zone.estimatedMinutes} min estimados</span></div> : <p className="text-xs text-destructive">Selecciona otra dirección con cobertura para continuar.</p>}
+                          {available && zone ? <div className="flex flex-wrap justify-between gap-2 border-t border-border pt-2 text-xs text-ink-light"><span>{zone.name}</span><span className="tabular-nums">Tarifa base por tienda: <strong>{formatCents(zone.baseFeeCents)}</strong> · {zone.estimatedMinutes} min estimados</span></div> : <p className="text-xs text-destructive">Selecciona otra dirección con cobertura para continuar.</p>}
                         </div>
                       </label>
                     );
@@ -430,15 +128,17 @@ export const CheckoutPage: React.FC = () => {
                 <p className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-3 text-sm text-ink-light">Total del pedido <span className="text-lg font-bold tabular-nums text-ink">{formatCents(cartCalculations.grandTotalCents)}</span></p>
               </header>
 
+              <RemoteState loading={methods.loading} error={methods.error} retry={methods.reload}/>
               <fieldset className="space-y-3">
                 <legend className="sr-only">Método de pago</legend>
                 {paymentOptions.map((option) => (
                   <label key={option.method} className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-3 ${paymentMethod === option.method ? 'border-primary bg-primary-50' : 'border-border hover:border-field'}`}>
                     <input type="radio" name="checkout-payment-method" value={option.method} aria-label={option.label}
+                      disabled={!option.available}
                       checked={paymentMethod === option.method} onChange={() => selectPaymentMethod(option.method)}
                       className="mt-1 h-5 w-5 shrink-0 accent-primary" />
                     <option.icon className="mt-1 h-5 w-5 shrink-0 text-ink-muted" aria-hidden="true" />
-                    <span className="min-w-0 space-y-1"><span className="block text-sm font-semibold text-ink">{option.label}</span><span className="block text-xs text-ink-light">{option.description}</span></span>
+                    <span className="min-w-0 space-y-1"><span className="block text-sm font-semibold text-ink">{option.label}{!option.available && <Badge variant="warning">No disponible</Badge>}</span><span className="block text-xs text-ink-light">{option.description}</span></span>
                   </label>
                 ))}
               </fieldset>
@@ -448,6 +148,7 @@ export const CheckoutPage: React.FC = () => {
               {paymentMethod === 'efectivo' && (
                 <div className="space-y-4 border-t border-border pt-4">
                   <h3 className="text-sm font-semibold text-ink">Prepara el efectivo y tu vuelto</h3>
+                  {multi && <p className="rounded-xl border border-info-border bg-info-soft p-3 text-sm text-info-strong">Cada tienda cobrará su propio pedido. Prepara el importe exacto de cada entrega que aparece en el resumen.</p>}
                   <div className="flex flex-wrap gap-2" role="group" aria-label="Montos rápidos de efectivo">
                     <Button type="button" variant="outline" size="sm" aria-pressed={parsedCashCents === cartCalculations.grandTotalCents}
                       className={parsedCashCents === cartCalculations.grandTotalCents ? 'bg-primary-50' : ''}
@@ -459,7 +160,8 @@ export const CheckoutPage: React.FC = () => {
                     ))}
                   </div>
                   <Input id="checkout-cash-amount" label="Monto con el que pagarás" type="text" inputMode="decimal"
-                    value={cashAmountGivenSoles} onChange={(event) => setCashAmount(event.target.value)}
+                    disabled={multi}
+                    value={multi && quote ? String(quote.totalCents / 100) : cashAmountGivenSoles} onChange={(event) => setCashAmount(event.target.value)}
                     onBlur={() => setCashTouched(true)} placeholder="Ej. 50,00" error={cashInputError}
                     helperText="Escribe el monto disponible en soles. Puedes usar coma o punto decimal." />
                   {parsedCashCents !== null && cashValidation.isValid && (
@@ -471,23 +173,11 @@ export const CheckoutPage: React.FC = () => {
                 </div>
               )}
 
-              {paymentMethod && paymentMethod !== 'efectivo' && (
-                <div className="space-y-3 rounded-xl border border-info-border bg-info-soft p-4">
-                  <h3 className="text-sm font-semibold text-info-strong">{paymentMethod === 'yape_plin' ? 'Pago con Yape / Plin' : 'Pago con tarjeta'}</h3>
-                  <p id="checkout-digital-help" className="text-sm text-info-strong">El pedido quedará con pago pendiente de verificación. Elegir este método no realiza un cargo ni confirma que hayas pagado.</p>
-                  <p className="text-xs text-ink-light">{paymentMethod === 'yape_plin' ? 'Los datos de cobro deberán ser proporcionados por el comercio o el servicio de pago.' : 'Aún no hay una pasarela conectada. No ingreses datos de tu tarjeta en este formulario.'}</p>
-                  <label htmlFor="checkout-digital-acknowledgement" className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl text-sm text-ink">
-                    <input id="checkout-digital-acknowledgement" type="checkbox" checked={digitalAcknowledged}
-                      aria-describedby="checkout-digital-help" className="mt-1 h-5 w-5 shrink-0 accent-primary"
-                      onChange={(event) => { setDigitalAcknowledgementKey(event.target.checked ? digitalKey : ''); setOrderError(null); }} />
-                    <span>Entiendo que el pago quedará pendiente de verificación.</span>
-                  </label>
-                </div>
-              )}
 
               <footer className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-between">
                 <Button type="button" variant="outline" size="sm" onClick={() => goToStep(1)}>Volver a dirección</Button>
-                <Button type="button" variant="primary" size="sm" className="min-h-12" disabled={!paymentReady || isSubmitting} onClick={continueToReview}>Revisar pedido</Button>
+                <Button type="button" variant="primary" size="sm" className="min-h-12" isLoading={reviewBusy}
+                  disabled={!paymentReady || isSubmitting || baseQuote.loading} onClick={continueToReview}>Revisar pedido</Button>
               </footer>
             </section>
           )}
@@ -557,7 +247,7 @@ export const CheckoutPage: React.FC = () => {
         </fieldset>
 
         <aside aria-label="Importe del pedido" className="min-w-0 space-y-4 lg:sticky lg:top-40">
-          <PriceSummary deliveryIsEstimate={!selectedZone} groups={cartCalculations.groups}
+          <PriceSummary deliveryIsEstimate={!quote} groups={cartCalculations.groups}
             itemsSubtotalCents={cartCalculations.itemsSubtotalCents} totalDeliveryFeeCents={cartCalculations.totalDeliveryFeeCents}
             grandTotalCents={cartCalculations.grandTotalCents} />
           <p className="text-xs text-ink-muted">El resumen incluye únicamente los productos seleccionados en el carrito.</p>
@@ -573,8 +263,9 @@ export const CheckoutPage: React.FC = () => {
         maxWidth="lg"
       >
         <AddressForm
-          userId={currentUser?.id || 'u_cliente_demo'}
+          userId={currentUser.id}
           onSuccess={(address) => {
+            refreshAddresses();
             chooseAddress(address.id);
             setAddressNotice('Dirección guardada y seleccionada.');
             setShowNewAddressDialog(false);

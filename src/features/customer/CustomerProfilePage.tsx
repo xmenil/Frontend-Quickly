@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { useDataStore } from '../../store/dataStore';
+import { useCustomerOrders } from '../orders/customerOrderModel';
+import { useCustomerAddresses } from './customerAddressModel';
+import { useFavoriteRecords, useCustomerNotifications } from './customerAccountModel';
+import { useRemote, RemoteState } from '../operations/shared';
+import { mediaApi, mediaUrl } from '../../services/api/mediaApi';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { formatCents } from '../../lib/currency';
@@ -24,7 +28,25 @@ import {
 
 export const CustomerProfilePage: React.FC = () => {
   const { currentUser, updateProfile, logout } = useAuthStore();
-  const { purchases, addresses, favoriteMerchantIds, favoriteProductIds, notifications, zones } = useDataStore();
+  const orders = useCustomerOrders(); const addressResource = useCustomerAddresses();
+  const favorites = useFavoriteRecords(); const notificationResource = useCustomerNotifications();
+  const purchases = orders.data || []; const addresses = addressResource.data?.addresses || []; const zones = addressResource.data?.zones || [];
+  const notifications = notificationResource.data || [];
+  const avatar = useRemote('profile-avatar', signal => mediaApi.avatar(signal));
+  const [actionError, setActionError] = useState(''); const [busy, setBusy] = useState(false); const actionRef = useRef(false);
+  const avatarUrl = avatar.data?.url ? mediaUrl(avatar.data.url) : '';
+  async function avatarAction(file?: File) {
+    if (actionRef.current) return; actionRef.current = true; setBusy(true); setActionError(''); const owner = currentUser?.id;
+    try { let content: string | undefined;
+      if (file) { if (file.type !== 'image/png' || file.size > 2097152) throw new Error('Elige una imagen PNG de hasta 2 MB.');
+        content = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(',')[1]); reader.onerror = () => reject(new Error('No se pudo leer la imagen.')); reader.readAsDataURL(file); }); }
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      const result = content ? await mediaApi.saveAvatar(content) : await mediaApi.removeAvatar();
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      const user = useAuthStore.getState().currentUser; if (user) useAuthStore.setState({ currentUser: { ...user, avatarUrl: result.url ? mediaUrl(result.url) : undefined } }); avatar.reload();
+    } catch (e) { setActionError(e instanceof Error ? e.message : 'No se pudo actualizar el avatar.'); }
+    finally { actionRef.current = false; setBusy(false); }
+  }
   const navigate = useNavigate();
 
   const [name, setName] = useState(currentUser?.name || '');
@@ -41,8 +63,8 @@ export const CustomerProfilePage: React.FC = () => {
 
   // Total spent in cents (only completed or active orders)
   const totalSpentCents = userPurchases
-    .filter((p) => p.status !== 'cancelado')
-    .reduce((sum, p) => sum + p.grandTotalCents, 0);
+    .flatMap(p => p.merchantOrders).filter(order => order.status === 'entregado' && order.paymentStatus === 'pagado')
+    .reduce((sum, order) => sum + order.totalCents, 0);
 
   // Distinct merchants ordered from
   const distinctMerchants = new Set<string>();
@@ -58,11 +80,11 @@ export const CustomerProfilePage: React.FC = () => {
 
   // Unread notifications
   const unreadNotificationsCount = notifications.filter(
-    (n) => n.userId === currentUser?.id && !n.isRead
+    (n) => !n.isRead
   ).length;
 
   // Favorites count
-  const totalFavoritesCount = favoriteMerchantIds.length + favoriteProductIds.length;
+  const totalFavoritesCount = favorites.data?.length || 0;
 
   // Initials generator
   const getInitials = (fullName: string) => {
@@ -72,20 +94,19 @@ export const CustomerProfilePage: React.FC = () => {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateProfile({ name: name.trim(), phone: phone.trim(), email: email.trim() });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  useEffect(() => { setName(currentUser?.name || ''); setPhone(currentUser?.phone || ''); setEmail(currentUser?.email || ''); setSaved(false); }, [currentUser?.id]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); if (actionRef.current) return; actionRef.current = true; setBusy(true); setSaved(false); setActionError(''); const owner = currentUser?.id;
+    try { const result = await updateProfile({ name: name.trim(), phone: phone.trim(), email: email.trim() });
+      if (useAuthStore.getState().currentUser?.id !== owner) return;
+      if (!result.success) throw new Error(result.message); setSaved(true);
+    } catch (e) { setActionError(e instanceof Error ? e.message : 'No se pudo guardar el perfil.'); } finally { actionRef.current = false; setBusy(false); }
   };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
+  const handleLogout = async () => { const result = await logout(); if (result.success) navigate('/login'); else setActionError(result.message || 'No se pudo cerrar sesión.'); };
   return (
     <div className="max-w-4xl mx-auto space-y-7 pb-20 sm:pb-8">
+      {actionError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{actionError}</p>}
+      {[orders, addressResource, favorites, notificationResource, avatar].map((resource, index) => <RemoteState key={index} loading={resource.loading} error={resource.error} retry={resource.reload} />)}
       {/* Header Profile Banner */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-subtle p-5 sm:p-7 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50/50 rounded-full blur-3xl -z-0 pointer-events-none" />
@@ -94,10 +115,10 @@ export const CustomerProfilePage: React.FC = () => {
           <div className="flex items-center gap-4 sm:gap-5">
             {/* Circular Avatar with Fallback Initials */}
             <div className="relative flex-shrink-0">
-              {currentUser?.avatarUrl ? (
+              {avatarUrl ? (
                 <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
+                  src={avatarUrl}
+                  alt={currentUser?.name || "Avatar"}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-primary-100 shadow-sm"
                 />
               ) : (
@@ -153,7 +174,7 @@ export const CustomerProfilePage: React.FC = () => {
           </div>
           <div>
             <div className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {totalOrdersCount}
+              {orders.loading || orders.error ? "—" : totalOrdersCount}
             </div>
             <p className="text-[11px] text-gray-500 mt-0.5">
               {activeOrdersCount > 0 ? (
@@ -167,16 +188,16 @@ export const CustomerProfilePage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-subtle flex flex-col justify-between">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold text-ink-light">Total invertido</span>
+            <span className="text-xs font-semibold text-ink-light">Total pagado</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700">
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {formatCents(totalSpentCents)}
+              {orders.loading || orders.error ? "—" : formatCents(totalSpentCents)}
             </div>
-            <p className="text-[11px] text-gray-500 mt-0.5">En comercios locales</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">En pedidos entregados</p>
           </div>
         </div>
 
@@ -189,7 +210,7 @@ export const CustomerProfilePage: React.FC = () => {
           </div>
           <div>
             <div className="text-xl sm:text-2xl font-extrabold text-ink tabular-nums">
-              {distinctMerchantsCount}
+              {orders.loading || orders.error ? "—" : distinctMerchantsCount}
             </div>
             <p className="text-[11px] text-gray-500 mt-0.5">Negocios probados</p>
           </div>
@@ -319,10 +340,10 @@ export const CustomerProfilePage: React.FC = () => {
                 <div className="font-bold text-sm text-ink group-hover:text-primary transition-colors flex items-center gap-2">
                   <span>Centro de Ayuda & Soporte</span>
                   <span className="text-[10px] bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded-full">
-                    Responde &lt; 2h
+                    Consultar soporte
                   </span>
                 </div>
-                <p className="text-xs text-ink-light mt-0.5">Preguntas frecuentes, contacto por WhatsApp y reclamos</p>
+                <p className="text-xs text-ink-light mt-0.5">Preguntas frecuentes y seguimiento de consultas</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -330,6 +351,7 @@ export const CustomerProfilePage: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 text-xs"><label className="font-bold text-primary">Cambiar avatar (PNG, hasta 2 MB)<input aria-label="Cambiar avatar" type="file" accept="image/png" disabled={busy} className="block min-h-11 pt-2" onChange={e => { const file = e.target.files?.[0]; if (file) void avatarAction(file); e.target.value = ""; }} /></label>{avatarUrl && <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void avatarAction()}>Quitar avatar</Button>}</div>
       {/* Edit Profile Form */}
       <div className="bg-white p-5 sm:p-7 rounded-3xl border border-gray-100 shadow-subtle space-y-5">
         <div>
@@ -397,7 +419,7 @@ export const CustomerProfilePage: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               Tus datos están protegidos en Quickly Tingo María
             </span>
-            <Button type="submit" variant="primary" size="md" className="min-h-[44px] px-6 font-bold shadow-sm">
+            <Button type="submit" isLoading={busy} disabled={busy} variant="primary" size="md" className="min-h-[44px] px-6 font-bold shadow-sm">
               Guardar Cambios
             </Button>
           </div>

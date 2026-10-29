@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { safeReturnPath } from '../../services/api/profileAdapter';
 import { UserRole } from '../../domain/types';
 import { Dialog } from '../../components/ui/Dialog';
 import { promptGoogleLogin } from '../../lib/googleAuth';
@@ -20,58 +21,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-interface DemoAccount {
-  role: UserRole;
-  title: string;
-  sublabel: string;
-  identifier: string;
-  passwordDefault: string;
-  targetPath: string;
-}
-
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    role: 'cliente',
-    title: 'Cliente',
-    sublabel: 'Consumidor',
-    identifier: 'cliente@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/',
-  },
-  {
-    role: 'comercio',
-    title: 'El Balcón',
-    sublabel: 'Importaciones El Balcón',
-    identifier: 'elbalcon@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/comercio/productos',
-  },
-  {
-    role: 'comercio',
-    title: 'La Selva',
-    sublabel: 'Restaurante Gourmet',
-    identifier: 'comercio@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/comercio/productos',
-  },
-  {
-    role: 'repartidor',
-    title: 'Repartidor',
-    sublabel: 'Moto en Tingo María',
-    identifier: 'repartidor@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/repartidor/solicitudes',
-  },
-  {
-    role: 'admin',
-    title: 'Admin',
-    sublabel: 'Gestión central',
-    identifier: 'admin@quickly.pe',
-    passwordDefault: '123456',
-    targetPath: '/admin/resumen',
-  },
-];
-
 export function getRoleDefaultPath(role?: UserRole): string {
   switch (role) {
     case 'admin':
@@ -87,11 +36,11 @@ export function getRoleDefaultPath(role?: UserRole): string {
 }
 
 export const LoginPage: React.FC = () => {
-  const { login, loginWithApi, loginGoogle, loginGoogleWithToken } = useAuthStore();
+  const { loginWithApi, loginGoogleWithToken } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as any)?.from || '/';
+  const from = safeReturnPath((location.state as any)?.from, '/');
   const redirectMessage = (location.state as any)?.message;
 
   // Clean initial state (Heuristic #5: Error Prevention & Jakob's Law)
@@ -99,7 +48,6 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [showDemoSection, setShowDemoSection] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,124 +67,16 @@ export const LoginPage: React.FC = () => {
   const cleanDigits = identifier.replace(/\D/g, '');
   const isPhone = cleanDigits.length === 9 && cleanDigits.startsWith('9');
 
-  const handleQuickDemoLogin = async (acc: DemoAccount) => {
-    setIdentifier(acc.identifier);
-    setPassword(acc.passwordDefault);
-    setError(null);
-    setIsLoading(true);
-    setLoadingMessage(`Ingresando como ${acc.title}...`);
-
-    // Intentar autenticación real con la API del backend
-    const apiResult = await loginWithApi({
-      email: acc.identifier,
-      password: acc.passwordDefault,
-    });
-
-    setIsLoading(false);
-    setLoadingMessage(null);
-
-    if (apiResult.success) {
-      const destination =
-        from && from !== '/login' && from !== '/'
-          ? from
-          : getRoleDefaultPath(apiResult.user?.role || acc.role);
-      navigate(destination, { replace: true });
-      return;
-    }
-
-    // Fallback con almacenamiento demo local
-    login(acc.identifier, acc.role);
-    const destination =
-      from && from !== '/login' && from !== '/' ? from : acc.targetPath;
-    navigate(destination, { replace: true });
-  };
-
+  const submitting = React.useRef(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) {
-      setError('Ingresa tu celular o correo electrónico.');
-      return;
-    }
-    if (!password.trim()) {
-      setError('Ingresa tu contraseña.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setLoadingMessage('Verificando credenciales...');
-
-    // Si es un correo electrónico, intentar primero con la API real del backend
-    if (identifier.includes('@')) {
-      const apiResult = await loginWithApi({
-        email: identifier.trim().toLowerCase(),
-        password,
-      });
-
-      if (apiResult.success) {
-        setIsLoading(false);
-        setLoadingMessage(null);
-        const destination =
-          from && from !== '/login' && from !== '/'
-            ? from
-            : getRoleDefaultPath(apiResult.user?.role || 'cliente');
-        navigate(destination, { replace: true });
-        return;
-      }
-
-      // Si la API devolvió un mensaje de error específico
-      if (
-        apiResult.message &&
-        !apiResult.message.includes('servidor') &&
-        !apiResult.message.includes('conexión')
-      ) {
-        setIsLoading(false);
-        setLoadingMessage(null);
-        setError(apiResult.message);
-        return;
-      }
-    }
-
-    // Fallback con cuentas demo locales si no es email o si no hay backend disponible
-    setTimeout(async () => {
-      // Determine probable role if using known demo email or default to cliente
-      const matchedDemo = DEMO_ACCOUNTS.find(
-        (a) => a.identifier.toLowerCase() === identifier.trim().toLowerCase()
-      );
-      const roleHint = matchedDemo ? matchedDemo.role : 'cliente';
-
-      const result = await login(identifier, roleHint as any);
-      setIsLoading(false);
-      setLoadingMessage(null);
-
-      if (result.success) {
-        const assignedRole = result.user?.role || roleHint;
-        const destination =
-          from && from !== '/login' && from !== '/'
-            ? from
-            : getRoleDefaultPath(assignedRole);
-
-        navigate(destination, { replace: true });
-      } else {
-        if (result.message?.includes('pendiente')) {
-          setStatusModal({
-            type: 'pendiente',
-            title: 'Cuenta en revisión',
-            message:
-              'Tu registro se encuentra en proceso de validación por el equipo de Quickly en Tingo María.',
-          });
-        } else if (result.message?.includes('suspendid')) {
-          setStatusModal({
-            type: 'suspendido',
-            title: 'Cuenta suspendida',
-            message:
-              'Esta cuenta se encuentra inactiva temporalmente. Comunícate con soporte de Quickly.',
-          });
-        } else {
-          setError(result.message || 'Credenciales no válidas. Revisa los datos ingresados.');
-        }
-      }
-    }, 400);
+    if (submitting.current) return;
+    if (!identifier.includes('@') || !password) { setError('Ingresa tu correo electrónico y contraseña.'); return; }
+    submitting.current = true; setIsLoading(true); setError(null); setLoadingMessage('Verificando credenciales...');
+    try { const result = await loginWithApi({ email: identifier.trim().toLowerCase(), password });
+      if (result.success) navigate(safeReturnPath(from === '/' ? undefined : from, getRoleDefaultPath(result.user?.role)), { replace: true });
+      else setError(result.message || 'No se pudo iniciar sesión.');
+    } finally { submitting.current = false; setIsLoading(false); setLoadingMessage(null); }
   };
 
   const handleGoogleLogin = () => {
@@ -248,7 +88,7 @@ export const LoginPage: React.FC = () => {
         setIsLoading(false);
         setLoadingMessage(null);
         if (res.success) {
-          navigate(from !== '/login' ? from : '/', { replace: true });
+          navigate(safeReturnPath(from, '/'), { replace: true });
         } else {
           setError(res.message || 'No se pudo iniciar sesión con Google.');
         }
@@ -313,7 +153,7 @@ export const LoginPage: React.FC = () => {
         <div className="flex items-center gap-3 select-none my-1" aria-hidden="true">
           <div className="flex-1 border-t border-border" />
           <span className="text-xs text-ink-muted font-medium shrink-0">
-            o con tu celular o correo
+            o con tu correo electrónico
           </span>
           <div className="flex-1 border-t border-border" />
         </div>
@@ -335,11 +175,11 @@ export const LoginPage: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="login_identifier" className="block text-xs font-bold text-ink">
-                Celular o correo electrónico
+                Correo electrónico
               </label>
               {isPhone && (
                 <span className="text-[11px] font-medium text-selva flex items-center gap-1">
-                  🇵🇪 Celular detectado
+                  Usa tu correo electrónico
                 </span>
               )}
             </div>
@@ -460,44 +300,20 @@ export const LoginPage: React.FC = () => {
         <div className="pt-2 border-t border-border/60">
           <button
             type="button"
-            onClick={() => setShowDemoSection(!showDemoSection)}
+            disabled
+            
             className="w-full flex items-center justify-between text-xs text-ink-muted hover:text-ink py-1 px-1 transition-colors select-none"
           >
             <span className="inline-flex items-center gap-1.5 font-medium">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>Accesos rápidos de prueba (Demo local)</span>
+              <span>Accesos rápidos no disponibles</span>
             </span>
             <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                showDemoSection ? 'rotate-180 text-primary' : ''
-              }`}
+              className="w-3.5 h-3.5 transition-transform duration-200"
             />
           </button>
 
-          {showDemoSection && (
-            <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1">
-              <p className="text-[11px] text-ink-muted">
-                Haz clic en cualquier rol para ingresar automáticamente sin escribir contraseña:
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <button
-                    key={acc.identifier}
-                    type="button"
-                    onClick={() => handleQuickDemoLogin(acc)}
-                    className="py-2 px-2.5 rounded-xl border border-border hover:border-primary/50 bg-surface-subtle hover:bg-primary-50 text-center transition-all select-none active:scale-95 touch-target min-h-[44px]"
-                  >
-                    <span className="block text-xs font-bold text-ink">
-                      {acc.title}
-                    </span>
-                    <span className="block text-[10px] text-ink-muted truncate">
-                      {acc.sublabel}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+         
         </div>
       </div>
 

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { catalogApi } from '../../services/api/catalogApi';
+import { RemoteState, useRemote } from '../../features/operations/shared';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SubCategory {
@@ -16,211 +18,14 @@ interface CategoryOption {
   badge?: string;
 }
 
-const CATEGORIES_DATA: CategoryOption[] = [
-  {
-    id: 'restaurantes',
-    name: 'Restaurantes Amazónicos',
-    route: '/negocios?categoria=restaurantes',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Tacacho con Cecina y Chorizo', query: 'tacacho' },
-      { name: 'Pollería Rubén (Pollo a la Brasa)', query: 'pollo' },
-      { name: 'Juanes de Gallina de Chacra', query: 'juane' },
-      { name: 'Pescados de Río y Patarashca', query: 'pescado' },
-      { name: 'Chaufa Amazónico al Wok', query: 'chaufa' },
-    ],
-  },
-  {
-    id: 'bodegas',
-    name: 'Bodegas & Supermercado Minisol',
-    route: '/negocios?categoria=bodegas',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Supermercado Minisol (Abarrotes)', query: 'minisol' },
-      { name: 'Aceites, Arroz y Fideos', query: 'arroz' },
-      { name: 'Lácteos Gloria y Embutidos', query: 'leche' },
-      { name: 'Bebidas Heladas y Cervezas', query: 'bebidas' },
-      { name: 'Golosinas Field y Snacks', query: 'galleta' },
-    ],
-  },
-  {
-    id: 'farmacias',
-    name: 'Farmacias & Boticas',
-    route: '/negocios?categoria=farmacias',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Medicamentos y Analgésicos', query: 'medicamentos' },
-      { name: 'Repelentes para Selva y Mosquitos', query: 'repelente' },
-      { name: 'Bloqueadores Solares', query: 'bloqueador' },
-      { name: 'Cuidado del Bebé y Pañales', query: 'bebe' },
-      { name: 'Primeros Auxilios y Botiquín', query: 'botiquin' },
-    ],
-  },
-  {
-    id: 'ropa',
-    name: 'Ropa & Moda Tingalesa',
-    route: '/negocios?categoria=ropa',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Galería San Benito', query: 'san benito' },
-      { name: 'Jeans y Palazos Denim', query: 'denim' },
-      { name: 'Polos de Algodón Tropicales', query: 'polos' },
-      { name: 'Mochilas y Accesorios', query: 'mochilas' },
-    ],
-  },
-  {
-    id: 'emprendedores',
-    name: 'Cacao, Café & Emprendedores',
-    route: '/negocios?categoria=emprendedores',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Chocolate 70% Cacao Nativo', query: 'chocolate' },
-      { name: 'Café Pashto Tingo María', query: 'cafe' },
-      { name: 'Miel de Abeja Virgen', query: 'miel' },
-      { name: 'Licores Exóticos y Macerados', query: 'macerado' },
-    ],
-  },
-  {
-    id: 'deportes-fitness',
-    name: 'Deportes y Fitness',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Zapatillas Deportivas', query: 'zapatillas' },
-      { name: 'Ropa de Entrenamiento', query: 'ropa deportiva' },
-      { name: 'Bicicletas y Ciclismo', query: 'bicicletas' },
-      { name: 'Mancuernas y Pesas', query: 'pesas' },
-      { name: 'Suplementos y Shakers', query: 'suplementos' },
-    ],
-  },
-  {
-    id: 'mascotas',
-    name: 'Mascotas',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Alimento para Perros', query: 'perros' },
-      { name: 'Alimento para Gatos', query: 'gatos' },
-      { name: 'Accesorios y Correas', query: 'accesorios mascotas' },
-      { name: 'Salud e Higiene Animal', query: 'veterinaria' },
-    ],
-  },
-  {
-    id: 'belleza-cuidado',
-    name: 'Belleza y Cuidado personal',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Perfumes y Fragancias', query: 'perfumes' },
-      { name: 'Cuidado Facial & Skincare', query: 'skincare' },
-      { name: 'Maquillaje Profesional', query: 'maquillaje' },
-      { name: 'Cuidado del Cabello', query: 'shampoo' },
-    ],
-  },
-  {
-    id: 'herramientas',
-    name: 'Herramientas',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Herramientas Eléctricas', query: 'herramientas electricas' },
-      { name: 'Taladros y Atornilladores', query: 'taladro' },
-      { name: 'Herramientas Manuales', query: 'herramientas' },
-      { name: 'Cajas y Organizadores', query: 'cajas herramientas' },
-    ],
-  },
-  {
-    id: 'construccion',
-    name: 'Construcción',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Pinturas y Barnices', query: 'pintura' },
-      { name: 'Plomería y Grifería', query: 'plomeria' },
-      { name: 'Materiales Eléctricos', query: 'electricidad' },
-    ],
-  },
-  {
-    id: 'industrias-oficinas',
-    name: 'Industrias y Oficinas',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Papelería y Cuadernos', query: 'papeleria' },
-      { name: 'Impresoras y Tintas', query: 'impresoras' },
-      { name: 'Equipamiento Comercial', query: 'oficina' },
-    ],
-  },
-  {
-    id: 'juegos-juguetes',
-    name: 'Juegos y Juguetes',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Juegos de Mesa', query: 'juegos de mesa' },
-      { name: 'Juguetes Didácticos', query: 'juguetes' },
-      { name: 'Figuras de Acción y Muñecas', query: 'figuras' },
-    ],
-  },
-  {
-    id: 'bebes',
-    name: 'Bebés',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Pañales y Toallitas', query: 'panales' },
-      { name: 'Coches y Cunas', query: 'coches bebe' },
-      { name: 'Ropa para Bebés', query: 'ropa bebe' },
-    ],
-  },
-  {
-    id: 'accesorios-vehiculos',
-    name: 'Accesorios para Vehículos',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Cascos para Moto', query: 'cascos' },
-      { name: 'Audio para Autos', query: 'audio auto' },
-      { name: 'Repuestos y Baterías', query: 'baterias' },
-    ],
-  },
-  {
-    id: 'moda',
-    name: 'Moda',
-    route: '/negocios?categoria=ropa',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Ropa Hombre', query: 'ropa hombre' },
-      { name: 'Ropa Mujer', query: 'ropa mujer' },
-      { name: 'Calzado y Zapatillas', query: 'calzado' },
-      { name: 'Mochilas y Bolsos', query: 'mochilas' },
-    ],
-  },
-  {
-    id: 'salud-medico',
-    name: 'Salud y Equipamiento Médico',
-    route: '/negocios?categoria=farmacias',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Botiquines y Primeros Auxilios', query: 'botiquin' },
-      { name: 'Termómetros y Tensiómetros', query: 'termometro' },
-      { name: 'Vitaminas y Suplementos', query: 'vitaminas' },
-    ],
-  },
-  {
-    id: 'vehiculos',
-    name: 'Vehículos',
-    hasSubcategories: true,
-    subcategories: [
-      { name: 'Motos y Mototaxis', query: 'motos' },
-      { name: 'Bicicletas Eléctricas', query: 'bicicleta electrica' },
-    ],
-  },
-];
-
-const LOCAL_DELIVERY_SPECIALS = [
-  { name: 'Restaurantes Amazónicos', route: '/negocios?categoria=restaurantes', icon: '🍽️' },
-  { name: 'Farmacias Locales', route: '/negocios?categoria=farmacias', icon: '💊' },
-  { name: 'Bodegas de Barrio', route: '/negocios?categoria=bodegas', icon: '🛒' },
-  { name: 'Cacao, Café & Selva Central', route: '/negocios?categoria=emprendedores', icon: '☕' },
-];
-
 interface CategoriesDropdownProps {
   variant?: 'default' | 'compact';
 }
 
 export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant = 'default' }) => {
+  const resource = useRemote('navigation-categories', signal => catalogApi.categories(signal));
+  const CATEGORIES_DATA: CategoryOption[] = resource.error ? [] : (resource.data || []).map(category => ({ id: category.id, name: category.name, hasSubcategories: true, subcategories: [], route: '/negocios?categoriaProducto=' + encodeURIComponent(category.id) }));
+  const LOCAL_DELIVERY_SPECIALS = CATEGORIES_DATA.slice(0, 4).map(category => ({ name: category.name, route: category.route!, icon: '🛍️' }));
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<CategoryOption | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -323,7 +128,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
               {/* Delivery shortcuts banner */}
               <div className="px-3 pb-2 mb-1 border-b border-neutral-700/80">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                  Envíos Rápidos Tingo María
+                  Explorar categorías
                 </span>
                 <div className="grid grid-cols-2 gap-1">
                   {LOCAL_DELIVERY_SPECIALS.map((loc) => (
@@ -342,6 +147,8 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
 
               {/* Mercado Libre Categories List */}
               <div className="space-y-0.5">
+                <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+                {!resource.loading && !resource.error && !CATEGORIES_DATA.length && <p className="px-4 py-2 text-xs text-gray-300">No hay categorías disponibles.</p>}
                 {CATEGORIES_DATA.map((cat) => {
                   const isHovered = hoveredCategory?.id === cat.id;
                   return (
@@ -390,6 +197,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
                   </div>
 
                   <div className="space-y-1">
+                    {!hoveredCategory.subcategories.length && <p className="px-2 py-2 text-xs text-gray-300">Subcategorías no disponibles.</p>}
                     {hoveredCategory.subcategories.map((sub) => (
                       <button
                         key={sub.name}
@@ -405,7 +213,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
 
                 <div className="pt-3 border-t border-neutral-700/80 text-[11px] text-gray-400 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Entrega disponible hoy en Tingo María</span>
+                  <span>Consulta disponibilidad en cada comercio</span>
                 </div>
               </div>
             )}

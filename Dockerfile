@@ -3,7 +3,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-ENV VITE_APP_MODE=real
 ENV VITE_API_BASE_URL=/api/v1
 RUN npm run build
 

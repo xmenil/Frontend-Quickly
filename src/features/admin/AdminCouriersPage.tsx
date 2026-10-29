@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { adminCourier, decisionsFor, decisionLabels, loadAdminCouriers, useAdminResource } from './adminModel';
+import { AdminDecisionDialog } from './AdminDecisionDialog';
+import { RemoteState, statusLabels } from '../operations/shared';
+import type { Decision } from '../../services/api/operationsApi';
 import { Bike, Power, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -8,11 +11,11 @@ import { Select } from '../../components/ui/Select';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export const AdminCouriersPage: React.FC = () => {
-  const { couriers, toggleCourierAvailability } = useDataStore();
+  const resource = useAdminResource('couriers', async signal => (await loadAdminCouriers(signal)).map(adminCourier));
+  const couriers = resource.data || [];
+  const [decision, setDecision] = useState<{ id: string; name: string; decision: Decision['decision'] } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
   const hasFilters = Boolean(searchQuery || availabilityFilter !== 'all');
   const filteredCouriers = couriers.filter((courier) => {
     const query = searchQuery.trim().toLowerCase();
@@ -28,21 +31,7 @@ export const AdminCouriersPage: React.FC = () => {
     setAvailabilityFilter('all');
   };
 
-  const toggleAvailability = (id: string, name: string, isAvailable: boolean) => {
-    setNotice('');
-    setError('');
-    try {
-      toggleCourierAvailability(id);
-      const updated = useDataStore.getState().couriers.find((courier) => courier.id === id);
-      if (!updated || updated.isAvailable !== !isAvailable) {
-        setError('No se pudo cambiar la disponibilidad. Revisa el repartidor e inténtalo nuevamente.');
-        return;
-      }
-      setNotice(isAvailable ? `Disponibilidad pausada: ${name}.` : `Repartidor disponible: ${name}.`);
-    } catch {
-      setError('No se pudo completar la acción. Revisa el estado del repartidor antes de volver a intentarlo.');
-    }
-  };
+  if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
 
   return (
     <div className="space-y-6">
@@ -67,8 +56,9 @@ export const AdminCouriersPage: React.FC = () => {
         {hasFilters && <Button type="button" variant="outline" size="sm" onClick={clearFilters}>Limpiar filtros</Button>}
       </section>
 
-      {notice && <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{notice}</p></div>}
-      {error && <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{error}</p></div>}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+
+
 
       <section aria-labelledby="admin-couriers-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -102,7 +92,7 @@ export const AdminCouriersPage: React.FC = () => {
                         <div className="min-w-0 space-y-1">
                           <h3 className="break-words text-sm font-semibold text-ink">{courier.name}</h3>
                           <p className="text-xs tabular-nums text-ink-light">{courier.phone}</p>
-                          <p className="text-xs tabular-nums text-ink-muted"><span aria-hidden="true">★ </span>Calificación: {courier.rating.toFixed(1)}</p>
+                          <p className="text-xs tabular-nums text-ink-muted">Calificaciones no disponibles en esta consulta.</p>
                         </div>
                       </div>
                     </th>
@@ -119,15 +109,19 @@ export const AdminCouriersPage: React.FC = () => {
                     </td>
                     <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                       <span className="text-xs text-ink-muted xl:hidden">Disponibilidad</span>
+                      <Badge>{statusLabels[courier.status]}</Badge>
+                      {courier.statusReason && <p className="mt-2 break-words text-xs text-ink-muted">{courier.statusReason}</p>}
                       <Badge variant={courier.isAvailable ? 'success' : 'default'}>{courier.isAvailable ? 'Disponible' : 'No disponible'}</Badge>
                     </td>
                     <td className="block pt-3 xl:table-cell xl:px-4 xl:py-3 xl:align-middle">
                       <Button type="button" variant="outline" size="sm" className="w-full gap-2"
                         aria-label={`${courier.isAvailable ? 'Pausar' : 'Activar'} disponibilidad: ${courier.name}`}
-                        onClick={() => toggleAvailability(courier.id, courier.name, courier.isAvailable)}>
+                        disabled title="La disponibilidad la cambia el repartidor desde su cuenta">
                         <Power className="h-4 w-4 shrink-0" aria-hidden="true" />
                         {courier.isAvailable ? 'Pausar disponibilidad' : 'Activar disponibilidad'}
                       </Button>
+                      <p className="mt-2 text-xs text-ink-muted">La disponibilidad la cambia el repartidor.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">{decisionsFor(courier.status).map(action => <Button key={action} type="button" variant="outline" size="sm" disabled={resource.loading || !!resource.error} onClick={() => setDecision({ id: courier.userId, name: courier.name, decision: action })}>{decisionLabels[action]}</Button>)}</div>
                     </td>
                   </tr>
                 ))}
@@ -136,6 +130,7 @@ export const AdminCouriersPage: React.FC = () => {
           </div>
         )}
       </section>
+      {decision && <AdminDecisionDialog key={decision.id + decision.decision} kind="couriers" item={decision} onClose={() => setDecision(null)} reload={resource.reload} blocked={resource.loading || !!resource.error} />}
     </div>
   );
 };

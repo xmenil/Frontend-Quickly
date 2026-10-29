@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
+import { useStorefrontStore } from './useStorefront';
+import { useCatalogFavorite } from './useCatalogFavorite';
+import { RemoteState } from '../operations/shared';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { formatCents } from '../../lib/currency';
 import {
@@ -16,11 +18,14 @@ import {
 
 export const MerchantDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { merchants, products, favoriteMerchantIds, toggleFavoriteMerchant } = useDataStore();
+  const resource = useStorefrontStore(id || '');
+  const favorite = useCatalogFavorite('store', id || '');
+  const products = resource.data?.products || [];
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
 
-  const merchant = merchants.find((m) => m.id === id);
+  const merchant = resource.data?.merchant;
+  if (resource.loading || resource.error) return <div className="max-w-4xl mx-auto py-16 px-4"><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/><Link to="/negocios" className="text-primary font-bold">Volver a Comercios</Link></div>;
 
   if (!merchant) {
     return (
@@ -37,16 +42,16 @@ export const MerchantDetailPage: React.FC = () => {
     );
   }
 
-  const isFavorite = favoriteMerchantIds.includes(merchant.id);
+  const isFavorite = favorite.isFavorite;
   const merchantProducts = products.filter((p) => p.merchantId === merchant.id);
 
   // Available unique categories in this merchant's products
-  const productCategories = Array.from(new Set(merchantProducts.map((p) => p.category)));
+  const productCategories = Array.from(new Set(merchantProducts.map((p) => p.categoryId || p.category)));
 
   const filteredProducts =
     activeCategoryFilter === 'all'
       ? merchantProducts
-      : merchantProducts.filter((p) => p.category === activeCategoryFilter);
+      : merchantProducts.filter((p) => (p.categoryId || p.category) === activeCategoryFilter);
 
   return (
     <div className="w-full pb-20">
@@ -114,7 +119,9 @@ export const MerchantDetailPage: React.FC = () => {
           {/* Favorite Button */}
           <button
             type="button"
-            onClick={() => toggleFavoriteMerchant(merchant.id)}
+            onClick={() => void favorite.toggle()}
+            disabled={favorite.busy}
+            aria-pressed={isFavorite}
             className="absolute top-4 right-4 touch-target w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-primary transition-colors cursor-pointer"
             aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
           >
@@ -167,7 +174,7 @@ export const MerchantDetailPage: React.FC = () => {
             <div className="flex md:flex-col items-center md:items-end justify-between bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl">
               <div className="flex items-center gap-1.5 text-ink font-black text-lg">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                <span className="tabular-nums">{merchant.rating.toFixed(1)}</span>
+                <span className="tabular-nums">{merchant.rating == null ? 'Sin valoraciones' : merchant.rating.toFixed(1)}</span>
                 <span className="text-xs text-gray-500 font-medium tabular-nums">
                   ({merchant.ratingCount} valoraciones)
                 </span>
@@ -185,7 +192,7 @@ export const MerchantDetailPage: React.FC = () => {
               <div>
                 <span className="text-gray-500 block text-[11px] font-medium">Tiempo estimado</span>
                 <span className="font-bold text-ink tabular-nums">
-                  {merchant.prepTimeMinutes + 10}-{merchant.prepTimeMinutes + 20} min
+                  {merchant.prepTimeMinutes === undefined ? 'Consultar al comercio' : `${merchant.prepTimeMinutes} min de preparación`}
                 </span>
               </div>
             </div>
@@ -197,7 +204,7 @@ export const MerchantDetailPage: React.FC = () => {
               <div>
                 <span className="text-gray-500 block text-[11px] font-medium">Tarifa de envío</span>
                 <span className="font-bold text-ink tabular-nums">
-                  {formatCents(merchant.deliveryFeeCents)}
+                  {merchant.deliveryFeeCents === undefined ? 'Se calcula en checkout' : `Desde ${formatCents(merchant.deliveryFeeCents)}`}
                 </span>
               </div>
             </div>
@@ -209,7 +216,7 @@ export const MerchantDetailPage: React.FC = () => {
               <div>
                 <span className="text-gray-500 block text-[11px] font-medium">Pedido mínimo</span>
                 <span className="font-bold text-ink">
-                  {formatCents(merchant.minOrderCents)}
+                  {merchant.minOrderCents === undefined ? 'Consultar al comercio' : formatCents(merchant.minOrderCents)}
                 </span>
               </div>
             </div>
@@ -229,6 +236,7 @@ export const MerchantDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {favorite.error && <p role="alert" className="text-destructive">{favorite.error}</p>}
       {/* Catalog & Products Section */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
@@ -261,7 +269,7 @@ export const MerchantDetailPage: React.FC = () => {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {cat}
+                  {merchantProducts.find(product => product.categoryId === cat)?.categoryName || cat}
                 </button>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useDataStore } from '../../store/dataStore';
+import { accountRoles, adminUser, changeAdminUser, loadAdminUsers, useAdminAction, useAdminResource } from './adminModel';
+import { RemoteState } from '../operations/shared';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -11,29 +12,29 @@ import { UserRole, UserStatus } from '../../domain/types';
 import { Check, X, ShieldAlert, CheckCircle2, Users, Search, AlertCircle } from 'lucide-react';
 
 export const AdminUsersPage: React.FC = () => {
-  const { users, adminApproveUser, adminRejectUser, adminSuspendUser, adminActivateUser } = useDataStore();
+  const resource = useAdminResource('users', async signal => (await loadAdminUsers(signal)).map(adminUser));
+  const actions = useAdminAction(resource.reload, resource.loading || !!resource.error);
+  const users = resource.data || [];
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [actionModal, setActionModal] = useState<{
-    type: 'reject' | 'suspend';
+    type: 'reject' | 'suspend' | 'activate';
     userId: string;
     userName: string;
   } | null>(null);
   const [actionReason, setActionReason] = useState('');
   const [reasonError, setReasonError] = useState('');
-  const [actionError, setActionError] = useState('');
-  const [notice, setNotice] = useState('');
   const pendingCount = users.filter((user) => user.status === 'pendiente_aprobacion').length;
   const hasFilters = Boolean(searchQuery || roleFilter !== 'all' || statusFilter !== 'all');
-  const roleLabels = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
+  const roleLabels: Record<string, string> = { cliente: 'Cliente', comercio: 'Comercio', repartidor: 'Repartidor', admin: 'Administrador' };
 
   const filteredUsers = users.filter((u) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       if (!u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
     }
-    if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+    if (roleFilter !== 'all' && !u.roles.includes(roleFilter)) return false;
     if (statusFilter !== 'all' && u.status !== statusFilter) return false;
     return true;
   });
@@ -47,52 +48,21 @@ export const AdminUsersPage: React.FC = () => {
   const openAction = (type: 'reject' | 'suspend', userId: string, userName: string) => {
     setActionReason('');
     setReasonError('');
-    setActionError('');
-    setNotice('');
-    setActionModal({ type, userId, userName });
+
+
+    actions.clear(); setActionModal({ type, userId, userName });
   };
 
-  const confirmStatus = (userId: string, expected: UserStatus, message: string) => {
-    if (useDataStore.getState().users.find((user) => user.id === userId)?.status !== expected) {
-      setActionError('No se pudo completar la acción. Revisa el estado de la cuenta e inténtalo nuevamente.');
-      return false;
-    }
-    setNotice(message);
-    return true;
+  const handleConfirmAction = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (!actionModal) return;
+    if (actionReason.trim().length < 3) { setReasonError('Escribe un motivo de al menos 3 caracteres.'); return; }
+    const status = actionModal.type === 'activate' ? 'active' : 'suspended';
+    if (await actions.execute(() => changeAdminUser(actionModal.userId, status, actionReason), 'Estado de cuenta confirmado.')) setActionModal(null);
   };
-
-  const handleConfirmAction = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!actionModal) return;
-    if (!actionReason.trim()) {
-      setReasonError('Escribe el motivo antes de continuar.');
-      return;
-    }
-    setReasonError('');
-    setActionError('');
-    try {
-      if (actionModal.type === 'reject') adminRejectUser(actionModal.userId, actionReason);
-      else adminSuspendUser(actionModal.userId, actionReason);
-      const message = actionModal.type === 'reject'
-        ? `Solicitud de ${actionModal.userName} rechazada.`
-        : `Cuenta de ${actionModal.userName} suspendida.`;
-      if (confirmStatus(actionModal.userId, 'suspendido', message)) setActionModal(null);
-    } catch {
-      setActionError('No se pudo completar la acción. Revisa la cuenta antes de volver a intentarlo.');
-    }
+  const handleActivation = (userId: string, userName: string, _approve: boolean) => {
+    actions.clear(); setActionReason(''); setReasonError(''); setActionModal({ type: 'activate', userId, userName });
   };
-
-  const handleActivation = (userId: string, userName: string, approve: boolean) => {
-    setActionError('');
-    setNotice('');
-    try {
-      if (approve) adminApproveUser(userId);
-      else adminActivateUser(userId);
-      confirmStatus(userId, 'activo', approve ? `Solicitud de ${userName} aprobada.` : `Cuenta de ${userName} reactivada.`);
-    } catch {
-      setActionError('No se pudo completar la acción. Revisa la cuenta antes de volver a intentarlo.');
-    }
-  };
+  if ((resource.loading || resource.error) && !resource.data) return <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />;
 
   return (
     <div className="space-y-6">
@@ -133,8 +103,11 @@ export const AdminUsersPage: React.FC = () => {
         {hasFilters && <Button type="button" variant="outline" onClick={clearFilters}>Limpiar filtros</Button>}
       </section>
 
-      {notice && <div role="status" className="flex items-start gap-3 rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{notice}</p></div>}
-      {actionError && !actionModal && <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong"><AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" /><p>{actionError}</p></div>}
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
+      {actions.notice && <p role="status" className="rounded-xl border border-selva-border bg-selva-soft p-4 text-sm text-selva-strong">{actions.notice}</p>}
+      {actions.error && !actionModal && <p role="alert" className="text-sm text-destructive-strong">{actions.error}</p>}
+
+
 
       <section aria-labelledby="admin-users-heading" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -177,7 +150,7 @@ export const AdminUsersPage: React.FC = () => {
                       </th>
                       <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                         <span className="text-xs text-ink-muted xl:hidden">Tipo de cuenta</span>
-                        <Badge>{roleLabels[user.role]}</Badge>
+                        <span className="flex flex-wrap gap-1">{user.source.roles.map(role => <Badge key={role}>{roleLabels[accountRoles[role] || role] || role}</Badge>)}</span>
                       </td>
                       <td className="flex items-center justify-between gap-3 py-2 xl:table-cell xl:px-3 xl:py-3 xl:align-middle">
                         <span className="text-xs text-ink-muted xl:hidden">Estado</span>
@@ -191,13 +164,13 @@ export const AdminUsersPage: React.FC = () => {
                         <div className="flex flex-wrap gap-2 xl:justify-end" role="group" aria-label={`Acciones para ${user.name}`}>
                           {pending ? (
                             <>
-                              <Button type="button" variant="outline" size="sm" className="flex-1 gap-2 xl:w-full" onClick={() => handleActivation(user.id, user.name, true)}><Check className="h-4 w-4" aria-hidden="true" />Aprobar</Button>
-                              <Button type="button" variant="ghost" size="sm" className="flex-1 gap-2 text-destructive hover:bg-destructive-soft xl:w-full" onClick={() => openAction('reject', user.id, user.name)}><X className="h-4 w-4" aria-hidden="true" />Rechazar</Button>
+                              <Button type="button" variant="outline" size="sm" className="flex-1 gap-2 xl:w-full" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => handleActivation(user.id, user.name, true)}><Check className="h-4 w-4" aria-hidden="true" />Activar cuenta</Button>
+                              <Button type="button" variant="ghost" size="sm" className="flex-1 gap-2 text-destructive hover:bg-destructive-soft xl:w-full" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => openAction('suspend', user.id, user.name)}><X className="h-4 w-4" aria-hidden="true" />Suspender cuenta</Button>
                             </>
                           ) : suspended ? (
-                            <Button type="button" variant="outline" size="sm" className="w-full gap-2" onClick={() => handleActivation(user.id, user.name, false)}><CheckCircle2 className="h-4 w-4" aria-hidden="true" />Reactivar</Button>
-                          ) : user.role !== 'admin' ? (
-                            <Button type="button" variant="ghost" size="sm" className="w-full gap-2 text-destructive hover:bg-destructive-soft" onClick={() => openAction('suspend', user.id, user.name)}><ShieldAlert className="h-4 w-4" aria-hidden="true" />Suspender</Button>
+                            <Button type="button" variant="outline" size="sm" className="w-full gap-2" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => handleActivation(user.id, user.name, false)}><CheckCircle2 className="h-4 w-4" aria-hidden="true" />Reactivar</Button>
+                          ) : !user.roles.includes('admin') ? (
+                            <Button type="button" variant="ghost" size="sm" className="w-full gap-2 text-destructive hover:bg-destructive-soft" disabled={actions.busy || resource.loading || !!resource.error} onClick={() => openAction('suspend', user.id, user.name)}><ShieldAlert className="h-4 w-4" aria-hidden="true" />Suspender</Button>
                           ) : <span className="text-xs text-ink-muted">Sin acciones</span>}
                         </div>
                       </td>
@@ -210,15 +183,15 @@ export const AdminUsersPage: React.FC = () => {
         )}
       </section>
 
-      <Dialog isOpen={Boolean(actionModal)} onClose={() => setActionModal(null)}
-        title={actionModal?.type === 'reject' ? 'Rechazar solicitud' : 'Suspender cuenta'}
-        description={actionModal?.type === 'reject' ? `Revisa tu decisión sobre la solicitud de ${actionModal.userName} y registra el motivo.` : `Revisa tu decisión sobre la cuenta de ${actionModal?.userName || 'este usuario'} y registra el motivo.`} maxWidth="md">
+      <Dialog isOpen={Boolean(actionModal)} onClose={() => { if (!actions.busy) setActionModal(null); }}
+        title={actionModal?.type === 'activate' ? 'Activar cuenta' : 'Suspender cuenta'}
+        description={`Registra el motivo para cambiar el acceso de ${actionModal?.userName || 'esta cuenta'}. Las afiliaciones se revisan en Comercios y Repartidores.`} maxWidth="md">
         <form noValidate onSubmit={handleConfirmAction} className="space-y-6">
-          <Input id="admin-user-action-reason" label="Motivo de la decisión" placeholder="Explica el motivo antes de continuar" value={actionReason} onChange={(event) => { setActionReason(event.target.value); setReasonError(''); }} required error={reasonError} helperText="Este motivo quedará registrado en el historial de actividad." />
-          {actionError && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong">{actionError}</p>}
+          <Input id="admin-user-action-reason" label="Motivo de la decisión" placeholder="Explica el motivo antes de continuar" value={actionReason} onChange={(event) => { setActionReason(event.target.value); setReasonError(''); }} required minLength={3} maxLength={500} error={reasonError} helperText="Este motivo quedará registrado en el historial de actividad." />
+          {actions.error && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-4 text-sm text-destructive-strong">{actions.error}</p>}
           <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setActionModal(null)}>Cancelar</Button>
-            <Button type="submit" variant="danger">{actionModal?.type === 'reject' ? 'Confirmar rechazo' : 'Confirmar suspensión'}</Button>
+            <Button type="button" variant="outline" disabled={actions.busy} onClick={() => setActionModal(null)}>Cancelar</Button>
+            <Button type="submit" variant={actionModal?.type === 'activate' ? 'primary' : 'danger'} disabled={actions.busy || resource.loading || !!resource.error}>Confirmar cambio</Button>
           </div>
         </form>
       </Dialog>

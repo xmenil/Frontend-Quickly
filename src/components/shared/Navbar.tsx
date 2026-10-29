@@ -8,7 +8,10 @@ import { CouponsModal } from './CouponsModal';
 import { PlayModal } from './PlayModal';
 import { useAuthStore } from '../../store/authStore';
 import { useRealCartStore } from '../../store/realCartStore';
-import { engagementApi } from '../../services/api/engagementApi';
+import { RemoteState } from '../../features/operations/shared';
+import { useCustomerNotifications } from '../../features/customer/customerAccountModel';
+import { catalogApi } from '../../services/api/catalogApi';
+import { useRemote } from '../../features/operations/shared';
 import { RoleBadge } from '../ui/Badge';
 import {
   ShoppingCart,
@@ -32,7 +35,12 @@ import {
 export const Navbar: React.FC = () => {
   const { currentUser, activeRole, logout, isAuthenticated } = useAuthStore();
   const cartCount = useRealCartStore((s) => s.items.reduce((acc, item) => acc + item.quantity, 0));
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; readAt: string | null }>>([]);
+  const [logoutError, setLogoutError] = useState("");
+  const notificationResource = useCustomerNotifications();
+  const notifications = isAuthenticated && !notificationResource.error ? notificationResource.data || [] : [];
+  const categoryResource = useRemote('navbar-category-links', signal => catalogApi.categories(signal));
+  const fashionCategory = categoryResource.error ? undefined : categoryResource.data?.find(category => ['ropa','moda','textiles'].includes(category.code));
+  const fashionLink = fashionCategory ? '/negocios?categoriaProducto=' + encodeURIComponent(fashionCategory.id) : '/negocios';
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,7 +87,7 @@ export const Navbar: React.FC = () => {
   const isCuponesActive = showCouponsModal || location.pathname === '/cupones';
   const isModaActive =
     location.pathname === '/negocios' &&
-    (location.search.includes('categoria=ropa') || location.search.includes('moda'));
+    !!fashionCategory && new URLSearchParams(location.search).get('categoriaProducto') === fashionCategory.id;
   const isPlayActive = showPlayModal || location.pathname === '/play';
   const isVenderActive = location.pathname.startsWith('/comercio');
   const isAyudaActive = location.pathname === '/cliente/ayuda';
@@ -94,26 +102,11 @@ export const Navbar: React.FC = () => {
       ? 'bg-white text-primary font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
       : 'text-white hover:text-white hover:bg-white/15 px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer';
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      let isMounted = true;
-      engagementApi.notifications()
-        .then((data) => {
-          if (isMounted) setNotifications(data.items);
-        })
-        .catch(() => {
-          // ignore error if unauthenticated
-        });
-      return () => { isMounted = false; };
-    } else {
-      setNotifications([]);
-    }
-  }, [isAuthenticated]);
-
   const unreadNotifications = notifications.filter((n) => !n.readAt);
 
   return (
     <>
+      {logoutError && <p role="alert" className="bg-red-50 p-3 text-sm text-red-800">{logoutError}</p>}
       <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
@@ -223,7 +216,8 @@ export const Navbar: React.FC = () => {
                       </Link>
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {unreadNotifications.length === 0 ? (
+                      <RemoteState loading={notificationResource.loading} error={notificationResource.error} retry={notificationResource.reload} />
+                      {notificationResource.loading || notificationResource.error ? null : unreadNotifications.length === 0 ? (
                         <p className="text-xs text-gray-400 py-3 text-center">
                           No tienes notificaciones pendientes.
                         </p>
@@ -298,11 +292,7 @@ export const Navbar: React.FC = () => {
                       <div className="pt-1 mt-1 border-t border-gray-100">
                         <button
                           type="button"
-                          onClick={() => {
-                            logout();
-                            setShowProfileMenu(false);
-                            navigate('/login');
-                          }}
+                          onClick={async () => { const result = await logout(); if (result.success) { setShowProfileMenu(false); navigate('/login'); } else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
                           className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
@@ -326,14 +316,14 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Sub-bar: Categorías, Ofertas, Cupones, Mercado Play, Ayuda & Auth */}
+          {/* Sub-bar: Categorías, Ofertas, Cupones, Quickly Play, Ayuda & Auth */}
           <div className="hidden md:flex items-center justify-between py-1.5 border-t border-white/10 text-xs text-white">
             {/* Left Nav Navigation */}
             <div className="flex items-center gap-2 sm:gap-3">
               <CategoriesDropdown />
 
               <Link
-                to="/negocios?q=oferta"
+                to="/negocios" aria-disabled="true" onClick={event => event.preventDefault()} title="Ofertas no disponibles"
                 className={getNavBtnClass(isOfertasActive)}
               >
                 Ofertas
@@ -348,22 +338,22 @@ export const Navbar: React.FC = () => {
               </button>
 
               <Link
-                to="/negocios?categoria=ropa"
+                to={fashionLink} aria-disabled={!fashionCategory} onClick={event => { if (!fashionCategory) event.preventDefault(); }} title={fashionCategory ? undefined : 'Categoría de moda no disponible'}
                 className={getNavBtnClass(isModaActive)}
               >
                 Moda
               </Link>
 
-              {/* Mercado Play / Quickly Play with GRATIS Badge */}
+              {/* Quickly Play / Quickly Play with PLAY Badge */}
               <button
                 type="button"
                 onClick={() => setShowPlayModal(true)}
                 className={`${getNavBtnClass(isPlayActive)} flex items-center gap-1.5`}
               >
                 <span className="bg-[#00a650] text-white text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5 shadow-sm">
-                  GRATIS
+                  PLAY
                 </span>
-                <span>Mercado Play</span>
+                <span>Quickly Play</span>
               </button>
 
               <Link
@@ -505,8 +495,8 @@ export const Navbar: React.FC = () => {
               </Link>
 
               <Link
-                to="/negocios?q=oferta"
-                onClick={() => setShowMobileDrawer(false)}
+                to="/negocios" aria-disabled="true" title="Las ofertas no están disponibles"
+                onClick={event => event.preventDefault()}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
               >
                 <Tag className="w-4 h-4 text-amber-500" />
@@ -526,8 +516,8 @@ export const Navbar: React.FC = () => {
               </button>
 
               <Link
-                to="/negocios?categoria=ropa"
-                onClick={() => setShowMobileDrawer(false)}
+                to={fashionLink} aria-disabled={!fashionCategory}
+                onClick={event => { if (!fashionCategory) event.preventDefault(); else setShowMobileDrawer(false); }}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
               >
                 <ShoppingBag className="w-4 h-4 text-primary" />
@@ -544,9 +534,9 @@ export const Navbar: React.FC = () => {
               >
                 <Film className="w-4 h-4 text-emerald-600" />
                 <div className="flex items-center gap-2">
-                  <span>Mercado Play</span>
+                  <span>Quickly Play</span>
                   <span className="bg-[#00a650] text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                    GRATIS
+                    PLAY
                   </span>
                 </div>
               </button>
@@ -638,11 +628,7 @@ export const Navbar: React.FC = () => {
               <div className="p-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => {
-                    logout();
-                    setShowMobileDrawer(false);
-                    navigate('/login');
-                  }}
+                  onClick={async () => { const result = await logout(); if (result.success) { setShowMobileDrawer(false); navigate('/login'); } else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
                   className="flex items-center gap-2 w-full p-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />

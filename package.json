@@ -11,7 +11,11 @@
     "contracts:sync": "node scripts/contracts.mjs --sync",
     "contracts:generate": "node scripts/contracts.mjs",
     "contracts:check": "node scripts/contracts.mjs --check",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:storefront": "playwright test --config playwright.storefront.config.ts",
+    "test:checkout": "playwright test --config playwright.checkout.config.ts",
+    "integration:inventory": "node scripts/operation-inventory.mjs",
+    "integration:check": "node scripts/operation-inventory.mjs --check"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

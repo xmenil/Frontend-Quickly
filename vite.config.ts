@@ -8,7 +8,16 @@ export default defineConfig(({ mode }) => {
   const target = env.API_PROXY_TARGET || 'http://localhost:3000';
 
   return {
-    plugins: [react()],
+    plugins: [react(), {
+      name: 'quickly-production-boundary',
+      apply: 'build',
+      generateBundle(_, bundle) {
+        const retired = /\/src\/(?:test\/|mocks\/|store\/(?:demoAuthStore|dataStore|cartStore)\.|features\/(?:catalog\/DemoHomePage|operations\/Real[^/]+)\.|components\/shared\/DemoSwitcher\.)/;
+        const modules = Object.values(bundle).flatMap(output => output.type === 'chunk' ? Object.keys(output.modules) : []);
+        const forbidden = modules.filter(id => retired.test(id.replace(/\\/g, '/')));
+        if (forbidden.length) this.error('Dependencias de prototipo en producción: ' + forbidden.join(', '));
+      },
+    }],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

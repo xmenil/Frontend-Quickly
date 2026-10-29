@@ -18,8 +18,20 @@ const inventorySchema: z.ZodType<InventoryItem> = z.object({ skuId: uuid, produc
   onHand: z.number().int(), reserved: z.number().int(), available: z.number().int(), lowStockThreshold: z.number().int(), lowStock: z.boolean() });
 const movementSchema: z.ZodType<Schemas['InventoryMovementDto']> = z.object({ id: uuid, kind: z.string(), quantity: z.number().int(), onHandAfter: z.number().int(),
   reason: z.string(), actorUserId: uuid.nullable(), createdAt: z.string().datetime() });
-const storeSchema = z.object({ id: uuid, name: z.string(), zone_id: uuid, zone_name: z.string(), category_code: z.string(), isOpen: z.boolean(), accepting_orders: z.boolean(), logoUrl:z.string().nullable(),bannerUrl:z.string().nullable() });
+const storeSchema = z.object({ id: uuid, name: z.string(), zone_id: uuid, zone_name: z.string(), category_code: z.string(), isOpen: z.boolean(), accepting_orders: z.boolean(), logoUrl:z.string().nullable(),bannerUrl:z.string().nullable(),
+  address_text: z.string().optional(), phone: z.string().optional(), description: z.string().optional(),
+  rating_average: z.coerce.number().min(0).max(5).nullable().optional(), rating_count: z.coerce.number().int().nonnegative().optional(),
+  preparation_minutes: z.number().int().positive().optional(), minimum_order_cents: z.number().int().nonnegative().optional(),
+  base_fee_cents: z.number().int().nonnegative().optional(),
+});
+const publicStoreDetailSchema = storeSchema.extend({
+  address_text: z.string().optional(), phone: z.string().optional(), description: z.string().optional(),
+  rating_average: z.coerce.number().nullable().optional(), rating_count: z.coerce.number().int().nonnegative().optional(),
+  base_fee_cents: z.number().int().nonnegative().optional(),
+  openingIntervals: z.array(z.object({ weekday: z.number().int(), opens_at: z.string(), closes_at: z.string() })).optional(),
+});
 export type PublicStore = z.infer<typeof storeSchema>;
+export type PublicStoreDetail = z.infer<typeof publicStoreDetailSchema>;
 function checked<T>(schema: z.ZodType<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) throw new ApiError('No se pudo validar la información del catálogo. Vuelve a intentarlo.', 0, 'INVALID_RESPONSE');
@@ -31,12 +43,12 @@ function query(params: CatalogQuery = {}) {
   return search.size ? `?${search}` : '';
 }
 export const catalogApi = {
-  categories: async (signal?: AbortSignal) => checked(z.array(z.object({ id: uuid, code: z.string(), name: z.string() })), await apiRequest('/catalog/categories', { signal, publicRequest: true })),
-  stores: async (signal?: AbortSignal) => checked(z.array(storeSchema), await apiRequest('/stores', { signal, publicRequest: true })),
-  store: async (id: string, signal?: AbortSignal) => checked(storeSchema, await apiRequest(`/stores/${id}`, { signal, publicRequest: true })),
-  search: async (params: CatalogQuery = {}, signal?: AbortSignal) => checked(pageSchema, await apiRequest(`/catalog/search${query(params)}`, { signal, publicRequest: true })),
+  categories: async (signal?: AbortSignal) => checked(z.array(z.object({ id: uuid, code: z.string(), name: z.string() })), await apiRequest('/catalog/categories', { signal, publicRequest: true, sessionIndependent: true })),
+  stores: async (signal?: AbortSignal) => checked(z.array(storeSchema), await apiRequest('/stores', { signal, publicRequest: true, sessionIndependent: true })),
+  store: async (id: string, signal?: AbortSignal) => checked(publicStoreDetailSchema, await apiRequest(`/stores/${encodeURIComponent(id)}`, { signal, publicRequest: true, sessionIndependent: true })),
+  search: async (params: CatalogQuery = {}, signal?: AbortSignal) => checked(pageSchema, await apiRequest(`/catalog/search${query(params)}`, { signal, publicRequest: true, sessionIndependent: true })),
   products: async (storeId: string, params: CatalogQuery = {}, signal?: AbortSignal) => checked(pageSchema, await apiRequest(`/merchant/stores/${storeId}/products${query(params)}`, { signal })),
-  product: async (id: string, signal?: AbortSignal) => checked(productSchema, await apiRequest(`/products/${id}`, { signal, publicRequest: true })),
+  product: async (id: string, signal?: AbortSignal) => checked(productSchema, await apiRequest(`/products/${encodeURIComponent(id)}`, { signal, publicRequest: true, sessionIndependent: true })),
   ownProduct: async (id: string, signal?: AbortSignal) => checked(productSchema, await apiRequest(`/merchant/products/${id}`, { signal })),
   create: async (id: string, body: Schemas['PublishProductDto']) => checked(z.object({ productId: uuid, skuId: uuid }), await apiRequest(`/merchant/stores/${id}/products`, { method: 'POST', body })),
   update: async (id: string, body: Schemas['UpdateProductDto']) => checked(productSchema, await apiRequest(`/merchant/products/${id}`, { method: 'PATCH', body })),
@@ -47,6 +59,7 @@ export const catalogApi = {
   movements: async (id: string, cursor?: string, signal?: AbortSignal) => checked(z.array(movementSchema), await apiRequest(`/merchant/skus/${id}/movements${query({ cursor, limit: 50 })}`, { signal })),
   image: async (id: string, body: Schemas['ProductImageInputDto']) => checked(productSchema, await apiRequest(`/merchant/products/${id}/images`, { method: 'POST', body, timeoutMs: 30000 })),
   removeImage: (id: string, imageId: string) => apiRequest<void>(`/merchant/products/${id}/images/${imageId}`, { method: 'DELETE' }),
+  deleteProduct: (id: string) => apiRequest<void>(`/merchant/products/${id}`, { method: 'DELETE' }),
 };
 export const money = (cents: number) => new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(cents / 100);
 export function priceCents(value: string) {

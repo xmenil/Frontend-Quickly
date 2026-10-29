@@ -2,7 +2,7 @@ import {beforeEach,afterEach,it,expect,vi} from 'vitest';
 import {useRealCartStore} from '../store/realCartStore';
 import {orderingApi,cashCents} from '../services/api/orderingApi';
 import {resetApiSession} from '../services/api/apiClient';
-import {pendingFor} from '../features/checkout/RealShoppingPages';
+import {pendingFor} from '../features/checkout/checkoutIntent';
 const a={skuId:'10000000-0000-4000-8000-000000000001',productId:'20000000-0000-4000-8000-000000000001',storeId:'30000000-0000-4000-8000-000000000001'};
 const b={skuId:'10000000-0000-4000-8000-000000000002',productId:'20000000-0000-4000-8000-000000000002',storeId:'30000000-0000-4000-8000-000000000002'};
 beforeEach(()=>{localStorage.clear();sessionStorage.clear();resetApiSession();useRealCartStore.setState({items:[],notice:''});});afterEach(()=>vi.unstubAllGlobals());

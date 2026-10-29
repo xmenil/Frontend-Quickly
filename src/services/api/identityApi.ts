@@ -13,13 +13,15 @@ const profileSchema: z.ZodType<Profile> = z.object({
     storeStatus: z.enum(['pending', 'active', 'rejected', 'suspended']), membershipRole: z.enum(['owner', 'manager', 'operator']) })),
   courierId: z.string().uuid().nullable(),
 });
-const sessionSchema: z.ZodType<Session> = z.object({ user: profileSchema, csrfToken: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.string().datetime() });
+const sessionSchema: z.ZodType<Session> = z.object({ user: profileSchema, csrfToken: z.string().regex(/^[a-f0-9]{64}$/), token: z.string().regex(/^[a-f0-9]{64}$/).optional(), expiresAt: z.string().datetime() });
 function checked<T>(schema: z.ZodType<T>, payload: unknown): T {
   const result = schema.safeParse(payload);
   if (!result.success) throw new ApiError('La respuesta del servicio de cuentas no es válida. Actualiza la página e inténtalo de nuevo.', 0, 'INVALID_RESPONSE');
   return result.data;
 }
 export const identityApi = {
+  verification: async (email: string) => checked(z.object({ success: z.boolean(), message: z.string(), devCode: z.string().optional() }), await apiRequest('/auth/verification-code/send', { method: 'POST', body: { email }, publicRequest: true })),
+  google: async (idToken: string, phone?: string) => checked(sessionSchema, await apiRequest('/auth/google', { method: 'POST', body: { idToken, phone }, publicRequest: true })),
   session: async () => checked(sessionSchema, await apiRequest('/auth/session', { publicRequest: true })),
   login: async (email: string, password: string) => checked(sessionSchema, await apiRequest('/auth/login', { method: 'POST', body: { email, password }, publicRequest: true })),
   register: async (body: components['schemas']['RegisterDto']) => checked(sessionSchema, await apiRequest('/auth/register', { method: 'POST', body, publicRequest: true })),

@@ -3,7 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Address } from '../../domain/types';
-import { useDataStore } from '../../store/dataStore';
+import { operationsApi } from '../../services/api/operationsApi';
+import { useAuthStore } from '../../store/authStore';
+import { addressForView, useCustomerAddresses } from '../../features/customer/customerAddressModel';
+import { RemoteState } from '../../features/operations/shared';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
@@ -11,14 +14,15 @@ import { formatCents } from '../../lib/currency';
 import { MapPin } from 'lucide-react';
 
 const addressSchema = z.object({
-  recipientName: z.string().trim().min(2, 'Ingresa el nombre de quien recibirá el pedido.'),
+  recipientName: z.string().trim().min(3, 'Ingresa el nombre de quien recibirá el pedido.').max(120, 'Máximo 120 caracteres.'),
   phone: z.string().trim().transform((value) => value.replace(/[\s-]/g, ''))
+    .transform(value => value.startsWith('+51') ? value.slice(3) : value)
     .refine((value) => /^9\d{8}$/.test(value), 'Ingresa un celular válido de 9 dígitos (ej. 962 123 456).'),
   zoneId: z.string().min(1, 'Selecciona una zona de cobertura.'),
-  street: z.string().trim().min(3, 'Indica la calle, jirón o avenida (ej. Jr. Amazonas).'),
-  number: z.string().trim().min(1, 'Indica el número o escribe s/n.'),
-  reference: z.string().trim().min(4, 'Indica una referencia (ej. frente al parque, portón verde).'),
-  label: z.string().trim().min(2, 'Ponle un nombre a la dirección (ej. Casa o Trabajo).'),
+  street: z.string().trim().min(3, 'Indica la calle, jirón o avenida (ej. Jr. Amazonas).').max(180, 'Máximo 180 caracteres.'),
+  number: z.string().trim().min(1, 'Indica el número o escribe s/n.').max(30, 'Máximo 30 caracteres.'),
+  reference: z.string().trim().min(4, 'Indica una referencia (ej. frente al parque, portón verde).').max(500, 'Máximo 500 caracteres.'),
+  label: z.string().trim().min(2, 'Ponle un nombre a la dirección (ej. Casa o Trabajo).').max(60, 'Máximo 60 caracteres.'),
   isDefault: z.boolean().default(false),
 });
 type AddressFormData = z.infer<typeof addressSchema>;
@@ -31,57 +35,43 @@ interface AddressFormProps {
 }
 
 export const AddressForm: React.FC<AddressFormProps> = ({ initialData, userId, onSuccess, onCancel }) => {
-  const { zones, addresses, addAddress, updateAddress } = useDataStore();
+  const resource = useCustomerAddresses();
+  const zones = resource.data?.zones || [];
   const formId = useId();
   const savingRef = useRef(false);
   const { register, handleSubmit, watch, setError, clearErrors, setFocus,
     formState: { errors, isSubmitting } } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
-    defaultValues: initialData ? { ...initialData } : {
+    defaultValues: initialData ? { ...initialData, phone: initialData.phone.replace(/^\+51/, '') } : {
       recipientName: '', phone: '', zoneId: '', street: '', number: '', reference: '',
-      label: 'Casa', isDefault: !addresses.some((address) => address.userId === userId),
+      label: 'Casa', isDefault: false,
     },
   });
   const selectedZoneId = watch('zoneId');
   const activeZone = zones.find((zone) => zone.id === selectedZoneId);
   const hasCoverage = zones.some((zone) => zone.isAvailable);
 
-  const onSubmit = (data: AddressFormData) => {
+  const onSubmit = async (data: AddressFormData) => {
     if (savingRef.current) return;
     clearErrors('root');
-    const current = useDataStore.getState();
-    const zone = current.zones.find((entry) => entry.id === data.zoneId);
-    if (!zone?.isAvailable) {
-      setError('zoneId', { type: 'validate', message: 'Esta zona no tiene cobertura. Selecciona otra zona.' });
-      setFocus('zoneId');
-      return;
+    if (!zones.some(zone => zone.id === data.zoneId && zone.isAvailable)) {
+      setError('zoneId', { type: 'validate', message: 'Esta zona no tiene cobertura. Selecciona otra zona.' }); setFocus('zoneId'); return;
     }
-    if (!userId || initialData && !current.addresses.some((address) => address.id === initialData.id && address.userId === userId)) {
-      setError('root', { message: 'No se pudo guardar esta dirección en tu cuenta. Revisa tus direcciones.' });
-      return;
-    }
+    if (!userId || useAuthStore.getState().currentUser?.id !== userId) { setError('root', { message: 'Tu sesión cambió. Inicia sesión para guardar la dirección.' }); return; }
     savingRef.current = true;
-    const previousIds = new Set(current.addresses.map((address) => address.id));
     try {
-      if (initialData) updateAddress(initialData.id, data);
-      else addAddress({ ...data, userId });
-      const saved = useDataStore.getState().addresses.find((address) => address.userId === userId &&
-        (initialData ? address.id === initialData.id : !previousIds.has(address.id)));
-      if (!saved || Object.entries(data).some(([key, value]) => saved[key as keyof Address] !== value)) {
-        setError('root', { message: 'No se pudo guardar la dirección. Conservamos tus datos para que puedas intentarlo nuevamente.' });
-        return;
-      }
-      onSuccess(saved);
-    } catch {
-      setError('root', { message: 'No se pudo guardar la dirección. Revisa tus direcciones antes de volver a intentarlo.' });
-    } finally {
-      savingRef.current = false;
-    }
+      const saved = await operationsApi.saveAddress({ label: data.label, recipientName: data.recipientName, phone: '+51' + data.phone,
+        zoneId: data.zoneId, street: data.street, streetNumber: data.number, reference: data.reference, isDefault: data.isDefault }, initialData?.id);
+      if (useAuthStore.getState().currentUser?.id !== userId) return;
+      onSuccess(addressForView(saved, userId));
+    } catch (error) { setError('root', { message: error instanceof Error ? error.message : 'No se pudo guardar la dirección. Conservamos tus datos para reintentar.' }); }
+    finally { savingRef.current = false; }
   };
 
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
+      <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/>
+      <fieldset disabled={isSubmitting || resource.loading || !!resource.error} className="min-w-0 space-y-6">
         <legend className="sr-only">Datos de la dirección</legend>
         <section aria-labelledby={`${formId}-contact-title`} className="space-y-3">
           <h3 id={`${formId}-contact-title`} className="text-sm font-semibold text-ink">Quién recibirá el pedido</h3>
@@ -117,7 +107,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ initialData, userId, o
       {errors.root?.message && <p role="alert" className="rounded-xl border border-destructive-border bg-destructive-soft p-3 text-sm text-destructive-strong">{errors.root.message}</p>}
       <footer className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-border bg-surface py-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" disabled={isSubmitting} onClick={onCancel}>Cancelar</Button>
-        <Button type="submit" isLoading={isSubmitting} disabled={!hasCoverage}>{initialData ? 'Actualizar dirección' : 'Guardar dirección'}</Button>
+        <Button type="submit" isLoading={isSubmitting} disabled={!hasCoverage || resource.loading || !!resource.error}>{initialData ? 'Actualizar dirección' : 'Guardar dirección'}</Button>
       </footer>
     </form>
   );

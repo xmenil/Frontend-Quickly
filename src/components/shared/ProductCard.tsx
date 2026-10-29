@@ -1,33 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Product, Merchant } from '../../domain/types';
+import type { StorefrontProduct as Product, StorefrontMerchant as Merchant } from '../../features/catalog/storefrontModel';
+import { useCatalogFavorite } from '../../features/catalog/useCatalogFavorite';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { purchasableSku } from '../../domain/catalogRules';
 import { formatCents } from '../../lib/currency';
 import { getCategoryFallbackSvg } from '../../lib/imageFallback';
 import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag, BadgeCheck, Building2 } from 'lucide-react';
-import { useCartStore } from '../../store/cartStore';
-import { useDataStore } from '../../store/dataStore';
 
-interface ProductCardProps {
-  product: Product;
+interface ProductCardProps<T extends Product> {
+  product: T;
   merchant?: Merchant;
-  onOpenDetail?: (product: Product) => void;
+  onOpenDetail?: (product: T) => void;
   showFullButton?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+export function ProductCard<T extends Product>({
   product,
   merchant,
   onOpenDetail,
   showFullButton = true,
-}) => {
+}: ProductCardProps<T>) {
   const navigate = useNavigate();
-  const { addItem } = useCartStore();
-  const { favoriteProductIds, toggleFavoriteProduct } = useDataStore();
+  const favorite = useCatalogFavorite('product', product.id);
+  const [actionError, setActionError] = useState('');
   const [isAdded, setIsAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const isFavorite = favoriteProductIds.includes(product.id);
+  const isFavorite = favorite.isFavorite;
   const isOutOfStock = product.stock <= 0 || !product.isAvailable;
   const isLowStock = product.stock > 0 && product.stock <= 3;
 
@@ -37,17 +38,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
     if (isOutOfStock) return;
 
-    if (product.hasVariants && onOpenDetail) {
-      onOpenDetail(product);
+    if (product.hasVariants || !product.source) {
+      if (onOpenDetail) onOpenDetail(product); else navigate(`/producto/${product.id}`);
       return;
     }
-
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: 1,
-      unitPriceCents: product.priceCents,
-    });
+    const sku = purchasableSku(product.source);
+    if (!sku) return;
+    try { addCatalogProduct(product.source, sku.id, 1); setActionError(''); }
+    catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo agregar.'); return; }
 
     setIsAdded(true);
     setTimeout(() => {
@@ -123,9 +121,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            toggleFavoriteProduct(product.id);
+            void favorite.toggle();
           }}
           className="absolute top-2.5 right-2.5 touch-target w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-600 hover:text-primary transition-colors z-10"
+          disabled={favorite.busy}
+          aria-pressed={isFavorite}
           aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
         >
           <Heart
@@ -151,6 +151,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         ) : null}
       </div>
 
+      {(actionError || favorite.error) && <p role="alert" className="px-3 text-xs text-destructive">{actionError || favorite.error}</p>}
       {/* Info Content */}
       <div className="flex flex-col flex-1 p-2.5 sm:p-3 justify-between space-y-2">
         <div>
@@ -224,7 +225,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
             <div className="flex items-baseline gap-1">
               <span className="text-sm sm:text-base font-extrabold text-ink tabular-nums">
-                {formatCents(product.priceCents)}
+                {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
               </span>
               {product.hasVariants && (
                 <span className="text-[10px] text-gray-500 font-medium">desde</span>
@@ -260,7 +261,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
             <div>
               <span className="text-base sm:text-lg font-extrabold text-ink tabular-nums">
-                {formatCents(product.priceCents)}
+                {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
               </span>
               {product.hasVariants && (
                 <span className="text-[11px] text-gray-500 block -mt-0.5">Desde</span>

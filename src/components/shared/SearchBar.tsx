@@ -11,16 +11,7 @@ interface SearchBarProps {
   onSearch?: (query: string) => void;
 }
 
-const DEFAULT_HISTORY = [
-  'Minisol abarrotes',
-  'Pollería Rubén',
-  'tacacho con cecina',
-  'café de Tingo María',
-  'Farmacias y boticas',
-  'jugos naturales',
-];
-
-const STORAGE_KEY = 'quickly_search_history';
+const STORAGE_KEY = 'quickly_search_history_v2';
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   initialValue = '',
@@ -33,56 +24,34 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [liveResults, setLiveResults] = useState<CatalogProduct[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(''); const [revision, setRevision] = useState(0);
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter((term): term is string => typeof term === 'string' && !!term.trim() && term.length <= 200).slice(0, 8);
       }
     } catch {
       // Fallback
     }
-    return DEFAULT_HISTORY;
+    return [];
   });
 
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced search to PostgreSQL catalogApi
   useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setLiveResults([]);
-      setIsSearching(false);
-      return;
-    }
-
+    const trimmed = query.trim(); const controller = new AbortController(); let active = true;
+    setLiveResults([]); setSearchError('');
+    if (trimmed.length < 2) { setIsSearching(false); return; }
     setIsSearching(true);
     const timer = setTimeout(() => {
-      let active = true;
-      catalogApi
-        .search({ q: trimmed, limit: 5 })
-        .then((res) => {
-          if (active) {
-            setLiveResults(res.items);
-            setIsSearching(false);
-          }
-        })
-        .catch(() => {
-          if (active) {
-            setLiveResults([]);
-            setIsSearching(false);
-          }
-        });
-      return () => {
-        active = false;
-      };
+      catalogApi.search({ q: trimmed, limit: 5 }, controller.signal).then(result => { if (active) setLiveResults(result.items); }).catch(error => { if (active) setSearchError(error instanceof Error ? error.message : 'No se pudo consultar el catálogo.'); }).finally(() => { if (active) setIsSearching(false); });
     }, 280);
-
-    return () => clearTimeout(timer);
-  }, [query]);
+    return () => { active = false; clearTimeout(timer); controller.abort(); };
+  }, [query, revision]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -232,7 +201,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </div>
           )}
 
-          {/* Live Product Results from PostgreSQL */}
+          {searchError && <div className="px-3.5 py-3 text-sm"><p role="alert" className="text-destructive">{searchError}</p><button type="button" className="mt-2 min-h-11 font-semibold text-primary" onClick={() => setRevision(value => value + 1)}>Reintentar búsqueda</button></div>}
+          {!isSearching && !searchError && query.trim().length >= 2 && liveResults.length === 0 && <p role="status" className="px-3.5 py-3 text-xs text-gray-500">No se encontraron productos.</p>}
+          {/* Live product results */}
           {liveResults.length > 0 && (
             <>
               <div className="bg-emerald-50/50 px-3.5 py-1 text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center justify-between">

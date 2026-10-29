@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { safeReturnPath } from '../../services/api/profileAdapter';
 import { useAuthStore } from '../../store/authStore';
 import { Eye, EyeOff, CheckCircle2, Mail, Phone, Lock, User, Store, Bike, AlertCircle, RefreshCw } from 'lucide-react';
 import { promptGoogleLogin } from '../../lib/googleAuth';
@@ -14,11 +15,11 @@ interface FieldErrors {
 }
 
 export const RegisterCustomerPage: React.FC = () => {
-  const { registerCustomerWithApi, sendVerificationCode, loginGoogleWithToken, loginGoogle } = useAuthStore();
+  const { registerCustomerWithApi, sendVerificationCode, loginGoogleWithToken } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as any)?.from || '/';
+  const from = safeReturnPath((location.state as any)?.from, '/');
 
   // Clean initial state (Nielsen #5: Error Prevention - no prefilled dummy values)
   const [name, setName] = useState('');
@@ -65,8 +66,8 @@ export const RegisterCustomerPage: React.FC = () => {
 
     if (!password) {
       newErrors.password = 'Crea una contraseña para proteger tu cuenta.';
-    } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener como mínimo 6 caracteres.';
+    } else if (password.length < 6 || password.length > 100) {
+      newErrors.password = 'La contraseña debe tener entre 6 y 100 caracteres.';
     }
 
     setErrors(newErrors);
@@ -473,10 +474,6 @@ export const RegisterCustomerPage: React.FC = () => {
       <GoogleConfigModal
         isOpen={isGoogleConfigOpen}
         onClose={() => setIsGoogleConfigOpen(false)}
-        onContinueDemo={() => {
-          loginGoogle();
-          navigate(from !== '/login' ? from : '/', { replace: true });
-        }}
       />
     </div>
   );

@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
+import { useStorefrontCatalog } from './useStorefront';
+import { RemoteState } from '../operations/shared';
+import type { StorefrontProduct as Product } from './storefrontModel';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { purchasableSku } from '../../domain/catalogRules';
 import { MerchantCard } from '../../components/shared/MerchantCard';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { MerchantCategory, Product } from '../../domain/types';
 import { formatCents } from '../../lib/currency';
 import {
   Search,
@@ -23,22 +25,25 @@ import {
 } from 'lucide-react';
 
 export const MerchantsPage: React.FC = () => {
-  const { merchants, products } = useDataStore();
-  const { addItem } = useCartStore();
+  const catalog = useStorefrontCatalog();
+  const merchants = catalog.data?.merchants || [];
+  const products = catalog.data?.products || [];
+  const [actionError, setActionError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const categoryParam = searchParams.get('categoria') as MerchantCategory | null;
+  const categoryParam = searchParams.get('categoria');
+  const productCategoryParam = searchParams.get('categoriaProducto') || '';
   const queryParam = searchParams.get('q') || '';
 
   const [searchQuery, setSearchQuery] = useState(queryParam);
-  const [selectedCategory, setSelectedCategory] = useState<MerchantCategory | 'all'>(
+  const [selectedCategory, setSelectedCategory] = useState<string>(
     categoryParam || 'all'
   );
   const [onlyOpen, setOnlyOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('best_seller');
+  const [sortBy, setSortBy] = useState<string>('catalog');
   const [activeTab, setActiveTab] = useState<'products' | 'merchants'>(
-    queryParam.trim() ? 'products' : 'merchants'
+    queryParam.trim() || categoryParam || productCategoryParam ? 'products' : 'merchants'
   );
   const [addedToast, setAddedToast] = useState<string | null>(null);
 
@@ -51,10 +56,11 @@ export const MerchantsPage: React.FC = () => {
   }, [queryParam]);
 
   useEffect(() => {
-    if (categoryParam) {
-      setSelectedCategory(categoryParam);
-    }
+    setSelectedCategory(categoryParam || 'all');
+    if (categoryParam) setActiveTab('products');
   }, [categoryParam]);
+
+  useEffect(() => { if (productCategoryParam) setActiveTab('products'); }, [productCategoryParam]);
 
   // Lookup map for fast merchant retrieval by id
   const merchantMap = useMemo(() => {
@@ -64,8 +70,6 @@ export const MerchantsPage: React.FC = () => {
   // 1. FILTER AND SORT PRODUCTS (Across ALL stores mixed, preferably best sellers first)
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const isOfferSearch =
-      q === 'oferta' || q === 'ofertas' || q === 'descuento' || q === 'combo' || q === 'promocion';
 
     return products
       .filter((p) => {
@@ -73,6 +77,7 @@ export const MerchantsPage: React.FC = () => {
         const merchant = merchantMap.get(p.merchantId);
         if (!merchant || merchant.status !== 'activo') return false;
 
+        if (productCategoryParam && p.categoryId !== productCategoryParam) return false;
         // Category filter
         if (selectedCategory !== 'all' && p.category !== selectedCategory) {
           return false;
@@ -91,12 +96,6 @@ export const MerchantsPage: React.FC = () => {
           const matchesSubCategory = p.subCategory ? p.subCategory.toLowerCase().includes(q) : false;
           const matchesMerchant = merchant.name.toLowerCase().includes(q);
 
-          if (isOfferSearch) {
-            const hasDiscount = p.originalPriceCents && p.originalPriceCents > p.priceCents;
-            const isPopular = (p.ratingCount || 0) >= 40;
-            return hasDiscount || isPopular;
-          }
-
           if (
             !matchesName &&
             !matchesDesc &&
@@ -112,11 +111,6 @@ export const MerchantsPage: React.FC = () => {
       })
       .sort((a, b) => {
         // Sort order
-        if (sortBy === 'best_seller') {
-          const salesA = (a.ratingCount || 0) + (a.soldCount || 0);
-          const salesB = (b.ratingCount || 0) + (b.soldCount || 0);
-          return salesB - salesA;
-        }
         if (sortBy === 'price_asc') {
           return a.priceCents - b.priceCents;
         }
@@ -128,17 +122,16 @@ export const MerchantsPage: React.FC = () => {
         }
         return 0;
       });
-  }, [products, merchantMap, selectedCategory, onlyOpen, searchQuery, sortBy]);
+  }, [products, merchantMap, selectedCategory, onlyOpen, searchQuery, sortBy, productCategoryParam]);
 
   // 2. FILTER AND SORT MERCHANTS
   const filteredMerchants = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const isOfferSearch =
-      q === 'oferta' || q === 'ofertas' || q === 'descuento' || q === 'combo' || q === 'promocion';
 
     return merchants
       .filter((m) => m.status === 'activo')
       .filter((m) => {
+        if (productCategoryParam && !products.some(p => p.merchantId === m.id && p.categoryId === productCategoryParam)) return false;
         // Category filter
         if (selectedCategory !== 'all' && m.category !== selectedCategory) {
           return false;
@@ -157,13 +150,9 @@ export const MerchantsPage: React.FC = () => {
             if (p.merchantId !== m.id) return false;
             if (p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)) return true;
             if (p.brand && p.brand.toLowerCase().includes(q)) return true;
-            if (isOfferSearch && p.originalPriceCents && p.originalPriceCents > p.priceCents) return true;
             return false;
           });
 
-          if (isOfferSearch && (matchesProduct || m.deliveryFeeCents <= 300 || m.rating >= 4.7)) {
-            return true;
-          }
 
           if (!matchesName && !matchesDesc && !matchesCategory && !matchesProduct) {
             return false;
@@ -172,18 +161,18 @@ export const MerchantsPage: React.FC = () => {
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === 'rating' || sortBy === 'best_seller') return b.rating - a.rating;
-        if (sortBy === 'prepTime') return a.prepTimeMinutes - b.prepTimeMinutes;
-        if (sortBy === 'deliveryFee') return a.deliveryFeeCents - b.deliveryFeeCents;
+        if (sortBy === 'rating') return (b.rating ?? -1) - (a.rating ?? -1);
+        if (sortBy === 'prepTime') return (a.prepTimeMinutes ?? Infinity) - (b.prepTimeMinutes ?? Infinity);
+        if (sortBy === 'deliveryFee') return (a.deliveryFeeCents ?? Infinity) - (b.deliveryFeeCents ?? Infinity);
         return 0;
       });
-  }, [merchants, products, selectedCategory, onlyOpen, searchQuery, sortBy]);
+  }, [merchants, products, selectedCategory, onlyOpen, searchQuery, sortBy, productCategoryParam]);
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
     setOnlyOpen(false);
-    setSortBy('best_seller');
+    setSortBy('catalog');
     setActiveTab('merchants');
     setSearchParams({});
   };
@@ -195,25 +184,18 @@ export const MerchantsPage: React.FC = () => {
       return;
     }
 
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: 1,
-      unitPriceCents: product.priceCents,
-    });
+    const sku = product.source && purchasableSku(product.source);
+    if (!product.source || !sku) return;
+    try { addCatalogProduct(product.source, sku.id, 1); setActionError(''); }
+    catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo agregar al carrito.'); return; }
 
     setAddedToast(product.name);
     setTimeout(() => setAddedToast(null), 2500);
   };
 
-  const categories: { id: MerchantCategory | 'all'; label: string }[] = [
+  const categories = [
     { id: 'all', label: 'Todas las Categorías' },
-    { id: 'restaurantes', label: 'Restaurantes Amazónicos' },
-    { id: 'farmacias', label: 'Boticas & Farmacias' },
-    { id: 'supermercados', label: 'Supermercados & Minimarkets' },
-    { id: 'bodegas', label: 'Bodegas & Abarrotes' },
-    { id: 'emprendedores', label: 'Tecnología, Cacao & Selva' },
-    { id: 'ropa', label: 'Textiles & Confección' },
+    ...Array.from(new Set(merchants.map(merchant => merchant.category))).map(category => ({ id: category, label: category.replace(/[-_]/g, ' ') })),
   ];
 
   return (
@@ -307,14 +289,14 @@ export const MerchantsPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  Explora <strong className="text-ink">{merchants.filter((m) => m.status === 'activo').length}</strong> negocios locales y miles de productos con delivery rápido en Leoncio Prado.
+                  Explora <strong className="text-ink">{merchants.filter((m) => m.status === 'activo').length}</strong> negocios locales y sus productos disponibles en Leoncio Prado.
                 </>
               )}
             </p>
           </div>
 
           {/* Clear Filters Button if any active */}
-          {(selectedCategory !== 'all' || onlyOpen || searchQuery) && (
+          {(selectedCategory !== 'all' || onlyOpen || searchQuery || productCategoryParam) && (
             <button
               type="button"
               onClick={handleClearFilters}
@@ -338,9 +320,9 @@ export const MerchantsPage: React.FC = () => {
                 setSearchQuery(val);
                 if (val.trim()) {
                   setActiveTab('products');
-                  setSearchParams({ q: val });
+                  setSearchParams({ ...(selectedCategory !== 'all' ? { categoria: selectedCategory } : {}), q: val });
                 } else {
-                  setSearchParams({});
+                  setSearchParams(selectedCategory !== 'all' ? { categoria: selectedCategory } : {});
                 }
               }}
               placeholder="Buscar productos por nombre, marca o tienda (ej: shampoo, xiaomi 15t pro, tacacho, cecina)..."
@@ -444,14 +426,14 @@ export const MerchantsPage: React.FC = () => {
                 >
                   {activeTab === 'products' ? (
                     <>
-                      <option value="best_seller">🔥 Más vendidos primero</option>
+                      <option value="catalog">Orden del catálogo</option>
                       <option value="price_asc">Menor precio</option>
                       <option value="price_desc">Mayor precio</option>
-                      <option value="rating">Mejor calificación</option>
+                      <option value="rating" disabled>Calificaciones de productos no disponibles</option>
                     </>
                   ) : (
                     <>
-                      <option value="best_seller">Mejor Calificación</option>
+                      <option value="catalog">Orden del catálogo</option>
                       <option value="rating">Mayor Puntuación</option>
                       <option value="prepTime">Tiempo más rápido</option>
                       <option value="deliveryFee">Menor costo de envío</option>
@@ -466,7 +448,9 @@ export const MerchantsPage: React.FC = () => {
         {/* ============================================================== */}
         {/* VIEW 1: PRODUCTS TAB (PRODUCTOS TRANSVERSALES DE CUALQUIER TIENDA) */}
         {/* ============================================================== */}
-        {activeTab === 'products' && (
+        <RemoteState loading={catalog.loading} error={catalog.error} retry={catalog.reload}/>
+        {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
+        {!catalog.loading && !catalog.error && activeTab === 'products' && (
           <div>
             {filteredProducts.length === 0 ? (
               <EmptyState
@@ -484,7 +468,7 @@ export const MerchantsPage: React.FC = () => {
                     Mostrando <strong className="text-ink">{filteredProducts.length}</strong> productos de diversas tiendas en Tingo María
                   </span>
                   <span className="text-primary font-bold hidden sm:inline">
-                    ✓ Ordenado preferentemente por más vendidos primero
+                    {sortBy === 'price_asc' ? '✓ Menor precio primero' : sortBy === 'price_desc' ? '✓ Mayor precio primero' : '✓ Catálogo actualizado'}
                   </span>
                 </div>
 
@@ -571,11 +555,11 @@ export const MerchantsPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500">
                               <div className="flex items-center text-amber-500 font-black">
                                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                <span className="ml-0.5 text-ink">{product.rating || 4.8}</span>
+                                <span className="ml-0.5 text-ink">{product.rating ?? 'Sin calificaciones'}</span>
                               </div>
                               <span className="text-gray-300">•</span>
                               <span className="text-gray-500 font-medium">
-                                {product.ratingCount || product.soldCount || 35}+ vendidos
+                                {product.soldCount !== undefined ? `${product.soldCount} vendidos` : (product.isAvailable ? 'Stock disponible' : 'Agotado')}
                               </span>
                             </div>
                           </div>
@@ -585,7 +569,7 @@ export const MerchantsPage: React.FC = () => {
                             {/* Price */}
                             <div className="flex items-baseline gap-2">
                               <span className="text-lg font-black text-ink">
-                                {formatCents(product.priceCents)}
+                                {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
                               </span>
                               {hasDiscount && (
                                 <span className="text-xs text-gray-400 line-through font-semibold">
@@ -597,12 +581,13 @@ export const MerchantsPage: React.FC = () => {
                             {/* Delivery indicator */}
                             <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
                               <Truck className="w-3 h-3 text-emerald-600" />
-                              <span>Envíos express 20-35 min</span>
+                              <span>Envío según dirección de entrega</span>
                             </div>
 
                             {/* Action Button */}
                             <button
                               type="button"
+                              disabled={!product.isAvailable}
                               onClick={(e) => {
                                 if (product.hasVariants) {
                                   e.stopPropagation();
@@ -639,7 +624,7 @@ export const MerchantsPage: React.FC = () => {
         {/* ============================================================== */}
         {/* VIEW 2: MERCHANTS TAB (TIENDAS Y COMERCIOS) */}
         {/* ============================================================== */}
-        {activeTab === 'merchants' && (
+        {!catalog.loading && !catalog.error && activeTab === 'merchants' && (
           <div>
             {filteredMerchants.length === 0 ? (
               <EmptyState

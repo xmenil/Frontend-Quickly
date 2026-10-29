@@ -1,9 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useDataStore } from '../../store/dataStore';
-import { useCartStore } from '../../store/cartStore';
+import { useStorefrontProduct, loadCatalogProducts } from './useStorefront';
+import { storefrontMerchant, storefrontProduct, type StorefrontProduct as Product, type StorefrontMerchant } from './storefrontModel';
+import { useCatalogFavorite } from './useCatalogFavorite';
+import { catalogApi } from '../../services/api/catalogApi';
+import { engagementApi } from '../../services/api/engagementApi';
+import { addCatalogProduct } from '../../store/realCartStore';
+import { preferredSku, purchasableSku } from '../../domain/catalogRules';
+import { RemoteState, useRemote } from '../operations/shared';
 import { useAuthStore } from '../../store/authStore';
-import { Product } from '../../domain/types';
+import { catalogPlaceholder } from '../../lib/catalogImage';
 import { formatCents } from '../../lib/currency';
 import {
   Star,
@@ -167,320 +173,45 @@ function findSimilarProducts(targetProduct: Product, allProducts: Product[]): Pr
   return [...filtered, ...fallback].slice(0, 6);
 }
 
-// Fotos de opiniones y compradores contextuales según el tipo de producto
-function getCategoryReviewPhotos(product: Product): { url: string; alt: string; rating: number }[] {
-  if (product.images && product.images.length >= 4) {
-    return product.images.slice(0, 4).map((url, i) => ({
-      url,
-      alt: `Foto de cliente ${i + 1}`,
-      rating: 5,
-    }));
-  }
-
-  const name = product.name.toLowerCase();
-  const cat = product.category;
-
-  // 1. Smartphones / Celulares / Tecnología
-  if (
-    /smartphone|celular|telefono|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name) ||
-    (cat === 'emprendedores' && /celular|phone|pro/i.test(name))
-  ) {
-    return [
-      {
-        url: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&auto=format&fit=crop&q=80',
-        alt: 'Cliente probando celular en mano',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&auto=format&fit=crop&q=80',
-        alt: 'Pantalla AMOLED del smartphone encendida',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=400&auto=format&fit=crop&q=80',
-        alt: 'Módulo de cámaras traseras en alta definición',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=400&auto=format&fit=crop&q=80',
-        alt: 'Equipo en su caja original con cargador y accesorios',
-        rating: 5,
-      },
-    ];
-  }
-
-  // 2. Shampoos / Cuidado Personal / Farmacia
-  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders|capilar/i.test(name) || cat === 'farmacias') {
-    return [
-      {
-        url: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=400&auto=format&fit=crop&q=80',
-        alt: 'Cliente mostrando frasco de shampoo recibido',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop&q=80',
-        alt: 'Producto sellado en baño',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=400&auto=format&fit=crop&q=80',
-        alt: 'Textura y consistencia del shampoo',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&auto=format&fit=crop&q=80',
-        alt: 'Frasco sellado con tapa protegida',
-        rating: 5,
-      },
-    ];
-  }
-
-  // 3. Abarrotes / Atún / Conservas / Supermercado
-  if (/atun|filete|grated|conserva|aceite|leche|arroz|azucar/i.test(name) || cat === 'supermercados' || cat === 'bodegas') {
-    return [
-      {
-        url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
-        alt: 'Plato preparado con el producto fresco',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
-        alt: 'Ensalada servida con atún en mesa',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400&auto=format&fit=crop&q=80',
-        alt: 'Ingredientes y preparación en cocina',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80',
-        alt: 'Presentación final servida en casa',
-        rating: 5,
-      },
-    ];
-  }
-
-  // 4. Zapatillas / Moda / Ropa
-  if (/zapatilla|calzado|vans|nike|polo|camisa|vestido|pantalon|ropa/i.test(name) || cat === 'ropa') {
-    return [
-      {
-        url: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&auto=format&fit=crop&q=80',
-        alt: 'Calzado puesto probando talla',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&auto=format&fit=crop&q=80',
-        alt: 'Detalle de costuras y suela',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&auto=format&fit=crop&q=80',
-        alt: 'Calzado en suelo vista superior',
-        rating: 5,
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&auto=format&fit=crop&q=80',
-        alt: 'Combinación con outfit diario',
-        rating: 5,
-      },
-    ];
-  }
-
-  // 5. Restaurantes / Gastronomía Amazónica
-  return [
-    {
-      url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop&q=80',
-      alt: 'Plato caliente servido al llegar el delivery',
-      rating: 5,
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
-      alt: 'Porción completa con guarnición y ají',
-      rating: 5,
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&auto=format&fit=crop&q=80',
-      alt: 'Carne ahumada y cecina en punto exacto',
-      rating: 5,
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=80',
-      alt: 'Refresco natural helado',
-      rating: 5,
-    },
-  ];
-}
-
-// Resumen inteligente generado por IA según el tipo de producto
-function getCategoryAiSummary(product: Product): string {
-  const name = product.name.toLowerCase();
-  if (/smartphone|celular|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name)) {
-    return 'Los compradores destacan la fluidez del procesador, la alta nitidez de la pantalla y la duración de la batería para todo el día. Las cámaras toman fotos con excelente detalle y el equipo llega sellado en su caja con garantía oficial en Tingo María.';
-  }
-  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders/i.test(name)) {
-    return 'Los clientes destacan el aroma agradable y duradero, la sensación de limpieza profunda desde la primera lavada y la suavidad en el cuero cabelludo. Excelente presentación sellada sin derrames.';
-  }
-  if (/atun|filete|grated|conserva/i.test(name)) {
-    return 'Los compradores resaltan la frescura del pescado, la calidad del aceite vegetal y el tamaño de la porción. Muy práctico para preparar ensaladas y platos rápidos en familia en Leoncio Prado.';
-  }
-  if (product.category === 'ropa' || /zapatilla|calzado/i.test(name)) {
-    return 'Las zapatillas destacan por su excelente comodidad y calidad. El diseño es atractivo y los materiales son de buena calidad, cumpliendo con las expectativas visuales y de uso. Además, las tallas son precisas, asegurando un ajuste perfecto.';
-  }
-  return 'Los clientes destacan la frescura de los ingredientes, excelente sazón y rápida entrega en Tingo María. El empaque llega en óptimas condiciones térmicas y la porción cumple con las expectativas descritas.';
-}
-
-interface SampleReview {
-  id: string;
-  author: string;
-  date: string;
-  rating: number;
-  variantText: string;
-  comment: string;
-  imageUrl?: string;
-  location: string;
-}
-
-function getCategorySampleReviews(product: Product): SampleReview[] {
-  const name = product.name.toLowerCase();
-  const cat = product.category;
-
-  if (/smartphone|celular|xiaomi|redmi|poco|iphone|samsung|galaxy/i.test(name)) {
-    return [
-      {
-        id: 'r1',
-        author: 'Carlos M.',
-        date: 'Hace 2 semanas',
-        rating: 5,
-        variantText: 'Color: Negro Titanio · Capacidad: 256GB · Compra verificada',
-        comment: 'Excelente rendimiento, la batería dura más de un día completo y la pantalla a 120Hz es súper fluida. En Tingo María me llegó en 30 minutos.',
-        location: 'Cliente en Castillo Grande',
-      },
-      {
-        id: 'r2',
-        author: 'Valeria R.',
-        date: 'Hace 1 mes',
-        rating: 5,
-        variantText: 'Color: Titanio Natural · Capacidad: 512GB · Compra verificada',
-        comment: 'Las fotos de noche son espectaculares y carga en menos de 25 minutos con su cargador rápido. Viene completamente nuevo y sellado con garantía.',
-        imageUrl: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&auto=format&fit=crop&q=80',
-        location: 'Cliente en Centro de Tingo María',
-      },
-    ];
-  }
-
-  if (/shampoo|champu|medicasp|sedal|pantene|head & shoulders/i.test(name) || cat === 'farmacias') {
-    return [
-      {
-        id: 'r1',
-        author: 'Marita G.',
-        date: 'Hace 2 semanas',
-        rating: 5,
-        variantText: 'Presentación: 375ml · Compra verificada',
-        comment: 'Deja el cabello súper limpio y con un aroma fresco que dura todo el día. Muy efectivo contra la resequedad.',
-        location: 'Cliente en Rupa Rupa',
-      },
-      {
-        id: 'r2',
-        author: 'Renato S.',
-        date: 'Hace 3 semanas',
-        rating: 5,
-        variantText: 'Presentación: 375ml · Compra verificada',
-        comment: 'Llegó sellado con precinto de seguridad para evitar derrames en el delivery. 100% recomendado.',
-        imageUrl: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=300&auto=format&fit=crop&q=80',
-        location: 'Cliente en Castillo Grande',
-      },
-    ];
-  }
-
-  if (/atun|filete|grated|conserva|aceite|leche/i.test(name) || cat === 'supermercados' || cat === 'bodegas') {
-    return [
-      {
-        id: 'r1',
-        author: 'Rosa P.',
-        date: 'Hace 1 semana',
-        rating: 5,
-        variantText: 'Presentación: Lata 170g · Compra verificada',
-        comment: 'Lomos enteros de atún en aceite vegetal de gran calidad y con fecha de vencimiento lejana. Muy rendidor para ensaladas.',
-        location: 'Cliente en Centro de Tingo María',
-      },
-      {
-        id: 'r2',
-        author: 'Jorge T.',
-        date: 'Hace 2 semanas',
-        rating: 5,
-        variantText: 'Presentación: Pack ahorro · Compra verificada',
-        comment: 'Excelente sabor y frescura, llegó rápido y bien protegido junto con las compras del supermercado.',
-        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80',
-        location: 'Cliente en Las Palmas',
-      },
-    ];
-  }
-
-  if (cat === 'ropa' || /zapatilla|calzado|vans|nike/i.test(name)) {
-    return [
-      {
-        id: 'r1',
-        author: 'Edwin B.',
-        date: 'Hace 2 semanas',
-        rating: 5,
-        variantText: 'Color: Negro · Talla: 41 EU · Compra verificada',
-        comment: 'Soy talla 41 y me quedó como un guante. La suela vulcanizada no resbala con la lluvia de la selva y la lona es resistente.',
-        location: 'Cliente en Tingo María',
-      },
-      {
-        id: 'r2',
-        author: 'Andrea L.',
-        date: 'Hace 1 mes',
-        rating: 5,
-        variantText: 'Color: Negro · Talla: 42 EU · Compra verificada',
-        comment: 'Es encantadora esta zapatilla muy cómoda, la compré en mi talla habitual y el acabado es de primera calidad.',
-        imageUrl: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=300&auto=format&fit=crop&q=80',
-        location: 'Cliente en Castillo Grande',
-      },
-    ];
-  }
-
-  return [
-    {
-      id: 'r1',
-      author: 'Milagros Q.',
-      date: 'Hace 1 semana',
-      rating: 5,
-      variantText: 'Porción: Personal · Compra verificada',
-      comment: 'La cecina deliciosa con el auténtico ahumado tradicional tingalés. El tacacho en su punto y el ají de cocona buenísimo.',
-      location: 'Cliente en Rupa Rupa',
-    },
-    {
-      id: 'r2',
-      author: 'Fernando M.',
-      date: 'Hace 2 semanas',
-      rating: 5,
-      variantText: 'Porción: Familiar · Compra verificada',
-      comment: 'Llegó calientito en envase térmico en menos de 25 minutos. El sabor es insuperable, volveré a pedir.',
-      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&auto=format&fit=crop&q=80',
-      location: 'Cliente en Centro de Tingo María',
-    },
-  ];
-}
-
 export const ProductDetailPage: React.FC = () => {
+  const { id = '' } = useParams();
+  const resource = useStorefrontProduct(id);
+  if (resource.loading || resource.error) return <div className="max-w-4xl mx-auto py-16 px-4"><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/><Link to="/negocios" className="text-primary font-bold">Volver al catálogo</Link></div>;
+  if (!resource.data) return null;
+  return <ProductDetailContent key={id} initialProduct={resource.data.product} merchant={resource.data.merchant}/>;
+};
+
+function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Product; merchant: StorefrontMerchant }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const { products, merchants, favoriteProductIds, toggleFavoriteProduct } = useDataStore();
-  const { addItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
-
-  // Find product or fallback to authentic Amazonian dish
-  const product =
-    products.find((p) => p.id === id) ||
-    products.find((p) => p.id === 'p_tacacho_cecina') ||
-    products[0];
-
-  const merchant = merchants.find((m) => m.id === product?.merchantId) || merchants[0];
-
-  const isFavorite = product ? favoriteProductIds.includes(product.id) : false;
+  const favorite = useCatalogFavorite('product', initialProduct.id);
+  const isFavorite = favorite.isFavorite;
+  const [actionError, setActionError] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState(preferredSku(initialProduct.source!)?.id || '');
+  const selectedSku = initialProduct.source?.skus.find(sku => sku.id === selectedVariantId);
+  const product = { ...initialProduct, priceCents: selectedSku?.priceCents ?? initialProduct.priceCents,
+    stock: selectedSku?.availableStock ?? 0, isAvailable: !!initialProduct.source?.isActive && !!selectedSku?.isActive && (selectedSku?.availableStock ?? 0) > 0 };
+  const related = useRemote(`related:${initialProduct.id}`, async signal => {
+    const [sources, stores] = await Promise.all([loadCatalogProducts({ category: initialProduct.categoryId }, signal), catalogApi.stores(signal)]);
+    const merchants = stores.map(storefrontMerchant);
+    return { merchants, products: sources.map(source => storefrontProduct(source, merchants.find(store => store.id === source.storeId))) };
+  });
+  const products = related.data?.products || [];
+  const merchants = related.data?.merchants || [];
+  const reviews = useRemote(`product-store-reviews:${merchant.id}`, async signal => {
+    const first = await engagementApi.reviews(merchant.id, undefined, signal);
+    const items = [...first.items];
+    const cursors = new Set<string>();
+    let cursor = first.nextCursor;
+    while (cursor) {
+      if (cursors.has(cursor)) throw new Error('No se pudieron cargar todas las opiniones.');
+      cursors.add(cursor);
+      const page = await engagementApi.reviews(merchant.id, cursor, signal);
+      items.push(...page.items); cursor = page.nextCursor;
+    }
+    return { ...first, items };
+  });
 
   // Galería de fotos del mismo modelo con diferentes colores
   const galleryItems = useMemo(() => {
@@ -490,21 +221,18 @@ export const ProductDetailPage: React.FC = () => {
         const variant = product.variants && product.variants[idx];
         return {
           url,
-          label: variant ? variant.name.replace(/^Color:\s*/i, '') : `Color ${idx + 1}`,
-          variantId: variant?.id,
+          label: `Imagen ${idx + 1}`,
+          variantId: undefined,
         };
       });
     }
 
     // Si no tiene múltiples imágenes, usar su imagen única (nunca ensaladas ni fotos ajenas)
-    return [{ url: product.imageUrl, label: 'Color principal', variantId: undefined }];
+    return [{ url: product.imageUrl, label: 'Imagen principal', variantId: undefined }];
   }, [product]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    product?.variants && product.variants.length > 0 ? product.variants[0]?.id || '' : ''
-  );
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const [addedSimilarId, setAddedSimilarId] = useState<string | null>(null);
@@ -519,107 +247,30 @@ export const ProductDetailPage: React.FC = () => {
     setSelectedQuantity(1);
   }, [id, product?.id]);
 
-  // Review useful counters state
-  const [reviewHelpful, setReviewHelpful] = useState<Record<string, number>>({
-    r1: 3,
-    r2: 5,
-    r3: 2,
-  });
-  const [votedReviews, setVotedReviews] = useState<Record<string, boolean>>({});
-
-  if (!product) {
-    return (
-      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
-        <h1 className="text-2xl font-bold text-ink mb-2">Producto no encontrado</h1>
-        <p className="text-ink-light text-sm mb-6">El producto que buscas ya no está disponible en Tingo María.</p>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm"
-        >
-          Volver al Inicio
-        </Link>
-      </div>
-    );
-  }
-
-  const originalPriceCents = product.originalPriceCents || Math.round(product.priceCents * 1.2);
-  const discountPercent = Math.round(
-    ((originalPriceCents - product.priceCents) / originalPriceCents) * 100
-  );
-
-  // Productos similares inteligentes (mismo tipo en otros modelos o marcas)
-  const similarProducts = useMemo(() => {
-    return findSimilarProducts(product, products);
-  }, [product, products]);
-
-  // Fotos de reviews contextuales según el producto (celulares, shampoo, etc.)
-  const reviewPhotos = useMemo(() => {
-    return getCategoryReviewPhotos(product);
-  }, [product]);
-
-  // Resumen de opiniones IA contextual
-  const aiSummary = useMemo(() => {
-    return getCategoryAiSummary(product);
-  }, [product]);
-
-  // Reseñas de clientes contextuales al tipo de producto
-  const sampleReviews = useMemo(() => {
-    return getCategorySampleReviews(product);
-  }, [product]);
+  const originalPriceCents = product.originalPriceCents;
+  const discountPercent = originalPriceCents && originalPriceCents > product.priceCents
+    ? Math.round((originalPriceCents - product.priceCents) / originalPriceCents * 100) : 0;
+  const similarProducts = useMemo(() => findSimilarProducts(initialProduct, products), [initialProduct, products]);
+  const reviewPhotos: { url: string; alt: string; rating: number }[] = [];
+  const aiSummary = reviews.data ? (reviews.data.count > 0
+    ? `El comercio tiene ${reviews.data.count} opiniones registradas y una calificación media de ${reviews.data.average?.toFixed(1) ?? 'sin calcular'}.`
+    : 'Todavía no hay opiniones registradas sobre este comercio.') : 'Las opiniones se mostrarán cuando termine la consulta.';
+  const storeReviews = (reviews.data?.items || []).map(review => ({ id: review.id, rating: review.rating,
+    date: new Date(review.createdAt).toLocaleDateString('es-PE'), variantText: 'Opinión sobre el comercio',
+    comment: review.comment || '', imageUrl: '', location: '' }));
+  const canBuy = product.isAvailable && Number.isInteger(selectedQuantity) && selectedQuantity >= 1 && selectedQuantity <= Math.min(product.stock, 10000);
 
   const selectedVariantObj = product.variants?.find((v) => v.id === selectedVariantId);
 
   const handleAddToCart = () => {
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: selectedQuantity,
-      unitPriceCents: product.priceCents,
-      selectedVariantId: selectedVariantId || undefined,
-      selectedVariantName: selectedVariantObj?.name || undefined,
-    });
+    if (!initialProduct.source || !selectedSku || !canBuy) return false;
+    try { addCatalogProduct(initialProduct.source, selectedSku.id, selectedQuantity); setActionError(''); }
+    catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo agregar al carrito.'); return false; }
     setShowAddedToast(true);
     setTimeout(() => setShowAddedToast(false), 3500);
+    return true;
   };
-
-  const handleAddSimilarProduct = (e: React.MouseEvent, simProd: Product) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addItem({
-      productId: simProd.id,
-      merchantId: simProd.merchantId,
-      quantity: 1,
-      unitPriceCents: simProd.priceCents,
-    });
-    setAddedSimilarId(simProd.id);
-    setTimeout(() => {
-      setAddedSimilarId((curr) => (curr === simProd.id ? null : curr));
-    }, 1500);
-  };
-
-  const handleBuyNow = () => {
-    // High-level operation: if guest, redirect to login!
-    addItem({
-      productId: product.id,
-      merchantId: product.merchantId,
-      quantity: selectedQuantity,
-      unitPriceCents: product.priceCents,
-      selectedVariantId: selectedVariantId || undefined,
-      selectedVariantName: selectedVariantObj?.name || undefined,
-    });
-
-    if (!isAuthenticated) {
-      // Redirect to login preserving the checkout intent
-      navigate('/login', {
-        state: {
-          from: '/checkout',
-          message: 'Inicia sesión para completar tu compra de manera segura',
-        },
-      });
-    } else {
-      navigate('/checkout');
-    }
-  };
+  const handleBuyNow = () => { if (handleAddToCart()) navigate('/carrito'); };
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -629,17 +280,10 @@ export const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleVoteUseful = (reviewId: string) => {
-    if (votedReviews[reviewId]) return;
-    setReviewHelpful((prev) => ({
-      ...prev,
-      [reviewId]: (prev[reviewId] || 0) + 1,
-    }));
-    setVotedReviews((prev) => ({ ...prev, [reviewId]: true }));
-  };
 
   return (
     <div className="w-full pb-28 sm:pb-8">
+      {(actionError || favorite.error) && <p role="alert" className="mx-auto max-w-7xl px-4 py-3 text-destructive">{actionError || favorite.error}</p>}
       {/* Toast Notification */}
       {showAddedToast && (
         <div className="fixed top-20 right-4 z-50 bg-white border border-primary/20 shadow-floating rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -787,19 +431,21 @@ export const ProductDetailPage: React.FC = () => {
               {/* Active Color Tag on Preview */}
               <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Color: {galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
+                <span>Imagen: {galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
               </div>
 
               {/* Free Shipping Badge */}
               <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                 <Truck className="w-3 h-3" />
-                <span>Envío gratis</span>
+                <span>Envío según destino</span>
               </div>
 
               {/* Mobile Favorite button inside preview */}
               <button
                 type="button"
-                onClick={() => toggleFavoriteProduct(product.id)}
+                onClick={() => void favorite.toggle()}
+                disabled={favorite.busy}
+                aria-pressed={isFavorite}
                 className="sm:hidden absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-md text-gray-500 hover:text-primary"
               >
                 <Heart
@@ -824,27 +470,27 @@ export const ProductDetailPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
                   <span className="text-gray-400 block text-[11px]">Marca</span>
-                  <span className="font-bold text-ink">{product.brand || merchant.name}</span>
+                  <span className="font-bold text-ink">{product.brand || 'No especificada'}</span>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
                   <span className="text-gray-400 block text-[11px]">Condición</span>
-                  <span className="font-bold text-ink">{product.condition || 'Nuevo'}</span>
+                  <span className="font-bold text-ink">{product.condition || 'No especificada'}</span>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
                   <span className="text-gray-400 block text-[11px]">Disponibilidad</span>
-                  <span className="font-bold text-emerald-600">En stock ({product.stock} disp.)</span>
+                  <span className="font-bold text-emerald-600">{product.isAvailable ? `En stock (${product.stock} disp.)` : 'Agotado'}</span>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
-                  <span className="text-gray-400 block text-[11px]">Origen</span>
-                  <span className="font-bold text-ink">Tingo María, Huánuco</span>
+                  <span className="text-gray-400 block text-[11px]">Ubicación del comercio</span>
+                  <span className="font-bold text-ink">{merchant.address}</span>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
                   <span className="text-gray-400 block text-[11px]">Garantía</span>
-                  <span className="font-bold text-ink">30 días de fábrica</span>
+                  <span className="font-bold text-ink">Consultar al comercio</span>
                 </div>
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100">
                   <span className="text-gray-400 block text-[11px]">Envío rápido</span>
-                  <span className="font-bold text-primary">Mismo día (35 min)</span>
+                  <span className="font-bold text-primary">Según dirección de entrega</span>
                 </div>
               </div>
             </div>
@@ -854,17 +500,17 @@ export const ProductDetailPage: React.FC = () => {
           <div className="pt-6 border-t border-gray-100 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-extrabold text-ink">Opiniones del producto</h2>
+                <h2 className="text-lg font-extrabold text-ink">Opiniones del comercio</h2>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-4xl font-black text-ink">{product.rating || 4.8}</span>
+                  <span className="text-4xl font-black text-ink">{reviews.data?.average == null ? 'Sin valoraciones' : reviews.data.average.toFixed(1)}</span>
                   <div>
                     <div className="flex items-center text-amber-400">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
+                        <Star key={i} className={`w-4 h-4 ${i < Math.round(reviews.data?.average || 0) ? 'fill-amber-400' : 'fill-gray-200 text-gray-200'}`} />
                       ))}
                     </div>
                     <span className="text-xs text-gray-500">
-                      {product.ratingCount || 175} calificaciones
+                      {reviews.data?.count ?? '—'} opiniones del comercio
                     </span>
                   </div>
                 </div>
@@ -875,42 +521,44 @@ export const ProductDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 w-3">5</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full w-[82%]" />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: reviews.data?.items.length ? `${reviews.data.items.filter(review => review.rating === 5).length / reviews.data.items.length * 100}%` : '0%' }}/>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 w-3">4</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full w-[12%]" />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: reviews.data?.items.length ? `${reviews.data.items.filter(review => review.rating === 4).length / reviews.data.items.length * 100}%` : '0%' }}/>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 w-3">3</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full w-[4%]" />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: reviews.data?.items.length ? `${reviews.data.items.filter(review => review.rating === 3).length / reviews.data.items.length * 100}%` : '0%' }}/>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 w-3">2</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full w-[1%]" />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: reviews.data?.items.length ? `${reviews.data.items.filter(review => review.rating === 2).length / reviews.data.items.length * 100}%` : '0%' }}/>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 w-3">1</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full w-[1%]" />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: reviews.data?.items.length ? `${reviews.data.items.filter(review => review.rating === 1).length / reviews.data.items.length * 100}%` : '0%' }}/>
                   </div>
                 </div>
                 <p className="text-[11px] text-primary font-semibold text-right pt-0.5">
-                  Al 92% le quedó como esperaba
+                  Opiniones registradas de compradores
                 </p>
               </div>
             </div>
 
+<RemoteState loading={reviews.loading} error={reviews.error} retry={reviews.reload}/>
             {/* Opiniones con fotos strip matching Capture 3 */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-ink">Opiniones con fotos</h3>
+              {!reviewPhotos.length && <p className="text-xs text-gray-500">No hay fotos de opiniones disponibles.</p>}
               <div className="grid grid-cols-4 gap-2.5">
                 {reviewPhotos.map((photo, idx) => (
                   <div
@@ -931,11 +579,11 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* AI Review Summary Card (Capture 3: Resumen de opiniones generado por IA) */}
+            {/* AI Review Summary Card (Capture 3: Resumen de opiniones del comercio) */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50/90 to-emerald-50/70 border border-primary-200 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                 <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                <span>Resumen de opiniones generado por IA</span>
+                <span>Resumen de opiniones del comercio</span>
               </div>
               <p className="text-xs text-ink/80 leading-relaxed font-medium">
                 {aiSummary}
@@ -944,7 +592,7 @@ export const ProductDetailPage: React.FC = () => {
 
             {/* Review Cards List */}
             <div className="space-y-4 pt-2">
-              {sampleReviews.map((rev) => (
+              {storeReviews.map((rev) => (
                 <div
                   key={rev.id}
                   className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-2 text-xs"
@@ -976,15 +624,16 @@ export const ProductDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
-                      onClick={() => handleVoteUseful(rev.id)}
+                      disabled
+                      title="Esta función no está disponible"
                       className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
-                        votedReviews[rev.id]
+                        false
                           ? 'bg-primary-50 text-primary border-primary-200'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
                       }`}
                     >
                       <ThumbsUp className="w-3 h-3" />
-                      <span>Útil {reviewHelpful[rev.id] || 4}</span>
+                      <span>Valorar utilidad no disponible</span>
                     </button>
                     <span className="text-[10px] text-gray-400">{rev.location}</span>
                   </div>
@@ -1000,10 +649,12 @@ export const ProductDetailPage: React.FC = () => {
           <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-5 sm:p-6 space-y-5">
             {/* Condition & Sales badge */}
             <div className="flex items-center justify-between text-xs text-gray-400">
-              <span>{product.condition || 'Nuevo'} | +{product.soldCount || 500} vendidos</span>
+              <span>{product.isAvailable ? 'Disponible en el catálogo' : 'Agotado'}</span>
               <button
                 type="button"
-                onClick={() => toggleFavoriteProduct(product.id)}
+                onClick={() => void favorite.toggle()}
+                disabled={favorite.busy}
+                aria-pressed={isFavorite}
                 className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors"
                 aria-label="Favorito"
               >
@@ -1021,37 +672,35 @@ export const ProductDetailPage: React.FC = () => {
               <div className="flex items-center gap-2 text-xs">
                 <div className="flex items-center text-amber-400">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(reviews.data?.average || 0) ? 'fill-amber-400' : 'fill-gray-200 text-gray-200'}`} />
                   ))}
                 </div>
-                <span className="font-bold text-ink">{product.rating || 4.8}</span>
-                <span className="text-gray-400">({product.ratingCount || 175})</span>
+                <span className="font-bold text-ink">{reviews.data?.average == null ? 'Sin valoraciones' : reviews.data.average.toFixed(1)}</span>
+                <span className="text-gray-400">({reviews.data?.count ?? '—'})</span>
               </div>
             </div>
 
             {/* Price Box */}
             <div className="space-y-1.5 pt-1">
               <span className="text-xs text-gray-500 line-through tabular-nums">
-                {formatCents(originalPriceCents)}
+                {originalPriceCents ? formatCents(originalPriceCents) : ''}
               </span>
               <div className="flex items-baseline gap-2.5">
                 <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight tabular-nums">
-                  {formatCents(product.priceCents)}
+                  {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
                 </span>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                  {discountPercent}% OFF
-                </span>
+                {discountPercent > 0 && <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">{discountPercent > 0 ? `${discountPercent}% OFF` : ''}</span>}
               </div>
               <div className="flex items-center gap-2 pt-1 text-xs text-ink-light">
                 <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Preparación y despacho: <strong className="text-ink tabular-nums">{merchant.prepTimeMinutes}-{merchant.prepTimeMinutes + 15} min</strong></span>
+                <span>Preparación y despacho: <strong className="text-ink tabular-nums">{merchant.prepTimeMinutes === undefined ? 'Consultar al comercio' : `${merchant.prepTimeMinutes} min de preparación`}</strong></span>
               </div>
             </div>
 
             {/* Coupon Callout */}
             <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-primary-200 flex items-center gap-2 text-xs text-primary font-semibold">
               <Sparkles className="w-4 h-4 flex-shrink-0" />
-              <span>Cupón S/ 25 OFF en tu primera compra con Quickly</span>
+              <span>Los importes se revisan antes de confirmar la compra</span>
             </div>
 
             {/* Shipping Info */}
@@ -1059,15 +708,15 @@ export const ProductDetailPage: React.FC = () => {
               <div className="flex items-start gap-2.5">
                 <Truck className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-emerald-700">Envío gratis en Tingo María</p>
-                  <p className="text-[11px] text-gray-400">Llega hoy en 35 a 45 minutos a tu puerta</p>
+                  <p className="font-bold text-emerald-700">Envío según dirección de entrega</p>
+                  <p className="text-[11px] text-gray-400">La tarifa se calcula antes de confirmar</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-ink">Enviar a Tingo María (Rupa Rupa)</p>
-                  <p className="text-[11px] text-gray-400">Cobertura en Centro, Castillo Grande y Rupa Sur</p>
+                  <p className="font-semibold text-ink">Entrega a tu dirección registrada</p>
+                  <p className="text-[11px] text-gray-400">Consulta las zonas de cobertura al elegir el destino</p>
                 </div>
               </div>
             </div>
@@ -1078,7 +727,7 @@ export const ProductDetailPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-ink flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5 text-primary" />
-                    <span>Color del modelo:</span>
+                    <span>Presentación disponible:</span>
                   </label>
                   <span className="font-extrabold text-primary">
                     {selectedVariantObj?.name.replace(/^Color:\s*/i, '') || 'Seleccionar'}
@@ -1104,11 +753,11 @@ export const ProductDetailPage: React.FC = () => {
                       <button
                         key={v.id}
                         type="button"
+                        disabled={!v.isAvailable}
+                        aria-pressed={isSelected}
                         onClick={() => {
                           setSelectedVariantId(v.id);
-                          if (vIdx < galleryItems.length) {
-                            setActiveImageIndex(vIdx);
-                          }
+                          setSelectedQuantity(1);
                         }}
                         className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                           isSelected
@@ -1157,6 +806,7 @@ export const ProductDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBuyNow}
+                disabled={!canBuy}
                 className="w-full py-3.5 px-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
               >
                 <Zap className="w-4 h-4 fill-white" />
@@ -1166,6 +816,7 @@ export const ProductDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddToCart}
+                disabled={!canBuy}
                 className="w-full py-3 px-4 rounded-2xl bg-primary-50 hover:bg-primary-100 text-primary border border-primary-200 text-xs font-bold transition-all active:scale-98 flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -1177,7 +828,7 @@ export const ProductDetailPage: React.FC = () => {
             <div className="pt-4 border-t border-gray-100 space-y-3 text-xs">
               <div className="flex items-center gap-3">
                 <img
-                  src={merchant.logoUrl}
+                  src={merchant.logoUrl || catalogPlaceholder}
                   alt={merchant.name}
                   className="w-10 h-10 rounded-xl object-cover border border-gray-200 flex-shrink-0"
                 />
@@ -1186,7 +837,7 @@ export const ProductDetailPage: React.FC = () => {
                     <p className="font-extrabold text-ink truncate">{merchant.name}</p>
                     <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                   </div>
-                  <p className="text-[11px] text-gray-400">Tienda oficial Quickly · +5 mil ventas</p>
+                  <p className="text-[11px] text-gray-400">Comercio afiliado a Quickly</p>
                 </div>
               </div>
 
@@ -1194,28 +845,28 @@ export const ProductDetailPage: React.FC = () => {
               <div className="space-y-1 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                 <div className="flex items-center justify-between text-[11px] font-bold text-ink">
                   <span className="text-emerald-700 flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5" /> Comercio Destacado
+                    <Award className="w-3.5 h-3.5" /> Valoraciones del comercio
                   </span>
-                  <span>4.9 ★</span>
+                  <span>{merchant.rating == null ? 'Sin valoraciones' : `${merchant.rating.toFixed(1)} ★`}</span>
                 </div>
                 <div className="grid grid-cols-5 gap-1 h-1.5">
                   <div className="bg-red-400 rounded-full" />
                   <div className="bg-orange-400 rounded-full" />
                   <div className="bg-yellow-400 rounded-full" />
                   <div className="bg-lime-400 rounded-full" />
-                  <div className="bg-emerald-500 rounded-full ring-2 ring-emerald-300" />
+                  <div className={`bg-emerald-500 rounded-full ${merchant.rating != null && merchant.rating >= 4.5 ? 'ring-2 ring-emerald-300' : ''}`} />
                 </div>
                 <div className="grid grid-cols-3 text-[10px] text-gray-500 text-center pt-1">
                   <div>
-                    <span className="font-bold text-ink block">+500</span>
-                    <span>Ventas</span>
+                    <span className="font-bold text-ink block">{merchant.ratingCount}</span>
+                    <span>Valoraciones</span>
                   </div>
                   <div>
-                    <span className="font-bold text-emerald-600 block">Buena</span>
+                    <span className="font-bold text-emerald-600 block">{merchant.isOpen ? 'Abierto' : 'Cerrado'}</span>
                     <span>Atención</span>
                   </div>
                   <div>
-                    <span className="font-bold text-emerald-600 block">A tiempo</span>
+                    <span className="font-bold text-emerald-600 block">En checkout</span>
                     <span>Entrega</span>
                   </div>
                 </div>
@@ -1234,13 +885,13 @@ export const ProductDetailPage: React.FC = () => {
               <div className="flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                 <p>
-                  <span className="font-bold text-ink">Compra Protegida Quickly:</span> Recibe el producto que esperabas o te devolvemos tu dinero.
+                  <span className="font-bold text-ink">Compra Protegida Quickly:</span> Consulta el detalle de tu pedido y contacta a soporte si necesitas ayuda.
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <RotateCcw className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-gray-400">
-                  Devolución gratis durante los primeros 30 días.
+                  Las consultas de devolución se gestionan con soporte.
                 </p>
               </div>
             </div>
@@ -1248,15 +899,8 @@ export const ProductDetailPage: React.FC = () => {
             {/* Payment Methods Box */}
             <div className="space-y-2 pt-3 border-t border-gray-100 text-xs">
               <h4 className="font-bold text-ink">Medios de pago disponibles</h4>
-              <p className="text-[11px] text-gray-500">Tarjetas de crédito y débito</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-1 rounded-md bg-gray-100 font-extrabold text-[11px] text-blue-700">VISA</span>
-                <span className="px-2 py-1 rounded-md bg-gray-100 font-extrabold text-[11px] text-red-600">Mastercard</span>
-                <span className="px-2 py-1 rounded-md bg-gray-100 font-extrabold text-[11px] text-indigo-700">Amex</span>
-                <span className="px-2 py-1 rounded-md bg-purple-100 font-extrabold text-[11px] text-purple-800">Yape</span>
-                <span className="px-2 py-1 rounded-md bg-sky-100 font-extrabold text-[11px] text-sky-800">Plin</span>
-                <span className="px-2 py-1 rounded-md bg-emerald-100 font-extrabold text-[11px] text-emerald-800">Efectivo</span>
-              </div>
+              <p className="text-[11px] text-gray-500">Pago contra entrega</p>
+              <div className="flex items-center gap-2 flex-wrap"><span className="px-2 py-1 rounded-md bg-emerald-100 font-extrabold text-[11px] text-emerald-800">Efectivo</span></div>
             </div>
           </div>
         </div>
@@ -1281,6 +925,7 @@ export const ProductDetailPage: React.FC = () => {
           </Link>
         </div>
 
+        <RemoteState loading={related.loading} error={related.error} retry={related.reload}/>
         {/* Mercado Libre Style Cards Grid with Next Arrow */}
         <div className="relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -1293,9 +938,9 @@ export const ProductDetailPage: React.FC = () => {
                         simProd.originalPriceCents) *
                         100
                     )
-                  : 19;
+                  : 0;
               const originalPrice =
-                simProd.originalPriceCents || Math.round(simProd.priceCents * 1.22);
+                simProd.originalPriceCents;
               const cuotaPrice = Math.round(simProd.priceCents / 6);
 
               return (
@@ -1331,11 +976,11 @@ export const ProductDetailPage: React.FC = () => {
                     {/* Pricing matching Captura 4 */}
                     <div className="mt-2 space-y-0.5">
                       <span className="text-[11px] text-gray-400 line-through tabular-nums block">
-                        {formatCents(originalPrice)}
+                        {originalPrice ? formatCents(originalPrice) : ''}
                       </span>
                       <div className="flex items-baseline gap-1.5 flex-wrap">
                         <span className="text-base sm:text-lg font-bold text-ink tabular-nums">
-                          {formatCents(simProd.priceCents)}
+                          {simProd.hasPrice === false ? 'Sin presentaciones' : formatCents(simProd.priceCents)}
                         </span>
                         <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded">
                           {discountPercent}% OFF
@@ -1344,12 +989,12 @@ export const ProductDetailPage: React.FC = () => {
 
                       {/* Cuotas sin interés */}
                       <p className="text-[11px] text-emerald-700 font-medium leading-tight pt-0.5">
-                        6 cuotas de {formatCents(cuotaPrice)} sin interés
+                        Pago en efectivo contra entrega
                       </p>
 
-                      {/* Envío gratis */}
+                      {/* Envío según destino */}
                       <p className="text-[11px] text-emerald-700 font-bold pt-0.5">
-                        Envío gratis
+                        Envío según dirección
                       </p>
                     </div>
                   </div>
@@ -1379,7 +1024,7 @@ export const ProductDetailPage: React.FC = () => {
         <div className="min-w-0">
           <span className="text-[10px] text-gray-500 font-medium block">Total</span>
           <span className="text-base font-black text-ink tabular-nums">
-            {formatCents(product.priceCents * selectedQuantity)}
+            {product.hasPrice === false ? 'Por verificar' : formatCents(product.priceCents * selectedQuantity)}
           </span>
         </div>
 
@@ -1407,6 +1052,7 @@ export const ProductDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={handleAddToCart}
+                disabled={!canBuy}
             className="min-h-[44px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 touch-target active:scale-95"
           >
             <ShoppingCart className="w-4 h-4" />

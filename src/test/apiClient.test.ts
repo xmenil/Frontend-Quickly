@@ -2,10 +2,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { apiRequest, ApiError, onUnauthorized, resetApiSession, setCsrfToken } from '../services/api/apiClient';
 
 const fetchMock = vi.fn<typeof fetch>();
-beforeEach(() => { resetApiSession(); vi.stubGlobal('fetch', fetchMock); fetchMock.mockReset(); });
+beforeEach(() => { localStorage.clear(); resetApiSession(); vi.stubGlobal('fetch', fetchMock); fetchMock.mockReset(); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
 it('envía cookies y CSRF en mutaciones, sin Authorization ni token persistido', async () => {
+  localStorage.setItem('quickly_session_token', 'token-heredado-no-autorizado');
+  localStorage.setItem('quickly_backend_url', 'https://legacy.example.test');
   setCsrfToken('csrf-en-memoria');
   fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
   await apiRequest('/me', { method: 'PATCH', body: { fullName: 'Nombre real' } });
@@ -42,4 +44,15 @@ it('distingue errores de red y no reintenta automáticamente una mutación', asy
   fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
   await expect(apiRequest('/purchases', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
   expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it('restaurar sesión no cancela lecturas públicas del catálogo', async () => {
+  let finish!: (value: Response) => void;
+  fetchMock.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const request = apiRequest('/catalog/search', { publicRequest: true, sessionIndependent: true });
+  const options = fetchMock.mock.calls[0][1];
+  resetApiSession();
+  expect(options?.signal?.aborted).toBe(false);
+  finish(new Response(JSON.stringify({ items: [], nextCursor: null })));
+  await expect(request).resolves.toEqual({ items: [], nextCursor: null });
 });

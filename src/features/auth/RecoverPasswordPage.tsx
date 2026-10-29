@@ -5,12 +5,12 @@ import { Button } from '../../components/ui/Button';
 import { Mail, CheckCircle2, ArrowLeft, ShieldAlert, Compass, Sparkles } from 'lucide-react';
 
 export const RecoverPasswordPage: React.FC = () => {
-  const [email, setEmail] = useState('cliente@quickly.pe');
+  const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setSent(false);
   };
 
   return (
@@ -35,31 +35,6 @@ export const RecoverPasswordPage: React.FC = () => {
         </p>
       </div>
 
-      {sent ? (
-        <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3 animate-in fade-in">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-subtle">
-            <CheckCircle2 className="w-7 h-7" />
-          </div>
-          <h2 className="text-base font-bold text-emerald-950">Instrucciones enviadas</h2>
-          <p className="text-xs text-emerald-900 leading-relaxed max-w-xs mx-auto">
-            Hemos generado el enlace de recuperación para <strong>{email}</strong>. En este prototipo demostrativo, tu contraseña temporal es <strong>123456</strong>.
-          </p>
-          <div className="pt-2 flex flex-col gap-2">
-            <Link to="/login">
-              <Button variant="primary" size="md" className="w-full">
-                Ir a Iniciar Sesión con clave temporal
-              </Button>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setSent(false)}
-              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors py-1"
-            >
-              Probar con otro correo
-            </button>
-          </div>
-        </div>
-      ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Correo electrónico o teléfono registrado"
@@ -69,25 +44,15 @@ export const RecoverPasswordPage: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
             leftIcon={<Mail className="w-4 h-4 text-gray-500" />}
-            helperText="Te enviaremos un código de verificación vía WhatsApp o correo"
+            helperText="Este servicio está pendiente de habilitación."
           />
 
-          <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-between text-xs">
-            <span className="text-gray-600">Demo rápido:</span>
-            <button
-              type="button"
-              onClick={() => setEmail('cliente@quickly.pe')}
-              className="font-bold text-primary hover:underline"
-            >
-              Usar correo demo tingalés
-            </button>
-          </div>
+          <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">La recuperación de contraseña todavía no está disponible. No se ha enviado ningún enlace ni generado una contraseña temporal.</p>
 
-          <Button type="submit" variant="primary" size="lg" className="w-full">
+          <Button type="submit" disabled variant="primary" size="lg" className="w-full">
             Enviar Instrucciones de Recuperación
           </Button>
         </form>
-      )}
 
       <div className="pt-4 border-t border-gray-100 text-center text-xs text-gray-600">
         ¿Recordaste tu contraseña?{' '}
@@ -108,7 +73,7 @@ export const AccessDeniedPage: React.FC = () => {
       <h1 className="text-2xl font-extrabold text-ink mb-2">Área Restringida</h1>
       <p className="text-xs sm:text-sm text-ink-light max-w-md mb-6 leading-relaxed">
         No tienes los permisos asignados para visualizar este módulo con tu perfil actual en Quickly Tingo María.
-        Puedes cambiar a un perfil con permisos adecuados desde el selector demo flotante.
+        Accede con una cuenta que tenga los permisos asignados por la administración.
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
         <Link to="/login">
