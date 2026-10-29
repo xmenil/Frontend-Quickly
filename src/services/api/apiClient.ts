@@ -1,4 +1,4 @@
-import { getCsrfToken, resolveApiUrl, setCsrfToken as storeCsrfToken } from '../../lib/api';
+import { getCsrfToken, getSessionToken, resolveApiUrl, setCsrfToken as storeCsrfToken, setSessionToken as storeSessionToken } from '../../lib/api';
 let generation = 0;
 let unauthorizedHandler: (() => void) | undefined;
 const pending = new Set<AbortController>();
@@ -7,10 +7,12 @@ export class ApiError extends Error {
   constructor(message: string, public status: number, public code: string, public requestId?: string) { super(message); }
 }
 export function setCsrfToken(token?: string) { storeCsrfToken(token ?? null); }
+export function setSessionToken(token?: string) { storeSessionToken(token ?? null); }
 export function onUnauthorized(handler: () => void) { unauthorizedHandler = handler; }
 export function resetApiSession() {
   generation++;
   storeCsrfToken(null);
+  storeSessionToken(null);
   for (const controller of pending) controller.abort();
   pending.clear();
 }
@@ -39,6 +41,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
     const csrfToken = getCsrfToken();
     if (csrfToken && method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
+    const bearer = getSessionToken();
+    if (bearer && !headers['Authorization']) headers['Authorization'] = `Bearer ${bearer}`;
 
     const response = await fetch(resolveApiUrl(path), {
       method,

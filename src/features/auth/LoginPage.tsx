@@ -88,7 +88,7 @@ export const LoginPage: React.FC = () => {
         setIsLoading(false);
         setLoadingMessage(null);
         if (res.success) {
-          navigate(safeReturnPath(from, '/'), { replace: true });
+          navigate(safeReturnPath(from === '/' ? undefined : from, getRoleDefaultPath(res.user?.role)), { replace: true });
         } else {
           setError(res.message || 'No se pudo iniciar sesión con Google.');
         }

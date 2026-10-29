@@ -2,7 +2,7 @@ import { migrateLegacyStorage } from '../lib/legacyStorage';
 import { create } from 'zustand';
 import { User, UserRole } from '../domain/types';
 import { identityApi, Profile, ProfileUpdate, Session } from '../services/api/identityApi';
-import { ApiError, onUnauthorized, resetApiSession, setCsrfToken } from '../services/api/apiClient';
+import { ApiError, onUnauthorized, resetApiSession, setCsrfToken, setSessionToken } from '../services/api/apiClient';
 import { normalizePhone, profileToUser, roleMap } from '../services/api/profileAdapter';
 
 interface AuthResult { success: boolean; message?: string; user?: User }
@@ -47,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
   }
   function acceptSession(session: Session) {
     setCsrfToken(session.csrfToken);
+    if (session.token) setSessionToken(session.token);
     return acceptProfile(session.user);
   }
   async function externalSession(load: () => Promise<Session>) {
