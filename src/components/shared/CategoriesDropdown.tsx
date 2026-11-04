@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { catalogApi } from '../../services/api/catalogApi';
 import { RemoteState, useRemote } from '../../features/operations/shared';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Menu } from 'lucide-react';
 
 interface SubCategory {
   name: string;
@@ -19,7 +19,7 @@ interface CategoryOption {
 }
 
 interface CategoriesDropdownProps {
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'menu';
 }
 
 export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant = 'default' }) => {
@@ -87,6 +87,26 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
           <ChevronDown
             className={`w-3.5 h-3.5 text-gray-500 stroke-[2.5] transition-transform duration-200 ${
               isOpen ? 'rotate-180 text-primary' : ''
+            }`}
+          />
+        </button>
+      ) : variant === 'menu' ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
+            isOpen
+              ? 'bg-primary text-white border-primary shadow-xs'
+              : 'bg-gray-100 hover:bg-gray-200/80 text-gray-800 border-gray-200/80'
+          }`}
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <Menu className="w-4 h-4 stroke-[2.5]" />
+          <span>Menú</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-white' : 'text-gray-500'
             }`}
           />
         </button>

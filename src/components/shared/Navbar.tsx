@@ -15,6 +15,7 @@ import { useRemote } from '../../features/operations/shared';
 import { RoleBadge } from '../ui/Badge';
 import {
   ShoppingCart,
+  Heart,
   Bell,
   ChevronDown,
   ShoppingBag,
@@ -29,7 +30,6 @@ import {
   Tag,
   Sparkles,
   HelpCircle,
-  Film,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -82,7 +82,7 @@ export const Navbar: React.FC = () => {
     setShowMobileDrawer(false);
   }, [location.pathname, location.search]);
 
-  // Active section detection so buttons paint when selected
+  // Active section detection
   const isOfertasActive =
     location.pathname === '/negocios' &&
     (location.search.includes('q=oferta') || location.search.includes('descuento'));
@@ -99,95 +99,74 @@ export const Navbar: React.FC = () => {
   const isPedidosActive = location.pathname === '/cliente/pedidos';
   const isPerfilActive = location.pathname === '/cliente/perfil';
 
-  const getNavBtnClass = (active: boolean) =>
-    active
-      ? 'bg-white text-primary font-black px-3 py-1 rounded-full shadow-sm ring-1 ring-white/50 transition-all cursor-pointer'
-      : 'text-white hover:text-white hover:bg-white/15 px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer';
-
   const unreadNotifications = notifications.filter((n) => !n.readAt);
 
   return (
     <>
       {logoutError && <p role="alert" className="bg-red-50 p-3 text-sm text-red-800">{logoutError}</p>}
-      <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
+      
+      {/* Header estilo Falabella: Fondo blanco limpio con detalles en verde Quickly */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200/90 shadow-2xs select-none text-ink">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-6 pt-1">
-            {/* Hamburger Button (Mobile) & Brand Logo & Zone Selector */}
-            <div className="flex items-center gap-2 sm:gap-5 flex-shrink-0">
+          <div className="flex items-center justify-between h-16 sm:h-18 gap-2 sm:gap-4 py-2">
+            {/* Hamburger Button (Mobile) & Brand Logo & Categories Menu */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(true)}
-                className="md:hidden p-1.5 -ml-1 text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
                 aria-label="Abrir menú de navegación"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               </button>
 
-              <BrandLogo size="md" variant="white" />
+              <BrandLogo size="md" variant="default" />
 
-              {/* Zone Selector (Extracted Component) */}
-              <div className="hidden lg:block">
-                <ZoneSelector variant="navbar" />
+              {/* Botón Menú / Categorías inspirado en Falabella */}
+              <div className="hidden md:block">
+                <CategoriesDropdown variant="menu" />
               </div>
             </div>
 
-            {/* Desktop Search Bar (Extracted Component with 300ms debounce) */}
-            <div className="hidden sm:flex flex-1 max-w-xl">
+            {/* Desktop Search Bar */}
+            <div className="hidden sm:flex flex-1 max-w-xl mx-2 lg:mx-4">
               <SearchBar variant="navbar-desktop" />
             </div>
 
-            {/* Right Quick Actions & Role Badges */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              {/* Role Switches */}
-              {(activeRole === 'comercio' || roles?.includes('comercio')) && (
-                <Link
-                  to="/comercio/tienda"
-                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <Store className="w-3 h-3 text-white" />
-                  Panel Proveedor
-                </Link>
-              )}
-              {(activeRole === 'repartidor' || roles?.includes('repartidor')) && (
-                <Link
-                  to="/repartidor/solicitudes"
-                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <Bike className="w-3 h-3 text-white" />
-                  Panel Repartidor
-                </Link>
-              )}
+            {/* Right Quick Actions & Account */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Badges de Panel Administrativo / Comercial */}
               {(activeRole === 'admin' || roles?.includes('admin')) && (
                 <Link
                   to="/admin/resumen"
-                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
+                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full hover:bg-purple-100 transition-colors"
                 >
-                  <ShieldCheck className="w-3 h-3 text-white" />
+                  <ShieldCheck className="w-3 h-3 text-purple-700" />
                   Panel Admin
                 </Link>
               )}
+              {(activeRole === 'comercio' || roles?.includes('comercio')) && (
+                <Link
+                  to="/comercio/tienda"
+                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors"
+                >
+                  <Store className="w-3 h-3 text-primary" />
+                  Panel Tienda
+                </Link>
+              )}
 
-              {/* Fast delivery pill */}
-              <div className="hidden lg:flex items-center gap-1 text-[11px] font-bold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/20">
-                <span>🚚 Envíos express Tingo María</span>
-              </div>
-
-              {/* Cart Button with Count Badge */}
+              {/* Wishlist / Favoritos (Ícono corazón estilo Falabella) */}
               <Link
-                to="/carrito"
-                className="relative p-2 rounded-lg text-white hover:bg-white/10 transition-colors"
-                aria-label={`Ver carrito con ${cartCount} productos`}
+                to="/cliente/favoritos"
+                className="p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Mis favoritos"
+                title="Mis favoritos"
               >
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-white text-primary text-[10px] font-black rounded-full flex items-center justify-center shadow-sm animate-in zoom-in-75">
-                    {cartCount}
-                  </span>
-                )}
+                <Heart className="w-5 h-5 stroke-[2]" />
               </Link>
 
-              {/* Notifications Bell with Outside Click Protection */}
+              {/* Notifications Bell */}
               <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
@@ -195,18 +174,18 @@ export const Navbar: React.FC = () => {
                     setShowNotificationsMenu((prev) => !prev);
                     setShowProfileMenu(false);
                   }}
-                  className="relative p-2 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
                   aria-label={`Notificaciones (${unreadNotifications.length} sin leer)`}
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 stroke-[2]" />
                   {unreadNotifications.length > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-300 rounded-full ring-2 ring-primary-dark" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-white" />
                   )}
                 </button>
 
                 {/* Notifications Popover */}
                 {showNotificationsMenu && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white text-ink rounded-2xl shadow-floating border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute right-0 mt-2 w-80 bg-white text-ink rounded-2xl shadow-floating border border-gray-150 p-3 z-50 animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
                       <span className="font-bold text-sm text-ink">Notificaciones</span>
                       <Link
@@ -236,26 +215,45 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
 
-              {/* User Profile Dropdown with Outside Click Protection */}
+              {/* Cart Button with Count Badge */}
+              <Link
+                to="/carrito"
+                className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label={`Ver carrito con ${cartCount} productos`}
+              >
+                <ShoppingCart className="w-5 h-5 stroke-[2]" />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* User Account Button (Falabella style: "Hola, Inicia sesión ⌵" o "Hola, [Nombre] ⌵") */}
               {isAuthenticated && currentUser ? (
-                <div className="relative" ref={profileRef}>
+                <div className="relative pl-1 sm:pl-2 border-l border-gray-200" ref={profileRef}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowProfileMenu((prev) => !prev);
                       setShowNotificationsMenu(false);
                     }}
-                    className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-left"
                   >
-                    <div className="w-7 h-7 rounded-full bg-white text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                      {currentUser.name.substring(0, 2)}
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                      {currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'U'}
                     </div>
-                    <ChevronDown className="w-3.5 h-3.5 text-white hidden sm:block" />
+                    <div className="hidden md:flex flex-col leading-tight">
+                      <span className="text-[10px] text-gray-500 font-normal">Hola,</span>
+                      <span className="font-bold text-xs text-gray-900 truncate max-w-[110px] flex items-center gap-0.5">
+                        {currentUser.name.split(' ')[0]} <ChevronDown className="w-3 h-3 text-gray-400" />
+                      </span>
+                    </div>
                   </button>
 
                   {/* Profile Menu Popover */}
                   {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white text-ink rounded-2xl shadow-floating border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="absolute right-0 mt-2 w-56 bg-white text-ink rounded-2xl shadow-floating border border-gray-150 p-2 z-50 animate-in fade-in slide-in-from-top-2">
                       <div className="p-2.5 border-b border-gray-100 mb-1">
                         <p className="font-bold text-sm text-ink truncate">{currentUser?.name}</p>
                         <p className="text-xs text-gray-400 truncate">{currentUser?.email}</p>
@@ -271,7 +269,7 @@ export const Navbar: React.FC = () => {
                           className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
                         >
                           <ShoppingBag className="w-4 h-4 text-gray-400" />
-                          Mis Pedidos
+                          Mis Compras
                         </Link>
                         <Link
                           to="/cliente/direcciones"
@@ -282,6 +280,14 @@ export const Navbar: React.FC = () => {
                           Direcciones guardadas
                         </Link>
                         <Link
+                          to="/cliente/favoritos"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                        >
+                          <Heart className="w-4 h-4 text-gray-400" />
+                          Mis Favoritos
+                        </Link>
+                        <Link
                           to="/cliente/perfil"
                           onClick={() => setShowProfileMenu(false)}
                           className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
@@ -289,6 +295,7 @@ export const Navbar: React.FC = () => {
                           <User className="w-4 h-4 text-gray-400" />
                           Mi Perfil
                         </Link>
+
                         {roles?.includes('admin') && (
                           <Link
                             to="/admin/resumen"
@@ -324,7 +331,15 @@ export const Navbar: React.FC = () => {
                       <div className="pt-1 mt-1 border-t border-gray-100">
                         <button
                           type="button"
-                          onClick={async () => { const result = await logout(); if (result.success) { setShowProfileMenu(false); navigate('/login'); } else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
+                          onClick={async () => {
+                            const result = await logout();
+                            if (result.success) {
+                              setShowProfileMenu(false);
+                              navigate('/login');
+                            } else {
+                              setLogoutError(result.message || 'No se pudo cerrar sesión.');
+                            }
+                          }}
                           className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
@@ -335,28 +350,39 @@ export const Navbar: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <Link
-                  to="/login"
-                  className="p-1 sm:px-2 text-white hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-                  aria-label="Ingresar a tu cuenta"
-                >
-                  <div className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white">
-                    <User className="w-4 h-4" />
-                  </div>
-                </Link>
+                <div className="pl-1 sm:pl-2 border-l border-gray-200 flex items-center">
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors text-left"
+                    aria-label="Ingresar a tu cuenta"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center border border-gray-200">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="hidden md:flex flex-col leading-tight">
+                      <span className="text-[10px] text-gray-500 font-normal">Hola,</span>
+                      <span className="font-bold text-xs text-gray-900 flex items-center gap-0.5">
+                        Inicia sesión <ChevronDown className="w-3 h-3 text-gray-400" />
+                      </span>
+                    </div>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Sub-bar: Categorías, Ofertas, Cupones, Quickly Play, Ayuda & Auth */}
-          <div className="hidden md:flex items-center justify-between py-1.5 border-t border-white/10 text-xs text-white">
-            {/* Left Nav Navigation */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <CategoriesDropdown />
+          {/* Sub-bar: Ubicación + Enlaces limpios estilo Falabella */}
+          <div className="hidden md:flex items-center justify-between py-2 border-t border-gray-100 text-xs text-gray-700">
+            {/* Left: Ubicación */}
+            <div className="flex items-center gap-2">
+              <ZoneSelector variant="header-light" />
+            </div>
 
+            {/* Right: Enlaces directos sin saturación */}
+            <div className="flex items-center gap-4 lg:gap-6 font-medium text-gray-600">
               <Link
-                to="/negocios" aria-disabled="true" onClick={event => event.preventDefault()} title="Ofertas no disponibles"
-                className={getNavBtnClass(isOfertasActive)}
+                to="/negocios"
+                className="hover:text-primary transition-colors cursor-pointer"
               >
                 Ofertas
               </Link>
@@ -364,25 +390,26 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCouponsModal(true)}
-                className={getNavBtnClass(isCuponesActive)}
+                className="hover:text-primary transition-colors cursor-pointer"
               >
                 Cupones
               </button>
 
               <Link
-                to={fashionLink} aria-disabled={!fashionCategory} onClick={event => { if (!fashionCategory) event.preventDefault(); }} title={fashionCategory ? undefined : 'Categoría de moda no disponible'}
-                className={getNavBtnClass(isModaActive)}
+                to={fashionLink}
+                aria-disabled={!fashionCategory}
+                onClick={(event) => { if (!fashionCategory) event.preventDefault(); }}
+                className="hover:text-primary transition-colors cursor-pointer"
               >
                 Moda
               </Link>
 
-              {/* Quickly Play / Quickly Play with PLAY Badge */}
               <button
                 type="button"
                 onClick={() => setShowPlayModal(true)}
-                className={`${getNavBtnClass(isPlayActive)} flex items-center gap-1.5`}
+                className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span className="bg-[#00a650] text-white text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5 shadow-sm">
+                <span className="bg-primary text-white text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5">
                   PLAY
                 </span>
                 <span>Quickly Play</span>
@@ -390,68 +417,33 @@ export const Navbar: React.FC = () => {
 
               <Link
                 to={venderDestination}
-                className={getNavBtnClass(isVenderActive)}
+                className="font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
               >
-                Vender
+                {hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}
+              </Link>
+
+              <Link
+                to="/cliente/pedidos"
+                className="hover:text-primary transition-colors cursor-pointer"
+              >
+                Mis compras
               </Link>
 
               <Link
                 to="/cliente/ayuda"
-                className={getNavBtnClass(isAyudaActive)}
+                className="hover:text-primary transition-colors cursor-pointer"
               >
                 Ayuda
               </Link>
             </div>
-
-            {/* Right Side Auth / Account Links */}
-            <div className="flex items-center gap-2 text-xs">
-              {!isAuthenticated || !currentUser ? (
-                <>
-                  <Link
-                    to="/registro"
-                    className={getNavBtnClass(isRegistroActive)}
-                  >
-                    Crea tu cuenta
-                  </Link>
-                  <Link
-                    to="/login"
-                    className={getNavBtnClass(isLoginActive)}
-                  >
-                    Ingresa
-                  </Link>
-                  <Link
-                    to="/cliente/pedidos"
-                    className={getNavBtnClass(isPedidosActive)}
-                  >
-                    Mis compras
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/cliente/pedidos"
-                    className={getNavBtnClass(isPedidosActive)}
-                  >
-                    Mis compras
-                  </Link>
-                  <Link
-                    to="/cliente/perfil"
-                    className={getNavBtnClass(isPerfilActive)}
-                  >
-                    Hola {currentUser.name.split(' ')[0]}
-                  </Link>
-                </>
-              )}
-            </div>
           </div>
 
-          {/* Mobile Search Bar & Mobile Zone/Categories Pills */}
-          <div className="sm:hidden pb-3 pt-1 space-y-2.5">
+          {/* Mobile Search Bar & Zone Selector */}
+          <div className="sm:hidden pb-3 pt-1 space-y-2">
             <SearchBar variant="navbar-mobile" />
-
-            <div className="flex items-center gap-2 text-xs font-medium px-0.5">
-              <CategoriesDropdown variant="compact" />
+            <div className="flex items-center justify-between text-xs pt-1 px-0.5">
               <ZoneSelector variant="compact" />
+              <CategoriesDropdown variant="compact" />
             </div>
           </div>
         </div>
@@ -469,12 +461,12 @@ export const Navbar: React.FC = () => {
           {/* Drawer panel */}
           <div className="fixed inset-y-0 left-0 max-w-[85%] w-80 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
-            <div className="bg-primary text-white p-4 flex items-center justify-between shadow-xs">
-              <BrandLogo size="sm" variant="white" />
+            <div className="bg-white border-b border-gray-150 p-4 flex items-center justify-between shadow-2xs">
+              <BrandLogo size="sm" variant="default" />
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(false)}
-                className="p-1.5 rounded-lg text-white hover:bg-white/20 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
                 aria-label="Cerrar menú"
               >
                 <X className="w-5 h-5" />
@@ -515,88 +507,47 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Lista de Enlaces de Navegación */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-semibold">
+            {/* Navegación Principal Móvil */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-1 text-sm font-medium">
+              <Link
+                to="/"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
+              >
+                <Store className="w-4 h-4 text-gray-400" />
+                <span>Inicio & Categorías</span>
+              </Link>
               <Link
                 to="/negocios"
                 onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
               >
-                <Store className="w-4 h-4 text-primary" />
-                <span>Comercios & Tiendas</span>
+                <Tag className="w-4 h-4 text-gray-400" />
+                <span>Comercios & Catálogo</span>
               </Link>
-
               <Link
-                to="/negocios" aria-disabled="true" title="Las ofertas no están disponibles"
-                onClick={event => event.preventDefault()}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                to="/cliente/favoritos"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
               >
-                <Tag className="w-4 h-4 text-amber-500" />
-                <span>Ofertas del Día</span>
+                <Heart className="w-4 h-4 text-gray-400" />
+                <span>Mis Favoritos</span>
               </Link>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobileDrawer(false);
-                  setShowCouponsModal(true);
-                }}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 text-left transition-colors cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                <span>Cupones de Descuento</span>
-              </button>
-
-              <Link
-                to={fashionLink} aria-disabled={!fashionCategory}
-                onClick={event => { if (!fashionCategory) event.preventDefault(); else setShowMobileDrawer(false); }}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
-              >
-                <ShoppingBag className="w-4 h-4 text-primary" />
-                <span>Moda & Confección</span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobileDrawer(false);
-                  setShowPlayModal(true);
-                }}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 text-left transition-colors cursor-pointer"
-              >
-                <Film className="w-4 h-4 text-emerald-600" />
-                <div className="flex items-center gap-2">
-                  <span>Quickly Play</span>
-                  <span className="bg-[#00a650] text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                    PLAY
-                  </span>
-                </div>
-              </button>
-
-              <div className="pt-2 my-2 border-t border-gray-100" />
 
               {isAuthenticated && (
                 <>
                   <Link
                     to="/cliente/pedidos"
                     onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
                   >
                     <ShoppingBag className="w-4 h-4 text-gray-400" />
-                    <span>Mis Pedidos</span>
-                  </Link>
-                  <Link
-                    to="/cliente/direcciones"
-                    onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
-                  >
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span>Mis Direcciones</span>
+                    <span>Mis Compras</span>
                   </Link>
                   <Link
                     to="/cliente/perfil"
                     onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-800 transition-colors"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
                   >
                     <User className="w-4 h-4 text-gray-400" />
                     <span>Mi Perfil</span>
@@ -660,7 +611,15 @@ export const Navbar: React.FC = () => {
               <div className="p-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={async () => { const result = await logout(); if (result.success) { setShowMobileDrawer(false); navigate('/login'); } else setLogoutError(result.message || 'No se pudo cerrar sesión.'); }}
+                  onClick={async () => {
+                    const result = await logout();
+                    if (result.success) {
+                      setShowMobileDrawer(false);
+                      navigate('/login');
+                    } else {
+                      setLogoutError(result.message || 'No se pudo cerrar sesión.');
+                    }
+                  }}
                   className="flex items-center gap-2 w-full p-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
@@ -672,7 +631,7 @@ export const Navbar: React.FC = () => {
         </div>
       )}
 
-      {/* Extracted Modals */}
+      {/* Modales extraídos */}
       <CouponsModal isOpen={showCouponsModal} onClose={() => setShowCouponsModal(false)} />
       <PlayModal isOpen={showPlayModal} onClose={() => setShowPlayModal(false)} />
     </>

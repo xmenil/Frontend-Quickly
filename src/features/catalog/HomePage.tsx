@@ -1,97 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
-import { addCatalogProduct } from '../../store/realCartStore';
+import { useRealCartStore, addCatalogProduct } from '../../store/realCartStore';
 import { preferredSku, purchasableSku } from '../../domain/catalogRules';
-import { RemoteState, useRemote } from '../operations/shared';
-import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
+import { catalogPlaceholder, catalogImage } from '../../lib/catalogImage';
+import { catalogApi, CatalogProduct, PublicStore, money } from '../../services/api/catalogApi';
 import { operationsApi } from '../../services/api/operationsApi';
+import { RemoteState, useRemote } from '../operations/shared';
 import { ProductDetailModal } from './ProductDetailModal';
-import { OfficialStoresSection } from '../../components/shared/OfficialStoresSection';
-import { BigStoreProductsSection } from '../../components/shared/BigStoreProductsSection';
 import {
-  ArrowRight,
-  Clock,
-  Check,
-  Bike,
-  ShoppingCart,
   Store,
-  Sparkles,
   ShoppingBag,
+  Sparkles,
+  Clock,
+  ArrowRight,
+  Building2,
+  Check,
+  CheckCircle2,
+  Heart,
+  ChevronRight,
+  ChevronLeft,
+  Bike,
+  Truck,
+  SlidersHorizontal,
+  RotateCcw,
+  Tag,
+  Loader2,
+  MapPin,
   UtensilsCrossed,
+  ShoppingCart,
   PlusCircle,
   Shirt,
   Sprout,
-  Heart,
-  ChevronRight,
-  ChevronDown,
-  Loader2,
-  Building2,
+  CheckCircle,
 } from 'lucide-react';
 
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
 import heroMotorcycleDelivery from '../../assets/img/image copy 3.png';
 import heroSmartphoneView from '../../assets/img/image copy 4.png';
 
-
 export function HomePage() {
-  const { isAuthenticated, currentUser, activeRole, switchRole, roles } = useAuthStore();
+  const { isAuthenticated, currentUser } = useAuthStore();
   const navigate = useNavigate();
 
+  // Recursos remotos oficiales conectados a PostgreSQL Supabase
   const categoriesResource = useRemote('home-categories', signal => catalogApi.categories(signal));
-  const featured = useRemote('home-featured', signal => catalogApi.search({ limit: 4 }, signal));
-  const coverage = useRemote('home-zones', signal => operationsApi.zones(signal));
-  const featuredProducts = featured.data?.items || [];
-  const zones = coverage.data?.filter(zone => zone.isActive) || [];
-  const [addError, setAddError] = useState('');
+  const storesResource = useRemote('home-stores', signal => catalogApi.stores(signal));
+  const productsResource = useRemote('home-products', signal => catalogApi.search({ limit: 40 }, signal));
+  const coverageResource = useRemote('home-zones', signal => operationsApi.zones(signal));
+
+  const categories = categoriesResource.data || [];
+  const stores = storesResource.data || [];
+  const allProducts = productsResource.data?.items || [];
+  const zones = coverageResource.data?.filter(zone => zone.isActive) || [];
+
+  // Estados de filtros (Estilo Falabella)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
+  const [onlyOpen, setOnlyOpen] = useState(false);
+  const [deliveryType, setDeliveryType] = useState<'all' | 'delivery' | 'pickup'>('all');
+  const [sortBy, setSortBy] = useState<'recommended' | 'price_asc' | 'price_desc'>('recommended');
+
+  // Slider de banner
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+
+  // Modal y agregados
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
-  const [addedFeaturedId, setAddedFeaturedId] = useState<string | null>(null);
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [addError, setAddError] = useState('');
 
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
-  const roleMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
-        setShowRoleMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // 3 Slides con fotografías locales de Tingo María y micro-copys concisos estilo Rappi
+  // 3 Slides con fotografías locales de Tingo María
   const heroSlides = [
     {
       id: 1,
       image: heroFamilyGroceries,
-      badge: 'Restaurantes, Bodegas, Farmacias y más',
-      title: 'Todo lo que necesitas, en un solo lugar',
-      description:
-        'Explora los productos publicados por los comercios disponibles en tu zona.',
-      ctaText: 'Ver categorías',
+      badge: 'Restaurantes, Bodegas y Farmacias',
+      title: 'Todo lo que necesitas en Tingo María',
+      description: 'Pide de tus comercios locales favoritos con entrega rápida a domicilio.',
+      ctaText: 'Ver comercios',
       ctaLink: '/negocios',
     },
     {
       id: 2,
       image: heroMotorcycleDelivery,
-      badge: 'Envíos Express Tingo María',
-      title: 'Descubre sabores y comercios locales',
-      description:
-        'Consulta precios, disponibilidad y condiciones de entrega antes de pedir.',
-      ctaText: 'Pedir comida caliente',
+      badge: 'Envíos Express Selva Alta',
+      title: 'Comida caliente y compras en minutos',
+      description: 'Gastronomía amazónica, pollerías y farmacias con pago contra entrega en efectivo.',
+      ctaText: 'Pedir ahora',
       ctaLink: '/negocios',
     },
     {
       id: 3,
       image: heroSmartphoneView,
-      badge: 'Productos para tu día a día',
+      badge: 'Comercios de tu ciudad',
       title: 'Tus compras del hogar directo a tu puerta',
-      description:
-        'Abarrotes frescos, boticas y productos locales con entrega rápida y pago contra entrega en efectivo.',
-      ctaText: 'Explorar comercios',
+      description: 'Abarrotes frescos, boticas y productos locales en Rupa Rupa y Castillo Grande.',
+      ctaText: 'Explorar catálogo',
       ctaLink: '/negocios',
     },
   ];
@@ -100,15 +104,49 @@ export function HomePage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
+    }, 5500);
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  // 5 Categorías destacadas del prototipo v2 (Restaurantes, Bodegas, Farmacias, Ropa, Emprendedores)
-  const categoryIcons = [UtensilsCrossed, ShoppingCart, PlusCircle, Shirt, Sprout];
-  const mainCategoryCards = (categoriesResource.error ? [] : categoriesResource.data || []).slice(0, 5).map((category, index) => { const Icon = categoryIcons[index]; return { id: category.id, name: category.name, icon: <Icon className="w-6 h-6 text-primary stroke-[2.2]" />, link: '/negocios?categoriaProducto=' + encodeURIComponent(category.id) }; });
+  // Filtrado y ordenamiento de productos en tiempo real
+  const filteredProducts = useMemo(() => {
+    let result = [...allProducts];
 
-  const handleAddFeatured = (e: React.MouseEvent, product: CatalogProduct) => {
+    // Filtro por categoría
+    if (selectedCategory !== 'all') {
+      result = result.filter(p => p.categoryId === selectedCategory);
+    }
+
+    // Filtro por tienda específica
+    if (selectedStoreId !== 'all') {
+      result = result.filter(p => p.storeId === selectedStoreId);
+    }
+
+    // Filtro por tiendas abiertas
+    if (onlyOpen) {
+      const openStoreIds = new Set(stores.filter(s => s.isOpen && s.accepting_orders).map(s => s.id));
+      result = result.filter(p => openStoreIds.has(p.storeId));
+    }
+
+    // Ordenamiento (Recomendados / Menor precio / Mayor precio)
+    if (sortBy === 'price_asc') {
+      result.sort((a, b) => {
+        const priceA = preferredSku(a)?.priceCents ?? 0;
+        const priceB = preferredSku(b)?.priceCents ?? 0;
+        return priceA - priceB;
+      });
+    } else if (sortBy === 'price_desc') {
+      result.sort((a, b) => {
+        const priceA = preferredSku(a)?.priceCents ?? 0;
+        const priceB = preferredSku(b)?.priceCents ?? 0;
+        return priceB - priceA;
+      });
+    }
+
+    return result;
+  }, [allProducts, selectedCategory, selectedStoreId, onlyOpen, sortBy, stores]);
+
+  const handleAddToCart = (e: React.MouseEvent, product: CatalogProduct) => {
     e.stopPropagation();
     e.preventDefault();
 
@@ -118,527 +156,527 @@ export function HomePage() {
     try {
       addCatalogProduct(product, sku.id, 1);
       setAddError('');
-
-      setAddedFeaturedId(product.id);
+      setAddedProductId(product.id);
       setTimeout(() => {
-        setAddedFeaturedId((curr) => (curr === product.id ? null : curr));
+        setAddedProductId((curr) => (curr === product.id ? null : curr));
       }, 1500);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'No se pudo agregar al carrito.');
     }
   };
 
+  const resetFilters = () => {
+    setSelectedCategory('all');
+    setSelectedStoreId('all');
+    setOnlyOpen(false);
+    setDeliveryType('all');
+    setSortBy('recommended');
+  };
+
+  const hasActiveFilters = selectedCategory !== 'all' || selectedStoreId !== 'all' || onlyOpen || deliveryType !== 'all';
+
   return (
-    <div className="w-full flex flex-col bg-white select-none">
-      {/* Indicador de Entrega: Envíos por tienda */}
-      <div className="w-full bg-white pt-2.5 pb-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs sm:text-sm">
-          <div className="inline-flex items-center gap-2 text-ink font-bold">
-            <Clock className="w-4 h-4 text-ink flex-shrink-0 stroke-[2.2]" />
-            <span>Consulta cobertura y tiempos de tu zona</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-ink-light">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Pago en efectivo contra entrega</span>
-          </div>
-        </div>
-      </div>
+    <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
+      {/* Contenedor Principal */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
 
-      {/* Top Section: Hero Banner Carousel & Category Cards */}
-      <section className="w-full bg-white pb-3 pt-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3.5">
-          {/* Hero Banner Carousel */}
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm h-[200px] sm:h-[240px] lg:h-[260px] flex flex-col justify-end p-5 sm:p-7 text-white select-none group w-full bg-gradient-to-br from-emerald-900 to-emerald-950">
-            {/* Background Slides */}
-            {heroSlides.map((slide, idx) => {
-              const isActive = idx === currentHeroSlide;
-              return (
-                <div
-                  key={slide.id}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="w-full h-full object-cover object-center filter brightness-[0.85] scale-100 group-hover:scale-105 transition-transform duration-1000"
-                  />
-                </div>
-              );
-            })}
-
-            {/* Sombra y gradiente para contraste limpio */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent z-10" />
-
-            {/* Slide Content */}
-            <div className="relative z-20 space-y-2 max-w-lg">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-white text-[11px] sm:text-xs font-bold shadow-xs">
-                <Sprout className="w-3.5 h-3.5 text-white" />
-                <span>{heroSlides[currentHeroSlide].badge}</span>
-              </span>
-
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight text-white drop-shadow-md">
-                {heroSlides[currentHeroSlide].title}
-              </h1>
-
-              <p className="text-xs sm:text-sm text-gray-100 font-medium leading-snug drop-shadow line-clamp-2 max-w-md">
-                {heroSlides[currentHeroSlide].description}
-              </p>
-
-              <div className="pt-1 flex items-center gap-2">
-                <Link
-                  to={heroSlides[currentHeroSlide].ctaLink}
-                  className="inline-flex items-center gap-2 px-5 py-2 sm:py-2.5 rounded-full bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer"
-                >
-                  <span>{heroSlides[currentHeroSlide].ctaText}</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Carousel Pagination Dots */}
-            <div className="absolute bottom-3.5 right-3.5 sm:bottom-5 sm:right-6 z-20 flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
-              {heroSlides.map((slide, idx) => (
-                <button
-                  key={slide.id}
-                  type="button"
-                  onClick={() => setCurrentHeroSlide(idx)}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    idx === currentHeroSlide
-                      ? 'w-5 h-2 bg-white shadow-sm'
-                      : 'w-2 h-2 bg-white/50 hover:bg-white'
-                  }`}
-                  aria-label={`Ir al slide ${idx + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* 5 Main Category Cards directly below banner (exacto a prototipo v2) */}
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
-            <RemoteState loading={categoriesResource.loading} error={categoriesResource.error} retry={categoriesResource.reload} />
-            {mainCategoryCards.map((cat) => (
-              <Link
-                key={cat.id}
-                to={cat.link}
-                className="bg-white hover:bg-emerald-50/40 border border-gray-150/80 hover:border-primary/50 rounded-2xl py-3 px-1 sm:py-4 sm:px-3 flex flex-col items-center justify-center gap-1.5 group transition-all duration-200 shadow-xs hover:shadow-subtle hover:-translate-y-0.5 active:scale-95 text-center"
+        {/* 1. Hero Promo Banner (Proporción horizontal limpia estilo Falabella) */}
+        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xs h-[180px] sm:h-[220px] lg:h-[240px] flex flex-col justify-end p-5 sm:p-7 text-white select-none group w-full bg-gradient-to-r from-emerald-900 to-emerald-950">
+          {heroSlides.map((slide, idx) => {
+            const isActive = idx === currentHeroSlide;
+            return (
+              <div
+                key={slide.id}
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                  isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+                }`}
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-primary flex items-center justify-center group-hover:scale-105 group-hover:bg-primary group-hover:text-white shadow-2xs transition-all duration-200">
-                  {cat.icon}
-                </div>
-                <span className="text-[11px] sm:text-xs font-bold text-ink group-hover:text-primary transition-colors truncate w-full">
-                  {cat.name}
-                </span>
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover object-center filter brightness-[0.88]"
+                />
+              </div>
+            );
+          })}
+
+          {/* Gradiente sutil para lectura sin saturación */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
+
+          {/* Contenido del Banner */}
+          <div className="relative z-20 space-y-2 max-w-lg">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-xs">
+              <Sprout className="w-3.5 h-3.5 text-white" />
+              <span>{heroSlides[currentHeroSlide].badge}</span>
+            </span>
+
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+              {heroSlides[currentHeroSlide].title}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-gray-200 font-normal leading-snug line-clamp-1 max-w-md">
+              {heroSlides[currentHeroSlide].description}
+            </p>
+
+            <div className="pt-1">
+              <Link
+                to={heroSlides[currentHeroSlide].ctaLink}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-full bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <span>{heroSlides[currentHeroSlide].ctaText}</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </Link>
+            </div>
+          </div>
+
+          {/* Dots de paginación */}
+          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-6 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20">
+            {heroSlides.map((slide, idx) => (
+              <button
+                key={slide.id}
+                type="button"
+                onClick={() => setCurrentHeroSlide(idx)}
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
+                  idx === currentHeroSlide
+                    ? 'w-4 h-1.5 bg-white shadow-xs'
+                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white'
+                }`}
+                aria-label={`Ir al slide ${idx + 1}`}
+              />
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Section: Accesos directos con Switch de Rol (exacto a prototipo v2) */}
-      <section className="w-full bg-white pt-2 pb-5 sm:pt-3 sm:pb-6 select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-              <h2 className="text-sm sm:text-base font-extrabold text-ink">Accesos directos</h2>
+        {/* 2. Estructura de 2 Columnas Estilo Falabella (Sidebar Filtros + Catálogo Principal) */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+          {/* Barra Lateral de Filtros (Sidebar limpio estilo Falabella) */}
+          <aside className="w-full lg:w-64 flex-shrink-0 space-y-4">
+            
+            {/* Tarjeta 1: Tipo de Entrega & Disponibilidad (Como Falabella Image 1) */}
+            <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-4">
+              
+              {/* Switch Tipo CYBER WOW: Solo abiertos ahora */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-150">
+                <div>
+                  <span className="text-xs font-bold text-gray-900 block">Solo abiertos ahora</span>
+                  <span className="text-[10px] text-gray-500">Comercios recibiendo pedidos</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOnlyOpen(!onlyOpen)}
+                  className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center cursor-pointer ${
+                    onlyOpen ? 'bg-primary justify-end' : 'bg-gray-300 justify-start'
+                  }`}
+                  aria-pressed={onlyOpen}
+                  aria-label="Filtrar solo comercios abiertos"
+                >
+                  <span className="w-5 h-5 rounded-full bg-white shadow-xs" />
+                </button>
+              </div>
+
+              {/* Tipo de Entrega */}
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider block">
+                  Tipo de Entrega
+                </span>
+
+                <div className="space-y-1.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryType(deliveryType === 'delivery' ? 'all' : 'delivery')}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                      deliveryType === 'delivery' ? 'bg-emerald-50 text-primary font-bold' : 'hover:bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-primary" />
+                      <span>Envío a domicilio</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-100 text-primary font-bold px-1.5 py-0.5 rounded">
+                      Express
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryType(deliveryType === 'pickup' ? 'all' : 'pickup')}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                      deliveryType === 'pickup' ? 'bg-emerald-50 text-primary font-bold' : 'hover:bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Store className="w-4 h-4 text-gray-500" />
+                      <span>Retiro en tienda</span>
+                    </div>
+                    <span className="text-[10px] bg-gray-100 text-gray-600 font-bold px-1.5 py-0.5 rounded">
+                      Sin costo
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Switch de Rol: Panel: CLIENTE ⌃ */}
-            <div className="relative" ref={roleMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-bold text-ink transition-all cursor-pointer shadow-2xs"
-                aria-label="Cambiar modo de vista o panel de demostración"
-              >
-                <span className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-gray-500 font-normal">Panel:</span>
-                <span className="text-primary font-black uppercase tracking-wide">{activeRole}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
-              </button>
+            {/* Tarjeta 2: Categorías (Conectadas a la API) */}
+            <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Categorías
+                </span>
+                {selectedCategory !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('all')}
+                    className="text-[10px] text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    Ver todas
+                  </button>
+                )}
+              </div>
 
-              {/* Dropdown de Roles */}
-              {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-floating border border-gray-100 p-2 z-40 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    Cambiar Modo de Vista
-                  </div>
-                  {[
-                    { role: 'cliente', label: 'Cliente', desc: 'Catálogo y pedidos' },
-                    { role: 'comercio', label: 'Comercio', desc: 'Panel de tienda y menú' },
-                    { role: 'repartidor', label: 'Repartidor', desc: 'Rutas y entregas' },
-                    { role: 'admin', label: 'Admin', desc: 'Supervisión y zonas' },
-                  ].filter(r => roles.includes(r.role as typeof activeRole)).map((r) => (
+              <div className="space-y-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                    selectedCategory === 'all'
+                      ? 'bg-primary text-white font-bold shadow-2xs'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <span>Todas las categorías</span>
+                  <span className="text-[10px] opacity-80">{allProducts.length}</span>
+                </button>
+
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  const catProductsCount = allProducts.filter(p => p.categoryId === cat.id).length;
+                  return (
                     <button
-                      key={r.role}
+                      key={cat.id}
                       type="button"
-                      onClick={() => {
-                        switchRole(r.role as typeof activeRole);
-                        setShowRoleMenu(false);
-                      }}
-                      className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                        activeRole === r.role ? 'bg-emerald-50 text-primary font-bold' : 'hover:bg-gray-50 text-ink'
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-primary text-white font-bold shadow-2xs'
+                          : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
-                      <div>
-                        <p className="font-bold capitalize">{r.label}</p>
-                        <p className="text-[10px] text-gray-400">{r.desc}</p>
-                      </div>
-                      {activeRole === r.role && <Check className="w-3.5 h-3.5 text-primary" />}
+                      <span className="truncate">{cat.name}</span>
+                      <span className="text-[10px] opacity-80">{catProductsCount}</span>
                     </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tarjeta 3: Comercios Locales Verificados */}
+            <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Comercios
+                </span>
+                {selectedStoreId !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStoreId('all')}
+                    className="text-[10px] text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    Ver todos
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-1 text-xs max-h-56 overflow-y-auto pr-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedStoreId('all')}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                    selectedStoreId === 'all'
+                      ? 'bg-primary text-white font-bold shadow-2xs'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <span>Todos los comercios</span>
+                  <span className="text-[10px] opacity-80">{stores.length}</span>
+                </button>
+
+                {stores.slice(0, 10).map((st) => {
+                  const isSelected = selectedStoreId === st.id;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setSelectedStoreId(st.id)}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-primary text-white font-bold shadow-2xs'
+                          : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <span className="truncate max-w-[130px]">{st.name}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                        st.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {st.isOpen ? 'Abierto' : 'Cerrado'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Botón Limpiar Filtros si hay alguno activo */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="w-full flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Limpiar filtros</span>
+              </button>
+            )}
+          </aside>
+
+          {/* Área Principal (Productos y Comercios estilo Falabella) */}
+          <main className="flex-1 min-w-0 space-y-4">
+
+            {/* Barra Superior de Catálogo: Ordenar por + Paginación / Conteo */}
+            <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">Ordenar por:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  aria-label="Ordenar productos"
+                >
+                  <option value="recommended">Recomendados</option>
+                  <option value="price_asc">Menor precio</option>
+                  <option value="price_desc">Mayor precio</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs text-gray-500 self-end sm:self-auto">
+                <span className="font-bold text-gray-800">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="flex items-center gap-1 text-primary font-bold">
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>Tingo María</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Strip de Tiendas Oficiales (Logos / Accesos rápidos) */}
+            {stores.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-3 sm:p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                    <Building2 className="w-4 h-4 text-primary" />
+                    <span>Tiendas oficiales de la ciudad</span>
+                  </div>
+                  <Link
+                    to="/negocios"
+                    className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    <span>Ver todas</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {stores.slice(0, 8).map((st) => (
+                    <Link
+                      key={st.id}
+                      to={`/negocios/${st.id}`}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-150 hover:border-primary hover:bg-emerald-50/30 transition-all flex-shrink-0 group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-50 text-primary flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
+                        <Store className="w-4 h-4" />
+                      </div>
+                      <div className="text-left leading-tight">
+                        <p className="text-xs font-bold text-gray-900 group-hover:text-primary transition-colors truncate max-w-[120px]">
+                          {st.name}
+                        </p>
+                        <p className="text-[10px] text-gray-400 capitalize truncate max-w-[120px]">
+                          {st.category_code}
+                        </p>
+                      </div>
+                    </Link>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* 4 Action Pills (exacto a prototipo v2) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Link
-              to="/negocios" aria-disabled="true" title="Ofertas no disponibles" onClick={event => event.preventDefault()}
-              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs shadow-2xs">
-                  %
-                </span>
-                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Ofertas
-                </span>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-            </Link>
+            )}
 
-            <Link
-              to="/negocios"
-              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-100 shadow-2xs">
-                  <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Pedidos
-                </span>
+            {/* Feedback de error de carrito */}
+            {addError && <p role="alert" className="text-xs font-bold text-destructive bg-red-50 p-3 rounded-xl">{addError}</p>}
+
+            {/* Estado de Carga */}
+            {productsResource.loading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-3 text-xs text-gray-500 bg-white rounded-2xl border border-gray-200">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                <span>Cargando productos de Tingo María...</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              to="/cliente/pedidos"
-              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xs">
-                  <Clock className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Mis pedidos
-                </span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              to="/cliente/favoritos"
-              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-150/80 hover:border-primary/50 hover:bg-emerald-50/20 shadow-xs hover:shadow-subtle transition-all group"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xs">
-                  <Heart className="w-4 h-4 fill-white stroke-[0]" />
-                </div>
-                <span className="text-xs sm:text-sm font-bold text-ink group-hover:text-primary transition-colors">
-                  Favoritos
-                </span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Official Stores Section (Connected to catalogApi.stores()) */}
-      <OfficialStoresSection />
-
-      {/* Big Stores Products & Deals Showcase (Connected to catalogApi.search()) */}
-      <BigStoreProductsSection />
-
-      {/* Featured Products Section: Platos y Productos de Tingo María */}
-      <section className="w-full bg-white border-y border-gray-150/70 py-8 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100/80">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-xl font-black text-ink tracking-tight">
-                    Productos del catálogo
-                  </h2>
-                  <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
-                    100% Selva Alta
-                  </span>
-                </div>
-                <p className="text-xs text-ink-light">
-                  Productos disponibles de los comercios de tu ciudad
+            ) : filteredProducts.length === 0 ? (
+              <div className="py-16 text-center text-xs text-gray-500 bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+                <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto" />
+                <p className="font-bold text-sm text-gray-800">No se encontraron productos con estos filtros</p>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  Prueba cambiando la categoría, la tienda seleccionada o limpia los filtros.
                 </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-hover shadow-xs transition-colors cursor-pointer"
+                >
+                  Mostrar todos los productos
+                </button>
               </div>
-            </div>
-            <Link
-              to="/negocios"
-              className="text-xs sm:text-sm font-bold text-primary hover:text-primary-hover flex items-center gap-1 hover:underline"
-            >
-              <span>Ver todos</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+            ) : (
+              /* Grid de Productos estilo Falabella: Limpio, espacioso y sin saturación */
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {filteredProducts.map((item) => {
+                  const isJustAdded = addedProductId === item.id;
+                  const sku = preferredSku(item);
+                  const price = sku ? sku.priceCents : 0;
+                  const hasStock = !!purchasableSku(item);
+                  const rawImg = item.images[0]?.url;
+                  const productImg = catalogImage(rawImg);
 
-          {addError && <p role="alert" className="text-destructive">{addError}</p>}
-          {featured.error ? <RemoteState loading={false} error={featured.error} retry={featured.reload}/> : featured.loading ? (
-            <div className="py-12 flex items-center justify-center gap-2 text-xs text-ink-light">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span>Cargando productos recomendados...</span>
-            </div>
-          ) : featuredProducts.length === 0 ? (
-            <div className="py-8 text-center text-xs text-ink-light">
-              No hay productos destacados disponibles en este momento.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              {featuredProducts.map((item) => {
-                const isJustAdded = addedFeaturedId === item.id;
-                const sku = preferredSku(item);
-                const price = sku ? sku.priceCents : 0;
-                const hasStock = !!purchasableSku(item);
-                const rawImg = item.images[0]?.url;
-                const productImg = catalogImage(rawImg);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => setSelectedProduct(item)}
+                      className="group bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary hover:shadow-card transition-all duration-200 overflow-hidden flex flex-col justify-between text-left h-full cursor-pointer"
+                    >
+                      {/* Imagen Cuadrada con Badge sutil */}
+                      <div className="relative aspect-square w-full bg-white overflow-hidden border-b border-gray-100 flex items-center justify-center p-2">
+                        <img
+                          src={productImg}
+                          alt={item.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                          }}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                          Envío local
+                        </span>
+                      </div>
 
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => setSelectedProduct(item)}
-                    className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full cursor-pointer"
-                  >
-                    {/* Product Image */}
-                    <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                      <img src={productImg} alt={item.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-                      <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                        Envío local
-                      </span>
-                    </div>
-
-                    {/* Content Body */}
-                    <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                      <div>
-                        {/* Product Name */}
-                        <h4 className="font-bold text-xs sm:text-sm text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
-                          {item.name}
-                        </h4>
-
-                        {/* Store badge & Stock */}
-                        <div className="flex items-center justify-between gap-1.5 mt-2">
-                          <div
-                            className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full min-w-0 max-w-[58%]"
-                            title={`${item.storeName} • Tienda verificada`}
-                          >
+                      {/* Cuerpo de información */}
+                      <div className="p-3 flex flex-col justify-between flex-1 space-y-2">
+                        <div>
+                          {/* Tienda */}
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-1 truncate" title={item.storeName}>
                             <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                            <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                              {item.storeName}
+                            <span className="font-semibold text-gray-700 truncate">{item.storeName}</span>
+                          </div>
+
+                          {/* Nombre del producto */}
+                          <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2.5rem]">
+                            {item.name}
+                          </h3>
+                        </div>
+
+                        {/* Precio & Botón de Compra */}
+                        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] text-gray-400 block">Precio online</span>
+                            <span className="font-black text-sm sm:text-base text-gray-900 tabular-nums">
+                              {sku ? money(price) : 'S/ --'}
                             </span>
                           </div>
 
-                          <span className={`text-[10px] font-bold ${hasStock ? 'text-primary' : 'text-gray-400'}`}>
-                            {hasStock ? 'En stock' : 'Agotado'}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToCart(e, item)}
+                            disabled={!hasStock}
+                            className={`p-2 rounded-xl transition-all cursor-pointer ${
+                              isJustAdded
+                                ? 'bg-emerald-600 text-white scale-105'
+                                : hasStock
+                                ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                            aria-label={`Agregar ${item.name} al carrito`}
+                          >
+                            {isJustAdded ? (
+                              <Check className="w-4 h-4 stroke-[3]" />
+                            ) : (
+                              <ShoppingCart className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
-                      </div>
-
-                      {/* Price & Add to Cart button */}
-                      <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-gray-100/70">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-ink-light">Precio contado</span>
-                          <span className="font-black text-sm sm:text-base text-ink">
-                            {sku ? money(price) : 'Sin presentaciones'}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddFeatured(e, item)}
-                          disabled={!hasStock}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${
-                            isJustAdded
-                              ? 'bg-emerald-600 text-white scale-105'
-                              : hasStock
-                              ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                          aria-label={`Agregar ${item.name} al carrito`}
-                        >
-                          {isJustAdded ? (
-                            <Check className="w-4 h-4 stroke-[3]" />
-                          ) : (
-                            <ShoppingCart className="w-4 h-4" />
-                          )}
-                        </button>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </main>
         </div>
-      </section>
 
-      {/* Information Cards: Cobertura, Entrega y Seguridad */}
-      <section className="w-full bg-emerald-50/30 py-8 sm:py-10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="text-center max-w-xl mx-auto space-y-1">
-            <h3 className="text-lg sm:text-xl font-black text-ink">
-              Compras seguras en la Bella Durmiente
-            </h3>
-            <p className="text-xs text-ink-light">
-              Logística local transparente para comercios, repartidores y familias tingalesas.
+        {/* 3. Secciones Informativas Limpias (Logística y Afiliaciones) */}
+        <section className="grid sm:grid-cols-2 gap-4 pt-4">
+          <Link
+            to="/registro/comercio"
+            className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-2 hover:border-primary transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Store className="w-5 h-5" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">¿Tienes un negocio en Tingo María?</h2>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Afilia tu restaurante, bodega o tienda a Quickly y recibe pedidos en línea de toda la ciudad.
             </p>
-          </div>
+            <span className="inline-flex items-center gap-1.5 font-bold text-xs text-primary pt-1">
+              Afiliar mi negocio <ArrowRight className="w-4 h-4" />
+            </span>
+          </Link>
 
-          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-            {/* Card 1: Dirección */}
-            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-ink">Direcciones guardadas</span>
-                <Link to="/cliente/direcciones" className="text-primary hover:underline font-semibold">
-                  Gestionar <ArrowRight className="w-3 h-3 inline" />
-                </Link>
-              </div>
-
-              <div className="space-y-2 py-1 text-xs">
-                <p className="text-gray-600 leading-relaxed">
-                  Registra tus puntos de entrega frecuentes (casa, trabajo o negocio) con referencias
-                  claras de tu barrio en Tingo María.
-                </p>
-                <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[11px] text-ink flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="font-medium truncate">Direcciones de tu cuenta</span>
-                </div>
-              </div>
+          <Link
+            to="/registro/repartidor"
+            className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-2 hover:border-primary transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Bike className="w-5 h-5" />
             </div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Reparte en tu ciudad</h2>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Genera ingresos entregando pedidos en moto, bicicleta o mototaxi en todo el valle del Huallaga.
+            </p>
+            <span className="inline-flex items-center gap-1.5 font-bold text-xs text-primary pt-1">
+              Solicitar afiliación como repartidor <ArrowRight className="w-4 h-4" />
+            </span>
+          </Link>
+        </section>
 
-            {/* Card 2: Cobertura PostgreSQL */}
-            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-ink">
-                  <Bike className="w-4 h-4 text-primary" />
-                  <span>Cobertura & Tarifas de Entrega</span>
-                </div>
-                <span className="text-[10px] bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  Cobertura
-                </span>
-              </div>
-
-              <div className="space-y-2 py-1 text-xs">
-                <p className="text-[11px] text-ink-light leading-relaxed">
-                  Consulta las zonas de entrega disponibles:
-                </p>
-                <div className="space-y-1.5 text-[11px]">
-                  {zones.slice(0, 3).map((z) => (
-                    <div
-                      key={z.id}
-                      className="flex justify-between items-center py-1 border-b border-gray-50"
-                    >
-                      <span className="font-medium text-ink truncate max-w-[170px]">{z.name}</span>
-                      <span className="font-bold text-primary tabular-nums">
-                        {money(z.baseFeeCents)} • ~{z.estimatedMinutes} min
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Mis compras */}
-            <div className="bg-white rounded-2xl border border-emerald-100/70 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-ink">Tus pedidos y seguimiento</span>
-                <Link to="/cliente/pedidos" className="text-primary hover:underline font-semibold">
-                  Ver compras <ArrowRight className="w-3 h-3 inline" />
-                </Link>
-              </div>
-
-              <div className="space-y-3 py-2 text-xs">
-                <p className="text-gray-600 leading-relaxed">
-                  Consulta el estado de tu orden, desde la aceptación del comercio
-                  hasta la entrega contra entrega en efectivo.
-                </p>
-                <Link
-                  to="/cliente/pedidos"
-                  className="w-full py-2.5 px-3 rounded-xl bg-primary text-white text-xs font-bold text-center block hover:bg-primary-hover shadow-subtle transition-all cursor-pointer"
-                >
-                  Ir al historial de pedidos →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Affiliation Section: Tu negocio & Reparte */}
-      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid sm:grid-cols-2 gap-4">
-        <Link
-          to="/registro/comercio"
-          className="bg-primary text-white rounded-2xl p-6 space-y-3 hover:bg-primary-dark transition-colors shadow-sm"
-        >
-          <Store aria-hidden className="w-7 h-7" />
-          <h2 className="text-xl font-bold">Tu negocio en Quickly</h2>
-          <p className="text-xs sm:text-sm text-emerald-100">
-            Afilia tu restaurante, bodega o tienda de Tingo María y recibe comandas al instante.
-          </p>
-          <span className="inline-flex items-center gap-2 font-bold text-sm">
-            Afiliar mi negocio <ArrowRight className="w-4 h-4" />
-          </span>
-        </Link>
-
-        <Link
-          to="/registro/repartidor"
-          className="bg-surface-subtle border border-border rounded-2xl p-6 space-y-3 hover:border-primary-dark transition-colors shadow-sm"
-        >
-          <Bike aria-hidden className="w-7 h-7 text-primary" />
-          <h2 className="text-xl font-bold text-ink">Reparte en tu ciudad</h2>
-          <p className="text-xs sm:text-sm text-ink-light">
-            Genera ingresos entregando pedidos en moto, bicicleta o mototaxi en todo el valle.
-          </p>
-          <span className="inline-flex items-center gap-2 font-bold text-sm text-primary">
-            Solicitar afiliación como repartidor <ArrowRight className="w-4 h-4" />
-          </span>
-        </Link>
-      </section>
-
-      {/* Footer matching Quickly Branding */}
-      <footer className="w-full bg-white border-t border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-light">
+        {/* Footer */}
+        <footer className="w-full bg-white rounded-2xl border border-gray-200/90 p-4 sm:p-6 text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center p-1 text-white shadow-subtle">
+            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-white">
               <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div>
-              <span className="font-extrabold text-ink">Quickly Tingo María</span>
+              <span className="font-extrabold text-gray-900">Quickly Tingo María</span>
               <span className="text-[11px] text-primary ml-1.5 font-bold">
                 Plataforma de delivery y compras de la Selva Alta
               </span>
             </div>
           </div>
+          <p className="text-[11px] text-gray-400">
+            Rupa Rupa • Castillo Grande • Naranjillo • Leoncio Prado
+          </p>
+        </footer>
 
-          <div className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
-            <span>Rupa Rupa • Castillo Grande • Naranjillo • Leoncio Prado</span>
-          </div>
-        </div>
-      </footer>
+      </div>
 
-      {/* Product Detail Modal */}
+      {/* Modal de Detalle de Producto */}
       <ProductDetailModal
         product={selectedProduct}
         isOpen={Boolean(selectedProduct)}
