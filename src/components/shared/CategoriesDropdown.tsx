@@ -19,7 +19,7 @@ interface CategoryOption {
 }
 
 interface CategoriesDropdownProps {
-  variant?: 'default' | 'compact' | 'menu';
+  variant?: 'default' | 'compact' | 'menu' | 'menu-green';
 }
 
 export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant = 'default' }) => {
@@ -107,6 +107,26 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform duration-200 ${
               isOpen ? 'rotate-180 text-white' : 'text-gray-500'
+            }`}
+          />
+        </button>
+      ) : variant === 'menu-green' ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
+            isOpen
+              ? 'bg-white text-primary border-white shadow-xs'
+              : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
+          }`}
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <Menu className="w-4 h-4 stroke-[2.5]" />
+          <span>Menú</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-primary' : 'text-white'
             }`}
           />
         </button>

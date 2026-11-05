@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useRealCartStore, addCatalogProduct } from '../../store/realCartStore';
@@ -8,6 +8,7 @@ import { catalogApi, CatalogProduct, PublicStore, money } from '../../services/a
 import { operationsApi } from '../../services/api/operationsApi';
 import { RemoteState, useRemote } from '../operations/shared';
 import { ProductDetailModal } from './ProductDetailModal';
+import { SearchBar } from '../../components/shared/SearchBar';
 import {
   Store,
   ShoppingBag,
@@ -22,7 +23,6 @@ import {
   ChevronLeft,
   Bike,
   Truck,
-  SlidersHorizontal,
   RotateCcw,
   Tag,
   Loader2,
@@ -32,7 +32,7 @@ import {
   PlusCircle,
   Shirt,
   Sprout,
-  CheckCircle,
+  Share2,
 } from 'lucide-react';
 
 import heroFamilyGroceries from '../../assets/img/image copy 2.png';
@@ -43,7 +43,7 @@ export function HomePage() {
   const { isAuthenticated, currentUser } = useAuthStore();
   const navigate = useNavigate();
 
-  // Recursos remotos oficiales conectados a PostgreSQL Supabase
+  // Recursos remotos conectados a PostgreSQL
   const categoriesResource = useRemote('home-categories', signal => catalogApi.categories(signal));
   const storesResource = useRemote('home-stores', signal => catalogApi.stores(signal));
   const productsResource = useRemote('home-products', signal => catalogApi.search({ limit: 40 }, signal));
@@ -54,7 +54,7 @@ export function HomePage() {
   const allProducts = productsResource.data?.items || [];
   const zones = coverageResource.data?.filter(zone => zone.isActive) || [];
 
-  // Estados de filtros (Estilo Falabella)
+  // Estados de filtros
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
   const [onlyOpen, setOnlyOpen] = useState(false);
@@ -75,7 +75,7 @@ export function HomePage() {
       id: 1,
       image: heroFamilyGroceries,
       badge: 'Restaurantes, Bodegas y Farmacias',
-      title: 'Todo lo que necesitas en Tingo María',
+      title: 'Todo lo que necesitas, en un solo lugar',
       description: 'Pide de tus comercios locales favoritos con entrega rápida a domicilio.',
       ctaText: 'Ver comercios',
       ctaLink: '/negocios',
@@ -104,7 +104,7 @@ export function HomePage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5500);
+    }, 6000);
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
@@ -177,60 +177,82 @@ export function HomePage() {
 
   return (
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
-      {/* Contenedor Principal */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
 
-        {/* 1. Hero Promo Banner (Proporción horizontal limpia estilo Falabella) */}
-        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xs h-[180px] sm:h-[220px] lg:h-[240px] flex flex-col justify-end p-5 sm:p-7 text-white select-none group w-full bg-gradient-to-r from-emerald-900 to-emerald-950">
-          {heroSlides.map((slide, idx) => {
-            const isActive = idx === currentHeroSlide;
-            return (
-              <div
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                  isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
-                }`}
-              >
-                <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover object-center filter brightness-[0.88]"
-                />
-              </div>
-            );
-          })}
-
-          {/* Gradiente sutil para lectura sin saturación */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
-
-          {/* Contenido del Banner */}
-          <div className="relative z-20 space-y-2 max-w-lg">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-xs">
-              <Sprout className="w-3.5 h-3.5 text-white" />
-              <span>{heroSlides[currentHeroSlide].badge}</span>
-            </span>
-
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
-              {heroSlides[currentHeroSlide].title}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-gray-200 font-normal leading-snug line-clamp-1 max-w-md">
-              {heroSlides[currentHeroSlide].description}
-            </p>
-
-            <div className="pt-1">
-              <Link
-                to={heroSlides[currentHeroSlide].ctaLink}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-full bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
-              >
-                <span>{heroSlides[currentHeroSlide].ctaText}</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-              </Link>
+      {/* 1. Hero Panoramic Banner (Estilo de la segunda imagen: Fotografía panorámica con texto centrado, buscador integrado y pastillas) */}
+      <section className="relative w-full bg-emerald-950 text-white overflow-hidden py-10 sm:py-14 lg:py-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[340px] sm:min-h-[380px] lg:min-h-[420px]">
+        {/* Slides de Fondo Panorámico */}
+        {heroSlides.map((slide, idx) => {
+          const isActive = idx === currentHeroSlide;
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+              }`}
+            >
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover object-center filter brightness-[0.75]"
+              />
             </div>
+          );
+        })}
+
+        {/* Gradiente sutil uniforme para legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/70 z-10" />
+
+        {/* Contenido Central Inspirado en el Segundo Ejemplo */}
+        <div className="relative z-20 max-w-3xl w-full mx-auto text-center space-y-4">
+          {/* Título Principal */}
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md leading-tight">
+            {heroSlides[currentHeroSlide].title}.{' '}
+            <span className="font-extrabold text-emerald-400">en Tingo María</span>
+          </h1>
+
+          <p className="text-xs sm:text-sm text-gray-200 font-normal max-w-xl mx-auto drop-shadow-sm line-clamp-2">
+            {heroSlides[currentHeroSlide].description}
+          </p>
+
+          {/* Buscador Centrado Sobre el Paisaje (Exacto a la segunda imagen de ejemplo) */}
+          <div className="w-full max-w-2xl mx-auto pt-2">
+            <SearchBar
+              placeholder="¿Qué estás buscando? Restaurantes, boticas, productos..."
+              className="shadow-2xl"
+            />
           </div>
 
-          {/* Dots de paginación */}
-          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-6 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20">
+          {/* Pastillas de Categorías Rápidas bajo el Buscador (Estilo segunda imagen) */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap pt-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer ${
+                selectedCategory === 'all'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs border border-white/20'
+              }`}
+            >
+              Todos
+            </button>
+            {categories.slice(0, 5).map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs border border-white/20'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Paginación de slides */}
+          <div className="flex items-center justify-center gap-1.5 pt-2">
             {heroSlides.map((slide, idx) => (
               <button
                 key={slide.id}
@@ -238,25 +260,96 @@ export function HomePage() {
                 onClick={() => setCurrentHeroSlide(idx)}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   idx === currentHeroSlide
-                    ? 'w-4 h-1.5 bg-white shadow-xs'
-                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white'
+                    ? 'w-6 h-1.5 bg-emerald-400 shadow-xs'
+                    : 'w-2 h-1.5 bg-white/50 hover:bg-white'
                 }`}
                 aria-label={`Ir al slide ${idx + 1}`}
               />
             ))}
           </div>
         </div>
+      </section>
 
-        {/* 2. Estructura de 2 Columnas Estilo Falabella (Sidebar Filtros + Catálogo Principal) */}
+      {/* Contenedor Principal */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+
+        {/* 2. Tarjeta Promocional Limpia (Directamente debajo del Hero, como en la segunda imagen) */}
+        <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-primary flex items-center justify-center flex-shrink-0 shadow-2xs">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-sm sm:text-base font-bold text-gray-900">
+                ¡Pide seguro en Tingo María! Comercios formales y entregas rápidas
+              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-0.5 text-xs text-gray-500">
+                <span className="flex items-center gap-1 text-emerald-800 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <span>Restaurantes, bodegas y boticas de la ciudad</span>
+                </span>
+                <span className="flex items-center gap-1 text-emerald-800 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <span>Envíos express y pago contra entrega en efectivo</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end md:self-auto flex-shrink-0">
+            <Link
+              to="/negocios"
+              className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs sm:text-sm font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Explorar comercios</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/cliente/favoritos"
+              className="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:text-primary hover:bg-gray-50 transition-colors cursor-pointer"
+              aria-label="Ver mis favoritos"
+              title="Mis favoritos"
+            >
+              <Heart className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+
+        {/* 3. Encabezado de la Sección de Catálogo */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-gray-200/80">
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
+              Comercios y Productos en Tingo María
+            </h2>
+            <p className="text-xs text-gray-500">
+              Mostrando {filteredProducts.length} {filteredProducts.length === 1 ? 'producto disponible' : 'productos disponibles'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-500 font-medium">Ordenar por:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="bg-white border border-gray-200 text-gray-800 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
+              aria-label="Ordenar productos"
+            >
+              <option value="recommended">Recomendados</option>
+              <option value="price_asc">Menor precio</option>
+              <option value="price_desc">Mayor precio</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 4. Estructura de 2 Columnas (Sidebar Filtros + Catálogo Principal) */}
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-          {/* Barra Lateral de Filtros (Sidebar limpio estilo Falabella) */}
+          {/* Barra Lateral de Filtros */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-4">
             
-            {/* Tarjeta 1: Tipo de Entrega & Disponibilidad (Como Falabella Image 1) */}
+            {/* Disponibilidad y Tipo de Entrega */}
             <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-4">
-              
-              {/* Switch Tipo CYBER WOW: Solo abiertos ahora */}
+              {/* Switch: Solo abiertos ahora */}
               <div className="flex items-center justify-between pb-3 border-b border-gray-150">
                 <div>
                   <span className="text-xs font-bold text-gray-900 block">Solo abiertos ahora</span>
@@ -317,7 +410,7 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Tarjeta 2: Categorías (Conectadas a la API) */}
+            {/* Categorías */}
             <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
@@ -370,7 +463,7 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Tarjeta 3: Comercios Locales Verificados */}
+            {/* Comercios Locales */}
             <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
@@ -426,7 +519,7 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Botón Limpiar Filtros si hay alguno activo */}
+            {/* Limpiar Filtros */}
             {hasActiveFilters && (
               <button
                 type="button"
@@ -439,38 +532,10 @@ export function HomePage() {
             )}
           </aside>
 
-          {/* Área Principal (Productos y Comercios estilo Falabella) */}
+          {/* Catálogo de Productos y Comercios */}
           <main className="flex-1 min-w-0 space-y-4">
 
-            {/* Barra Superior de Catálogo: Ordenar por + Paginación / Conteo */}
-            <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-medium">Ordenar por:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  aria-label="Ordenar productos"
-                >
-                  <option value="recommended">Recomendados</option>
-                  <option value="price_asc">Menor precio</option>
-                  <option value="price_desc">Mayor precio</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs text-gray-500 self-end sm:self-auto">
-                <span className="font-bold text-gray-800">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
-                </span>
-                <span className="text-gray-300">|</span>
-                <span className="flex items-center gap-1 text-primary font-bold">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Tingo María</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Strip de Tiendas Oficiales (Logos / Accesos rápidos) */}
+            {/* Strip de Tiendas Oficiales */}
             {stores.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-3 sm:p-4 space-y-2">
                 <div className="flex items-center justify-between">
@@ -511,10 +576,10 @@ export function HomePage() {
               </div>
             )}
 
-            {/* Feedback de error de carrito */}
+            {/* Error de carrito */}
             {addError && <p role="alert" className="text-xs font-bold text-destructive bg-red-50 p-3 rounded-xl">{addError}</p>}
 
-            {/* Estado de Carga */}
+            {/* Grid de Productos (Estilo limpio como en la segunda imagen: Imágenes que cubren bien la parte superior y badges en las esquinas) */}
             {productsResource.loading ? (
               <div className="py-20 flex flex-col items-center justify-center gap-3 text-xs text-gray-500 bg-white rounded-2xl border border-gray-200">
                 <Loader2 className="w-7 h-7 animate-spin text-primary" />
@@ -536,7 +601,6 @@ export function HomePage() {
                 </button>
               </div>
             ) : (
-              /* Grid de Productos estilo Falabella: Limpio, espacioso y sin saturación */
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredProducts.map((item) => {
                   const isJustAdded = addedProductId === item.id;
@@ -552,29 +616,35 @@ export function HomePage() {
                       onClick={() => setSelectedProduct(item)}
                       className="group bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary hover:shadow-card transition-all duration-200 overflow-hidden flex flex-col justify-between text-left h-full cursor-pointer"
                     >
-                      {/* Imagen Cuadrada con Badge sutil */}
-                      <div className="relative aspect-square w-full bg-white overflow-hidden border-b border-gray-100 flex items-center justify-center p-2">
+                      {/* Imagen con Badges de Esquina (Estilo de la segunda imagen: badges en esquina izquierda y derecha) */}
+                      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden border-b border-gray-100">
                         <img
                           src={productImg}
                           alt={item.name}
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                           }}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
-                        <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
-                          Envío local
+                        {/* Badge Izquierdo: Estado de Envío (Verde como en el ejemplo) */}
+                        <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                          {hasStock ? 'Disponible ahora' : 'Agotado'}
+                        </span>
+
+                        {/* Badge Derecho: Nombre/Tipo de Tienda (Blanco como en el ejemplo) */}
+                        <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-gray-800 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs truncate max-w-[100px]">
+                          {item.storeName}
                         </span>
                       </div>
 
                       {/* Cuerpo de información */}
                       <div className="p-3 flex flex-col justify-between flex-1 space-y-2">
                         <div>
-                          {/* Tienda */}
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-1 truncate" title={item.storeName}>
+                          {/* Categoría / Tienda */}
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-0.5 truncate">
                             <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                            <span className="font-semibold text-gray-700 truncate">{item.storeName}</span>
+                            <span className="font-semibold text-gray-600 truncate">{item.storeName}</span>
                           </div>
 
                           {/* Nombre del producto */}
@@ -621,7 +691,7 @@ export function HomePage() {
           </main>
         </div>
 
-        {/* 3. Secciones Informativas Limpias (Logística y Afiliaciones) */}
+        {/* 5. Secciones Informativas */}
         <section className="grid sm:grid-cols-2 gap-4 pt-4">
           <Link
             to="/registro/comercio"

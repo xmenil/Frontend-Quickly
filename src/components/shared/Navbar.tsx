@@ -105,8 +105,8 @@ export const Navbar: React.FC = () => {
     <>
       {logoutError && <p role="alert" className="bg-red-50 p-3 text-sm text-red-800">{logoutError}</p>}
       
-      {/* Header estilo Falabella: Fondo blanco limpio con detalles en verde Quickly */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-200/90 shadow-2xs select-none text-ink">
+      {/* Header oficial con verde característico de Quickly y diseño limpio */}
+      <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
           <div className="flex items-center justify-between h-16 sm:h-18 gap-2 sm:gap-4 py-2">
@@ -115,17 +115,17 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(true)}
-                className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                className="md:hidden p-2 text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer"
                 aria-label="Abrir menú de navegación"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
-              <BrandLogo size="md" variant="default" />
+              <BrandLogo size="md" variant="white" />
 
-              {/* Botón Menú / Categorías inspirado en Falabella */}
+              {/* Botón Menú / Categorías con contraste blanco sobre fondo verde */}
               <div className="hidden md:block">
-                <CategoriesDropdown variant="menu" />
+                <CategoriesDropdown variant="menu-green" />
               </div>
             </div>
 
@@ -140,26 +140,26 @@ export const Navbar: React.FC = () => {
               {(activeRole === 'admin' || roles?.includes('admin')) && (
                 <Link
                   to="/admin/resumen"
-                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full hover:bg-purple-100 transition-colors"
+                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/30 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
                 >
-                  <ShieldCheck className="w-3 h-3 text-purple-700" />
+                  <ShieldCheck className="w-3 h-3 text-white" />
                   Panel Admin
                 </Link>
               )}
               {(activeRole === 'comercio' || roles?.includes('comercio')) && (
                 <Link
                   to="/comercio/tienda"
-                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors"
+                  className="hidden xl:inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/20 border border-white/30 px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
                 >
-                  <Store className="w-3 h-3 text-primary" />
+                  <Store className="w-3 h-3 text-white" />
                   Panel Tienda
                 </Link>
               )}
 
-              {/* Wishlist / Favoritos (Ícono corazón estilo Falabella) */}
+              {/* Wishlist / Favoritos (Ícono corazón) */}
               <Link
                 to="/cliente/favoritos"
-                className="p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-white hover:bg-white/15 transition-colors cursor-pointer"
                 aria-label="Mis favoritos"
                 title="Mis favoritos"
               >
@@ -174,12 +174,12 @@ export const Navbar: React.FC = () => {
                     setShowNotificationsMenu((prev) => !prev);
                     setShowProfileMenu(false);
                   }}
-                  className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="relative p-2 rounded-xl text-white hover:bg-white/15 transition-colors cursor-pointer"
                   aria-label={`Notificaciones (${unreadNotifications.length} sin leer)`}
                 >
                   <Bell className="w-5 h-5 stroke-[2]" />
                   {unreadNotifications.length > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-white" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-300 rounded-full ring-2 ring-primary-dark" />
                   )}
                 </button>
 
@@ -218,35 +218,35 @@ export const Navbar: React.FC = () => {
               {/* Cart Button with Count Badge */}
               <Link
                 to="/carrito"
-                className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                className="relative p-2 rounded-xl text-white hover:bg-white/15 transition-colors cursor-pointer"
                 aria-label={`Ver carrito con ${cartCount} productos`}
               >
                 <ShoppingCart className="w-5 h-5 stroke-[2]" />
                 {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-white text-primary text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
                     {cartCount}
                   </span>
                 )}
               </Link>
 
-              {/* User Account Button (Falabella style: "Hola, Inicia sesión ⌵" o "Hola, [Nombre] ⌵") */}
+              {/* User Account Button ("Hola, Inicia sesión ⌵" o "Hola, [Nombre] ⌵") */}
               {isAuthenticated && currentUser ? (
-                <div className="relative pl-1 sm:pl-2 border-l border-gray-200" ref={profileRef}>
+                <div className="relative pl-1 sm:pl-2 border-l border-white/20" ref={profileRef}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowProfileMenu((prev) => !prev);
                       setShowNotificationsMenu(false);
                     }}
-                    className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-left"
+                    className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-white/15 transition-colors cursor-pointer text-left text-white"
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                    <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-bold text-xs uppercase shadow-xs">
                       {currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'U'}
                     </div>
                     <div className="hidden md:flex flex-col leading-tight">
-                      <span className="text-[10px] text-gray-500 font-normal">Hola,</span>
-                      <span className="font-bold text-xs text-gray-900 truncate max-w-[110px] flex items-center gap-0.5">
-                        {currentUser.name.split(' ')[0]} <ChevronDown className="w-3 h-3 text-gray-400" />
+                      <span className="text-[10px] text-emerald-100 font-normal">Hola,</span>
+                      <span className="font-bold text-xs text-white truncate max-w-[110px] flex items-center gap-0.5">
+                        {currentUser.name.split(' ')[0]} <ChevronDown className="w-3 h-3 text-emerald-200" />
                       </span>
                     </div>
                   </button>
@@ -350,19 +350,19 @@ export const Navbar: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="pl-1 sm:pl-2 border-l border-gray-200 flex items-center">
+                <div className="pl-1 sm:pl-2 border-l border-white/20 flex items-center">
                   <Link
                     to="/login"
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors text-left"
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/15 transition-colors text-left text-white"
                     aria-label="Ingresar a tu cuenta"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center border border-gray-200">
-                      <User className="w-4 h-4 text-primary" />
+                    <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/30">
+                      <User className="w-4 h-4 text-white" />
                     </div>
                     <div className="hidden md:flex flex-col leading-tight">
-                      <span className="text-[10px] text-gray-500 font-normal">Hola,</span>
-                      <span className="font-bold text-xs text-gray-900 flex items-center gap-0.5">
-                        Inicia sesión <ChevronDown className="w-3 h-3 text-gray-400" />
+                      <span className="text-[10px] text-emerald-100 font-normal">Hola,</span>
+                      <span className="font-bold text-xs text-white flex items-center gap-0.5">
+                        Inicia sesión <ChevronDown className="w-3 h-3 text-emerald-200" />
                       </span>
                     </div>
                   </Link>
@@ -371,18 +371,18 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Sub-bar: Ubicación + Enlaces limpios estilo Falabella */}
-          <div className="hidden md:flex items-center justify-between py-2 border-t border-gray-100 text-xs text-gray-700">
+          {/* Sub-bar: Ubicación + Enlaces directos */}
+          <div className="hidden md:flex items-center justify-between py-2 border-t border-white/15 text-xs text-white">
             {/* Left: Ubicación */}
             <div className="flex items-center gap-2">
-              <ZoneSelector variant="header-light" />
+              <ZoneSelector variant="navbar" />
             </div>
 
             {/* Right: Enlaces directos sin saturación */}
-            <div className="flex items-center gap-4 lg:gap-6 font-medium text-gray-600">
+            <div className="flex items-center gap-4 lg:gap-6 font-medium text-white/90">
               <Link
                 to="/negocios"
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-white transition-colors cursor-pointer"
               >
                 Ofertas
               </Link>
@@ -390,7 +390,7 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCouponsModal(true)}
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-white transition-colors cursor-pointer"
               >
                 Cupones
               </button>
@@ -399,7 +399,7 @@ export const Navbar: React.FC = () => {
                 to={fashionLink}
                 aria-disabled={!fashionCategory}
                 onClick={(event) => { if (!fashionCategory) event.preventDefault(); }}
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-white transition-colors cursor-pointer"
               >
                 Moda
               </Link>
@@ -407,9 +407,9 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPlayModal(true)}
-                className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
+                className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span className="bg-primary text-white text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5">
+                <span className="bg-white text-primary text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5 shadow-xs">
                   PLAY
                 </span>
                 <span>Quickly Play</span>
@@ -417,21 +417,21 @@ export const Navbar: React.FC = () => {
 
               <Link
                 to={venderDestination}
-                className="font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
+                className="font-bold text-white bg-white/20 hover:bg-white/30 border border-white/30 px-3 py-1 rounded-full transition-colors cursor-pointer"
               >
                 {hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}
               </Link>
 
               <Link
                 to="/cliente/pedidos"
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-white transition-colors cursor-pointer"
               >
                 Mis compras
               </Link>
 
               <Link
                 to="/cliente/ayuda"
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-white transition-colors cursor-pointer"
               >
                 Ayuda
               </Link>
@@ -441,7 +441,7 @@ export const Navbar: React.FC = () => {
           {/* Mobile Search Bar & Zone Selector */}
           <div className="sm:hidden pb-3 pt-1 space-y-2">
             <SearchBar variant="navbar-mobile" />
-            <div className="flex items-center justify-between text-xs pt-1 px-0.5">
+            <div className="flex items-center justify-between text-xs pt-1 px-0.5 text-white">
               <ZoneSelector variant="compact" />
               <CategoriesDropdown variant="compact" />
             </div>
@@ -461,12 +461,12 @@ export const Navbar: React.FC = () => {
           {/* Drawer panel */}
           <div className="fixed inset-y-0 left-0 max-w-[85%] w-80 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
-            <div className="bg-white border-b border-gray-150 p-4 flex items-center justify-between shadow-2xs">
-              <BrandLogo size="sm" variant="default" />
+            <div className="bg-primary text-white p-4 flex items-center justify-between shadow-2xs">
+              <BrandLogo size="sm" variant="white" />
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(false)}
-                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-white hover:bg-white/20 transition-colors cursor-pointer"
                 aria-label="Cerrar menú"
               >
                 <X className="w-5 h-5" />
