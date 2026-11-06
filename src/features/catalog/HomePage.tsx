@@ -517,9 +517,9 @@ export function HomePage() {
     const catArrays = Array.from(byCategory.values());
     const maxLen = Math.max(...catArrays.map(a => a.length), 0);
 
-    for (let i = 0; i < maxLen && result.length < 16; i++) {
+    for (let i = 0; i < maxLen && result.length < 12; i++) {
       for (const arr of catArrays) {
-        if (arr[i] && result.length < 16) {
+        if (arr[i] && result.length < 12) {
           if (!result.some(r => r.id === arr[i].id)) {
             result.push(arr[i]);
           }
@@ -628,8 +628,8 @@ export function HomePage() {
               <ChevronRight className="w-5 h-5 stroke-[2.5]" />
             </button>
 
-            {/* Grid de 3 productos del slide activo */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 items-stretch px-2 sm:px-4">
+            {/* Grid de 3 productos del slide activo - Más apegadas y cuadradas estilo Imagen 1 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 items-stretch px-1 sm:px-3">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -643,14 +643,14 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => navigate(categoryLink)}
-                    className="group relative h-[280px] sm:h-[310px] lg:h-[330px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    className="group relative aspect-square sm:aspect-[4/3] max-h-[330px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
                   >
                     {/* Badges superiores flotantes tipo especificación */}
                     <div className="absolute top-2.5 inset-x-2.5 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
-                      <span className="bg-[#18181b]/85 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
                         {spec1}
                       </span>
-                      <span className="bg-[#18181b]/85 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
                         {spec2}
                       </span>
                     </div>
@@ -670,7 +670,7 @@ export function HomePage() {
                     </div>
 
                     {/* Información ensobre de la imagen con fondo transparente plomito (frosted glass) */}
-                    <div className="absolute bottom-2.5 inset-x-2.5 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
+                    <div className="absolute bottom-2 inset-x-2 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
                       </span>
@@ -683,6 +683,11 @@ export function HomePage() {
                         <span className="bg-[#00a8e8] text-white font-black text-xs px-2.5 py-0.5 rounded-sm shadow-xs tabular-nums">
                           {sku ? money(price) : 'S/ --'}
                         </span>
+                        {price > 0 && (
+                          <span className="text-[10px] text-gray-300 line-through tabular-nums">
+                            {money(Math.round(price * 1.25))}
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -873,8 +878,8 @@ export function HomePage() {
           </div>
         ) : (
           <>
-            {/* Grid de productos multitienda con tarjetas estilo Imagen 5/6 */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {/* Grid de productos destacados estilo Imagen 3: Cuadradas, foto al 100% y tarjeta blanca flotante inferior */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {mixedDiverseProducts.map((item) => {
                 const isJustAdded = addedProductId === item.id;
                 const sku = preferredSku(item);
@@ -882,61 +887,76 @@ export function HomePage() {
                 const hasStock = !!purchasableSku(item);
                 const productImg = getProductImageUrl(item);
                 const brand = extractBrandOrStore(item);
-                const promoBadge = getPromoBadge(item);
-                const categoryName = getCategoryDescriptor(item);
+                const [spec1] = getProductSpecBadges(item);
 
                 return (
                   <div
                     key={item.id}
                     onClick={() => setSelectedProduct(item)}
-                    className="group bg-[#f4f6f8] rounded-2xl border border-gray-200/90 shadow-2xs hover:shadow-card hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col justify-between text-left p-3.5 sm:p-4 cursor-pointer"
+                    className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-200/90 bg-gray-100"
                   >
-                    {/* Cabecera superior: Marca y Tienda en mayúsculas elegante */}
-                    <div className="pb-2 flex items-center justify-between border-b border-gray-200/60">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-gray-800 line-clamp-1">
-                        {brand}
-                      </span>
-                      <span className="text-[10px] text-gray-400 truncate max-w-[100px]">
-                        {item.storeName}
-                      </span>
-                    </div>
-
-                    {/* Imagen grande centrada con efecto sin fondo */}
-                    <div className="relative h-44 sm:h-52 w-full flex items-center justify-center my-3 overflow-hidden">
+                    {/* Imagen que llena toda la tarjeta al 100% */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
                       <img
                         src={productImg}
                         alt={item.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="max-h-full max-w-full object-contain mix-blend-multiply drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
+                      {/* Gradientes superior e inferior para resaltar textos */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
                     </div>
 
-                    {/* Módulo blanco inferior tipo pastilla de descuento (Estilo Imagen 5/6) */}
-                    <div className="bg-white rounded-xl p-3 shadow-xs border border-gray-150 flex flex-col justify-between gap-1.5 text-center">
-                      <div>
-                        <p className="text-xs sm:text-sm font-black text-rose-600 uppercase tracking-tight">
-                          {promoBadge}
+                    {/* Marca superior centrada en blanco elegante (Estilo Imagen 3) */}
+                    <div className="absolute top-4 inset-x-4 flex items-center justify-center pointer-events-none z-10">
+                      <span className="text-sm sm:text-base font-black uppercase tracking-widest text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                        {brand}
+                      </span>
+                    </div>
+
+                    {/* Badges laterales de capacidad y especificaciones técnicas (Estilo Imagen 3) */}
+                    <div className="absolute top-11 right-3.5 flex flex-col items-end gap-1.5 pointer-events-none z-10">
+                      <span className="bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">
+                        {spec1}
+                      </span>
+                      <div className="bg-white/90 backdrop-blur-xs text-gray-900 border border-gray-200 text-[8px] font-black px-1.5 py-0.5 rounded flex flex-col items-center shadow-xs">
+                        <span className="font-black text-[10px] leading-none text-emerald-700">A</span>
+                        <span className="text-[6.5px] uppercase font-bold text-gray-600 leading-tight">Garantía</span>
+                      </div>
+                    </div>
+
+                    {/* Módulo blanco inferior flotante (Exactamente como en la Imagen 3) */}
+                    <div className="absolute bottom-3 inset-x-3 bg-white/95 backdrop-blur-xs rounded-xl p-3 shadow-lg border border-gray-100 flex items-center justify-between gap-2 z-10">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-xs sm:text-sm text-gray-900 truncate">
+                          {item.name}
                         </p>
-                        <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium line-clamp-1">
-                          {categoryName}
+                        <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                          {item.storeName}
                         </p>
                       </div>
 
-                      <h3 className="font-bold text-xs text-gray-800 group-hover:text-primary transition-colors line-clamp-1 text-center">
-                        {item.name}
-                      </h3>
-
-                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                        <span className="font-black text-xs sm:text-sm text-gray-900 tabular-nums">
-                          {sku ? money(price) : 'S/ --'}
-                        </span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex flex-col items-end">
+                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded shadow-2xs tabular-nums">
+                            {sku ? money(price) : 'S/ --'}
+                          </span>
+                          {price > 0 && (
+                            <span className="text-[10px] text-gray-400 line-through tabular-nums">
+                              {money(Math.round(price * 1.25))}
+                            </span>
+                          )}
+                        </div>
 
                         <button
                           type="button"
-                          onClick={(e) => handleAddToCart(e, item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(e, item);
+                          }}
                           disabled={!hasStock}
                           className={`p-2 rounded-lg transition-all cursor-pointer ${
                             isJustAdded
@@ -948,9 +968,9 @@ export function HomePage() {
                           aria-label={`Agregar ${item.name} al carrito`}
                         >
                           {isJustAdded ? (
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <Check className="w-4 h-4 stroke-[3]" />
                           ) : (
-                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <ShoppingCart className="w-4 h-4" />
                           )}
                         </button>
                       </div>
