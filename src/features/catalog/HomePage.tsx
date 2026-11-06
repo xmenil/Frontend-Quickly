@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { addCatalogProduct } from '../../store/realCartStore';
@@ -7,7 +7,6 @@ import { catalogPlaceholder, catalogImage } from '../../lib/catalogImage';
 import { catalogApi, CatalogProduct, money } from '../../services/api/catalogApi';
 import { operationsApi } from '../../services/api/operationsApi';
 import { useRemote } from '../operations/shared';
-import { ProductDetailModal } from './ProductDetailModal';
 import {
   Store,
   ArrowRight,
@@ -19,6 +18,8 @@ import {
   MapPin,
   Banknote,
   ShoppingCart,
+  ShieldCheck,
+  Gift,
 } from 'lucide-react';
 
 function extractBrandOrStore(p: CatalogProduct): string {
@@ -26,8 +27,9 @@ function extractBrandOrStore(p: CatalogProduct): string {
   const name = (p.name || '').toUpperCase();
   const brands = [
     'NIKE', 'ADIDAS', 'VANS', 'PARAÍSO', 'MUEBLES TINGO', 'CANNON',
-    'XIAOMI', 'SAMSUNG', 'APPLE', 'HONOR', 'HUAWEI', 'LENOVO', 'LG',
-    'OSTER', 'PHILIPS', 'MABE', 'INDURAMA', 'HAYLOU', 'STANDFORD', 'HOT WHEELS'
+    'XIAOMI', 'SAMSUNG', 'APPLE', 'HONOR', 'HUAWEI', 'LENOVO', 'HP', 'LG',
+    'OSTER', 'PHILIPS', 'MABE', 'INDURAMA', 'HAYLOU', 'STANDFORD', 'HOT WHEELS',
+    'MAC', 'ESTÉE LAUDER', 'ESTEE LAUDER', 'LANCÔME', 'LANCOME'
   ];
   for (const b of brands) {
     if (name.includes(b)) return b;
@@ -43,11 +45,38 @@ function getProductSpecBadges(p: CatalogProduct): [string, string] {
     if (name.includes('512gb')) return ['512GB ROM', '12GB RAM'];
     if (name.includes('256gb')) return ['256GB ROM', '8GB RAM'];
     if (name.includes('128gb')) return ['128GB ROM', '6GB RAM'];
+    if (name.includes('64gb')) return ['64GB ROM', '4GB RAM'];
     return ['PANTALLA AMOLED', 'CÁMARA IA'];
   }
-  // Laptops
+  // Laptops y cómputo
+  if (name.includes('macbook') || name.includes('neo 13')) {
+    return ['256GB SSD', '8GB RAM'];
+  }
+  if (name.includes('loq') || name.includes('gamer')) {
+    return ['512GB SSD', '16GB RAM'];
+  }
+  if (name.includes('15-fc0287la') || name.includes('hp')) {
+    return ['512GB SSD', '8GB RAM'];
+  }
   if (name.includes('laptop') || name.includes('notebook') || name.includes('lenovo')) {
     return ['16GB RAM', '512GB SSD'];
+  }
+  // Cosméticos y regalos
+  if (name.includes('labiales') || name.includes('teddy party')) {
+    return ['EDICIÓN LIMITADA', '3 TONOS MATE'];
+  }
+  if (name.includes('máscara') || name.includes('mascara') || name.includes('sumptuous')) {
+    return ['EXTRA VOLUMEN', 'A PRUEBA DE AGUA'];
+  }
+  if (name.includes('living legends') || name.includes('gloss')) {
+    return ['KIT COMPLETO', 'ALTA HIDRATACIÓN'];
+  }
+  // Juguetes
+  if (name.includes('hot wheels')) {
+    return ['PACK X5 AUTOS', 'COLECCIONABLE'];
+  }
+  if (name.includes('pikachu') || name.includes('peluche')) {
+    return ['ORIGINAL 45CM', 'PELUCHE SUAVE'];
   }
   // Calzado y zapatillas
   if (name.includes('nike')) {
@@ -116,6 +145,12 @@ function getProductSpecBadges(p: CatalogProduct): [string, string] {
   if (name.includes('repelente')) {
     return ['PROTECCIÓN SELVA', 'SPRAY 150ML'];
   }
+  if (name.includes('whisky') || name.includes('black label')) {
+    return ['AÑEJADO 12 AÑOS', '750 ML ESCOCÉS'];
+  }
+  if (name.includes('chocolate') || name.includes('cacao') || name.includes('bombones')) {
+    return ['70% CACAO PURO', 'AROMA NATIVO'];
+  }
   return ['ENVÍO EXPRESS', 'EN STOCK'];
 }
 
@@ -125,6 +160,42 @@ function getProductImageUrl(p: CatalogProduct): string {
     return catalogImage(raw);
   }
   const name = (p.name || '').toLowerCase();
+
+  // Laptops y cómputo
+  if (name.includes('macbook') || name.includes('neo 13')) {
+    return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('loq') || name.includes('gamer')) {
+    return 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('hp') || name.includes('fc0287la')) {
+    return 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('laptop') || name.includes('lenovo')) {
+    return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Belleza y cosméticos
+  if (name.includes('teddy party') || (name.includes('mac') && name.includes('labiales'))) {
+    return 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('sumptuous') || name.includes('estée') || name.includes('estee') || name.includes('máscara') || name.includes('mascara')) {
+    return 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('living legends') || name.includes('gloss')) {
+    return 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Juguetes y regalos
+  if (name.includes('hot wheels')) {
+    return 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('pikachu') || name.includes('peluche')) {
+    return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('whisky') || name.includes('black label')) {
+    return 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=900&auto=format&fit=crop&q=80';
+  }
 
   // Zapatos y Calzado
   if (name.includes('nike')) {
@@ -178,9 +249,6 @@ function getProductImageUrl(p: CatalogProduct): string {
   if (name.includes('samsung') && name.includes('s24')) {
     return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('laptop') || name.includes('lenovo')) {
-    return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&auto=format&fit=crop&q=80';
-  }
   if (name.includes('xiaomi') || name.includes('poco') || name.includes('15t')) {
     return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=900&auto=format&fit=crop&q=80';
   }
@@ -212,90 +280,22 @@ function getProductImageUrl(p: CatalogProduct): string {
   if (name.includes('repelente')) {
     return 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('chocolate') || name.includes('cacao')) {
+  if (name.includes('chocolate') || name.includes('cacao') || name.includes('bombones') || name.includes('trufas')) {
     return 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=900&auto=format&fit=crop&q=80';
   }
 
   return catalogPlaceholder;
 }
 
-function getPromoBadge(p: CatalogProduct): string {
-  const name = (p.name || '').toLowerCase();
-  if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) {
-    return 'Hasta 35% Dscto';
-  }
-  if (name.includes('paraíso') || name.includes('cama') || name.includes('colchón')) {
-    return 'Entrega a Domicilio';
-  }
-  if (name.includes('pantalon') || name.includes('casaca') || name.includes('vestido') || name.includes('polo')) {
-    return 'Colección 2026';
-  }
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('laptop')) {
-    return 'Garantía Oficial';
-  }
-  if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) {
-    return 'Hasta 25% Dscto';
-  }
-  if (name.includes('bloqueador') || name.includes('repelente')) {
-    return 'Envío Express Hoy';
-  }
-  return 'En Stock en Tienda';
-}
-
-function getCategoryDescriptor(p: CatalogProduct): string {
-  const name = (p.name || '').toLowerCase();
-  if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) {
-    return 'en calzado urbano y deportivo';
-  }
-  if (name.includes('paraíso') || name.includes('colchón') || name.includes('cama')) {
-    return 'en descanso y dormitorio';
-  }
-  if (name.includes('casaca') || name.includes('pantalon') || name.includes('vestido') || name.includes('polo')) {
-    return 'en prendas de moda selva';
-  }
-  if (name.includes('celular') || name.includes('smartphone')) {
-    return 'en telefonía y smartphones';
-  }
-  if (name.includes('laptop')) {
-    return 'en computadoras portátiles';
-  }
-  if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) {
-    return 'en electrodomésticos para el hogar';
-  }
-  if (name.includes('bloqueador') || name.includes('repelente')) {
-    return 'en farmacia y cuidado personal';
-  }
-  return 'disponible en comercio oficial';
-}
-
 function getProductDiscountPercent(p: CatalogProduct): number {
   const name = (p.name || '').toLowerCase();
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('laptop')) return 25;
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('laptop') || name.includes('macbook')) return 25;
   if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) return 35;
   if (name.includes('pantalon') || name.includes('casaca') || name.includes('vestido') || name.includes('polo')) return 30;
   if (name.includes('paraíso') || name.includes('cama') || name.includes('colchón')) return 20;
   if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) return 25;
+  if (name.includes('labiales') || name.includes('máscara') || name.includes('gloss') || name.includes('mac')) return 34;
   return 20;
-}
-
-function getProductCategoryLink(p: CatalogProduct, slideUrl: string): string {
-  const n = (p.name || '').toLowerCase();
-  if (n.includes('laptop') || n.includes('notebook') || n.includes('lenovo')) return '/negocios?q=laptop';
-  if (n.includes('celular') || n.includes('smartphone') || n.includes('samsung') || n.includes('xiaomi') || n.includes('poco') || n.includes('iphone')) return '/negocios?q=celular';
-  if (n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas')) return '/negocios?q=zapatillas';
-  if (n.includes('botines') || n.includes('calzado')) return '/negocios?q=calzado';
-  if (n.includes('palazzo') || n.includes('pantalon') || n.includes('denim')) return '/negocios?q=pantalon';
-  if (n.includes('casaca') || n.includes('bomber')) return '/negocios?q=casaca';
-  if (n.includes('vestido')) return '/negocios?q=vestido';
-  if (n.includes('polo')) return '/negocios?q=polo';
-  if (n.includes('paraíso') || n.includes('colchón') || n.includes('colchon')) return '/negocios?q=colchon';
-  if (n.includes('cama') || n.includes('tarima')) return '/negocios?q=cama';
-  if (n.includes('sábanas') || n.includes('sabanas')) return '/negocios?q=sabanas';
-  if (n.includes('smart tv') || n.includes('tv') || n.includes('televisor')) return '/negocios?q=tv';
-  if (n.includes('cocina')) return '/negocios?q=cocina';
-  if (n.includes('licuadora')) return '/negocios?q=licuadora';
-  if (n.includes('freidora')) return '/negocios?q=electrohogar';
-  return slideUrl;
 }
 
 interface BannerSlideConfig {
@@ -317,7 +317,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     id: 'celulares',
     badge: 'OFICIAL EN TINGO MARÍA',
     title: 'CELULARES',
-    subtitle: 'Smartphones de alta gama, Xiaomi, Samsung Galaxy y Redmi con garantía oficial',
+    subtitle: 'Smartphones de alta gama, Xiaomi, Samsung Galaxy, Apple y Redmi con garantía oficial',
     bgColor: '#064e3b',
     benefitBadge: 'HASTA 12 CUOTAS SIN INTERESES',
     benefitTitle: 'Pago contra entrega en efectivo',
@@ -327,7 +327,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
       return (
-        n.includes('celular') || n.includes('smartphone') || n.includes('samsung galaxy') ||
+        n.includes('celular') || n.includes('smartphone') || n.includes('samsung') ||
         n.includes('redmi') || n.includes('xiaomi') || n.includes('poco') || n.includes('iphone')
       );
     },
@@ -336,7 +336,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     id: 'laptops',
     badge: 'LO MEJOR EN CÓMPUTO',
     title: 'LAPTOPS & COMPUTADORAS',
-    subtitle: 'Laptops Lenovo IdeaPad, gamers LOQ y accesorios con garantía oficial',
+    subtitle: 'Laptops HP, MacBook Neo y Lenovo Gamer con garantía oficial y soporte técnico',
     bgColor: '#0f172a',
     benefitBadge: 'ENVÍO EXPRESS EN EL DÍA',
     benefitTitle: 'Garantía oficial y servicio técnico',
@@ -345,7 +345,11 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     linkUrl: '/negocios?q=laptop',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
-      return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora');
+      return (
+        n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') ||
+        n.includes('computadora') || n.includes('macbook') || n.includes('hp') ||
+        n.includes('loq') || n.includes('gamer')
+      );
     },
   },
   {
@@ -421,9 +425,9 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
       return (
-        n.includes('smart tv') || n.includes('tv') || n.includes('cocina indurama') ||
+        n.includes('smart tv') || n.includes('tv') || n.includes('cocina') ||
         n.includes('licuadora') || n.includes('freidora') || n.includes('refrigeradora') ||
-        n.includes('lavadora')
+        n.includes('lavadora') || n.includes('microondas')
       );
     },
   },
@@ -432,6 +436,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
 export function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const giftScrollRef = useRef<HTMLDivElement>(null);
 
   // Recursos remotos conectados a PostgreSQL / Supabase
   const categoriesResource = useRemote('home-categories', signal => catalogApi.categories(signal));
@@ -456,19 +461,15 @@ export function HomePage() {
     return { items: allItems, nextCursor: null };
   });
 
-  const coverageResource = useRemote('home-zones', signal => operationsApi.zones(signal));
-
   const categories = categoriesResource.data || [];
   const stores = storesResource.data || [];
   const allProducts = productsResource.data?.items || [];
 
-  // Modal y agregados
-  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  // Estados locales
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
-
-  // Carrusel activo
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [giftFilter, setGiftFilter] = useState<'all' | '49' | '99' | '199' | 'more'>('all');
 
   // Auto-rotación del carrusel cada 5.5 segundos
   useEffect(() => {
@@ -488,7 +489,7 @@ export function HomePage() {
 
   const activeSlide = BANNER_SLIDES[currentSlide] || BANNER_SLIDES[0];
 
-  // 3 Productos destacados del slide activo (100% de la categoría correcta)
+  // 3 Productos destacados del slide activo (Garantía absoluta de 3 productos siempre)
   const currentSlideProducts = useMemo(() => {
     const isRestaurant = (storeName?: string) =>
       ['La Selva Gourmet', 'Restaurante & Pollería Rubén', 'El Encanto Amazónico', 'Recreo Campestre El Mirador'].includes(storeName || '');
@@ -501,18 +502,18 @@ export function HomePage() {
 
     if (matched.length >= 3) return matched.slice(0, 3);
 
-    // Si hay menos de 3 por filtro estricto, buscar coincidencias más amplias pero de la misma categoría
+    // Fallback inteligente para llenar siempre las 3 columnas sin huecos
     const slideId = activeSlide.id;
     const fallbackList = allProducts.filter(p => {
       if (!purchasableSku(p)) return false;
       if (isRestaurant(p.storeName)) return false;
       const n = (p.name || '').toLowerCase();
-      if (slideId === 'celulares') return n.includes('samsung') || n.includes('xiaomi') || n.includes('celular') || n.includes('redmi') || n.includes('poco');
-      if (slideId === 'laptops') return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora');
-      if (slideId === 'shoes') return n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas');
-      if (slideId === 'fashion') return n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') || n.includes('polo');
-      if (slideId === 'beds') return n.includes('colchón') || n.includes('cama') || n.includes('paraíso') || n.includes('sabanas');
-      if (slideId === 'home') return n.includes('tv') || n.includes('cocina') || n.includes('licuadora') || n.includes('freidora');
+      if (slideId === 'celulares') return n.includes('samsung') || n.includes('xiaomi') || n.includes('celular') || n.includes('redmi') || n.includes('poco') || n.includes('iphone');
+      if (slideId === 'laptops') return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora') || n.includes('hp') || n.includes('macbook') || n.includes('smart tv') || n.includes('smartwatch');
+      if (slideId === 'shoes') return n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas') || n.includes('botines') || n.includes('calzado');
+      if (slideId === 'fashion') return n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') || n.includes('polo') || n.includes('denim');
+      if (slideId === 'beds') return n.includes('colchón') || n.includes('cama') || n.includes('paraíso') || n.includes('sabanas') || n.includes('tarima');
+      if (slideId === 'home') return n.includes('tv') || n.includes('cocina') || n.includes('licuadora') || n.includes('freidora') || n.includes('microondas');
       return false;
     });
 
@@ -523,14 +524,53 @@ export function HomePage() {
         combined.push(p);
       }
     }
+
+    // Si aún faltara por catálogo local corto, rellenar de productos no-restaurante para asegurar 3 siempre
+    if (combined.length < 3) {
+      for (const p of allProducts) {
+        if (combined.length >= 3) break;
+        if (!purchasableSku(p)) continue;
+        if (isRestaurant(p.storeName)) continue;
+        if (!combined.some(x => x.id === p.id)) {
+          combined.push(p);
+        }
+      }
+    }
+
     return combined.slice(0, 3);
   }, [allProducts, activeSlide]);
+
+  // Selección de Regalos Populares y Reconocidos con filtro de presupuesto (Imagen 3)
+  const giftProducts = useMemo(() => {
+    const recognized = allProducts.filter(p => {
+      if (!purchasableSku(p)) return false;
+      const n = (p.name || '').toLowerCase();
+      return (
+        n.includes('set de labiales') || n.includes('máscara') || n.includes('mascara') ||
+        n.includes('mac') || n.includes('estée') || n.includes('estee') ||
+        n.includes('hot wheels') || n.includes('pikachu') || n.includes('peluche') ||
+        n.includes('chocolate') || n.includes('bombones') || n.includes('trufas') ||
+        n.includes('whisky') || n.includes('smartwatch') || n.includes('fit3') ||
+        n.includes('licuadora') || n.includes('freidora') || n.includes('vans') ||
+        n.includes('nike') || n.includes('iphone') || n.includes('samsung galaxy')
+      );
+    });
+
+    return recognized.filter(p => {
+      const sku = preferredSku(p);
+      const price = sku ? sku.priceCents / 100 : 0;
+      if (giftFilter === '49') return price <= 49;
+      if (giftFilter === '99') return price <= 99;
+      if (giftFilter === '199') return price <= 199;
+      if (giftFilter === 'more') return price > 199;
+      return true;
+    });
+  }, [allProducts, giftFilter]);
 
   // Productos multitienda y multicategoría completamente mezclados (sin predominar una sola tienda ni categoría)
   const mixedDiverseProducts = useMemo(() => {
     if (allProducts.length === 0) return [];
 
-    // Agrupar productos por categoría
     const byCategory = new Map<string, CatalogProduct[]>();
     for (const p of allProducts) {
       if (!purchasableSku(p)) continue;
@@ -539,7 +579,6 @@ export function HomePage() {
       byCategory.get(cat)!.push(p);
     }
 
-    // Selección round-robin para mezclar ropa, calzado, tecnología, camas, alimentos, etc.
     const result: CatalogProduct[] = [];
     const catArrays = Array.from(byCategory.values());
     const maxLen = Math.max(...catArrays.map(a => a.length), 0);
@@ -635,7 +674,7 @@ export function HomePage() {
           {/* Columna Derecha: Tarima ajustada a la altura de los productos sin vacíos blancos */}
           <div className="relative flex-1 bg-[#f3f4f6] flex items-center justify-center p-1 sm:p-1.5 overflow-hidden">
             
-            {/* Grid de 3 productos cuadrados bien pegados, sin ningún borde */}
+            {/* Grid de 3 productos cuadrados bien pegados, sin ningún borde (Siempre 3 productos completos) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-1.5 lg:gap-2 w-full items-stretch">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
@@ -645,12 +684,11 @@ export function HomePage() {
                 const isJustAdded = addedProductId === p.id;
                 const [spec1, spec2] = getProductSpecBadges(p);
                 const brand = extractBrandOrStore(p);
-                const categoryLink = getProductCategoryLink(p, activeSlide.linkUrl);
 
                 return (
                   <div
                     key={p.id}
-                    onClick={() => navigate(categoryLink)}
+                    onClick={() => navigate('/producto/' + p.id)}
                     className="group relative aspect-square w-full rounded-none overflow-hidden bg-slate-900 transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
                   >
                     {/* Badges superiores flotantes de especificaciones */}
@@ -775,53 +813,303 @@ export function HomePage() {
         </div>
       )}
 
-      {/* 2. Barra de Garantías y Beneficios */}
+      {/* 2. Barra de Garantías y Beneficios Estilo Tarjetas Oficiales (Imagen 4) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-3.5 sm:p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center flex-shrink-0">
-              <Banknote className="w-5 h-5" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                <Banknote className="w-5 h-5" />
+              </div>
+              <div className="leading-tight">
+                <p className="font-bold text-xs sm:text-sm text-gray-900">Pago contra entrega</p>
+                <p className="text-[11px] text-gray-500">Efectivo o transferencia al recibir</p>
+              </div>
             </div>
-            <div className="leading-tight">
-              <p className="font-bold text-xs sm:text-sm text-gray-900">Pago en efectivo</p>
-              <p className="text-[11px] text-gray-500">Contra entrega al recibir</p>
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                <Store className="w-5 h-5" />
+              </div>
+              <div className="leading-tight">
+                <p className="font-bold text-xs sm:text-sm text-gray-900">Compra y retira</p>
+                <p className="text-[11px] text-gray-500">En más de 400 comercios locales</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                <Bike className="w-5 h-5" />
+              </div>
+              <div className="leading-tight">
+                <p className="font-bold text-xs sm:text-sm text-gray-900">Envío hoy mismo</p>
+                <p className="text-[11px] text-gray-500">Entrega express a domicilio en tu puerta</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="leading-tight">
+                <p className="font-bold text-xs sm:text-sm text-gray-900">Garantía oficial</p>
+                <p className="text-[11px] text-gray-500">Cambio y respaldo de tiendas físicas</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Sección "✦ Encuentra el regalo ideal ✦" con Filtros de Presupuesto y Carrusel (Imagen 3) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7">
+        <div className="bg-white rounded-2xl border border-gray-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-gray-100">
+            <div>
+              <div className="flex items-center gap-2 text-rose-900 text-xs font-black uppercase tracking-wider">
+                <Gift className="w-4 h-4" />
+                <span>✦ Encuentra el regalo ideal ✦</span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mt-0.5">
+                Selección de las mejores marcas y detalles
+              </h2>
+            </div>
+
+            {/* Pastillas de presupuesto estilo Falabella / Ripley */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: 'all', label: 'Todos' },
+                { id: '49', label: 'Hasta S/ 49' },
+                { id: '99', label: 'Hasta S/ 99' },
+                { id: '199', label: 'Hasta S/ 199' },
+                { id: 'more', label: 'Más de S/ 200' },
+              ].map((btn) => (
+                <button
+                  key={btn.id}
+                  type="button"
+                  onClick={() => setGiftFilter(btn.id as any)}
+                  className={`text-[11px] font-bold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                    giftFilter === btn.id
+                      ? 'bg-rose-900 text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-3.5 sm:p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center flex-shrink-0">
-              <Bike className="w-5 h-5" />
-            </div>
-            <div className="leading-tight">
-              <p className="font-bold text-xs sm:text-sm text-gray-900">Envíos express</p>
-              <p className="text-[11px] text-gray-500">En moto a tu dirección</p>
-            </div>
-          </div>
+          {/* Carrusel horizontal con flechas de navegación */}
+          <div className="relative group/gift">
+            <button
+              type="button"
+              onClick={() => {
+                giftScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' });
+              }}
+              className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
+              aria-label="Anterior regalo"
+            >
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+            </button>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-3.5 sm:p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center flex-shrink-0">
-              <Store className="w-5 h-5" />
-            </div>
-            <div className="leading-tight">
-              <p className="font-bold text-xs sm:text-sm text-gray-900">Comercios formales</p>
-              <p className="text-[11px] text-gray-500">Tiendas verificadas</p>
-            </div>
-          </div>
+            <button
+              type="button"
+              onClick={() => {
+                giftScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' });
+              }}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
+              aria-label="Siguiente regalo"
+            >
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+            </button>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-3.5 sm:p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <div className="leading-tight">
-              <p className="font-bold text-xs sm:text-sm text-gray-900">Cobertura local</p>
-              <p className="text-[11px] text-gray-500">Tingo María y Castillo Grande</p>
+            <div
+              ref={giftScrollRef}
+              className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-none pb-2 pt-1 scroll-smooth"
+            >
+              {giftProducts.map((p) => {
+                const sku = preferredSku(p);
+                const price = sku ? sku.priceCents : 0;
+                const hasStock = !!purchasableSku(p);
+                const pImg = getProductImageUrl(p);
+                const brand = extractBrandOrStore(p);
+                const discountPct = getProductDiscountPercent(p);
+                const originalPrice = price > 0 ? Math.round(price / (1 - discountPct / 100)) : 0;
+                const isJustAdded = addedProductId === p.id;
+
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => navigate('/producto/' + p.id)}
+                    className="w-44 sm:w-52 flex-shrink-0 flex flex-col justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group/card text-left"
+                  >
+                    <div>
+                      {/* Imagen centrada y limpia */}
+                      <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-[#f8f9fa] flex items-center justify-center">
+                        <img
+                          src={pImg}
+                          alt={p.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                          }}
+                          className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+
+                      {/* Badge ENVIO HOY */}
+                      <div className="mb-1">
+                        <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                          ENVÍO HOY
+                        </span>
+                      </div>
+
+                      {/* Marca en mayúsculas negrita */}
+                      <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                        {brand}
+                      </p>
+
+                      {/* Nombre del producto */}
+                      <h3 className="text-xs text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover/card:text-primary transition-colors">
+                        {p.name}
+                      </h3>
+                    </div>
+
+                    {/* Precios y botón de agregar */}
+                    <div className="pt-1 mt-1 border-t border-gray-100">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
+                            {sku ? money(price) : 'S/ --'}
+                          </span>
+                          {discountPct > 0 && (
+                            <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                              -{discountPct}%
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(e, p);
+                          }}
+                          disabled={!hasStock}
+                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                            isJustAdded
+                              ? 'bg-emerald-600 text-white'
+                              : hasStock
+                              ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
+                          aria-label={`Agregar ${p.name}`}
+                        >
+                          {isJustAdded ? (
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          ) : (
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+
+                      {originalPrice > price && (
+                        <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                          {money(originalPrice)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Tiendas y Comercios Oficiales de la Ciudad */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 space-y-3">
+      {/* 4. Bloques Promocionales Informativos Estilo Imagen 5 (Sin mencionar la palabra categoría) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Bloque 1: Zapatillas */}
+          <div
+            onClick={() => navigate('/negocios?q=zapatillas')}
+            className="group relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#172554] to-[#1e3a8a] text-white p-5 sm:p-6 flex items-center justify-between cursor-pointer shadow-2xs hover:shadow-card transition-all"
+          >
+            <div className="relative z-10 max-w-[65%] space-y-1">
+              <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-sky-300 uppercase">
+                VANS • NIKE • ADIDAS • URBANAS
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                Tus zapatillas favoritas
+              </h3>
+              <p className="text-xs text-sky-100 font-medium">
+                Hasta <span className="font-black text-amber-300">40% dcto.</span> en modelos seleccionados
+              </p>
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black bg-white text-gray-900 px-4 py-1.5 rounded-full group-hover:bg-sky-50 transition-colors">
+                  Ver modelos <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </div>
+            </div>
+
+            <div className="w-28 sm:w-36 aspect-square rounded-xl overflow-hidden flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <img
+                src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&auto=format&fit=crop&q=80"
+                alt="Zapatillas favoritas"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+
+          {/* Bloque 2: Juguetes y regalos */}
+          <div
+            onClick={() => navigate('/negocios?q=juguetes')}
+            className="group relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#701a75] to-[#86198f] text-white p-5 sm:p-6 flex items-center justify-between cursor-pointer shadow-2xs hover:shadow-card transition-all"
+          >
+            <div className="relative z-10 max-w-[65%] space-y-1">
+              <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-pink-300 uppercase">
+                HOT WHEELS • POKÉMON • REGALOS
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                Miles de juguetes y diversión
+              </h3>
+              <p className="text-xs text-pink-100 font-medium">
+                Hasta <span className="font-black text-amber-300">35% dcto.</span> para todas las edades
+              </p>
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black bg-white text-gray-900 px-4 py-1.5 rounded-full group-hover:bg-pink-50 transition-colors">
+                  Ver juguetes <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </div>
+            </div>
+
+            <div className="w-28 sm:w-36 aspect-square rounded-xl overflow-hidden flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <img
+                src="https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=600&auto=format&fit=crop&q=80"
+                alt="Miles de juguetes"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 5. Tiendas y Comercios Oficiales de la Ciudad */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-3">
         <div className="flex items-center justify-between pb-1 border-b border-gray-200">
           <div>
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
@@ -878,7 +1166,7 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* 4. Productos Variados y Mezclados de Diversas Tiendas (Estilo Tarjetas Imagen 5/6) */}
+      {/* 6. Productos Variados y Mezclados de Diversas Tiendas (Navegación directa al producto) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-4">
         <div className="flex items-center justify-between pb-1 border-b border-gray-200">
           <div>
@@ -912,7 +1200,7 @@ export function HomePage() {
           </div>
         ) : (
           <>
-            {/* Grid de productos estilo Imagen 1: Sin marco ni fondo, sin borde de cuadro */}
+            {/* Grid de productos estilo Imagen 1: Sin marco ni fondo, directo al detalle del producto */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {mixedDiverseProducts.map((item) => {
                 const isJustAdded = addedProductId === item.id;
@@ -927,7 +1215,7 @@ export function HomePage() {
                 return (
                   <div
                     key={item.id}
-                    onClick={() => setSelectedProduct(item)}
+                    onClick={() => navigate('/producto/' + item.id)}
                     className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl"
                   >
                     <div>
@@ -1029,7 +1317,7 @@ export function HomePage() {
         )}
       </div>
 
-      {/* 5. Secciones Informativas: Afiliar Comercio y Ser Repartidor */}
+      {/* 7. Secciones Informativas: Afiliar Comercio y Ser Repartidor */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8">
         <section className="grid sm:grid-cols-2 gap-4">
           <Link
@@ -1066,12 +1354,6 @@ export function HomePage() {
         </section>
       </div>
 
-      {/* Modal de Detalle de Producto */}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={Boolean(selectedProduct)}
-        onClose={() => setSelectedProduct(null)}
-      />
     </div>
   );
 }
