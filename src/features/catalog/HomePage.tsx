@@ -314,23 +314,38 @@ interface BannerSlideConfig {
 
 const BANNER_SLIDES: BannerSlideConfig[] = [
   {
-    id: 'tech',
+    id: 'celulares',
     badge: 'OFICIAL EN TINGO MARÍA',
-    title: 'CELULARES & TECNOLOGÍA',
-    subtitle: 'Smartphones de alta gama, laptops y televisores con garantía de marca',
-    bgColor: '#042817',
-    benefitBadge: 'ENVÍO EXPRESS EN EL DÍA',
+    title: 'CELULARES',
+    subtitle: 'Smartphones de alta gama, Xiaomi, Samsung Galaxy y Redmi con garantía oficial',
+    bgColor: '#064e3b',
+    benefitBadge: 'HASTA 12 CUOTAS SIN INTERESES',
     benefitTitle: 'Pago contra entrega en efectivo',
     benefitSubtitle: 'La Curacao, Tiendas EFE y Carsa',
-    linkText: 'Ver tecnología',
-    linkUrl: '/negocios?q=tecnologia',
+    linkText: 'Ver celulares',
+    linkUrl: '/negocios?q=celular',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
       return (
-        n.includes('lenovo') || n.includes('samsung galaxy') || n.includes('xiaomi 15t') ||
-        n.includes('smartphone') || n.includes('laptop') || n.includes('poco') ||
-        n.includes('celular') || n.includes('iphone')
+        n.includes('celular') || n.includes('smartphone') || n.includes('samsung galaxy') ||
+        n.includes('redmi') || n.includes('xiaomi') || n.includes('poco') || n.includes('iphone')
       );
+    },
+  },
+  {
+    id: 'laptops',
+    badge: 'LO MEJOR EN CÓMPUTO',
+    title: 'LAPTOPS & COMPUTADORAS',
+    subtitle: 'Laptops Lenovo IdeaPad, gamers LOQ y accesorios con garantía oficial',
+    bgColor: '#0f172a',
+    benefitBadge: 'ENVÍO EXPRESS EN EL DÍA',
+    benefitTitle: 'Garantía oficial y servicio técnico',
+    benefitSubtitle: 'Tiendas EFE, Carsa e Importaciones El Balcón',
+    linkText: 'Ver laptops',
+    linkUrl: '/negocios?q=laptop',
+    matcher: (p) => {
+      const n = (p.name || '').toLowerCase();
+      return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora');
     },
   },
   {
@@ -357,7 +372,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     badge: 'MODA SELVA',
     title: 'ROPA & MODA ACTUAL',
     subtitle: 'Pantalones palazzo denim, casacas bomber, vestidos y polos frescos',
-    bgColor: '#064e3b',
+    bgColor: '#14532d',
     benefitBadge: 'TENDENCIAS 2026',
     benefitTitle: 'Confección fresca y cómoda',
     benefitSubtitle: 'Galería San Benito y Moda Selva Tingo',
@@ -397,7 +412,7 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     badge: 'EQUIPA TU HOGAR',
     title: 'ELECTROHOGAR & COCINA',
     subtitle: 'Smart TVs 55", cocinas Indurama, licuadoras clásicas y freidoras de aire',
-    bgColor: '#0f172a',
+    bgColor: '#312e81',
     benefitBadge: 'GARANTÍA OFICIAL',
     benefitTitle: 'Marcas líderes Oster, Samsung e Indurama',
     benefitSubtitle: 'Importaciones El Balcón, Carsa y Tiendas EFE',
@@ -406,8 +421,9 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
       return (
-        n.includes('smart tv') || n.includes('cocina indurama') || n.includes('licuadora') ||
-        n.includes('freidora') || n.includes('refrigeradora') || n.includes('lavadora')
+        n.includes('smart tv') || n.includes('tv') || n.includes('cocina indurama') ||
+        n.includes('licuadora') || n.includes('freidora') || n.includes('refrigeradora') ||
+        n.includes('lavadora')
       );
     },
   },
@@ -491,7 +507,8 @@ export function HomePage() {
       if (!purchasableSku(p)) return false;
       if (isRestaurant(p.storeName)) return false;
       const n = (p.name || '').toLowerCase();
-      if (slideId === 'tech') return n.includes('samsung') || n.includes('xiaomi') || n.includes('laptop') || n.includes('tv');
+      if (slideId === 'celulares') return n.includes('samsung') || n.includes('xiaomi') || n.includes('celular') || n.includes('redmi') || n.includes('poco');
+      if (slideId === 'laptops') return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora');
       if (slideId === 'shoes') return n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas');
       if (slideId === 'fashion') return n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') || n.includes('polo');
       if (slideId === 'beds') return n.includes('colchón') || n.includes('cama') || n.includes('paraíso') || n.includes('sabanas');
@@ -565,16 +582,16 @@ export function HomePage() {
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
       <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row min-h-[460px] lg:min-h-[500px]">
+        <div className="w-full flex flex-col lg:flex-row h-auto lg:h-[370px] xl:h-[385px] relative">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
           <div
-            className="text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0 transition-colors duration-500"
+            className="text-white p-5 sm:p-6 lg:p-7 flex flex-col justify-between lg:w-[30%] xl:w-[27%] flex-shrink-0 transition-colors duration-500 relative z-10"
             style={{ backgroundColor: activeSlide.bgColor }}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-0.5">
-                <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
+                <p className="text-amber-300 text-xs sm:text-sm font-serif italic tracking-wide">
                   Tingo María
                 </p>
                 <p className="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 uppercase">
@@ -582,32 +599,32 @@ export function HomePage() {
                 </p>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
                 {activeSlide.title}
               </h2>
 
-              <p className="text-xs text-emerald-100/90 leading-relaxed font-normal">
+              <p className="text-xs text-emerald-100/90 leading-relaxed font-normal line-clamp-2">
                 {activeSlide.subtitle}
               </p>
 
               {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-              <div className="bg-[#00a8e8] text-white p-4 rounded-xl shadow-xs space-y-1">
-                <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
+              <div className="bg-[#00a8e8] text-white p-3 rounded-xl shadow-xs space-y-0.5">
+                <p className="text-[9.5px] font-black tracking-wider uppercase text-sky-100">
                   {activeSlide.benefitBadge}
                 </p>
-                <p className="text-sm sm:text-base font-black leading-snug">
+                <p className="text-xs sm:text-sm font-black leading-snug">
                   {activeSlide.benefitTitle}
                 </p>
-                <p className="text-[11px] text-sky-100 font-medium">
+                <p className="text-[10.5px] text-sky-100 font-medium truncate">
                   {activeSlide.benefitSubtitle}
                 </p>
               </div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-3">
               <Link
                 to={activeSlide.linkUrl}
-                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-7 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
               >
                 <span>{activeSlide.linkText}</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -615,34 +632,35 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que llenan toda la altura de la sección */}
-          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-4 sm:p-6 lg:p-7 flex flex-col justify-center">
+          {/* Flecha Anterior flotante estilo Oechsle (en el margen izquierdo) */}
+          <button
+            type="button"
+            onClick={handlePrevSlide}
+            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/60 text-white shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+            aria-label="Diapositiva anterior"
+          >
+            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+          </button>
+
+          {/* Flecha Siguiente flotante estilo Oechsle (en el margen derecho) */}
+          <button
+            type="button"
+            onClick={handleNextSlide}
+            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/60 text-white shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+            aria-label="Siguiente diapositiva"
+          >
+            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+          </button>
+
+          {/* Columna Derecha: Tarima Clara con 3 Productos erguidos a la misma altura completa (Estilo exacto Imagen 2) */}
+          <div className="relative flex-1 bg-[#ebedef] flex flex-col justify-between overflow-hidden">
             
-            {/* Flecha Anterior flotante */}
-            <button
-              type="button"
-              onClick={handlePrevSlide}
-              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
-              aria-label="Diapositiva anterior"
-            >
-              <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-            </button>
-
-            {/* Flecha Siguiente flotante */}
-            <button
-              type="button"
-              onClick={handleNextSlide}
-              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
-              aria-label="Siguiente diapositiva"
-            >
-              <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-            </button>
-
-            {/* Grid de 3 productos del slide activo - Altura completa de la sección */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
+            {/* 3 Columnas de productos - Full height de esquina a esquina, divididos por líneas sutiles */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 h-full divide-y sm:divide-y-0 sm:divide-x divide-gray-300/70 items-stretch">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
+                const hasStock = !!purchasableSku(p);
                 const img = getProductImageUrl(p);
                 const isJustAdded = addedProductId === p.id;
                 const [spec1, spec2] = getProductSpecBadges(p);
@@ -653,61 +671,65 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => navigate(categoryLink)}
-                    className="group relative h-[380px] sm:h-[420px] lg:h-[450px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    className="group relative flex flex-col justify-between p-3.5 sm:p-5 hover:bg-white/40 transition-colors duration-200 cursor-pointer h-full"
                   >
-                    {/* Badges superiores flotantes tipo especificación */}
-                    <div className="absolute top-3 inset-x-3 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
+                    {/* Badges superiores de especificaciones en píldora negra (Estilo Imagen 2) */}
+                    <div className="flex items-center justify-center gap-1.5 pt-0.5 z-10 pointer-events-none">
+                      <span className="bg-black/90 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
                         {spec1}
                       </span>
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
+                      <span className="bg-black/90 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen que llena toda la tarjeta al 100% en toda la altura */}
-                    <div className="absolute inset-0 w-full h-full overflow-hidden">
+                    {/* Imagen del producto erguida, en toda la altura central de la sección, alineada con el texto */}
+                    <div className="flex-1 flex items-center justify-center py-2 relative min-h-[160px] sm:min-h-[180px] lg:min-h-[195px]">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="max-h-[160px] sm:max-h-[180px] lg:max-h-[200px] w-auto object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/35 pointer-events-none" />
                     </div>
 
-                    {/* Información ensobre de la imagen con fondo transparente plomito (frosted glass) */}
-                    <div className="absolute bottom-3 inset-x-3 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-3 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
-                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
+                    {/* Información inferior del producto - Estilo exacto Imagen 2 de Oechsle */}
+                    <div className="pt-1 pb-1 z-10 flex flex-col">
+                      <p className="font-black text-xs sm:text-[13px] uppercase tracking-wider text-gray-900 line-clamp-1">
                         {brand}
-                      </span>
+                      </p>
 
-                      <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-1 leading-snug my-1 group-hover:text-emerald-200 transition-colors">
+                      <p className="text-[11.5px] text-gray-600 font-medium truncate mt-0.5">
                         {p.name}
-                      </h3>
+                      </p>
 
-                      <div className="flex items-center justify-center gap-2 mt-1">
-                        <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-xs tabular-nums">
-                          {sku ? money(price) : 'S/ --'}
-                        </span>
-                        {price > 0 && (
-                          <span className="text-[10px] text-gray-300 line-through tabular-nums">
-                            {money(Math.round(price * 1.25))}
+                      {/* Fila de precio con badge azul cyan, badge oferta y botón de carrito */}
+                      <div className="flex items-center justify-between gap-1.5 mt-1.5">
+                        <div className="flex items-center gap-1">
+                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-2xs tabular-nums">
+                            {sku ? money(price) : 'S/ --'}
                           </span>
-                        )}
+                          <span className="bg-black text-white text-[8.5px] font-black uppercase px-1 py-0.5 rounded-xs tracking-wider">
+                            oferta
+                          </span>
+                        </div>
+
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToCart(e, p);
                           }}
-                          className={`p-1.5 rounded-sm transition-all cursor-pointer ${
+                          disabled={!hasStock}
+                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                             isJustAdded
                               ? 'bg-emerald-600 text-white'
-                              : 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                              : hasStock
+                              ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                           }`}
                           aria-label={`Agregar ${p.name}`}
                         >
@@ -718,21 +740,28 @@ export function HomePage() {
                           )}
                         </button>
                       </div>
+
+                      {price > 0 && (
+                        <div className="flex items-center gap-2 mt-1 text-[10.5px] text-gray-400 tabular-nums">
+                          <span className="font-bold text-gray-700">{money(Math.round(price * 1.08))}</span>
+                          <span className="line-through">{money(Math.round(price * 1.25))}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Paginación de puntos inferiores */}
-            <div className="flex items-center justify-center gap-2 pt-4">
+            {/* Paginación de puntos inferiores centrada en la base del banner (Estilo Imagen 2) */}
+            <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-auto">
               {BANNER_SLIDES.map((slide, idx) => (
                 <button
                   key={slide.id}
                   type="button"
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                    currentSlide === idx ? 'w-9 bg-primary shadow-sm' : 'w-2.5 bg-gray-400 hover:bg-gray-500'
+                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                    currentSlide === idx ? 'w-7 bg-gray-800' : 'w-1.5 bg-gray-400 hover:bg-gray-600'
                   }`}
                   aria-label={`Ir a ${slide.title}`}
                 />
