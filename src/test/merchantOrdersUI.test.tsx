@@ -77,7 +77,7 @@ const mockOrderPending: Order = {
   cashTenderCents: 5000,
   cashReceivedCents: null,
   collectedByUserId: null,
-  createdAt: '2026-10-29T10:00:00.000Z',
+  createdAt: new Date().toISOString(),
   acceptanceExpiresAt: '2026-10-29T10:15:00.000Z',
   assignment: null,
   items: [

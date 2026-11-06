@@ -83,6 +83,7 @@ export const Navbar: React.FC = () => {
   }, [location.pathname, location.search]);
 
   // Active section detection
+  const isHome = location.pathname === '/';
   const isOfertasActive =
     location.pathname === '/negocios' &&
     (location.search.includes('q=oferta') || location.search.includes('descuento'));
@@ -109,7 +110,7 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
-          <div className="flex items-center justify-between h-16 sm:h-18 gap-2 sm:gap-4 py-2">
+          <div className="flex items-center justify-between min-h-[72px] sm:min-h-[78px] gap-2 sm:gap-4 py-3 sm:py-3.5">
             {/* Hamburger Button (Mobile) & Brand Logo & Categories Menu */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button
@@ -371,18 +372,36 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Sub-bar: Ubicación + Enlaces directos */}
-          <div className="hidden md:flex items-center justify-between py-2 border-t border-white/15 text-xs text-white">
+          {/* Mobile Search Bar & Zone Selector */}
+          <div className="sm:hidden pb-3 pt-1 space-y-2">
+            <SearchBar variant="navbar-mobile" />
+            <div className="flex items-center justify-between text-xs pt-1 px-0.5 text-white">
+              <ZoneSelector variant="compact" />
+              <CategoriesDropdown variant="compact" />
+            </div>
+          </div>
+        </div>
+
+        {/* Sub-bar: Ubicación + Enlaces directos */}
+        {/* En HomePage flota transparente sobre el Hero (estilo Trip.com); en otras páginas es verde sólido */}
+        <div
+          className={`hidden md:block select-none transition-colors ${
+            isHome
+              ? 'absolute top-full left-0 right-0 z-20 bg-gradient-to-b from-black/60 via-black/25 to-transparent text-white border-b border-white/10 backdrop-blur-[1px]'
+              : 'relative bg-primary border-t border-white/15 text-white'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2 text-xs">
             {/* Left: Ubicación */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 drop-shadow-sm">
               <ZoneSelector variant="navbar" />
             </div>
 
-            {/* Right: Enlaces directos sin saturación */}
-            <div className="flex items-center gap-4 lg:gap-6 font-medium text-white/90">
+            {/* Right: Enlaces directos sin saturación (Quickly Play eliminado) */}
+            <div className="flex items-center gap-4 lg:gap-6 font-medium text-white drop-shadow-sm">
               <Link
                 to="/negocios"
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 Ofertas
               </Link>
@@ -390,7 +409,7 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCouponsModal(true)}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 Cupones
               </button>
@@ -399,51 +418,31 @@ export const Navbar: React.FC = () => {
                 to={fashionLink}
                 aria-disabled={!fashionCategory}
                 onClick={(event) => { if (!fashionCategory) event.preventDefault(); }}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 Moda
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setShowPlayModal(true)}
-                className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <span className="bg-white text-primary text-[9px] font-black px-1 rounded uppercase tracking-wider py-0.5 shadow-xs">
-                  PLAY
-                </span>
-                <span>Quickly Play</span>
-              </button>
-
               <Link
                 to={venderDestination}
-                className="font-bold text-white bg-white/20 hover:bg-white/30 border border-white/30 px-3 py-1 rounded-full transition-colors cursor-pointer"
+                className="font-bold text-white bg-white/20 hover:bg-white/30 border border-white/30 px-3 py-1 rounded-full transition-colors cursor-pointer backdrop-blur-xs shadow-2xs"
               >
                 {hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}
               </Link>
 
               <Link
                 to="/cliente/pedidos"
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 Mis compras
               </Link>
 
               <Link
                 to="/cliente/ayuda"
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 Ayuda
               </Link>
-            </div>
-          </div>
-
-          {/* Mobile Search Bar & Zone Selector */}
-          <div className="sm:hidden pb-3 pt-1 space-y-2">
-            <SearchBar variant="navbar-mobile" />
-            <div className="flex items-center justify-between text-xs pt-1 px-0.5 text-white">
-              <ZoneSelector variant="compact" />
-              <CategoriesDropdown variant="compact" />
             </div>
           </div>
         </div>

@@ -179,7 +179,7 @@ export function HomePage() {
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
       {/* 1. Hero Panoramic Banner (Estilo de la segunda imagen: Fotografía panorámica con texto centrado, buscador integrado y pastillas) */}
-      <section className="relative w-full bg-emerald-950 text-white overflow-hidden py-10 sm:py-14 lg:py-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[340px] sm:min-h-[380px] lg:min-h-[420px]">
+      <section className="relative w-full bg-emerald-950 text-white overflow-hidden pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[380px] sm:min-h-[420px] lg:min-h-[460px]">
         {/* Slides de Fondo Panorámico */}
         {heroSlides.map((slide, idx) => {
           const isActive = idx === currentHeroSlide;
@@ -319,10 +319,10 @@ export function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-gray-200/80">
           <div>
             <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
-              Comercios y Productos en Tingo María
+              Productos más comprados en Tingo María
             </h2>
             <p className="text-xs text-gray-500">
-              Mostrando {filteredProducts.length} {filteredProducts.length === 1 ? 'producto disponible' : 'productos disponibles'}
+              Los artículos más pedidos y recomendados por comercios locales
             </p>
           </div>
 
@@ -579,7 +579,7 @@ export function HomePage() {
             {/* Error de carrito */}
             {addError && <p role="alert" className="text-xs font-bold text-destructive bg-red-50 p-3 rounded-xl">{addError}</p>}
 
-            {/* Grid de Productos (Estilo limpio como en la segunda imagen: Imágenes que cubren bien la parte superior y badges en las esquinas) */}
+            {/* Grid de Productos Más Comprados (Tarjetas grandes y cuadradas, poco texto: solo nombre, precio y tienda) */}
             {productsResource.loading ? (
               <div className="py-20 flex flex-col items-center justify-center gap-3 text-xs text-gray-500 bg-white rounded-2xl border border-gray-200">
                 <Loader2 className="w-7 h-7 animate-spin text-primary" />
@@ -601,91 +601,93 @@ export function HomePage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                {filteredProducts.map((item) => {
-                  const isJustAdded = addedProductId === item.id;
-                  const sku = preferredSku(item);
-                  const price = sku ? sku.priceCents : 0;
-                  const hasStock = !!purchasableSku(item);
-                  const rawImg = item.images[0]?.url;
-                  const productImg = catalogImage(rawImg);
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+                  {filteredProducts.slice(0, 8).map((item) => {
+                    const isJustAdded = addedProductId === item.id;
+                    const sku = preferredSku(item);
+                    const price = sku ? sku.priceCents : 0;
+                    const hasStock = !!purchasableSku(item);
+                    const rawImg = item.images[0]?.url;
+                    const productImg = catalogImage(rawImg);
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => setSelectedProduct(item)}
-                      className="group bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary hover:shadow-card transition-all duration-200 overflow-hidden flex flex-col justify-between text-left h-full cursor-pointer"
-                    >
-                      {/* Imagen con Badges de Esquina (Estilo de la segunda imagen: badges en esquina izquierda y derecha) */}
-                      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden border-b border-gray-100">
-                        <img
-                          src={productImg}
-                          alt={item.name}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
-                          }}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        {/* Badge Izquierdo: Estado de Envío (Verde como en el ejemplo) */}
-                        <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-                          {hasStock ? 'Disponible ahora' : 'Agotado'}
-                        </span>
-
-                        {/* Badge Derecho: Nombre/Tipo de Tienda (Blanco como en el ejemplo) */}
-                        <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-gray-800 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs truncate max-w-[100px]">
-                          {item.storeName}
-                        </span>
-                      </div>
-
-                      {/* Cuerpo de información */}
-                      <div className="p-3 flex flex-col justify-between flex-1 space-y-2">
-                        <div>
-                          {/* Categoría / Tienda */}
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-0.5 truncate">
-                            <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                            <span className="font-semibold text-gray-600 truncate">{item.storeName}</span>
-                          </div>
-
-                          {/* Nombre del producto */}
-                          <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2.5rem]">
-                            {item.name}
-                          </h3>
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => setSelectedProduct(item)}
+                        className="group bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary hover:shadow-card transition-all duration-200 overflow-hidden flex flex-col justify-between text-left h-full cursor-pointer"
+                      >
+                        {/* Imagen Cuadrada Grande */}
+                        <div className="relative aspect-square w-full bg-gray-100 overflow-hidden border-b border-gray-100">
+                          <img
+                            src={productImg}
+                            alt={item.name}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                            }}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
                         </div>
 
-                        {/* Precio & Botón de Compra */}
-                        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] text-gray-400 block">Precio online</span>
+                        {/* Contenido Limpio con Poco Texto: Tienda, Nombre y Precio */}
+                        <div className="p-3.5 sm:p-4 flex flex-col justify-between flex-1 gap-2.5">
+                          <div className="space-y-1">
+                            {/* Tienda quien lo está vendiendo */}
+                            <p className="text-xs font-semibold text-emerald-800 truncate">
+                              {item.storeName}
+                            </p>
+
+                            {/* Nombre del producto */}
+                            <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                              {item.name}
+                            </h3>
+                          </div>
+
+                          {/* Precio y Botón de Carrito */}
+                          <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
                             <span className="font-black text-sm sm:text-base text-gray-900 tabular-nums">
                               {sku ? money(price) : 'S/ --'}
                             </span>
-                          </div>
 
-                          <button
-                            type="button"
-                            onClick={(e) => handleAddToCart(e, item)}
-                            disabled={!hasStock}
-                            className={`p-2 rounded-xl transition-all cursor-pointer ${
-                              isJustAdded
-                                ? 'bg-emerald-600 text-white scale-105'
-                                : hasStock
-                                ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
-                            aria-label={`Agregar ${item.name} al carrito`}
-                          >
-                            {isJustAdded ? (
-                              <Check className="w-4 h-4 stroke-[3]" />
-                            ) : (
-                              <ShoppingCart className="w-4 h-4" />
-                            )}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleAddToCart(e, item)}
+                              disabled={!hasStock}
+                              className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+                                isJustAdded
+                                  ? 'bg-emerald-600 text-white scale-105'
+                                  : hasStock
+                                  ? 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              }`}
+                              aria-label={`Agregar ${item.name} al carrito`}
+                            >
+                              {isJustAdded ? (
+                                <Check className="w-4 h-4 stroke-[3]" />
+                              ) : (
+                                <ShoppingCart className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* Botón para ver más productos del catálogo si hay más de 8 */}
+                {filteredProducts.length > 8 && (
+                  <div className="flex justify-center pt-2 pb-1">
+                    <Link
+                      to="/negocios"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-primary hover:text-primary text-gray-800 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    >
+                      <span>Explorar todos los productos ({filteredProducts.length})</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </main>
