@@ -18,6 +18,7 @@ import {
   Heart,
   Bell,
   ChevronDown,
+  ChevronRight,
   ShoppingBag,
   Store,
   Bike,
@@ -41,6 +42,7 @@ export const Navbar: React.FC = () => {
   const notificationResource = useCustomerNotifications();
   const notifications = isAuthenticated && !notificationResource.error ? notificationResource.data || [] : [];
   const categoryResource = useRemote('navbar-category-links', signal => catalogApi.categories(signal));
+  const categories = categoryResource.error ? [] : categoryResource.data || [];
   const fashionCategory = categoryResource.error ? undefined : categoryResource.data?.find(category => ['ropa','moda','textiles'].includes(category.code));
   const fashionLink = fashionCategory ? '/negocios?categoriaProducto=' + encodeURIComponent(fashionCategory.id) : '/negocios';
   const navigate = useNavigate();
@@ -111,21 +113,22 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Top Row */}
           <div className="flex items-center justify-between min-h-[72px] sm:min-h-[78px] gap-2 sm:gap-4 py-3 sm:py-3.5">
-            {/* Hamburger Button (Mobile) & Brand Logo & Categories Menu */}
+            {/* Hamburger Button (3 rayas) & Brand Logo */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(true)}
-                className="md:hidden p-2 text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer"
-                aria-label="Abrir menú de navegación"
+                className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer border border-white/20 shadow-2xs"
+                aria-label="Abrir menú de departamentos y categorías"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5 stroke-[2.5]" />
+                <span className="hidden sm:inline font-bold text-xs">Menú</span>
               </button>
 
               <BrandLogo size="md" variant="white" />
 
-              {/* Botón Menú / Categorías con contraste blanco sobre fondo verde */}
-              <div className="hidden md:block">
+              {/* Botón rápido de categorías desplegables */}
+              <div className="hidden lg:block">
                 <CategoriesDropdown variant="menu-green" />
               </div>
             </div>
@@ -448,9 +451,9 @@ export const Navbar: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile Drawer (Menú Hamburguesa) */}
+      {/* Drawer de Navegación Estilo Amazon (Imagen 1) - Departamentos y Funcionalidades */}
       {showMobileDrawer && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50">
           {/* Backdrop oscurecedor */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
@@ -458,10 +461,22 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Drawer panel */}
-          <div className="fixed inset-y-0 left-0 max-w-[85%] w-80 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
-            {/* Drawer Header */}
-            <div className="bg-primary text-white p-4 flex items-center justify-between shadow-2xs">
-              <BrandLogo size="sm" variant="white" />
+          <div className="fixed inset-y-0 left-0 max-w-[85vw] w-80 sm:w-88 bg-white text-ink shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header estilo Amazon / Verde Oficial Quickly */}
+            <div className="bg-emerald-950 text-white p-4 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-200 font-normal leading-tight">
+                    {isAuthenticated && currentUser ? 'Bienvenido(a),' : 'Hola,'}
+                  </p>
+                  <p className="font-extrabold text-white text-sm truncate max-w-[170px]">
+                    {isAuthenticated && currentUser ? currentUser.name : 'Hola, Identifícate'}
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowMobileDrawer(false)}
@@ -473,141 +488,184 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Perfil del Usuario o Botones de Login */}
-            <div className="p-4 bg-emerald-50/60 border-b border-emerald-100">
-              {isAuthenticated && currentUser ? (
-                <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-bold">Bienvenido(a)</p>
-                  <p className="font-extrabold text-ink text-sm truncate">{currentUser.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <RoleBadge role={activeRole} />
+            {!isAuthenticated && (
+              <div className="p-3 bg-emerald-50/70 border-b border-emerald-100 flex gap-2">
+                <Link
+                  to="/login"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex-1 py-2 text-center text-xs font-black bg-primary text-white rounded-xl shadow-xs hover:bg-primary-hover transition-colors"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  to="/registro"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex-1 py-2 text-center text-xs font-bold border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Crear cuenta
+                </Link>
+              </div>
+            )}
+
+            {/* Navegación Principal con Departamentos (Estilo Imagen 1 de Amazon) */}
+            <div className="flex-1 overflow-y-auto divide-y divide-gray-150 text-xs">
+              {/* Sección 1: Buscar por departamento */}
+              <div className="p-3 space-y-1">
+                <h3 className="px-2 py-1 text-[11px] font-black text-gray-900 uppercase tracking-wider">
+                  Buscar por departamento
+                </h3>
+                <Link
+                  to="/negocios"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                >
+                  <span>Todos los comercios</span>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    to={`/negocios?categoriaProducto=${encodeURIComponent(cat.id)}`}
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                  >
+                    <span className="truncate">{cat.name}</span>
+                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+
+              {/* Sección 2: Programas y funcionalidades */}
+              <div className="p-3 space-y-1">
+                <h3 className="px-2 py-1 text-[11px] font-black text-gray-900 uppercase tracking-wider">
+                  Programas y servicios
+                </h3>
+                <Link
+                  to="/cliente/favoritos"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-gray-400" />
+                    <span>Mis Favoritos</span>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 font-semibold">Inicia sesión para pedir y rastrear</p>
-                  <div className="flex gap-2">
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+                {isAuthenticated && (
+                  <>
                     <Link
-                      to="/login"
+                      to="/cliente/pedidos"
                       onClick={() => setShowMobileDrawer(false)}
-                      className="flex-1 py-2 text-center text-xs font-black bg-primary text-white rounded-xl shadow-xs hover:bg-primary-hover transition-colors"
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
                     >
-                      Ingresar
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="w-4 h-4 text-gray-400" />
+                        <span>Mis Compras</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </Link>
                     <Link
-                      to="/registro"
+                      to="/cliente/direcciones"
                       onClick={() => setShowMobileDrawer(false)}
-                      className="flex-1 py-2 text-center text-xs font-bold border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
                     >
-                      Crear cuenta
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span>Direcciones guardadas</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </Link>
+                    <Link
+                      to="/cliente/perfil"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span>Mi Perfil</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </Link>
+                  </>
+                )}
+                <Link
+                  to={venderDestination}
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-gray-400" />
+                    <span>{hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}</span>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+                <Link
+                  to="/registro/repartidor"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Bike className="w-4 h-4 text-gray-400" />
+                    <span>Ser Repartidor</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+                <Link
+                  to="/cliente/ayuda"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                    <span>Centro de Ayuda</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+              </div>
+
+              {/* Paneles de gestión si aplica */}
+              {(roles?.includes('comercio') || roles?.includes('admin') || roles?.includes('repartidor')) && (
+                <div className="p-3 space-y-1">
+                  <h3 className="px-2 py-1 text-[11px] font-black text-gray-900 uppercase tracking-wider">
+                    Paneles de gestión
+                  </h3>
+                  {roles.includes('comercio') && (
+                    <Link
+                      to="/comercio/tienda"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 text-primary font-bold"
+                    >
+                      <span>Panel Tienda</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                  {roles.includes('repartidor') && (
+                    <Link
+                      to="/repartidor/solicitudes"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 text-primary font-bold"
+                    >
+                      <span>Panel Repartidor</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                  {roles.includes('admin') && (
+                    <Link
+                      to="/admin/resumen"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex items-center justify-between p-2 rounded-xl bg-purple-50 text-purple-700 font-bold"
+                    >
+                      <span>Panel Administrador</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Navegación Principal Móvil */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-1 text-sm font-medium">
-              <Link
-                to="/"
-                onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-              >
-                <Store className="w-4 h-4 text-gray-400" />
-                <span>Inicio & Categorías</span>
-              </Link>
-              <Link
-                to="/negocios"
-                onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-              >
-                <Tag className="w-4 h-4 text-gray-400" />
-                <span>Comercios & Catálogo</span>
-              </Link>
-              <Link
-                to="/cliente/favoritos"
-                onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-              >
-                <Heart className="w-4 h-4 text-gray-400" />
-                <span>Mis Favoritos</span>
-              </Link>
-
-              {isAuthenticated && (
-                <>
-                  <Link
-                    to="/cliente/pedidos"
-                    onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-                  >
-                    <ShoppingBag className="w-4 h-4 text-gray-400" />
-                    <span>Mis Compras</span>
-                  </Link>
-                  <Link
-                    to="/cliente/perfil"
-                    onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-                  >
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span>Mi Perfil</span>
-                  </Link>
-                </>
-              )}
-
-              {/* Acceso a Paneles según Rol */}
-              {(activeRole === 'comercio' || roles?.includes('comercio')) && (
-                <Link
-                  to="/comercio/tienda"
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
-                >
-                  <Store className="w-4 h-4 text-primary" />
-                  <span>Panel Proveedor</span>
-                </Link>
-              )}
-              {(activeRole === 'repartidor' || roles?.includes('repartidor')) && (
-                <Link
-                  to="/repartidor/solicitudes"
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50 text-primary font-bold"
-                >
-                  <Bike className="w-4 h-4 text-primary" />
-                  <span>Panel Repartidor</span>
-                </Link>
-              )}
-              {(activeRole === 'admin' || roles?.includes('admin')) && (
-                <Link
-                  to="/admin/resumen"
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold"
-                >
-                  <ShieldCheck className="w-4 h-4 text-purple-700" />
-                  <span>Panel Admin</span>
-                </Link>
-              )}
-
-              <div className="pt-2 my-2 border-t border-gray-100" />
-
-              <Link
-                to={venderDestination}
-                onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-              >
-                <Store className="w-4 h-4 text-gray-400" />
-                <span>{hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}</span>
-              </Link>
-              <Link
-                to="/cliente/ayuda"
-                onClick={() => setShowMobileDrawer(false)}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-                <span>Ayuda & Soporte</span>
-              </Link>
-            </div>
-
+            {/* Logout button si está autenticado */}
             {isAuthenticated && (
-              <div className="p-3 border-t border-gray-100">
+              <div className="p-3 border-t border-gray-100 bg-gray-50">
                 <button
                   type="button"
                   onClick={async () => {
@@ -619,7 +677,7 @@ export const Navbar: React.FC = () => {
                       setLogoutError(result.message || 'No se pudo cerrar sesión.');
                     }
                   }}
-                  className="flex items-center gap-2 w-full p-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 w-full p-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Cerrar Sesión</span>
