@@ -268,6 +268,16 @@ function getCategoryDescriptor(p: CatalogProduct): string {
   return 'disponible en comercio oficial';
 }
 
+function getProductDiscountPercent(p: CatalogProduct): number {
+  const name = (p.name || '').toLowerCase();
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('laptop')) return 25;
+  if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) return 35;
+  if (name.includes('pantalon') || name.includes('casaca') || name.includes('vestido') || name.includes('polo')) return 30;
+  if (name.includes('paraíso') || name.includes('cama') || name.includes('colchón')) return 20;
+  if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) return 25;
+  return 20;
+}
+
 function getProductCategoryLink(p: CatalogProduct, slideUrl: string): string {
   const n = (p.name || '').toLowerCase();
   if (n.includes('laptop') || n.includes('notebook') || n.includes('lenovo')) return '/negocios?q=laptop';
@@ -517,9 +527,9 @@ export function HomePage() {
     const catArrays = Array.from(byCategory.values());
     const maxLen = Math.max(...catArrays.map(a => a.length), 0);
 
-    for (let i = 0; i < maxLen && result.length < 12; i++) {
+    for (let i = 0; i < maxLen && result.length < 16; i++) {
       for (const arr of catArrays) {
-        if (arr[i] && result.length < 12) {
+        if (arr[i] && result.length < 16) {
           if (!result.some(r => r.id === arr[i].id)) {
             result.push(arr[i]);
           }
@@ -555,24 +565,24 @@ export function HomePage() {
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
       <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row min-h-[350px] lg:min-h-[385px]">
+        <div className="w-full flex flex-col lg:flex-row min-h-[460px] lg:min-h-[500px]">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
           <div
-            className="text-white p-5 sm:p-6 lg:p-7 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0 transition-colors duration-500"
+            className="text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0 transition-colors duration-500"
             style={{ backgroundColor: activeSlide.bgColor }}
           >
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="space-y-0.5">
-                <p className="text-amber-300 text-xs sm:text-sm font-serif italic tracking-wide">
+                <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
                   Tingo María
                 </p>
-                <p className="text-[10px] font-black tracking-widest text-emerald-300 uppercase">
+                <p className="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 uppercase">
                   {activeSlide.badge}
                 </p>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+              <h2 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
                 {activeSlide.title}
               </h2>
 
@@ -581,23 +591,23 @@ export function HomePage() {
               </p>
 
               {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-              <div className="bg-[#00a8e8] text-white p-3 rounded-xl shadow-xs space-y-0.5">
-                <p className="text-[9.5px] font-black tracking-wider uppercase text-sky-100">
+              <div className="bg-[#00a8e8] text-white p-4 rounded-xl shadow-xs space-y-1">
+                <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
                   {activeSlide.benefitBadge}
                 </p>
-                <p className="text-xs sm:text-sm font-black leading-snug">
+                <p className="text-sm sm:text-base font-black leading-snug">
                   {activeSlide.benefitTitle}
                 </p>
-                <p className="text-[10.5px] text-sky-100 font-medium">
+                <p className="text-[11px] text-sky-100 font-medium">
                   {activeSlide.benefitSubtitle}
                 </p>
               </div>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-6">
               <Link
                 to={activeSlide.linkUrl}
-                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-7 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
               >
                 <span>{activeSlide.linkText}</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -605,8 +615,8 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que llenan toda la tarjeta con información ensobre */}
-          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-3 sm:p-5 lg:p-6 flex flex-col justify-center">
+          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que llenan toda la altura de la sección */}
+          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-4 sm:p-6 lg:p-7 flex flex-col justify-center">
             
             {/* Flecha Anterior flotante */}
             <button
@@ -628,8 +638,8 @@ export function HomePage() {
               <ChevronRight className="w-5 h-5 stroke-[2.5]" />
             </button>
 
-            {/* Grid de 3 productos del slide activo - Más apegadas y cuadradas estilo Imagen 1 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 items-stretch px-1 sm:px-3">
+            {/* Grid de 3 productos del slide activo - Altura completa de la sección */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -643,19 +653,19 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => navigate(categoryLink)}
-                    className="group relative aspect-square sm:aspect-[4/3] max-h-[330px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    className="group relative h-[380px] sm:h-[420px] lg:h-[450px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
                   >
                     {/* Badges superiores flotantes tipo especificación */}
-                    <div className="absolute top-2.5 inset-x-2.5 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
+                    <div className="absolute top-3 inset-x-3 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
                         {spec1}
                       </span>
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen que llena toda la tarjeta al 100% */}
+                    {/* Imagen que llena toda la tarjeta al 100% en toda la altura */}
                     <div className="absolute inset-0 w-full h-full overflow-hidden">
                       <img
                         src={img}
@@ -670,17 +680,17 @@ export function HomePage() {
                     </div>
 
                     {/* Información ensobre de la imagen con fondo transparente plomito (frosted glass) */}
-                    <div className="absolute bottom-2 inset-x-2 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
+                    <div className="absolute bottom-3 inset-x-3 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-3 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
                       </span>
 
-                      <h3 className="font-bold text-xs text-white line-clamp-1 leading-snug my-0.5 group-hover:text-emerald-200 transition-colors">
+                      <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-1 leading-snug my-1 group-hover:text-emerald-200 transition-colors">
                         {p.name}
                       </h3>
 
                       <div className="flex items-center justify-center gap-2 mt-1">
-                        <span className="bg-[#00a8e8] text-white font-black text-xs px-2.5 py-0.5 rounded-sm shadow-xs tabular-nums">
+                        <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-xs tabular-nums">
                           {sku ? money(price) : 'S/ --'}
                         </span>
                         {price > 0 && (
@@ -878,8 +888,8 @@ export function HomePage() {
           </div>
         ) : (
           <>
-            {/* Grid de productos destacados estilo Imagen 3: Cuadradas, foto al 100% y tarjeta blanca flotante inferior */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {/* Grid de productos estilo Imagen 1: Sin marco ni fondo, sin borde de cuadro */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {mixedDiverseProducts.map((item) => {
                 const isJustAdded = addedProductId === item.id;
                 const sku = preferredSku(item);
@@ -887,66 +897,57 @@ export function HomePage() {
                 const hasStock = !!purchasableSku(item);
                 const productImg = getProductImageUrl(item);
                 const brand = extractBrandOrStore(item);
-                const [spec1] = getProductSpecBadges(item);
+                const discountPct = getProductDiscountPercent(item);
+                const originalPrice = price > 0 ? Math.round(price / (1 - discountPct / 100)) : 0;
 
                 return (
                   <div
                     key={item.id}
                     onClick={() => setSelectedProduct(item)}
-                    className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-200/90 bg-gray-100"
+                    className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl"
                   >
-                    {/* Imagen que llena toda la tarjeta al 100% */}
-                    <div className="absolute inset-0 w-full h-full overflow-hidden">
-                      <img
-                        src={productImg}
-                        alt={item.name}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      {/* Gradientes superior e inferior para resaltar textos */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
-                    </div>
+                    <div>
+                      {/* Imagen del producto sin marco ni fondo */}
+                      <div className="relative w-full aspect-square flex items-center justify-center p-3 mb-2 overflow-hidden bg-white rounded-xl">
+                        <img
+                          src={productImg}
+                          alt={item.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                          }}
+                          className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
 
-                    {/* Marca superior centrada en blanco elegante (Estilo Imagen 3) */}
-                    <div className="absolute top-4 inset-x-4 flex items-center justify-center pointer-events-none z-10">
-                      <span className="text-sm sm:text-base font-black uppercase tracking-widest text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                      {/* Badge ENVIO HOY estilo Falabella */}
+                      <div className="mb-1">
+                        <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                          ENVÍO HOY
+                        </span>
+                      </div>
+
+                      {/* Marca en mayúsculas negrita */}
+                      <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
                         {brand}
-                      </span>
+                      </p>
+
+                      {/* Título del producto */}
+                      <h3 className="text-xs sm:text-[13px] text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover:text-primary transition-colors">
+                        {item.name}
+                      </h3>
                     </div>
 
-                    {/* Badges laterales de capacidad y especificaciones técnicas (Estilo Imagen 3) */}
-                    <div className="absolute top-11 right-3.5 flex flex-col items-end gap-1.5 pointer-events-none z-10">
-                      <span className="bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">
-                        {spec1}
-                      </span>
-                      <div className="bg-white/90 backdrop-blur-xs text-gray-900 border border-gray-200 text-[8px] font-black px-1.5 py-0.5 rounded flex flex-col items-center shadow-xs">
-                        <span className="font-black text-[10px] leading-none text-emerald-700">A</span>
-                        <span className="text-[6.5px] uppercase font-bold text-gray-600 leading-tight">Garantía</span>
-                      </div>
-                    </div>
-
-                    {/* Módulo blanco inferior flotante (Exactamente como en la Imagen 3) */}
-                    <div className="absolute bottom-3 inset-x-3 bg-white/95 backdrop-blur-xs rounded-xl p-3 shadow-lg border border-gray-100 flex items-center justify-between gap-2 z-10">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-xs sm:text-sm text-gray-900 truncate">
-                          {item.name}
-                        </p>
-                        <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
-                          {item.storeName}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="flex flex-col items-end">
-                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded shadow-2xs tabular-nums">
+                    {/* Fila de precio con porcentaje de descuento y botón de carrito */}
+                    <div className="pt-1 mt-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
                             {sku ? money(price) : 'S/ --'}
                           </span>
-                          {price > 0 && (
-                            <span className="text-[10px] text-gray-400 line-through tabular-nums">
-                              {money(Math.round(price * 1.25))}
+                          {discountPct > 0 && (
+                            <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                              -{discountPct}%
                             </span>
                           )}
                         </div>
@@ -958,7 +959,7 @@ export function HomePage() {
                             handleAddToCart(e, item);
                           }}
                           disabled={!hasStock}
-                          className={`p-2 rounded-lg transition-all cursor-pointer ${
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
                             isJustAdded
                               ? 'bg-emerald-600 text-white'
                               : hasStock
@@ -968,12 +969,22 @@ export function HomePage() {
                           aria-label={`Agregar ${item.name} al carrito`}
                         >
                           {isJustAdded ? (
-                            <Check className="w-4 h-4 stroke-[3]" />
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
                           ) : (
-                            <ShoppingCart className="w-4 h-4" />
+                            <ShoppingCart className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </div>
+
+                      {originalPrice > price && (
+                        <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                          {money(originalPrice)}
+                        </p>
+                      )}
+
+                      <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                        {item.storeName}
+                      </p>
                     </div>
                   </div>
                 );
