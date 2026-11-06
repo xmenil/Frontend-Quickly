@@ -23,8 +23,6 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 
-import heroFamilyGroceries from '../../assets/img/image copy 2.png';
-
 export function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -44,8 +42,13 @@ export function HomePage() {
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
 
-  // 3 Productos patrocinados/destacados con imágenes nítidas de la base de datos (Estilo Imagen 2 y 3)
+  // Productos famosos de la selva / platos típicos patrocinados (Tacacho con cecina, juane, pollo a la brasa)
   const sponsoredProducts = useMemo(() => {
+    const dishes = allProducts.filter(p => {
+      const n = (p.name || '').toLowerCase();
+      return (n.includes('tacacho') || n.includes('juane') || n.includes('pollo a la brasa') || n.includes('chaufa')) && !!purchasableSku(p);
+    });
+    if (dishes.length >= 3) return dishes.slice(0, 3);
     const withImages = allProducts.filter(p => p.images && p.images.length > 0 && !!purchasableSku(p));
     return withImages.length >= 3 ? withImages.slice(0, 3) : allProducts.slice(0, 3);
   }, [allProducts]);
@@ -73,121 +76,124 @@ export function HomePage() {
   return (
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
-      {/* 1. Banner Principal Promocional Patrocinando Productos (Estilo Imagen 2 de AliExpress e Imagen 3 de Oechsle) */}
-      <section className="relative w-full bg-gradient-to-r from-emerald-950 via-primary-dark to-emerald-900 text-white overflow-hidden py-10 sm:py-14 lg:py-16 px-4 sm:px-6 lg:px-8 border-b border-primary-dark/20">
-        {/* Fondo sutil con imagen local integrada suavemente */}
-        <div className="absolute inset-0 z-0 opacity-15 mix-blend-luminosity pointer-events-none">
-          <img
-            src={heroFamilyGroceries}
-            alt="Fondo Tingo María"
-            className="w-full h-full object-cover object-center filter blur-[1px]"
-          />
-        </div>
+      {/* 1. Banner Promocional Oechsle / Falabella (Exacto a Imagen 4) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="bg-[#f3f4f6] rounded-3xl overflow-hidden shadow-lg border border-gray-200/90 flex flex-col lg:flex-row min-h-[360px] sm:min-h-[400px]">
+          {/* Columna Izquierda: Fondo Verde Selva Oscuro con Tipografía Promocional */}
+          <div className="bg-[#042817] text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[35%] xl:w-[32%] relative overflow-hidden">
+            <div className="absolute top-3 right-4 text-emerald-400/25 text-xl font-bold select-none pointer-events-none">✦</div>
+            <div className="absolute bottom-6 left-6 text-amber-300/15 text-2xl font-bold select-none pointer-events-none">★</div>
 
-        <div className="max-w-7xl mx-auto w-full relative z-10 grid lg:grid-cols-12 gap-8 items-center">
-          {/* Columna Izquierda: Mensaje Promocional y Buscador */}
-          <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-white border border-white/20 shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Promociones en Tingo María · Envíos Express</span>
+            <div className="space-y-3 relative z-10">
+              <span className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
+                Tingo María · Sabores de la Selva
+              </span>
+
+              <div className="space-y-1">
+                <p className="text-[11px] font-black tracking-widest text-emerald-300 uppercase">
+                  GASTRONOMÍA LOCAL
+                </p>
+                <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                  PLATOS TÍPICOS
+                </h2>
+              </div>
+
+              <p className="text-xs text-emerald-100/90 leading-relaxed font-normal pt-1">
+                Disfruta del auténtico sabor amazónico preparado al momento por los mejores restaurantes de la ciudad.
+              </p>
+
+              <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-xs text-emerald-200 text-[11px] font-bold px-3 py-1.5 rounded-full border border-white/15">
+                <span>🛵 Envíos Express · Pago Contra Entrega</span>
+              </div>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight leading-tight">
-              Lo mejor de tu ciudad,{' '}
-              <span className="text-emerald-300 underline decoration-emerald-400/40">directo a tu mesa</span>
-            </h1>
-
-            <p className="text-xs sm:text-sm text-emerald-100/90 max-w-lg mx-auto lg:mx-0 leading-relaxed font-normal">
-              Pide de tus restaurantes favoritos, pollerías, boticas y bodegas de Rupa Rupa y Castillo Grande con entrega rápida y pago contra entrega en efectivo.
-            </p>
-
-            {/* Buscador Integrado en el Banner */}
-            <div className="pt-1 max-w-md mx-auto lg:mx-0">
-              <SearchBar
-                placeholder="¿Qué estás buscando? Restaurantes, boticas..."
-                className="shadow-xl"
-              />
-            </div>
-
-            {/* Botones de acción rápida */}
-            <div className="pt-2 flex items-center justify-center lg:justify-start gap-3 text-xs">
+            <div className="pt-6 relative z-10">
               <Link
                 to="/negocios"
-                className="px-5 py-2.5 rounded-xl bg-white text-primary font-black hover:bg-emerald-50 shadow-md transition-all flex items-center gap-1.5"
+                className="inline-flex items-center gap-2 bg-white text-[#042817] hover:bg-emerald-50 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
               >
-                <span>Ver ofertas</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/negocios"
-                className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold border border-white/20 transition-all"
-              >
-                Ver comercios
+                <span>Ver más</span>
+                <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
           </div>
 
-          {/* Columna Derecha: Tarjetas de Productos Patrocinados (Como en Imagen 3 de Oechsle) */}
-          <div className="lg:col-span-7 w-full">
-            <div className="flex items-center justify-between pb-2 text-white">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-200">
-                <Tag className="w-3.5 h-3.5" />
-                <span>Productos patrocinados de comercios locales</span>
-              </div>
-              <span className="text-[11px] text-emerald-100 font-semibold">Tingo María</span>
-            </div>
-
-            {/* Grid de 3 productos patrocinados en tarjetas nítidas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              {sponsoredProducts.map((p) => {
+          {/* Columna Derecha: Tarima Clara con los Productos Posados Directamente (SIN tarjetas blancas) */}
+          <div className="flex-1 p-6 sm:p-8 bg-gradient-to-r from-[#eceef1] via-[#f3f4f6] to-[#f8f9fa] flex flex-col justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 lg:gap-6 items-stretch">
+              {sponsoredProducts.map((p, idx) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
                 const rawImg = p.images[0]?.url;
                 const img = catalogImage(rawImg);
                 const isJustAdded = addedProductId === p.id;
 
+                const specBadges = idx === 0
+                  ? ['Plato Típico', '100% Selva']
+                  : idx === 1
+                  ? ['Tradicional', 'Gallina de Chacra']
+                  : ['Familiar', 'Brasas & Sazón'];
+
                 return (
                   <div
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className="bg-white rounded-2xl p-3 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 text-left cursor-pointer flex flex-col justify-between border border-gray-150 group"
+                    className="flex flex-col justify-between items-center text-center cursor-pointer group transition-transform duration-200 hover:-translate-y-1"
                   >
-                    {/* Imagen Cuadrada Nítida */}
-                    <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gray-100 mb-2 border border-gray-100">
+                    {/* Badges superiores tipo especificación en negro claro (Imagen 4) */}
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2 w-full">
+                      {specBadges.map((badge, bIdx) => (
+                        <span
+                          key={bIdx}
+                          className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Imagen posada directamente sobre el fondo claro, sin caja blanca */}
+                    <div className="relative aspect-square w-full max-w-[200px] sm:max-w-none flex items-center justify-center my-1">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 rounded-xl"
+                        loading="lazy"
                       />
-                      <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-xs truncate max-w-[110px]">
-                        {p.storeName}
-                      </span>
                     </div>
 
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2.25rem]">
+                    {/* Información debajo de la foto */}
+                    <div className="w-full space-y-1.5 mt-2 flex flex-col items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 line-clamp-1">
+                        {p.storeName || 'Comercio Local'}
+                      </span>
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug max-w-[220px]">
                         {p.name}
-                      </h4>
+                      </h3>
 
-                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                        <span className="font-black text-sm sm:text-base text-gray-900 tabular-nums">
+                      {/* Precio destacado en pastilla verde con botón de carrito */}
+                      <div className="pt-1 flex items-center justify-center gap-2">
+                        <span className="bg-primary text-white font-black text-xs sm:text-sm px-3 py-1 rounded-md shadow-xs tabular-nums">
                           {sku ? money(price) : 'S/ --'}
                         </span>
-
                         <button
                           type="button"
                           onClick={(e) => handleAddToCart(e, p)}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${
+                          className={`p-1.5 rounded-md transition-all cursor-pointer ${
                             isJustAdded
-                              ? 'bg-emerald-600 text-white'
+                              ? 'bg-emerald-700 text-white'
                               : 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
                           }`}
                           aria-label={`Agregar ${p.name}`}
                         >
-                          {isJustAdded ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+                          {isJustAdded ? (
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          ) : (
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -197,7 +203,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Alerta de error de carrito */}
       {addError && (

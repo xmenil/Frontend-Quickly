@@ -345,7 +345,7 @@ export const MerchantsPage: React.FC = () => {
           </div>
 
           {/* Category Chips Scrollable */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.id;
               return (
@@ -359,10 +359,10 @@ export const MerchantsPage: React.FC = () => {
                     if (cat.id !== 'all') newParams.categoria = cat.id;
                     setSearchParams(newParams);
                   }}
-                  className={`whitespace-nowrap px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  className={`whitespace-nowrap px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border shadow-2xs ${
                     isSelected
-                      ? 'bg-primary text-white shadow-xs ring-2 ring-primary/20'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200/70 hover:text-ink'
+                      ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary'
                   }`}
                 >
                   {cat.label}

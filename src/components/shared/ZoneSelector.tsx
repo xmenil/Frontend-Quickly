@@ -5,7 +5,7 @@ import { MapPin, ChevronDown, Check, Clock, Bike, X, Loader2 } from 'lucide-reac
 
 interface ZoneSelectorProps {
   className?: string;
-  variant?: 'navbar' | 'compact' | 'button' | 'header-light';
+  variant?: 'navbar' | 'compact' | 'button' | 'header-light' | 'topbar';
   onChangeZone?: (zoneId: string) => void;
 }
 
@@ -81,6 +81,18 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
               <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-primary" />
             </span>
           </div>
+        </button>
+      ) : variant === 'topbar' ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className={`flex items-center gap-1.5 text-xs text-gray-300 hover:text-white transition-colors cursor-pointer ${className}`}
+          aria-label={`Zona de entrega actual: ${currentZone?.name || 'Tingo María'}. Clic para cambiar`}
+        >
+          <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+          <span className="text-gray-400 font-normal">Enviar a</span>
+          <span className="font-bold text-white max-w-[150px] truncate">{currentZone?.name || 'Tingo María'}</span>
+          <ChevronDown className="w-3 h-3 text-gray-400" />
         </button>
       ) : variant === 'navbar' ? (
         <button

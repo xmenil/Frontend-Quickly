@@ -246,14 +246,14 @@ export const MerchantDetailPage: React.FC = () => {
 
           {/* Sub-filter chips if applicable */}
           {productCategories.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
               <button
                 type="button"
                 onClick={() => setActiveCategoryFilter('all')}
-                className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`touch-target px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border shadow-2xs ${
                   activeCategoryFilter === 'all'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary'
                 }`}
               >
                 Todos
@@ -263,10 +263,10 @@ export const MerchantDetailPage: React.FC = () => {
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategoryFilter(cat)}
-                  className={`touch-target px-3.5 py-1.5 text-xs font-bold rounded-xl capitalize transition-all cursor-pointer ${
+                  className={`touch-target px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl capitalize transition-all cursor-pointer border shadow-2xs ${
                     activeCategoryFilter === cat
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary'
                   }`}
                 >
                   {merchantProducts.find(product => product.categoryId === cat)?.categoryName || cat}

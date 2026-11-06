@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from './BrandLogo';
-import { CategoriesDropdown } from './CategoriesDropdown';
 import { ZoneSelector } from './ZoneSelector';
 import { SearchBar } from './SearchBar';
 import { CouponsModal } from './CouponsModal';
@@ -108,30 +107,85 @@ export const Navbar: React.FC = () => {
     <>
       {logoutError && <p role="alert" className="bg-red-50 p-3 text-sm text-red-800">{logoutError}</p>}
       
-      {/* Header oficial con verde característico de Quickly y diseño limpio */}
-      <header className="sticky top-0 z-30 bg-primary border-b border-primary-dark/20 shadow-md select-none text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Main Top Row */}
-          <div className="flex items-center justify-between min-h-[72px] sm:min-h-[78px] gap-2 sm:gap-4 py-3 sm:py-3.5">
-            {/* Hamburger Button (3 rayas) & Brand Logo */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      {/* Header oficial con top bar en negro claro y barra principal verde característico de Quickly */}
+      <header className="sticky top-0 z-30 shadow-md select-none text-white">
+        {/* Barra superior de utilidades en Negro Claro (Estilo pc Factory en Imagen 3) */}
+        <div className="hidden md:block bg-[#18181b] text-gray-300 border-b border-white/10 text-[11px] font-medium">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
+            {/* Ubicación / Selector de Zona */}
+            <div className="flex items-center gap-2">
+              <ZoneSelector variant="topbar" />
+            </div>
+
+            {/* Enlaces Rápidos Reales */}
+            <div className="flex items-center gap-4 lg:gap-6">
+              <Link
+                to="/negocios?q=oferta"
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Ofertas
+              </Link>
+
               <button
                 type="button"
-                onClick={() => setShowMobileDrawer(true)}
-                className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer border border-white/20 shadow-2xs"
-                aria-label="Abrir menú de departamentos y categorías"
+                onClick={() => setShowCouponsModal(true)}
+                className="hover:text-white transition-colors cursor-pointer"
               >
-                <Menu className="w-5 h-5 stroke-[2.5]" />
-                <span className="hidden sm:inline font-bold text-xs">Menú</span>
+                Cupones
               </button>
 
-              <BrandLogo size="md" variant="white" />
+              <Link
+                to={fashionLink}
+                aria-disabled={!fashionCategory}
+                onClick={(event) => { if (!fashionCategory) event.preventDefault(); }}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Moda
+              </Link>
 
-              {/* Botón rápido de categorías desplegables */}
-              <div className="hidden lg:block">
-                <CategoriesDropdown variant="menu-green" />
-              </div>
+              <Link
+                to={venderDestination}
+                className="bg-white text-primary font-bold px-3 py-0.5 rounded-full shadow-xs hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                {hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}
+              </Link>
+
+              <Link
+                to="/cliente/pedidos"
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Mis compras
+              </Link>
+
+              <Link
+                to="/cliente/ayuda"
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Ayuda
+              </Link>
             </div>
+          </div>
+        </div>
+
+        {/* Barra Principal Verde Quickly */}
+        <div className="bg-primary border-b border-primary-dark/20 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Main Top Row */}
+            <div className="flex items-center justify-between min-h-[70px] sm:min-h-[74px] gap-2 sm:gap-4 py-2.5 sm:py-3">
+              {/* Hamburger Button (3 rayas) & Brand Logo */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowMobileDrawer(true)}
+                  className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer border border-white/20 shadow-2xs"
+                  aria-label="Abrir menú de departamentos y categorías"
+                >
+                  <Menu className="w-5 h-5 stroke-[2.5]" />
+                  <span className="hidden sm:inline font-bold text-xs">Menú</span>
+                </button>
+
+                <BrandLogo size="md" variant="white" />
+              </div>
 
             {/* Desktop Search Bar */}
             <div className="hidden sm:flex flex-1 max-w-xl mx-2 lg:mx-4">
@@ -380,76 +434,11 @@ export const Navbar: React.FC = () => {
             <SearchBar variant="navbar-mobile" />
             <div className="flex items-center justify-between text-xs pt-1 px-0.5 text-white">
               <ZoneSelector variant="compact" />
-              <CategoriesDropdown variant="compact" />
             </div>
           </div>
         </div>
-
-        {/* Sub-bar: Ubicación + Enlaces directos */}
-        {/* En HomePage flota transparente sobre el Hero (estilo Trip.com); en otras páginas es verde sólido */}
-        <div
-          className={`hidden md:block select-none transition-colors ${
-            isHome
-              ? 'absolute top-full left-0 right-0 z-20 bg-gradient-to-b from-black/60 via-black/25 to-transparent text-white border-b border-white/10 backdrop-blur-[1px]'
-              : 'relative bg-primary border-t border-white/15 text-white'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2 text-xs">
-            {/* Left: Ubicación */}
-            <div className="flex items-center gap-2 drop-shadow-sm">
-              <ZoneSelector variant="navbar" />
-            </div>
-
-            {/* Right: Enlaces directos sin saturación (Quickly Play eliminado) */}
-            <div className="flex items-center gap-4 lg:gap-6 font-medium text-white drop-shadow-sm">
-              <Link
-                to="/negocios"
-                className="hover:text-emerald-300 transition-colors cursor-pointer"
-              >
-                Ofertas
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => setShowCouponsModal(true)}
-                className="hover:text-emerald-300 transition-colors cursor-pointer"
-              >
-                Cupones
-              </button>
-
-              <Link
-                to={fashionLink}
-                aria-disabled={!fashionCategory}
-                onClick={(event) => { if (!fashionCategory) event.preventDefault(); }}
-                className="hover:text-emerald-300 transition-colors cursor-pointer"
-              >
-                Moda
-              </Link>
-
-              <Link
-                to={venderDestination}
-                className="font-bold text-white bg-white/20 hover:bg-white/30 border border-white/30 px-3 py-1 rounded-full transition-colors cursor-pointer backdrop-blur-xs shadow-2xs"
-              >
-                {hasMerchantRole ? 'Mi Tienda' : 'Vender en Quickly'}
-              </Link>
-
-              <Link
-                to="/cliente/pedidos"
-                className="hover:text-emerald-300 transition-colors cursor-pointer"
-              >
-                Mis compras
-              </Link>
-
-              <Link
-                to="/cliente/ayuda"
-                className="hover:text-emerald-300 transition-colors cursor-pointer"
-              >
-                Ayuda
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      </div>
+    </header>
 
       {/* Drawer de Navegación Estilo Amazon (Imagen 1) - Departamentos y Funcionalidades */}
       {showMobileDrawer && (
