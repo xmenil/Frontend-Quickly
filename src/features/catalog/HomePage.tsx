@@ -23,6 +23,42 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 
+function extractBrandOrStore(p: CatalogProduct): string {
+  if (p.brand && p.brand.trim()) return p.brand.toUpperCase();
+  const name = (p.name || '').toUpperCase();
+  const brands = ['XIAOMI', 'SAMSUNG', 'APPLE', 'HONOR', 'HUAWEI', 'LENOVO', 'LG', 'OSTER', 'PHILIPS', 'VANS', 'MABE', 'INDURAMA', 'HAYLOU'];
+  for (const b of brands) {
+    if (name.includes(b)) return b;
+  }
+  return (p.storeName || 'TIENDA LOCAL').toUpperCase();
+}
+
+function getProductSpecBadges(p: CatalogProduct): [string, string] {
+  const name = (p.name || '').toLowerCase();
+
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('redmi') || name.includes('samsung') || name.includes('galaxy') || name.includes('xiaomi') || name.includes('honor')) {
+    if (name.includes('256gb')) return ['256GB ROM', '8GB RAM'];
+    if (name.includes('128gb')) return ['128GB ROM', '6GB RAM'];
+    return ['PANTALLA AMOLED', 'OCTA CORE'];
+  }
+  if (name.includes('smartwatch') || name.includes('reloj') || name.includes('band')) {
+    return ['BLUETOOTH', 'RESISTENTE AL AGUA'];
+  }
+  if (name.includes('laptop') || name.includes('notebook')) {
+    return ['16GB RAM', '512GB SSD'];
+  }
+  if (name.includes('tv') || name.includes('televisor')) {
+    return ['4K ULTRA HD', 'SMART TV'];
+  }
+  if (name.includes('zapatillas') || name.includes('polo') || name.includes('pantalon') || name.includes('denim')) {
+    return ['ORIGINAL', 'ALTA CALIDAD'];
+  }
+  if (name.includes('bloqueador') || name.includes('repelente')) {
+    return ['DERMATOLÓGICO', 'PROTECCIÓN UV'];
+  }
+  return ['ENVÍO EXPRESS', 'EN STOCK'];
+}
+
 export function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -42,13 +78,27 @@ export function HomePage() {
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
 
-  // Productos famosos de la selva / platos típicos patrocinados (Tacacho con cecina, juane, pollo a la brasa)
+  // Productos generales destacados (tecnología, electrohogar, calzado, etc.) - NO sólo comida
   const sponsoredProducts = useMemo(() => {
-    const dishes = allProducts.filter(p => {
-      const n = (p.name || '').toLowerCase();
-      return (n.includes('tacacho') || n.includes('juane') || n.includes('pollo a la brasa') || n.includes('chaufa')) && !!purchasableSku(p);
+    // 1. Priorizamos productos generales fuera de comida que tengan imagen y SKU
+    const nonFood = allProducts.filter(p => {
+      const name = (p.name || '').toLowerCase();
+      const isFood = name.includes('pollo a la brasa') || name.includes('juane') || name.includes('tacacho') || name.includes('chaufa') || name.includes('costillas') || name.includes('patarashca') || name.includes('cecina');
+      return !isFood && !!purchasableSku(p) && p.images && p.images.length > 0;
     });
-    if (dishes.length >= 3) return dishes.slice(0, 3);
+
+    if (nonFood.length >= 3) return nonFood.slice(0, 3);
+
+    // 2. Fallback: Cualquier producto no gastronómico con SKU
+    const anyNonFood = allProducts.filter(p => {
+      const name = (p.name || '').toLowerCase();
+      const isFood = name.includes('pollo a la brasa') || name.includes('juane') || name.includes('tacacho') || name.includes('chaufa');
+      return !isFood && !!purchasableSku(p);
+    });
+
+    if (anyNonFood.length >= 3) return anyNonFood.slice(0, 3);
+
+    // 3. Fallback general
     const withImages = allProducts.filter(p => p.images && p.images.length > 0 && !!purchasableSku(p));
     return withImages.length >= 3 ? withImages.slice(0, 3) : allProducts.slice(0, 3);
   }, [allProducts]);
@@ -76,125 +126,124 @@ export function HomePage() {
   return (
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
-      {/* 1. Banner Promocional Oechsle / Falabella (Exacto a Imagen 4) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
-        <div className="bg-[#f3f4f6] rounded-3xl overflow-hidden shadow-lg border border-gray-200/90 flex flex-col lg:flex-row min-h-[360px] sm:min-h-[400px]">
-          {/* Columna Izquierda: Fondo Verde Selva Oscuro con Tipografía Promocional */}
-          <div className="bg-[#042817] text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[35%] xl:w-[32%] relative overflow-hidden">
-            <div className="absolute top-3 right-4 text-emerald-400/25 text-xl font-bold select-none pointer-events-none">✦</div>
-            <div className="absolute bottom-6 left-6 text-amber-300/15 text-2xl font-bold select-none pointer-events-none">★</div>
-
-            <div className="space-y-3 relative z-10">
-              <span className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
-                Tingo María · Sabores de la Selva
-              </span>
-
-              <div className="space-y-1">
-                <p className="text-[11px] font-black tracking-widest text-emerald-300 uppercase">
-                  GASTRONOMÍA LOCAL
+      {/* 1. Banner Promocional Oechsle / Falabella - De esquina a esquina y con productos generales grandes sin fondo */}
+      <section className="w-full bg-[#f3f4f6] border-b border-gray-200">
+        <div className="max-w-[1440px] mx-auto w-full flex flex-col lg:flex-row min-h-[440px] lg:min-h-[480px]">
+          {/* Columna Izquierda: Fondo Verde Selva Oscuro con Tipografía Promocional en Texto Plano (Sin Emojis) */}
+          <div className="bg-[#042817] text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0">
+            <div className="space-y-4">
+              <div className="space-y-0.5">
+                <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
+                  Tingo María
                 </p>
-                <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                  PLATOS TÍPICOS
-                </h2>
+                <p className="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 uppercase">
+                  COMERCIO LOCAL
+                </p>
               </div>
 
-              <p className="text-xs text-emerald-100/90 leading-relaxed font-normal pt-1">
-                Disfruta del auténtico sabor amazónico preparado al momento por los mejores restaurantes de la ciudad.
-              </p>
+              <h2 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+                PRODUCTOS DESTACADOS
+              </h2>
 
-              <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-xs text-emerald-200 text-[11px] font-bold px-3 py-1.5 rounded-full border border-white/15">
-                <span>🛵 Envíos Express · Pago Contra Entrega</span>
+              {/* Tarjeta de beneficio tipo recuadro cyan en Oechsle */}
+              <div className="bg-[#00a8e8] text-white p-4 rounded-xl shadow-xs space-y-1">
+                <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
+                  ENVÍOS EXPRESS EN EL DÍA
+                </p>
+                <p className="text-sm sm:text-base font-black leading-snug">
+                  Pago contra entrega en efectivo
+                </p>
+                <p className="text-[11px] text-sky-100 font-medium">
+                  En productos seleccionados de comercios locales
+                </p>
               </div>
             </div>
 
-            <div className="pt-6 relative z-10">
+            <div className="pt-6">
               <Link
                 to="/negocios"
-                className="inline-flex items-center gap-2 bg-white text-[#042817] hover:bg-emerald-50 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#042817] hover:bg-gray-100 px-7 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
               >
                 <span>Ver más</span>
-                <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-0.5 transition-transform" />
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
           </div>
 
-          {/* Columna Derecha: Tarima Clara con los Productos Posados Directamente (SIN tarjetas blancas) */}
-          <div className="flex-1 p-6 sm:p-8 bg-gradient-to-r from-[#eceef1] via-[#f3f4f6] to-[#f8f9fa] flex flex-col justify-center">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 lg:gap-6 items-stretch">
-              {sponsoredProducts.map((p, idx) => {
+          {/* Columna Derecha: Tarima Clara con los Productos Grandes sin fondo que cubren la tarima */}
+          <div className="flex-1 bg-gradient-to-r from-[#eceef1] via-[#f3f4f6] to-[#eceef1] p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200/80 items-stretch">
+              {sponsoredProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
                 const rawImg = p.images[0]?.url;
                 const img = catalogImage(rawImg);
                 const isJustAdded = addedProductId === p.id;
-
-                const specBadges = idx === 0
-                  ? ['Plato Típico', '100% Selva']
-                  : idx === 1
-                  ? ['Tradicional', 'Gallina de Chacra']
-                  : ['Familiar', 'Brasas & Sazón'];
+                const [spec1, spec2] = getProductSpecBadges(p);
+                const brand = extractBrandOrStore(p);
 
                 return (
                   <div
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className="flex flex-col justify-between items-center text-center cursor-pointer group transition-transform duration-200 hover:-translate-y-1"
+                    className="flex flex-col justify-between items-center text-center p-4 sm:p-5 lg:p-6 cursor-pointer group transition-all duration-200 hover:bg-white/50"
                   >
-                    {/* Badges superiores tipo especificación en negro claro (Imagen 4) */}
+                    {/* Badges superiores tipo especificación en negro claro (Imagen Oechsle) */}
                     <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2 w-full">
-                      {specBadges.map((badge, bIdx) => (
-                        <span
-                          key={bIdx}
-                          className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs"
-                        >
-                          {badge}
-                        </span>
-                      ))}
+                      <span className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs">
+                        {spec1}
+                      </span>
+                      <span className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs">
+                        {spec2}
+                      </span>
                     </div>
 
-                    {/* Imagen posada directamente sobre el fondo claro, sin caja blanca */}
-                    <div className="relative aspect-square w-full max-w-[200px] sm:max-w-none flex items-center justify-center my-1">
+                    {/* Imagen grande sin fondo que cubre la tarima con sombra suave en la base */}
+                    <div className="relative w-full h-56 sm:h-64 lg:h-72 flex items-center justify-center my-2">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 rounded-xl"
+                        className="h-full w-auto max-w-full object-contain mix-blend-multiply filter drop-shadow-[0_12px_14px_rgba(0,0,0,0.18)] group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
                     </div>
 
-                    {/* Información debajo de la foto */}
+                    {/* Información debajo de la foto: Marca, Nombre y Pastilla de Precio */}
                     <div className="w-full space-y-1.5 mt-2 flex flex-col items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 line-clamp-1">
-                        {p.storeName || 'Comercio Local'}
+                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-900 line-clamp-1">
+                        {brand}
                       </span>
-                      <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug max-w-[220px]">
+
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-snug max-w-[220px]">
                         {p.name}
                       </h3>
 
-                      {/* Precio destacado en pastilla verde con botón de carrito */}
-                      <div className="pt-1 flex items-center justify-center gap-2">
-                        <span className="bg-primary text-white font-black text-xs sm:text-sm px-3 py-1 rounded-md shadow-xs tabular-nums">
-                          {sku ? money(price) : 'S/ --'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToCart(e, p)}
-                          className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                            isJustAdded
-                              ? 'bg-emerald-700 text-white'
-                              : 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
-                          }`}
-                          aria-label={`Agregar ${p.name}`}
-                        >
-                          {isJustAdded ? (
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          ) : (
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                      {/* Pastilla de precio en cyan brillante estilo Oechsle */}
+                      <div className="pt-1 flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-2xs tabular-nums">
+                            {sku ? money(price) : 'S/ --'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToCart(e, p)}
+                            className={`p-1.5 rounded-sm transition-all cursor-pointer ${
+                              isJustAdded
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                            }`}
+                            aria-label={`Agregar ${p.name}`}
+                          >
+                            {isJustAdded ? (
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            ) : (
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -203,7 +252,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Alerta de error de carrito */}
       {addError && (
@@ -306,7 +355,7 @@ export function HomePage() {
                 <span className={`font-bold px-2 py-0.5 rounded-full ${
                   st.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
                 }`}>
-                  {st.isOpen ? '● Abierto ahora' : '○ Cerrado'}
+                  {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
                 </span>
                 <span className="font-bold text-primary flex items-center">
                   Entrar <ChevronRight className="w-3 h-3" />
