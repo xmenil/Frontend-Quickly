@@ -582,14 +582,14 @@ export function HomePage() {
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
       <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row h-auto lg:h-[370px] xl:h-[385px] relative">
+        <div className="w-full flex flex-col lg:flex-row items-stretch relative">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
           <div
-            className="text-white p-5 sm:p-6 lg:p-7 flex flex-col justify-between lg:w-[30%] xl:w-[27%] flex-shrink-0 transition-colors duration-500 relative z-10"
+            className="text-white p-4 sm:p-5 lg:p-6 flex flex-col justify-between lg:w-[28%] xl:w-[26%] flex-shrink-0 transition-colors duration-500 relative z-10"
             style={{ backgroundColor: activeSlide.bgColor }}
           >
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="space-y-0.5">
                 <p className="text-amber-300 text-xs sm:text-sm font-serif italic tracking-wide">
                   Tingo María
@@ -599,7 +599,7 @@ export function HomePage() {
                 </p>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                 {activeSlide.title}
               </h2>
 
@@ -608,23 +608,23 @@ export function HomePage() {
               </p>
 
               {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-              <div className="bg-[#00a8e8] text-white p-3 rounded-xl shadow-xs space-y-0.5">
+              <div className="bg-[#00a8e8] text-white p-2.5 rounded-xl shadow-xs space-y-0.5">
                 <p className="text-[9.5px] font-black tracking-wider uppercase text-sky-100">
                   {activeSlide.benefitBadge}
                 </p>
                 <p className="text-xs sm:text-sm font-black leading-snug">
                   {activeSlide.benefitTitle}
                 </p>
-                <p className="text-[10.5px] text-sky-100 font-medium truncate">
+                <p className="text-[10px] text-sky-100 font-medium truncate">
                   {activeSlide.benefitSubtitle}
                 </p>
               </div>
             </div>
 
-            <div className="pt-3">
+            <div className="pt-2">
               <Link
                 to={activeSlide.linkUrl}
-                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-5 py-2 rounded-full font-black text-xs shadow-md transition-all group"
               >
                 <span>{activeSlide.linkText}</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -632,31 +632,11 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Flecha Anterior flotante estilo Oechsle (en el margen izquierdo) */}
-          <button
-            type="button"
-            onClick={handlePrevSlide}
-            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/60 text-white shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
-            aria-label="Diapositiva anterior"
-          >
-            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-          </button>
-
-          {/* Flecha Siguiente flotante estilo Oechsle (en el margen derecho) */}
-          <button
-            type="button"
-            onClick={handleNextSlide}
-            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/60 text-white shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
-            aria-label="Siguiente diapositiva"
-          >
-            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-          </button>
-
-          {/* Columna Derecha: Tarima Clara con 3 Productos erguidos a la misma altura completa (Estilo exacto Imagen 2) */}
-          <div className="relative flex-1 bg-[#ebedef] flex flex-col justify-between overflow-hidden">
+          {/* Columna Derecha: Tarima ajustada a la altura de los productos sin vacíos blancos */}
+          <div className="relative flex-1 bg-[#f3f4f6] flex items-center justify-center p-2 sm:p-2.5 lg:p-3 overflow-hidden">
             
-            {/* 3 Columnas de productos - Full height de esquina a esquina, divididos por líneas sutiles */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 h-full divide-y sm:divide-y-0 sm:divide-x divide-gray-300/70 items-stretch">
+            {/* Grid de 3 productos cuadrados que ocupan todo el fondo de su tarjeta */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-3.5 w-full items-stretch">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -671,50 +651,52 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => navigate(categoryLink)}
-                    className="group relative flex flex-col justify-between p-3.5 sm:p-5 hover:bg-white/40 transition-colors duration-200 cursor-pointer h-full"
+                    className="group relative aspect-square w-full rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
                   >
-                    {/* Badges superiores de especificaciones en píldora negra (Estilo Imagen 2) */}
-                    <div className="flex items-center justify-center gap-1.5 pt-0.5 z-10 pointer-events-none">
-                      <span className="bg-black/90 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+                    {/* Badges superiores flotantes de especificaciones */}
+                    <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
                         {spec1}
                       </span>
-                      <span className="bg-black/90 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen del producto erguida, en toda la altura central de la sección, alineada con el texto */}
-                    <div className="flex-1 flex items-center justify-center py-2 relative min-h-[160px] sm:min-h-[180px] lg:min-h-[195px]">
+                    {/* Imagen cuadrada que cubre el 100% del fondo sin dejar vacíos blancos */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="max-h-[160px] sm:max-h-[180px] lg:max-h-[200px] w-auto object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/35 pointer-events-none" />
                     </div>
 
-                    {/* Información inferior del producto - Estilo exacto Imagen 2 de Oechsle */}
-                    <div className="pt-1 pb-1 z-10 flex flex-col">
-                      <p className="font-black text-xs sm:text-[13px] uppercase tracking-wider text-gray-900 line-clamp-1">
+                    {/* Módulo inferior flotante con la información del producto */}
+                    <div className="absolute bottom-2.5 inset-x-2.5 z-20 bg-slate-950/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col shadow-lg transition-all group-hover:bg-slate-950/95">
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
-                      </p>
+                      </span>
 
-                      <p className="text-[11.5px] text-gray-600 font-medium truncate mt-0.5">
+                      <h3 className="font-bold text-xs sm:text-[13px] text-white line-clamp-1 leading-snug my-0.5 group-hover:text-emerald-200 transition-colors">
                         {p.name}
-                      </p>
+                      </h3>
 
-                      {/* Fila de precio con badge azul cyan, badge oferta y botón de carrito */}
-                      <div className="flex items-center justify-between gap-1.5 mt-1.5">
-                        <div className="flex items-center gap-1">
-                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-2xs tabular-nums">
+                      <div className="flex items-center justify-between gap-1.5 mt-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-xs tabular-nums">
                             {sku ? money(price) : 'S/ --'}
                           </span>
-                          <span className="bg-black text-white text-[8.5px] font-black uppercase px-1 py-0.5 rounded-xs tracking-wider">
-                            oferta
-                          </span>
+                          {price > 0 && (
+                            <span className="text-[10px] text-gray-300 line-through tabular-nums">
+                              {money(Math.round(price * 1.25))}
+                            </span>
+                          )}
                         </div>
 
                         <button
@@ -729,7 +711,7 @@ export function HomePage() {
                               ? 'bg-emerald-600 text-white'
                               : hasStock
                               ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
-                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                           }`}
                           aria-label={`Agregar ${p.name}`}
                         >
@@ -740,28 +722,41 @@ export function HomePage() {
                           )}
                         </button>
                       </div>
-
-                      {price > 0 && (
-                        <div className="flex items-center gap-2 mt-1 text-[10.5px] text-gray-400 tabular-nums">
-                          <span className="font-bold text-gray-700">{money(Math.round(price * 1.08))}</span>
-                          <span className="line-through">{money(Math.round(price * 1.25))}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Paginación de puntos inferiores centrada en la base del banner (Estilo Imagen 2) */}
-            <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-auto">
+            {/* Flecha Anterior flotante */}
+            <button
+              type="button"
+              onClick={handlePrevSlide}
+              className="absolute left-1 sm:left-1.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              aria-label="Diapositiva anterior"
+            >
+              <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+            </button>
+
+            {/* Flecha Siguiente flotante */}
+            <button
+              type="button"
+              onClick={handleNextSlide}
+              className="absolute right-1 sm:right-1.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              aria-label="Siguiente diapositiva"
+            >
+              <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+            </button>
+
+            {/* Paginación de puntos centrada en la base */}
+            <div className="absolute bottom-1 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-auto">
               {BANNER_SLIDES.map((slide, idx) => (
                 <button
                   key={slide.id}
                   type="button"
                   onClick={() => setCurrentSlide(idx)}
                   className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    currentSlide === idx ? 'w-7 bg-gray-800' : 'w-1.5 bg-gray-400 hover:bg-gray-600'
+                    currentSlide === idx ? 'w-7 bg-primary' : 'w-1.5 bg-gray-400 hover:bg-gray-600'
                   }`}
                   aria-label={`Ir a ${slide.title}`}
                 />
