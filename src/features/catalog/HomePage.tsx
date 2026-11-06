@@ -633,10 +633,10 @@ export function HomePage() {
           </div>
 
           {/* Columna Derecha: Tarima ajustada a la altura de los productos sin vacíos blancos */}
-          <div className="relative flex-1 bg-[#f3f4f6] flex items-center justify-center p-2 sm:p-2.5 lg:p-3 overflow-hidden">
+          <div className="relative flex-1 bg-[#f3f4f6] flex items-center justify-center p-1 sm:p-1.5 overflow-hidden">
             
-            {/* Grid de 3 productos cuadrados que ocupan todo el fondo de su tarjeta */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-3.5 w-full items-stretch">
+            {/* Grid de 3 productos cuadrados bien pegados, sin ningún borde */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-1.5 lg:gap-2 w-full items-stretch">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -651,19 +651,19 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => navigate(categoryLink)}
-                    className="group relative aspect-square w-full rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
+                    className="group relative aspect-square w-full rounded-none overflow-hidden bg-slate-900 transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
                   >
                     {/* Badges superiores flotantes de especificaciones */}
                     <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
-                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
                         {spec1}
                       </span>
-                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+                      <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen cuadrada que cubre el 100% del fondo sin dejar vacíos blancos */}
+                    {/* Imagen cuadrada que cubre el 100% del fondo sin bordes ni vacíos */}
                     <div className="absolute inset-0 w-full h-full overflow-hidden">
                       <img
                         src={img}
@@ -674,11 +674,11 @@ export function HomePage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/35 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/35 pointer-events-none" />
                     </div>
 
                     {/* Módulo inferior flotante con la información del producto */}
-                    <div className="absolute bottom-2.5 inset-x-2.5 z-20 bg-slate-950/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col shadow-lg transition-all group-hover:bg-slate-950/95">
+                    <div className="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-black/95 via-black/85 to-transparent pt-6 pb-2.5 px-3 text-white flex flex-col">
                       <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
                       </span>
@@ -689,7 +689,7 @@ export function HomePage() {
 
                       <div className="flex items-center justify-between gap-1.5 mt-1">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-xs tabular-nums">
+                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2 py-0.5 rounded-xs shadow-xs tabular-nums">
                             {sku ? money(price) : 'S/ --'}
                           </span>
                           {price > 0 && (
@@ -706,7 +706,7 @@ export function HomePage() {
                             handleAddToCart(e, p);
                           }}
                           disabled={!hasStock}
-                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          className={`p-1.5 rounded-md transition-all cursor-pointer ${
                             isJustAdded
                               ? 'bg-emerald-600 text-white'
                               : hasStock
@@ -732,7 +732,7 @@ export function HomePage() {
             <button
               type="button"
               onClick={handlePrevSlide}
-              className="absolute left-1 sm:left-1.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Diapositiva anterior"
             >
               <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -742,7 +742,7 @@ export function HomePage() {
             <button
               type="button"
               onClick={handleNextSlide}
-              className="absolute right-1 sm:right-1.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Siguiente diapositiva"
             >
               <ChevronRight className="w-5 h-5 stroke-[2.5]" />
