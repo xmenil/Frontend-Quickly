@@ -24,7 +24,11 @@ import {
 function extractBrandOrStore(p: CatalogProduct): string {
   if (p.brand && p.brand.trim()) return p.brand.toUpperCase();
   const name = (p.name || '').toUpperCase();
-  const brands = ['XIAOMI', 'SAMSUNG', 'APPLE', 'HONOR', 'HUAWEI', 'LENOVO', 'LG', 'OSTER', 'PHILIPS', 'VANS', 'MABE', 'INDURAMA', 'HAYLOU', 'STANDFORD', 'HOT WHEELS'];
+  const brands = [
+    'NIKE', 'ADIDAS', 'VANS', 'PARAÍSO', 'MUEBLES TINGO', 'CANNON',
+    'XIAOMI', 'SAMSUNG', 'APPLE', 'HONOR', 'HUAWEI', 'LENOVO', 'LG',
+    'OSTER', 'PHILIPS', 'MABE', 'INDURAMA', 'HAYLOU', 'STANDFORD', 'HOT WHEELS'
+  ];
   for (const b of brands) {
     if (name.includes(b)) return b;
   }
@@ -34,43 +38,83 @@ function extractBrandOrStore(p: CatalogProduct): string {
 function getProductSpecBadges(p: CatalogProduct): [string, string] {
   const name = (p.name || '').toLowerCase();
 
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('redmi') || name.includes('samsung') || name.includes('galaxy') || name.includes('xiaomi') || name.includes('honor')) {
+  // Celulares y telefonía
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('redmi') || name.includes('samsung') || name.includes('galaxy') || name.includes('xiaomi') || name.includes('poco') || name.includes('honor') || name.includes('iphone')) {
+    if (name.includes('512gb')) return ['512GB ROM', '12GB RAM'];
     if (name.includes('256gb')) return ['256GB ROM', '8GB RAM'];
     if (name.includes('128gb')) return ['128GB ROM', '6GB RAM'];
-    return ['PANTALLA AMOLED', 'OCTA CORE'];
+    return ['PANTALLA AMOLED', 'CÁMARA IA'];
   }
-  if (name.includes('smartwatch') || name.includes('reloj') || name.includes('band')) {
-    return ['BLUETOOTH', 'RESISTENTE AL AGUA'];
-  }
-  if (name.includes('laptop') || name.includes('notebook')) {
+  // Laptops
+  if (name.includes('laptop') || name.includes('notebook') || name.includes('lenovo')) {
     return ['16GB RAM', '512GB SSD'];
   }
-  if (name.includes('tv') || name.includes('televisor')) {
-    return ['4K ULTRA HD', 'SMART TV'];
+  // Calzado y zapatillas
+  if (name.includes('nike')) {
+    return ['CORTE CLÁSICO', 'SUELA DE GOMA'];
   }
-  if (name.includes('zapatillas') || name.includes('vans')) {
-    return ['URBANO', 'SUELA ANTIDESLIZANTE'];
+  if (name.includes('adidas')) {
+    return ['CLOUDFOAM', 'TRANSPIRABLE'];
+  }
+  if (name.includes('vans')) {
+    return ['URBANO VANS', 'VULCANIZADO'];
+  }
+  if (name.includes('botines') || name.includes('cuero')) {
+    return ['CUERO IMPERMEABLE', 'ANTIDESLIZANTE'];
+  }
+  if (name.includes('zapatillas') || name.includes('sandalias')) {
+    return ['CALZADO CÓMODO', 'ANTIDESLIZANTE'];
+  }
+  // Camas y colchones
+  if (name.includes('paraíso') || (name.includes('colchón') && name.includes('royal'))) {
+    return ['RESORTES POCKET', '2 PLAZAS'];
+  }
+  if (name.includes('tarima') || name.includes('cama')) {
+    return ['MADERA TORNILLO', 'CON CABECERA'];
+  }
+  if (name.includes('inflable')) {
+    return ['ATERCIOPELADO', 'CON INFLADOR'];
+  }
+  if (name.includes('sábanas') || name.includes('sabanas')) {
+    return ['100% ALGODÓN', '400 HILOS'];
+  }
+  // Ropa y moda
+  if (name.includes('casaca') || name.includes('bomber')) {
+    return ['IMPERMEABLE', 'FORRO LIVIANO'];
+  }
+  if (name.includes('vestido')) {
+    return ['VISCOSA FLORAL', 'CORTE EN A'];
   }
   if (name.includes('pantalon') || name.includes('palazzo') || name.includes('denim')) {
     return ['DENIM FRESCO', 'TIRO ALTO'];
   }
-  if (name.includes('polo') || name.includes('ropa')) {
-    return ['100% ALGODÓN', 'ALTA CALIDAD'];
+  if (name.includes('polo')) {
+    return ['100% ALGODÓN', 'ESTAMPADO LOCAL'];
+  }
+  if (name.includes('sombrero')) {
+    return ['PROTECCIÓN UV', 'IDEAL SELVA'];
+  }
+  // Smart TVs y Electro
+  if (name.includes('tv') || name.includes('televisor')) {
+    return ['4K CRYSTAL UHD', '55 PULGADAS'];
+  }
+  if (name.includes('cocina')) {
+    return ['4 HORNILLAS', 'ENCENDIDO ELÉCTRICO'];
+  }
+  if (name.includes('licuadora')) {
+    return ['VASO DE VIDRIO', 'MOTOR CLÁSICO'];
+  }
+  if (name.includes('freidora')) {
+    return ['4.1 LITROS', 'AIRFRYER DIGITAL'];
+  }
+  if (name.includes('smartwatch') || name.includes('reloj') || name.includes('fit3') || name.includes('band')) {
+    return ['PANTALLA AMOLED', 'BLUETOOTH 5.3'];
   }
   if (name.includes('bloqueador') || name.includes('solar')) {
     return ['FPS 50+', 'RESISTENTE AL AGUA'];
   }
   if (name.includes('repelente')) {
     return ['PROTECCIÓN SELVA', 'SPRAY 150ML'];
-  }
-  if (name.includes('termometro')) {
-    return ['DIGITAL INFRARROJO', 'ALTA PRECISIÓN'];
-  }
-  if (name.includes('licuadora')) {
-    return ['VASO DE VIDRIO', 'MOTOR POTENTE'];
-  }
-  if (name.includes('cocina') || name.includes('camping')) {
-    return ['PORTÁTIL', 'IDEAL CAMPING'];
   }
   return ['ENVÍO EXPRESS', 'EN STOCK'];
 }
@@ -81,93 +125,147 @@ function getProductImageUrl(p: CatalogProduct): string {
     return catalogImage(raw);
   }
   const name = (p.name || '').toLowerCase();
-  if (name.includes('samsung galaxy') || name.includes('a55')) {
-    return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80';
+
+  // Zapatos y Calzado
+  if (name.includes('nike')) {
+    return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('redmi') || name.includes('xiaomi')) {
-    return 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&auto=format&fit=crop&q=80';
-  }
-  if (name.includes('smartwatch') || name.includes('huawei') || name.includes('reloj') || name.includes('band')) {
-    return 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop&q=80';
-  }
-  if (name.includes('laptop') || name.includes('lenovo')) {
-    return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&auto=format&fit=crop&q=80';
-  }
-  if (name.includes('tv') || name.includes('televisor')) {
-    return 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('adidas')) {
+    return 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=900&auto=format&fit=crop&q=80';
   }
   if (name.includes('vans') || name.includes('zapatillas')) {
-    return 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('botines') || name.includes('cuero')) {
+    return 'https://images.unsplash.com/photo-1520639888713-7851133b1ed0?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('sandalias')) {
+    return 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Camas y Dormitorio
+  if (name.includes('paraíso') || (name.includes('colchón') && name.includes('royal'))) {
+    return 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('tarima') || name.includes('cama')) {
+    return 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('colchón') || name.includes('inflable')) {
+    return 'https://images.unsplash.com/photo-1582533561751-ef6f6ab93a2e?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('sábanas') || name.includes('sabanas')) {
+    return 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Ropa y Moda
+  if (name.includes('casaca') || name.includes('bomber')) {
+    return 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('vestido')) {
+    return 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=900&auto=format&fit=crop&q=80';
   }
   if (name.includes('pantalon') || name.includes('palazzo') || name.includes('denim')) {
-    return 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop&q=80';
-  }
-  if (name.includes('sombrero') || name.includes('safari')) {
-    return 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=800&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=900&auto=format&fit=crop&q=80';
   }
   if (name.includes('polo')) {
-    return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('bloqueador') || name.includes('solar')) {
-    return 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('sombrero')) {
+    return 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('repelente')) {
-    return 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=800&auto=format&fit=crop&q=80';
+
+  // Tecnología
+  if (name.includes('samsung') && name.includes('s24')) {
+    return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('termometro') || name.includes('digital')) {
-    return 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('laptop') || name.includes('lenovo')) {
+    return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('xiaomi') || name.includes('poco') || name.includes('15t')) {
+    return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('a55')) {
+    return 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('smartwatch') || name.includes('fit3') || name.includes('reloj')) {
+    return 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Electrohogar
+  if (name.includes('tv') || name.includes('televisor')) {
+    return 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('cocina') || name.includes('indurama')) {
+    return 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=900&auto=format&fit=crop&q=80';
   }
   if (name.includes('licuadora') || name.includes('oster')) {
-    return 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=800&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('cocina') || name.includes('camping')) {
-    return 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('freidora') || name.includes('airfryer')) {
+    return 'https://images.unsplash.com/photo-1585695085337-6775384e442f?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('hot wheels') || name.includes('carritos')) {
-    return 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=800&auto=format&fit=crop&q=80';
+
+  // Farmacia y Cuidado
+  if (name.includes('bloqueador') || name.includes('solar')) {
+    return 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=900&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('repelente')) {
+    return 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=900&auto=format&fit=crop&q=80';
   }
   if (name.includes('chocolate') || name.includes('cacao')) {
-    return 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=800&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=900&auto=format&fit=crop&q=80';
   }
-  if (name.includes('atun') || name.includes('durazno') || name.includes('aceite')) {
-    return 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=800&auto=format&fit=crop&q=80';
-  }
+
   return catalogPlaceholder;
 }
 
 function getPromoBadge(p: CatalogProduct): string {
   const name = (p.name || '').toLowerCase();
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('samsung') || name.includes('xiaomi')) {
-    return 'Hasta 25% Dscto';
+  if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) {
+    return 'Hasta 35% Dscto';
   }
-  if (name.includes('vans') || name.includes('zapatillas') || name.includes('pantalon') || name.includes('polo')) {
-    return 'Hasta 40% Dscto';
+  if (name.includes('paraíso') || name.includes('cama') || name.includes('colchón')) {
+    return 'Entrega a Domicilio';
   }
-  if (name.includes('bloqueador') || name.includes('repelente') || name.includes('termometro')) {
-    return 'Envío Express Hoy';
+  if (name.includes('pantalon') || name.includes('casaca') || name.includes('vestido') || name.includes('polo')) {
+    return 'Colección 2026';
   }
-  if (name.includes('licuadora') || name.includes('camping') || name.includes('tv') || name.includes('smartwatch')) {
+  if (name.includes('celular') || name.includes('smartphone') || name.includes('laptop')) {
     return 'Garantía Oficial';
   }
-  if (name.includes('chocolate') || name.includes('cacao') || name.includes('cafe')) {
-    return '100% Selva Alta';
+  if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) {
+    return 'Hasta 25% Dscto';
+  }
+  if (name.includes('bloqueador') || name.includes('repelente')) {
+    return 'Envío Express Hoy';
   }
   return 'En Stock en Tienda';
 }
 
 function getCategoryDescriptor(p: CatalogProduct): string {
   const name = (p.name || '').toLowerCase();
-  if (name.includes('celular') || name.includes('smartphone')) return 'en smartphones y telefonía';
-  if (name.includes('smartwatch') || name.includes('reloj')) return 'en relojes inteligentes';
-  if (name.includes('laptop')) return 'en laptops y computación';
-  if (name.includes('vans') || name.includes('zapatillas')) return 'en calzado urbano de marca';
-  if (name.includes('pantalon') || name.includes('polo')) return 'en prendas de vestir';
-  if (name.includes('bloqueador') || name.includes('solar')) return 'en protección dermatológica';
-  if (name.includes('repelente')) return 'en cuidado antimosquitos';
-  if (name.includes('licuadora') || name.includes('tv')) return 'en electrodomésticos para el hogar';
-  if (name.includes('camping') || name.includes('cocina')) return 'en artículos de viaje y camping';
-  if (name.includes('chocolate') || name.includes('cacao')) return 'en cacao nativo premiado';
-  return 'disponible en comercio verificado';
+  if (name.includes('nike') || name.includes('adidas') || name.includes('vans') || name.includes('zapatillas')) {
+    return 'en calzado urbano y deportivo';
+  }
+  if (name.includes('paraíso') || name.includes('colchón') || name.includes('cama')) {
+    return 'en descanso y dormitorio';
+  }
+  if (name.includes('casaca') || name.includes('pantalon') || name.includes('vestido') || name.includes('polo')) {
+    return 'en prendas de moda selva';
+  }
+  if (name.includes('celular') || name.includes('smartphone')) {
+    return 'en telefonía y smartphones';
+  }
+  if (name.includes('laptop')) {
+    return 'en computadoras portátiles';
+  }
+  if (name.includes('tv') || name.includes('cocina') || name.includes('licuadora')) {
+    return 'en electrodomésticos para el hogar';
+  }
+  if (name.includes('bloqueador') || name.includes('repelente')) {
+    return 'en farmacia y cuidado personal';
+  }
+  return 'disponible en comercio oficial';
 }
 
 interface BannerSlideConfig {
@@ -187,88 +285,99 @@ interface BannerSlideConfig {
 const BANNER_SLIDES: BannerSlideConfig[] = [
   {
     id: 'tech',
-    badge: 'COMERCIO LOCAL',
+    badge: 'OFICIAL EN TINGO MARÍA',
     title: 'CELULARES & TECNOLOGÍA',
-    subtitle: 'Smartphones, smartwatches y laptops con garantía oficial',
+    subtitle: 'Smartphones de alta gama, laptops y televisores con garantía de marca',
     bgColor: '#042817',
-    benefitBadge: 'ENVÍOS EXPRESS EN EL DÍA',
+    benefitBadge: 'ENVÍO EXPRESS EN EL DÍA',
     benefitTitle: 'Pago contra entrega en efectivo',
-    benefitSubtitle: 'En Tingo María y Castillo Grande',
-    linkText: 'Ver celulares',
-    linkUrl: '/negocios?q=celular',
+    benefitSubtitle: 'La Curacao, Tiendas EFE y Carsa',
+    linkText: 'Ver tecnología',
+    linkUrl: '/negocios?q=tecnologia',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
-      const s = (p.storeName || '').toLowerCase();
       return (
-        s.includes('curacao') || s.includes('efe') || s.includes('carsa') ||
-        n.includes('smartphone') || n.includes('samsung') || n.includes('xiaomi') ||
-        n.includes('redmi') || n.includes('celular') || n.includes('smartwatch') ||
-        n.includes('laptop') || n.includes('reloj') || n.includes('tv')
+        n.includes('lenovo') || n.includes('samsung galaxy') || n.includes('xiaomi 15t') ||
+        n.includes('smartphone') || n.includes('laptop') || n.includes('poco') ||
+        n.includes('celular') || n.includes('iphone')
+      );
+    },
+  },
+  {
+    id: 'shoes',
+    badge: 'CALZADO URBANO',
+    title: 'ZAPATOS & ZAPATILLAS',
+    subtitle: 'Zapatillas Nike, Adidas, Vans y botines de cuero para selva y ciudad',
+    bgColor: '#172554',
+    benefitBadge: 'HASTA 35% DSCTO',
+    benefitTitle: 'Garantía oficial y cambio de talla',
+    benefitSubtitle: 'Moda Selva Tingo y Galería San Benito',
+    linkText: 'Ver calzado',
+    linkUrl: '/negocios?q=zapatillas',
+    matcher: (p) => {
+      const n = (p.name || '').toLowerCase();
+      return (
+        n.includes('nike') || n.includes('adidas') || n.includes('vans') ||
+        n.includes('botines') || n.includes('zapatillas') || n.includes('sandalias')
       );
     },
   },
   {
     id: 'fashion',
-    badge: 'LO + NUEVO',
-    title: 'CALZADO & MODA SELVA',
-    subtitle: 'Zapatillas urbanas, prendas frescas y accesorios locales',
+    badge: 'MODA SELVA',
+    title: 'ROPA & MODA ACTUAL',
+    subtitle: 'Pantalones palazzo denim, casacas bomber, vestidos y polos frescos',
     bgColor: '#064e3b',
-    benefitBadge: 'HASTA 30% DSCTO',
-    benefitTitle: 'Pruébate y paga al recibir',
-    benefitSubtitle: 'Moda Selva y Galería San Benito',
-    linkText: 'Ver moda',
+    benefitBadge: 'TENDENCIAS 2026',
+    benefitTitle: 'Confección fresca y cómoda',
+    benefitSubtitle: 'Galería San Benito y Moda Selva Tingo',
+    linkText: 'Ver ropa',
     linkUrl: '/negocios?q=ropa',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
-      const s = (p.storeName || '').toLowerCase();
       return (
-        s.includes('moda') || s.includes('benito') ||
-        n.includes('zapatillas') || n.includes('vans') || n.includes('pantalon') ||
-        n.includes('polo') || n.includes('sombrero') || n.includes('denim') ||
-        n.includes('sandalias')
+        n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') ||
+        n.includes('polo') || n.includes('pantalon') || n.includes('denim') ||
+        n.includes('sombrero')
       );
     },
   },
   {
-    id: 'health',
-    badge: 'FARMACIAS & BOTICAS',
-    title: 'SALUD & CUIDADO PERSONAL',
-    subtitle: 'Bloqueadores, repelentes para selva y botiquín familiar',
-    bgColor: '#0b2923',
-    benefitBadge: 'BOTICAS FORMALES',
-    benefitTitle: 'Atención y delivery inmediato',
-    benefitSubtitle: 'Botica San Martín y Farmacia Vida',
-    linkText: 'Ver farmacia',
-    linkUrl: '/negocios?q=farmacia',
+    id: 'beds',
+    badge: 'DORMITORIO & CONFORT',
+    title: 'CAMAS & COLCHONES',
+    subtitle: 'Colchones Paraíso Royal, camas box tarima y juegos de sábanas finas',
+    bgColor: '#1e1b4b',
+    benefitBadge: 'DORMITORIO COMPLETO',
+    benefitTitle: 'Envío directo y armado en casa',
+    benefitSubtitle: 'Carsa, Tiendas EFE e Importaciones El Balcón',
+    linkText: 'Ver camas y colchones',
+    linkUrl: '/negocios?q=cama',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
-      const s = (p.storeName || '').toLowerCase();
       return (
-        s.includes('farmacia') || s.includes('botica') ||
-        n.includes('bloqueador') || n.includes('repelente') || n.includes('termometro') ||
-        n.includes('vitamina') || n.includes('alcohol') || n.includes('paracetamol')
+        n.includes('paraíso') || n.includes('cama box') || n.includes('colchón') ||
+        n.includes('colchon') || n.includes('tarima') || n.includes('sábanas') ||
+        n.includes('sabanas')
       );
     },
   },
   {
     id: 'home',
-    badge: 'TU HOGAR EQUIPADO',
-    title: 'ELECTROHOGAR & CAMPING',
-    subtitle: 'Smart TVs, licuadoras clásicas y cocinas portátiles',
-    bgColor: '#0d1e2d',
-    benefitBadge: 'GARANTÍA DE TIENDA',
-    benefitTitle: 'Marcas líderes Oster, Samsung y Mabe',
-    benefitSubtitle: 'Importaciones El Balcón y Tiendas EFE',
+    badge: 'EQUIPA TU HOGAR',
+    title: 'ELECTROHOGAR & COCINA',
+    subtitle: 'Smart TVs 55", cocinas Indurama, licuadoras clásicas y freidoras de aire',
+    bgColor: '#0f172a',
+    benefitBadge: 'GARANTÍA OFICIAL',
+    benefitTitle: 'Marcas líderes Oster, Samsung e Indurama',
+    benefitSubtitle: 'Importaciones El Balcón, Carsa y Tiendas EFE',
     linkText: 'Ver electrohogar',
     linkUrl: '/negocios?q=electrohogar',
     matcher: (p) => {
       const n = (p.name || '').toLowerCase();
-      const s = (p.storeName || '').toLowerCase();
       return (
-        s.includes('balcon') || s.includes('continental') ||
-        n.includes('licuadora') || n.includes('cocina') || n.includes('camping') ||
-        n.includes('olla') || n.includes('termo') || n.includes('gas') ||
-        n.includes('hot wheels') || n.includes('freidora')
+        n.includes('smart tv') || n.includes('cocina indurama') || n.includes('licuadora') ||
+        n.includes('freidora') || n.includes('refrigeradora') || n.includes('lavadora')
       );
     },
   },
@@ -278,10 +387,29 @@ export function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
-  // Recursos remotos conectados a PostgreSQL
+  // Recursos remotos conectados a PostgreSQL / Supabase
   const categoriesResource = useRemote('home-categories', signal => catalogApi.categories(signal));
   const storesResource = useRemote('home-stores', signal => catalogApi.stores(signal));
-  const productsResource = useRemote('home-products', signal => catalogApi.search({ limit: 40 }, signal));
+  
+  // Paginación exhaustiva para cargar todo el catálogo multitienda (hasta 150 productos)
+  const productsResource = useRemote('home-products', async (signal) => {
+    const p1 = await catalogApi.search({ limit: 50 }, signal);
+    let allItems = [...p1.items];
+    if (p1.nextCursor) {
+      try {
+        const p2 = await catalogApi.search({ limit: 50, cursor: p1.nextCursor }, signal);
+        allItems = allItems.concat(p2.items);
+        if (p2.nextCursor) {
+          const p3 = await catalogApi.search({ limit: 50, cursor: p2.nextCursor }, signal);
+          allItems = allItems.concat(p3.items);
+        }
+      } catch {
+        // En caso de corte en cursores, conservamos lo obtenido
+      }
+    }
+    return { items: allItems, nextCursor: null };
+  });
+
   const coverageResource = useRemote('home-zones', signal => operationsApi.zones(signal));
 
   const categories = categoriesResource.data || [];
@@ -314,7 +442,7 @@ export function HomePage() {
 
   const activeSlide = BANNER_SLIDES[currentSlide] || BANNER_SLIDES[0];
 
-  // Productos del slide activo (3 productos no gastronómicos por slide)
+  // 3 Productos destacados del slide activo (100% de la categoría correcta)
   const currentSlideProducts = useMemo(() => {
     const isRestaurant = (storeName?: string) =>
       ['La Selva Gourmet', 'Restaurante & Pollería Rubén', 'El Encanto Amazónico', 'Recreo Campestre El Mirador'].includes(storeName || '');
@@ -327,14 +455,22 @@ export function HomePage() {
 
     if (matched.length >= 3) return matched.slice(0, 3);
 
-    // Fallback con productos no gastronómicos
-    const nonFood = allProducts.filter(p => {
+    // Si hay menos de 3 por filtro estricto, buscar coincidencias más amplias pero de la misma categoría
+    const slideId = activeSlide.id;
+    const fallbackList = allProducts.filter(p => {
       if (!purchasableSku(p)) return false;
-      return !isRestaurant(p.storeName);
+      if (isRestaurant(p.storeName)) return false;
+      const n = (p.name || '').toLowerCase();
+      if (slideId === 'tech') return n.includes('samsung') || n.includes('xiaomi') || n.includes('laptop') || n.includes('tv');
+      if (slideId === 'shoes') return n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas');
+      if (slideId === 'fashion') return n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') || n.includes('polo');
+      if (slideId === 'beds') return n.includes('colchón') || n.includes('cama') || n.includes('paraíso') || n.includes('sabanas');
+      if (slideId === 'home') return n.includes('tv') || n.includes('cocina') || n.includes('licuadora') || n.includes('freidora');
+      return false;
     });
 
     const combined = [...matched];
-    for (const p of nonFood) {
+    for (const p of fallbackList) {
       if (combined.length >= 3) break;
       if (!combined.some(x => x.id === p.id)) {
         combined.push(p);
@@ -343,28 +479,30 @@ export function HomePage() {
     return combined.slice(0, 3);
   }, [allProducts, activeSlide]);
 
-  // Productos variados y mezclados de diferentes tiendas para la sección inferior
+  // Productos multitienda y multicategoría completamente mezclados (sin predominar una sola tienda ni categoría)
   const mixedDiverseProducts = useMemo(() => {
     if (allProducts.length === 0) return [];
 
-    // Agrupar productos por tienda
-    const byStore = new Map<string, CatalogProduct[]>();
+    // Agrupar productos por categoría
+    const byCategory = new Map<string, CatalogProduct[]>();
     for (const p of allProducts) {
       if (!purchasableSku(p)) continue;
-      const store = p.storeName || 'Tienda';
-      if (!byStore.has(store)) byStore.set(store, []);
-      byStore.get(store)!.push(p);
+      const cat = p.categoryId || 'other';
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat)!.push(p);
     }
 
-    // Selección round-robin para mezclar tiendas y categorías
+    // Selección round-robin para mezclar ropa, calzado, tecnología, camas, alimentos, etc.
     const result: CatalogProduct[] = [];
-    const storeArrays = Array.from(byStore.values());
-    const maxLen = Math.max(...storeArrays.map(a => a.length), 0);
+    const catArrays = Array.from(byCategory.values());
+    const maxLen = Math.max(...catArrays.map(a => a.length), 0);
 
-    for (let i = 0; i < maxLen && result.length < 12; i++) {
-      for (const arr of storeArrays) {
-        if (arr[i] && result.length < 12) {
-          result.push(arr[i]);
+    for (let i = 0; i < maxLen && result.length < 16; i++) {
+      for (const arr of catArrays) {
+        if (arr[i] && result.length < 16) {
+          if (!result.some(r => r.id === arr[i].id)) {
+            result.push(arr[i]);
+          }
         }
       }
     }
@@ -397,7 +535,7 @@ export function HomePage() {
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
       <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row min-h-[460px] lg:min-h-[500px]">
+        <div className="w-full flex flex-col lg:flex-row min-h-[480px] lg:min-h-[520px]">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
           <div
@@ -447,31 +585,31 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes sin fondo que cubren la tarima */}
-          <div className="relative flex-1 bg-gradient-to-r from-[#eceef1] via-[#f3f4f6] to-[#eceef1] p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que cubren todo el bloque con información en fondo transparente plomito */}
+          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
             
             {/* Flecha Anterior flotante */}
             <button
               type="button"
               onClick={handlePrevSlide}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Diapositiva anterior"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
             </button>
 
             {/* Flecha Siguiente flotante */}
             <button
               type="button"
               onClick={handleNextSlide}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Siguiente diapositiva"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-6 h-6 stroke-[2.5]" />
             </button>
 
             {/* Grid de 3 productos del slide activo */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200/80 items-stretch px-6 sm:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-5 items-stretch px-3 sm:px-6">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -484,64 +622,61 @@ export function HomePage() {
                   <div
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className="flex flex-col justify-between items-center text-center p-4 sm:p-5 lg:p-6 cursor-pointer group transition-all duration-200 hover:bg-white/50"
+                    className="group relative h-[380px] sm:h-[420px] lg:h-[450px] rounded-2xl overflow-hidden border border-gray-300/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
                   >
-                    {/* Badges superiores tipo especificación en negro claro (Imagen Oechsle) */}
-                    <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2 w-full">
-                      <span className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs">
+                    {/* Badges superiores flotantes tipo especificación */}
+                    <div className="absolute top-3 inset-x-3 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
                         {spec1}
                       </span>
-                      <span className="bg-[#18181b] text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-2xs">
+                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen grande sin fondo que cubre la tarima con sombra suave en la base */}
-                    <div className="relative w-full h-56 sm:h-64 lg:h-72 flex items-center justify-center my-2">
+                    {/* Imagen que cubre todo el bloque de la tarjeta de forma completa y nítida */}
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center p-3 pb-28 pt-10 bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-[#e2e8f0]">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="h-full w-auto max-w-full object-contain mix-blend-multiply filter drop-shadow-[0_12px_14px_rgba(0,0,0,0.18)] group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain filter drop-shadow-[0_16px_20px_rgba(0,0,0,0.22)] group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
                     </div>
 
-                    {/* Información debajo de la foto: Marca, Nombre y Pastilla de Precio */}
-                    <div className="w-full space-y-1.5 mt-2 flex flex-col items-center">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-900 line-clamp-1">
+                    {/* Información ensobre de la imagen con fondo transparente plomito (frosted glass) */}
+                    <div className="absolute bottom-3 inset-x-3 z-20 bg-slate-900/80 backdrop-blur-md border border-white/20 rounded-xl p-3 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-900/90">
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
                       </span>
 
-                      <h3 className="font-bold text-xs sm:text-sm text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-snug max-w-[220px]">
+                      <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-2 leading-tight my-1 group-hover:text-emerald-200 transition-colors">
                         {p.name}
                       </h3>
 
-                      {/* Pastilla de precio en cyan brillante estilo Oechsle */}
-                      <div className="pt-1 flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-2xs tabular-nums">
-                            {sku ? money(price) : 'S/ --'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => handleAddToCart(e, p)}
-                            className={`p-1.5 rounded-sm transition-all cursor-pointer ${
-                              isJustAdded
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
-                            }`}
-                            aria-label={`Agregar ${p.name}`}
-                          >
-                            {isJustAdded ? (
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            ) : (
-                              <ShoppingCart className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
+                      <div className="flex items-center justify-center gap-2 mt-1">
+                        <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-xs tabular-nums">
+                          {sku ? money(price) : 'S/ --'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAddToCart(e, p)}
+                          className={`p-1.5 rounded-sm transition-all cursor-pointer ${
+                            isJustAdded
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-primary hover:bg-primary-hover text-white shadow-xs active:scale-95'
+                          }`}
+                          aria-label={`Agregar ${p.name}`}
+                        >
+                          {isJustAdded ? (
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          ) : (
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -549,15 +684,15 @@ export function HomePage() {
               })}
             </div>
 
-            {/* Paginación de puntos inferiores estilo Oechsle */}
+            {/* Paginación de puntos inferiores */}
             <div className="flex items-center justify-center gap-2 pt-4">
               {BANNER_SLIDES.map((slide, idx) => (
                 <button
                   key={slide.id}
                   type="button"
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${
-                    currentSlide === idx ? 'w-8 bg-primary shadow-xs' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                    currentSlide === idx ? 'w-9 bg-primary shadow-sm' : 'w-2.5 bg-gray-400 hover:bg-gray-500'
                   }`}
                   aria-label={`Ir a ${slide.title}`}
                 />
