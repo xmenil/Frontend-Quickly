@@ -931,15 +931,15 @@ export function HomePage() {
                     className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl"
                   >
                     <div>
-                      {/* Imagen del producto sin marco ni fondo */}
-                      <div className="relative w-full aspect-square flex items-center justify-center p-3 mb-2 overflow-hidden bg-white rounded-xl">
+                      {/* Imagen del producto integrada a la página, sin fondo blanco ni marcos */}
+                      <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
                         <img
                           src={productImg}
                           alt={item.name}
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                           }}
-                          className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
                       </div>
