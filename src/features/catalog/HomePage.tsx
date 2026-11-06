@@ -268,6 +268,26 @@ function getCategoryDescriptor(p: CatalogProduct): string {
   return 'disponible en comercio oficial';
 }
 
+function getProductCategoryLink(p: CatalogProduct, slideUrl: string): string {
+  const n = (p.name || '').toLowerCase();
+  if (n.includes('laptop') || n.includes('notebook') || n.includes('lenovo')) return '/negocios?q=laptop';
+  if (n.includes('celular') || n.includes('smartphone') || n.includes('samsung') || n.includes('xiaomi') || n.includes('poco') || n.includes('iphone')) return '/negocios?q=celular';
+  if (n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas')) return '/negocios?q=zapatillas';
+  if (n.includes('botines') || n.includes('calzado')) return '/negocios?q=calzado';
+  if (n.includes('palazzo') || n.includes('pantalon') || n.includes('denim')) return '/negocios?q=pantalon';
+  if (n.includes('casaca') || n.includes('bomber')) return '/negocios?q=casaca';
+  if (n.includes('vestido')) return '/negocios?q=vestido';
+  if (n.includes('polo')) return '/negocios?q=polo';
+  if (n.includes('paraíso') || n.includes('colchón') || n.includes('colchon')) return '/negocios?q=colchon';
+  if (n.includes('cama') || n.includes('tarima')) return '/negocios?q=cama';
+  if (n.includes('sábanas') || n.includes('sabanas')) return '/negocios?q=sabanas';
+  if (n.includes('smart tv') || n.includes('tv') || n.includes('televisor')) return '/negocios?q=tv';
+  if (n.includes('cocina')) return '/negocios?q=cocina';
+  if (n.includes('licuadora')) return '/negocios?q=licuadora';
+  if (n.includes('freidora')) return '/negocios?q=electrohogar';
+  return slideUrl;
+}
+
 interface BannerSlideConfig {
   id: string;
   badge: string;
@@ -535,24 +555,24 @@ export function HomePage() {
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
       <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row min-h-[480px] lg:min-h-[520px]">
+        <div className="w-full flex flex-col lg:flex-row min-h-[350px] lg:min-h-[385px]">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
           <div
-            className="text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0 transition-colors duration-500"
+            className="text-white p-5 sm:p-6 lg:p-7 flex flex-col justify-between lg:w-[32%] xl:w-[28%] flex-shrink-0 transition-colors duration-500"
             style={{ backgroundColor: activeSlide.bgColor }}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-0.5">
-                <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
+                <p className="text-amber-300 text-xs sm:text-sm font-serif italic tracking-wide">
                   Tingo María
                 </p>
-                <p className="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 uppercase">
+                <p className="text-[10px] font-black tracking-widest text-emerald-300 uppercase">
                   {activeSlide.badge}
                 </p>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-black uppercase tracking-tight text-white leading-tight">
                 {activeSlide.title}
               </h2>
 
@@ -561,23 +581,23 @@ export function HomePage() {
               </p>
 
               {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-              <div className="bg-[#00a8e8] text-white p-4 rounded-xl shadow-xs space-y-1">
-                <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
+              <div className="bg-[#00a8e8] text-white p-3 rounded-xl shadow-xs space-y-0.5">
+                <p className="text-[9.5px] font-black tracking-wider uppercase text-sky-100">
                   {activeSlide.benefitBadge}
                 </p>
-                <p className="text-sm sm:text-base font-black leading-snug">
+                <p className="text-xs sm:text-sm font-black leading-snug">
                   {activeSlide.benefitTitle}
                 </p>
-                <p className="text-[11px] text-sky-100 font-medium">
+                <p className="text-[10.5px] text-sky-100 font-medium">
                   {activeSlide.benefitSubtitle}
                 </p>
               </div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-4">
               <Link
                 to={activeSlide.linkUrl}
-                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-7 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
               >
                 <span>{activeSlide.linkText}</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -585,31 +605,31 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que cubren todo el bloque con información en fondo transparente plomito */}
-          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+          {/* Columna Derecha: Tarima Clara con 3 Productos Grandes que llenan toda la tarjeta con información ensobre */}
+          <div className="relative flex-1 bg-gradient-to-r from-[#e2e8f0] via-[#f1f5f9] to-[#e2e8f0] p-3 sm:p-5 lg:p-6 flex flex-col justify-center">
             
             {/* Flecha Anterior flotante */}
             <button
               type="button"
               onClick={handlePrevSlide}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Diapositiva anterior"
             >
-              <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+              <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
             </button>
 
             {/* Flecha Siguiente flotante */}
             <button
               type="button"
               onClick={handleNextSlide}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
               aria-label="Siguiente diapositiva"
             >
-              <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+              <ChevronRight className="w-5 h-5 stroke-[2.5]" />
             </button>
 
             {/* Grid de 3 productos del slide activo */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-5 items-stretch px-3 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 items-stretch px-2 sm:px-4">
               {currentSlideProducts.map((p) => {
                 const sku = preferredSku(p);
                 const price = sku ? sku.priceCents : 0;
@@ -617,53 +637,58 @@ export function HomePage() {
                 const isJustAdded = addedProductId === p.id;
                 const [spec1, spec2] = getProductSpecBadges(p);
                 const brand = extractBrandOrStore(p);
+                const categoryLink = getProductCategoryLink(p, activeSlide.linkUrl);
 
                 return (
                   <div
                     key={p.id}
-                    onClick={() => setSelectedProduct(p)}
-                    className="group relative h-[380px] sm:h-[420px] lg:h-[450px] rounded-2xl overflow-hidden border border-gray-300/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    onClick={() => navigate(categoryLink)}
+                    className="group relative h-[280px] sm:h-[310px] lg:h-[330px] rounded-2xl overflow-hidden border border-gray-300/80 bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
                   >
                     {/* Badges superiores flotantes tipo especificación */}
-                    <div className="absolute top-3 inset-x-3 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
+                    <div className="absolute top-2.5 inset-x-2.5 flex flex-wrap items-center justify-center gap-1.5 z-20 pointer-events-none">
+                      <span className="bg-[#18181b]/85 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
                         {spec1}
                       </span>
-                      <span className="bg-[#18181b]/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
+                      <span className="bg-[#18181b]/85 backdrop-blur-xs text-white text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-md">
                         {spec2}
                       </span>
                     </div>
 
-                    {/* Imagen que cubre todo el bloque de la tarjeta de forma completa y nítida */}
-                    <div className="absolute inset-0 w-full h-full flex items-center justify-center p-3 pb-28 pt-10 bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-[#e2e8f0]">
+                    {/* Imagen que llena toda la tarjeta al 100% */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
                       <img
                         src={img}
                         alt={p.name}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
                         }}
-                        className="w-full h-full object-contain filter drop-shadow-[0_16px_20px_rgba(0,0,0,0.22)] group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/35 pointer-events-none" />
                     </div>
 
                     {/* Información ensobre de la imagen con fondo transparente plomito (frosted glass) */}
-                    <div className="absolute bottom-3 inset-x-3 z-20 bg-slate-900/80 backdrop-blur-md border border-white/20 rounded-xl p-3 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-900/90">
-                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
+                    <div className="absolute bottom-2.5 inset-x-2.5 z-20 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-xl p-2.5 text-white flex flex-col items-center text-center shadow-lg transition-all group-hover:bg-slate-950/95">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                         {brand}
                       </span>
 
-                      <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-2 leading-tight my-1 group-hover:text-emerald-200 transition-colors">
+                      <h3 className="font-bold text-xs text-white line-clamp-1 leading-snug my-0.5 group-hover:text-emerald-200 transition-colors">
                         {p.name}
                       </h3>
 
                       <div className="flex items-center justify-center gap-2 mt-1">
-                        <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-3 py-1 rounded-sm shadow-xs tabular-nums">
+                        <span className="bg-[#00a8e8] text-white font-black text-xs px-2.5 py-0.5 rounded-sm shadow-xs tabular-nums">
                           {sku ? money(price) : 'S/ --'}
                         </span>
                         <button
                           type="button"
-                          onClick={(e) => handleAddToCart(e, p)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(e, p);
+                          }}
                           className={`p-1.5 rounded-sm transition-all cursor-pointer ${
                             isJustAdded
                               ? 'bg-emerald-600 text-white'
