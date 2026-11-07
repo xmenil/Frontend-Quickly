@@ -433,6 +433,44 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
   },
 ];
 
+// Perfiles fotográficos de comercios de Tingo María para cubrir tarjetas completas
+const STORE_COVER_IMAGES: Record<string, string> = {
+  'botica san martín': 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80',
+  'cacao & café tingo': 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=700&auto=format&fit=crop&q=80',
+  'carsa tingo maría': 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=700&auto=format&fit=crop&q=80',
+  'el encanto amazónico': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&auto=format&fit=crop&q=80',
+  'la selva gourmet': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&auto=format&fit=crop&q=80',
+  'restaurante & pollería rubén': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=700&auto=format&fit=crop&q=80',
+  'tiendas efe tingo maría': 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=700&auto=format&fit=crop&q=80',
+  'moda selva tingo': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&auto=format&fit=crop&q=80',
+  'muebles tingo': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=700&auto=format&fit=crop&q=80',
+};
+
+function getStoreCoverImage(st: { name: string; bannerUrl?: string | null; category_code?: string }): string {
+  if (st.bannerUrl && st.bannerUrl.startsWith('http')) return st.bannerUrl;
+  const n = st.name.toLowerCase().trim();
+  for (const [key, url] of Object.entries(STORE_COVER_IMAGES)) {
+    if (n.includes(key) || key.includes(n)) return url;
+  }
+  const cat = (st.category_code || '').toLowerCase();
+  if (cat.includes('farmacia') || cat.includes('salud') || cat.includes('botica')) {
+    return 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('cafe') || cat.includes('café') || cat.includes('cacao') || cat.includes('emprendedor')) {
+    return 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=700&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('electro') || cat.includes('tecno') || cat.includes('hogar')) {
+    return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=700&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('gastronom')) {
+    return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('moda') || cat.includes('ropa') || cat.includes('calzado')) {
+    return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&auto=format&fit=crop&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=700&auto=format&fit=crop&q=80';
+}
+
 export function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -619,8 +657,8 @@ export function HomePage() {
   return (
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
-      {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - De esquina a esquina */}
-      <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden">
+      {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - Separación superior estilo Ripley */}
+      <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden mt-2 sm:mt-3">
         <div className="w-full flex flex-col lg:flex-row items-stretch relative">
           
           {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
@@ -891,40 +929,62 @@ export function HomePage() {
           </Link>
         </div>
 
-        {/* 4 Tiendas principales */}
+        {/* 4 Tiendas principales con perfil de imagen de fondo que cubre la tarjeta completa */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {stores.slice(0, 4).map((st) => (
-            <Link
-              key={st.id}
-              to={`/negocios/${st.id}`}
-              className="bg-white rounded-2xl border border-gray-200/90 hover:border-primary p-3.5 sm:p-4 shadow-2xs hover:shadow-card transition-all flex flex-col justify-between gap-3 group text-left cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform flex-shrink-0">
-                  <Store className="w-5 h-5" />
+          {stores.slice(0, 4).map((st) => {
+            const coverImg = getStoreCoverImage(st);
+            return (
+              <Link
+                key={st.id}
+                to={`/negocios/${st.id}`}
+                className="relative group rounded-2xl overflow-hidden h-36 sm:h-44 flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:shadow-card hover:-translate-y-1 cursor-pointer select-none border border-gray-200/50"
+              >
+                {/* Imagen de fondo que cubre la tarjeta completa */}
+                <img
+                  src={coverImg}
+                  alt={st.name}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+
+                {/* Capa de contraste / degradado oscuro para que el texto sea perfectamente legible */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 group-hover:via-black/60 transition-colors" />
+
+                {/* Header de la tarjeta sobre la imagen: Badge de estado y logo */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span
+                    className={`font-black text-[10px] tracking-wide px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-xs ${
+                      st.isOpen
+                        ? 'bg-emerald-500/90 text-white'
+                        : 'bg-black/65 text-gray-300'
+                    }`}
+                  >
+                    {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
+                  </span>
+
+                  <div className="w-7 h-7 rounded-lg bg-white/95 text-emerald-900 flex items-center justify-center shadow-xs">
+                    <Store className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors truncate">
-                    {st.name}
-                  </h4>
-                  <p className="text-[10px] text-gray-400 capitalize truncate">
+
+                {/* Footer de la tarjeta sobre la imagen: Nombre de la tienda, categoría y Entrar > */}
+                <div className="relative z-10 pt-2">
+                  <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider line-clamp-1 mb-0.5">
                     {st.category_code}
                   </p>
+                  <h4 className="font-black text-xs sm:text-sm text-white group-hover:text-emerald-200 transition-colors truncate drop-shadow-xs">
+                    {st.name}
+                  </h4>
+                  <div className="flex items-center justify-between mt-1 text-[11px] text-gray-200">
+                    <span className="font-semibold text-white/90">Ver catálogo</span>
+                    <span className="font-bold text-white group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+                      Entrar <ChevronRight className="w-3 h-3 text-emerald-400" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[10px]">
-                <span className={`font-bold px-2 py-0.5 rounded-full ${
-                  st.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
-                </span>
-                <span className="font-bold text-primary flex items-center">
-                  Entrar <ChevronRight className="w-3 h-3" />
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
