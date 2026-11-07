@@ -33,6 +33,16 @@ export function ProductCard<T extends Product>({
   const isLowStock = product.stock > 0 && product.stock <= 3;
 
   const category = (product.category || merchant?.category || '').toLowerCase();
+  const brand = (product.brand || merchant?.name || 'TIENDA LOCAL').toUpperCase();
+  const hasDiscount =
+    Boolean(product.originalPriceCents && product.originalPriceCents > product.priceCents);
+  const discountPercent = hasDiscount
+    ? Math.round(
+        ((product.originalPriceCents! - product.priceCents) /
+          product.originalPriceCents!) *
+          100
+      )
+    : 0;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,218 +88,136 @@ export function ProductCard<T extends Product>({
   return (
     <div
       onClick={handleCardClick}
-      className="group relative flex flex-col bg-transparent hover:bg-gray-50/70 rounded-xl p-1.5 transition-all duration-200 cursor-pointer"
+      className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl bg-transparent"
     >
-      {/* Image Container with Fallback & Shimmer Loader */}
-      <div className="relative aspect-square w-full bg-transparent overflow-hidden rounded-xl mb-1.5">
-        {/* Shimmer skeleton while loading */}
-        {!imgLoaded && !imgError && (
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
-        )}
-
-        {imgError ? (
-          // Elegant SVG/Vector Branded Fallback
-          <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50/70 to-emerald-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
-            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 border border-emerald-100/80">
-              {renderCategoryIcon()}
-            </div>
-            <span className="text-xs font-bold text-ink line-clamp-1 max-w-[90%]">
-              {product.name}
-            </span>
-            <span className="text-[10px] font-semibold text-primary mt-0.5">
-              Quickly • Tingo María
-            </span>
-          </div>
-        ) : (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            loading="lazy"
-            onLoad={() => setImgLoaded(true)}
-            onError={(e) => {
-              setImgError(true);
-              (e.target as HTMLImageElement).src = getCategoryFallbackSvg(category, product.name);
-            }}
-            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-              isOutOfStock ? 'grayscale opacity-60' : ''
-            } ${!imgLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
-          />
-        )}
-
-        {/* Favorite Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            void favorite.toggle();
-          }}
-          className="absolute top-2.5 right-2.5 touch-target w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-600 hover:text-primary transition-colors z-10"
-          disabled={favorite.busy}
-          aria-pressed={isFavorite}
-          aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-        >
-          <Heart
-            className={`w-3.5 h-3.5 transition-colors ${
-              isFavorite ? 'fill-primary text-primary' : ''
-            }`}
-          />
-        </button>
-
-        {/* Stock / Variant Badges */}
-        {isOutOfStock ? (
-          <div className="absolute bottom-2 left-2 bg-red-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm z-10">
-            <AlertCircle className="w-3 h-3" /> Agotado
-          </div>
-        ) : isLowStock ? (
-          <div className="absolute bottom-2 left-2 bg-amber-600/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
-            ¡Últimos {product.stock}!
-          </div>
-        ) : product.hasVariants ? (
-          <div className="absolute bottom-2 left-2 bg-ink/70 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
-            <Sparkles className="w-3 h-3 text-amber-300" /> Variantes
-          </div>
-        ) : null}
-      </div>
-
-      {(actionError || favorite.error) && <p role="alert" className="px-3 text-xs text-destructive">{actionError || favorite.error}</p>}
-      {/* Info Content */}
-      <div className="flex flex-col flex-1 p-2.5 sm:p-3 justify-between space-y-2">
-        <div>
-          <h3 className="font-bold text-ink text-xs sm:text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors min-h-[2rem]">
-            {product.name}
-          </h3>
-          {product.description && (
-            <p className="text-[11px] text-ink-light mt-0.5 line-clamp-1 leading-relaxed">
-              {product.description}
-            </p>
+      <div>
+        {/* Image Container with Fallback & Shimmer Loader */}
+        <div className="relative aspect-square w-full bg-transparent overflow-hidden rounded-xl mb-2">
+          {/* Shimmer skeleton while loading */}
+          {!imgLoaded && !imgError && (
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
           )}
 
-          {/* Row: Perfil de tienda verificada (nombre en negro) a lado de Stock disponible */}
-          <div className="flex items-center justify-between gap-1.5 mt-2">
-            {merchant ? (
-              <div
-                className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 hover:bg-gray-100/80 border border-gray-200/80 px-1.5 py-0.5 rounded-full transition-colors min-w-0 max-w-[58%]"
-                title={`${merchant.name} • Tienda verificada`}
-              >
-                {merchant.logoUrl ? (
-                  <img
-                    src={merchant.logoUrl}
-                    alt={merchant.name}
-                    className="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                )}
-                <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                  {merchant.name
-                    .replace(/Supermercado\s+/i, 'Super ')
-                    .replace(/\s+Tingo María$/i, '')}
-                </span>
-                <BadgeCheck className="w-3 h-3 text-sky-500 fill-sky-100 flex-shrink-0" />
+          {imgError ? (
+            // Elegant SVG/Vector Branded Fallback
+            <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50/70 to-emerald-50/50 flex flex-col items-center justify-center p-4 text-center select-none">
+              <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 border border-emerald-100/80">
+                {renderCategoryIcon()}
               </div>
-            ) : (
-              <div />
-            )}
-
-            {/* Stock disponible */}
-            <div
-              className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap ${
-                isOutOfStock
-                  ? 'text-red-700 bg-red-50 border border-red-200/80'
-                  : isLowStock
-                  ? 'text-amber-800 bg-amber-50 border border-amber-200/80'
-                  : 'text-emerald-700 bg-emerald-50/90 border border-emerald-100/80'
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full inline-block flex-shrink-0 ${
-                  isOutOfStock
-                    ? 'bg-red-500'
-                    : isLowStock
-                    ? 'bg-amber-500 animate-pulse'
-                    : 'bg-emerald-500 animate-pulse'
-                }`}
-              />
-              <span>
-                {isOutOfStock ? 'Agotado' : isLowStock ? `Últimos ${product.stock}` : 'Stock disponible'}
+              <span className="text-xs font-bold text-ink line-clamp-1 max-w-[90%]">
+                {product.name}
+              </span>
+              <span className="text-[10px] font-semibold text-primary mt-0.5">
+                Quickly • Tingo María
               </span>
             </div>
-          </div>
+          ) : (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              onError={(e) => {
+                setImgError(true);
+                (e.target as HTMLImageElement).src = getCategoryFallbackSvg(category, product.name);
+              }}
+              className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                isOutOfStock ? 'grayscale opacity-60' : ''
+              } ${!imgLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
+            />
+          )}
+
+          {/* Favorite Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              void favorite.toggle();
+            }}
+            className="absolute top-2 right-2 touch-target w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs shadow-2xs flex items-center justify-center text-gray-500 hover:text-primary transition-colors z-10"
+            disabled={favorite.busy}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+          >
+            <Heart
+              className={`w-3.5 h-3.5 transition-colors ${
+                isFavorite ? 'fill-primary text-primary' : ''
+              }`}
+            />
+          </button>
         </div>
 
-        {/* Price and Add Button */}
-        {showFullButton ? (
-          <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm sm:text-base font-extrabold text-ink tabular-nums">
-                {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
-              </span>
-              {product.hasVariants && (
-                <span className="text-[10px] text-gray-500 font-medium">desde</span>
-              )}
-            </div>
+        {/* Badge ENVÍO HOY */}
+        <div className="mb-1">
+          <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+            ENVÍO HOY
+          </span>
+        </div>
 
-            <button
-              type="button"
-              disabled={isOutOfStock}
-              onClick={handleQuickAdd}
-              className={`w-full min-h-[44px] py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all touch-target select-none ${
-                isOutOfStock
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : isAdded
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-primary text-white hover:bg-primary-hover shadow-subtle active:scale-[0.98]'
-              }`}
-            >
-              {isAdded ? (
-                <>
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>¡Agregado!</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  <span>Agregar al pedido</span>
-                </>
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
-            <div>
-              <span className="text-base sm:text-lg font-extrabold text-ink tabular-nums">
-                {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
-              </span>
-              {product.hasVariants && (
-                <span className="text-[11px] text-gray-500 block -mt-0.5">Desde</span>
-              )}
-            </div>
+        {/* Brand */}
+        <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+          {brand}
+        </p>
 
-            <button
-              type="button"
-              disabled={isOutOfStock}
-              onClick={handleQuickAdd}
-              className={`touch-target min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center font-bold transition-all select-none ${
-                isOutOfStock
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : isAdded
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-primary text-white hover:bg-primary-hover shadow-subtle active:scale-95'
-              }`}
-              aria-label={`Agregar ${product.name} al pedido`}
-            >
-              {isAdded ? (
-                <Check className="w-4 h-4 stroke-[3]" />
-              ) : (
-                <ShoppingCart className="w-4 h-4" />
-              )}
-            </button>
+        {/* Title */}
+        <h3 className="text-xs sm:text-[13px] text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover:text-primary transition-colors">
+          {product.name}
+        </h3>
+      </div>
+
+      {/* Price row */}
+      <div className="pt-1 mt-1">
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
+              {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
+            </span>
+            {discountPercent > 0 && (
+              <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                -{discountPercent}%
+              </span>
+            )}
           </div>
+
+          <button
+            type="button"
+            disabled={isOutOfStock}
+            onClick={handleQuickAdd}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
+              isAdded
+                ? 'bg-emerald-600 text-white'
+                : !isOutOfStock
+                ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            aria-label="Agregar al pedido"
+          >
+            {isAdded ? (
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+            ) : (
+              <ShoppingCart className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+
+        {hasDiscount && (
+          <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+            {formatCents(product.originalPriceCents!)}
+          </p>
+        )}
+
+        {merchant && (
+          <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+            {merchant.name}
+          </p>
         )}
       </div>
+
+      {(actionError || favorite.error) && (
+        <p role="alert" className="text-xs text-destructive mt-1">
+          {actionError || favorite.error}
+        </p>
+      )}
     </div>
   );
 };

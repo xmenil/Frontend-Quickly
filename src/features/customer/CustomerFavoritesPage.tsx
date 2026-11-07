@@ -171,7 +171,7 @@ export const CustomerFavoritesPage: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {filteredProducts.map((product) => {
                 const merchant = merchants.find((m) => m.id === product.merchantId);
                 return (
@@ -179,8 +179,6 @@ export const CustomerFavoritesPage: React.FC = () => {
                     key={product.id}
                     product={product}
                     merchant={merchant}
-                    showFullButton={true}
-                    onOpenDetail={(prod) => setSelectedProduct(prod)}
                   />
                 );
               })}

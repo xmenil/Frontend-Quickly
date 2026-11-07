@@ -22,6 +22,7 @@ import {
   Tag,
   ArrowRight,
   Eye,
+  ShoppingCart,
 } from 'lucide-react';
 
 export const MerchantsPage: React.FC = () => {
@@ -472,11 +473,11 @@ export const MerchantsPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                {/* Products Grid - Diseño integrado sin marco ni fondo blanco */}
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {filteredProducts.map((product) => {
                     const merchant = merchantMap.get(product.merchantId);
-                    const isPopular = (product.ratingCount || 0) >= 60 || (product.soldCount || 0) >= 50;
+                    const brand = (product.brand || merchant?.name || 'TIENDA LOCAL').toUpperCase();
                     const hasDiscount =
                       product.originalPriceCents && product.originalPriceCents > product.priceCents;
                     const discountPercent = hasDiscount
@@ -486,105 +487,57 @@ export const MerchantsPage: React.FC = () => {
                             100
                         )
                       : 0;
+                    const isJustAdded = addedToast === product.name;
 
                     return (
                       <div
                         key={product.id}
                         onClick={() => navigate(`/producto/${product.id}`)}
-                        className="group bg-white rounded-2xl border border-gray-200/80 hover:border-primary-300 shadow-subtle hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer"
+                        className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl bg-transparent"
                       >
-                        {/* Image Container with Badges */}
-                        <div className="relative aspect-[4/3] bg-gray-50/80 overflow-hidden flex items-center justify-center p-3 border-b border-gray-100">
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            loading="lazy"
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                          />
-
-                          {/* Top-left Badges: Más vendido / Descuento */}
-                          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-                            {isPopular && (
-                              <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
-                                <Flame className="w-3 h-3 fill-white" />
-                                <span>Más vendido</span>
-                              </span>
-                            )}
-                            {hasDiscount && (
-                              <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
-                                -{discountPercent}% OFF
-                              </span>
-                            )}
+                        <div>
+                          {/* Imagen del producto integrada a la pantalla */}
+                          <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
                           </div>
 
-                          {/* Top-right Store pill */}
-                          {merchant && (
-                            <Link
-                              to={`/negocios/${merchant.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="absolute top-2.5 right-2.5 bg-ink/75 hover:bg-primary backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs transition-colors z-10 max-w-[130px]"
-                              title={`Vendido por ${merchant.name}`}
-                            >
-                              <Store className="w-2.5 h-2.5 flex-shrink-0" />
-                              <span className="truncate">{merchant.name}</span>
-                            </Link>
-                          )}
+                          {/* Badge ENVIO HOY */}
+                          <div className="mb-1">
+                            <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                              ENVÍO HOY
+                            </span>
+                          </div>
+
+                          {/* Marca en mayúsculas negrita */}
+                          <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                            {brand}
+                          </p>
+
+                          {/* Título del producto */}
+                          <h3 className="text-xs sm:text-[13px] text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover:text-primary transition-colors">
+                            {product.name}
+                          </h3>
                         </div>
 
-                        {/* Product Body */}
-                        <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
-                          <div>
-                            {/* Merchant name link subtitle */}
-                            {merchant && (
-                              <Link
-                                to={`/negocios/${merchant.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-[11px] font-bold text-gray-400 hover:text-primary transition-colors flex items-center gap-1 mb-1 truncate"
-                              >
-                                <span>Tienda:</span>
-                                <span className="text-gray-600 hover:underline">{merchant.name}</span>
-                              </Link>
-                            )}
-
-                            {/* Product Name */}
-                            <h3 className="font-bold text-ink text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                              {product.name}
-                            </h3>
-
-                            {/* Rating and sold count */}
-                            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500">
-                              <div className="flex items-center text-amber-500 font-black">
-                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                <span className="ml-0.5 text-ink">{product.rating ?? 'Sin calificaciones'}</span>
-                              </div>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-gray-500 font-medium">
-                                {product.soldCount !== undefined ? `${product.soldCount} vendidos` : (product.isAvailable ? 'Stock disponible' : 'Agotado')}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Price & Delivery & Add to Cart */}
-                          <div className="pt-2 border-t border-gray-100/80 space-y-2">
-                            {/* Price */}
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-lg font-black text-ink">
+                        {/* Fila de precio con descuento y botón cuadrado de carrito */}
+                        <div className="pt-1 mt-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
                                 {product.hasPrice === false ? 'Sin presentaciones' : formatCents(product.priceCents)}
                               </span>
-                              {hasDiscount && (
-                                <span className="text-xs text-gray-400 line-through font-semibold">
-                                  {formatCents(product.originalPriceCents!)}
+                              {discountPercent > 0 && (
+                                <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                                  -{discountPercent}%
                                 </span>
                               )}
                             </div>
 
-                            {/* Delivery indicator */}
-                            <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                              <Truck className="w-3 h-3 text-emerald-600" />
-                              <span>Envío según dirección de entrega</span>
-                            </div>
-
-                            {/* Action Button */}
                             <button
                               type="button"
                               disabled={!product.isAvailable}
@@ -596,21 +549,34 @@ export const MerchantsPage: React.FC = () => {
                                   handleQuickAddProduct(e, product);
                                 }
                               }}
-                              className="w-full mt-1 py-2 px-3 rounded-xl bg-primary-50 hover:bg-primary text-primary hover:text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+                              className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
+                                isJustAdded
+                                  ? 'bg-emerald-600 text-white'
+                                  : product.isAvailable
+                                  ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              }`}
+                              aria-label="Agregar al carrito"
                             >
-                              {product.hasVariants ? (
-                                <>
-                                  <Eye className="w-4 h-4 stroke-[2.5]" />
-                                  <span>Ver modelos y detalles</span>
-                                </>
+                              {isJustAdded ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
                               ) : (
-                                <>
-                                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                                  <span>Agregar al carrito</span>
-                                </>
+                                <ShoppingCart className="w-3.5 h-3.5" />
                               )}
                             </button>
                           </div>
+
+                          {hasDiscount && (
+                            <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                              {formatCents(product.originalPriceCents!)}
+                            </p>
+                          )}
+
+                          {merchant && (
+                            <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                              {merchant.name}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );

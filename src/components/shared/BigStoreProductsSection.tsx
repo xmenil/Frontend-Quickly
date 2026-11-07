@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
 import { addCatalogProduct } from '../../store/realCartStore';
 import { preferredSku, purchasableSku } from '../../domain/catalogRules';
 import { RemoteState, useRemote } from '../../features/operations/shared';
 import { catalogApi, CatalogProduct, PublicStore, imageUrl, money } from '../../services/api/catalogApi';
-import { ProductDetailModal } from '../../features/catalog/ProductDetailModal';
 import {
   ShoppingCart,
   Sparkles,
@@ -16,8 +15,8 @@ import {
   Loader2,
 } from 'lucide-react';
 
-
 export const BigStoreProductsSection: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
   const resource = useRemote('catalog-showcase:' + selectedStoreId, async signal => {
     const [products, stores] = await Promise.all([catalogApi.search({ limit: 15, ...(selectedStoreId === 'all' ? {} : { storeId: selectedStoreId }) }, signal), catalogApi.stores(signal)]);
@@ -28,7 +27,6 @@ export const BigStoreProductsSection: React.FC = () => {
   const loading = resource.loading;
   const [addError, setAddError] = useState('');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
-  const [selectedModalProduct, setSelectedModalProduct] = useState<CatalogProduct | null>(null);
 
 
   const storeFilters = [
@@ -131,7 +129,7 @@ export const BigStoreProductsSection: React.FC = () => {
             No se encontraron productos disponibles para este filtro.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {displayedProducts.map((product) => {
               const isJustAdded = addedProductId === product.id;
               const sku = preferredSku(product);
@@ -139,55 +137,50 @@ export const BigStoreProductsSection: React.FC = () => {
               const hasStock = !!purchasableSku(product);
               const rawImg = product.images[0]?.url;
               const productImg = catalogImage(rawImg);
+              const brand = (product.brand || product.storeName || 'TIENDA LOCAL').toUpperCase();
 
               return (
                 <div
                   key={product.id}
-                  onClick={() => setSelectedModalProduct(product)}
-                  className="group bg-white rounded-2xl border border-emerald-100/70 shadow-sm hover:border-primary-400 hover:shadow-card hover:-translate-y-1 overflow-hidden flex flex-col justify-between transition-all duration-200 text-left h-full cursor-pointer"
+                  onClick={() => navigate(`/producto/${product.id}`)}
+                  className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl bg-transparent"
                 >
-                  {/* Product Image */}
-                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden border-b border-gray-100/70">
-                    <img src={productImg} alt={product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-                    <span className="absolute top-2.5 left-2.5 bg-primary/95 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                      Envío local
-                    </span>
-                  </div>
-
-                  {/* Content Body */}
-                  <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                    <div>
-                      {/* Product Name */}
-                      <h3 className="font-bold text-xs text-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug min-h-[2rem]">
-                        {product.name}
-                      </h3>
-
-                      {/* Store badge & Stock */}
-                      <div className="flex items-center justify-between gap-1.5 mt-2">
-                        <div
-                          className="inline-flex items-center gap-1 text-[9px] text-gray-700 bg-gray-50 border border-gray-200/80 px-1.5 py-0.5 rounded-full truncate max-w-[60%]"
-                          title={product.storeName}
-                        >
-                          <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                          <span className="font-extrabold text-[9.5px] text-black truncate leading-none">
-                            {product.storeName}
-                          </span>
-                        </div>
-
-                        <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-700 bg-emerald-50/90 border border-emerald-100/80 px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              hasStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
-                            }`}
-                          />
-                          <span>{hasStock ? 'En stock' : 'Agotado'}</span>
-                        </div>
-                      </div>
+                  <div>
+                    {/* Imagen del producto integrada */}
+                    <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
+                      <img
+                        src={productImg}
+                        alt={product.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
                     </div>
 
-                    {/* Bottom Row */}
-                    <div className="flex items-end justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100">
-                      <span className="text-sm sm:text-base font-black text-ink leading-tight block tabular-nums">
+                    {/* Badge ENVIO HOY */}
+                    <div className="mb-1">
+                      <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                        ENVÍO HOY
+                      </span>
+                    </div>
+
+                    {/* Brand */}
+                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                      {brand}
+                    </p>
+
+                    {/* Product Name */}
+                    <h3 className="text-xs sm:text-[13px] text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                  </div>
+
+                  {/* Bottom Row */}
+                  <div className="pt-1 mt-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
                         {sku ? money(price) : 'Sin presentaciones'}
                       </span>
 
@@ -196,35 +189,34 @@ export const BigStoreProductsSection: React.FC = () => {
                         disabled={!hasStock}
                         onClick={(e) => handleAddToCart(e, product)}
                         title="Agregar al carrito"
-                        aria-label={`Agregar ${product.name} al carrito`}
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shadow-xs flex-shrink-0 ${
+                        aria-label="Agregar al carrito"
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
                           isJustAdded
-                            ? 'bg-emerald-600 text-white shadow-emerald-200 scale-105'
+                            ? 'bg-emerald-600 text-white'
                             : hasStock
-                            ? 'bg-primary hover:bg-primary-hover text-white hover:shadow-md'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                       >
                         {isJustAdded ? (
-                          <Check className="w-4 h-4 stroke-[3]" />
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
                         ) : (
-                          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <ShoppingCart className="w-3.5 h-3.5" />
                         )}
                       </button>
                     </div>
+
+                    {product.storeName && (
+                      <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                        {product.storeName}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-
-        {/* Product Detail Modal */}
-        <ProductDetailModal
-          product={selectedModalProduct}
-          isOpen={Boolean(selectedModalProduct)}
-          onClose={() => setSelectedModalProduct(null)}
-        />
       </div>
     </section>
   );
