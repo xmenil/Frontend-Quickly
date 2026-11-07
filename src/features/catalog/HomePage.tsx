@@ -666,12 +666,12 @@ export function HomePage() {
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
       {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - Separación superior estilo Ripley */}
-      <section className="relative w-full bg-[#f3f4f6] border-b border-gray-200 overflow-hidden mt-2 sm:mt-3">
+      <section className="relative w-full bg-black overflow-hidden mt-0 min-h-[460px] sm:min-h-[500px] lg:h-[540px] xl:h-[580px]">
         {activeSlide.isFullBanner ? (
           /* Diapositiva Panorámica Completa: Imagen 2 integrada al tamaño de toda la sección con diseño profesional de letras */
           <div
             onClick={() => navigate(activeSlide.linkUrl)}
-            className="relative w-full min-h-[380px] sm:min-h-[420px] lg:min-h-[450px] flex items-center justify-center overflow-hidden cursor-pointer select-none group bg-[#deddd9]"
+            className="relative w-full h-full min-h-[460px] sm:min-h-[500px] lg:min-h-0 flex items-center justify-center overflow-hidden cursor-pointer select-none group bg-[#deddd9]"
           >
             {/* Imagen de zapatillas cubriendo toda la sección */}
             <img
@@ -685,17 +685,17 @@ export function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-white/20 to-black/10 pointer-events-none" />
 
             {/* Texto centrado con tipografía profesional */}
-            <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-3 py-8">
-              <div className="inline-flex items-center gap-1.5 bg-black/85 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full shadow-sm">
+            <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-3.5 py-8">
+              <div className="inline-flex items-center gap-1.5 bg-black/85 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>{activeSlide.badge}</span>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-gray-950 leading-[1.05] drop-shadow-xs">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-gray-950 leading-[1.05] drop-shadow-xs">
                 {activeSlide.title}
               </h2>
 
-              <p className="text-xs sm:text-sm font-semibold text-gray-700 max-w-md leading-relaxed">
+              <p className="text-xs sm:text-sm lg:text-base font-semibold text-gray-700 max-w-lg leading-relaxed">
                 {activeSlide.subtitle}
               </p>
 
@@ -703,7 +703,7 @@ export function HomePage() {
                 <Link
                   to={activeSlide.linkUrl}
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center justify-center gap-2 bg-gray-950 hover:bg-black text-white px-7 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group-hover:scale-105 active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 bg-gray-950 hover:bg-black text-white px-8 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group-hover:scale-105 active:scale-95"
                 >
                   <span>{activeSlide.linkText}</span>
                   <span className="text-emerald-400 group-hover:translate-x-1 transition-transform">→</span>
@@ -712,48 +712,48 @@ export function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="w-full flex flex-col lg:flex-row items-stretch relative">
+          <div className="w-full h-full flex flex-col lg:flex-row items-stretch relative">
             {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
             <div
-              className="text-white p-4 sm:p-5 lg:p-6 flex flex-col justify-between lg:w-[28%] xl:w-[26%] flex-shrink-0 transition-colors duration-500 relative z-10"
+              className="text-white p-5 sm:p-6 lg:p-8 xl:p-10 flex flex-col justify-between lg:w-[28%] xl:w-[25%] flex-shrink-0 transition-colors duration-500 relative z-10 h-full"
               style={{ backgroundColor: activeSlide.bgColor }}
             >
-              <div className="space-y-2.5">
-                <div className="space-y-0.5">
-                  <p className="text-amber-300 text-xs sm:text-sm font-serif italic tracking-wide">
+              <div className="space-y-3 lg:space-y-4">
+                <div className="space-y-1">
+                  <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
                     Tingo María
                   </p>
-                  <p className="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 uppercase">
+                  <p className="text-[10px] sm:text-xs font-black tracking-widest text-emerald-300 uppercase">
                     {activeSlide.badge}
                   </p>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
                   {activeSlide.title}
                 </h2>
 
-                <p className="text-xs text-emerald-100/90 leading-relaxed font-normal line-clamp-2">
+                <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-normal line-clamp-3">
                   {activeSlide.subtitle}
                 </p>
 
                 {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-                <div className="bg-[#00a8e8] text-white p-2.5 rounded-xl shadow-xs space-y-0.5">
-                  <p className="text-[9.5px] font-black tracking-wider uppercase text-sky-100">
+                <div className="bg-[#00a8e8] text-white p-3 sm:p-3.5 rounded-xl shadow-xs space-y-1">
+                  <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
                     {activeSlide.benefitBadge}
                   </p>
-                  <p className="text-xs sm:text-sm font-black leading-snug">
+                  <p className="text-xs sm:text-sm lg:text-base font-black leading-snug">
                     {activeSlide.benefitTitle}
                   </p>
-                  <p className="text-[10px] text-sky-100 font-medium truncate">
+                  <p className="text-[10px] sm:text-[11px] text-sky-100 font-medium truncate">
                     {activeSlide.benefitSubtitle}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-4">
                 <Link
                   to={activeSlide.linkUrl}
-                  className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-5 py-2 rounded-full font-black text-xs shadow-md transition-all group"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
                 >
                   <span>{activeSlide.linkText}</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -762,7 +762,7 @@ export function HomePage() {
             </div>
 
             {/* Columna Derecha: Tarima de 3 productos pegados y del mismo tamaño uniforme exacto */}
-            <div className="relative flex-1 bg-black flex items-stretch overflow-hidden p-0">
+            <div className="relative flex-1 bg-black flex items-stretch h-full overflow-hidden p-0">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-0.5 w-full h-full items-stretch">
                 {currentSlideProducts.map((p) => {
                   const sku = preferredSku(p);
@@ -777,14 +777,14 @@ export function HomePage() {
                     <div
                       key={p.id}
                       onClick={() => navigate('/producto/' + p.id)}
-                      className="group relative w-full h-full min-h-[380px] sm:min-h-[420px] lg:min-h-0 overflow-hidden bg-slate-900 transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
+                      className="group relative w-full h-full min-h-[460px] sm:min-h-[500px] lg:min-h-0 overflow-hidden bg-slate-900 transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
                     >
                       {/* Badges superiores flotantes de especificaciones */}
-                      <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
-                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
+                      <div className="absolute top-3 inset-x-3 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-sm">
                           {spec1}
                         </span>
-                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
+                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-sm">
                           {spec2}
                         </span>
                       </div>
@@ -800,26 +800,26 @@ export function HomePage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/35 pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/40 pointer-events-none" />
                       </div>
 
                       {/* Módulo inferior flotante con la información del producto */}
-                      <div className="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-black/95 via-black/85 to-transparent pt-6 pb-2.5 px-3 text-white flex flex-col">
-                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
+                      <div className="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-black/95 via-black/85 to-transparent pt-8 pb-3.5 px-3.5 text-white flex flex-col">
+                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
                           {brand}
                         </span>
 
-                        <h3 className="font-bold text-xs sm:text-[13px] text-white line-clamp-1 leading-snug my-0.5 group-hover:text-emerald-200 transition-colors">
+                        <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-2 leading-snug my-1 group-hover:text-emerald-200 transition-colors">
                           {p.name}
                         </h3>
 
-                        <div className="flex items-center justify-between gap-1.5 mt-1">
+                        <div className="flex items-center justify-between gap-1.5 mt-1.5">
                           <div className="flex items-baseline gap-1.5">
-                            <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2 py-0.5 rounded-xs shadow-xs tabular-nums">
+                            <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-xs tabular-nums">
                               {sku ? money(price) : 'S/ --'}
                             </span>
                             {price > 0 && (
-                              <span className="text-[10px] text-gray-300 line-through tabular-nums">
+                              <span className="text-[10px] sm:text-xs text-gray-300 line-through tabular-nums">
                                 {money(Math.round(price * 1.25))}
                               </span>
                             )}
@@ -832,7 +832,7 @@ export function HomePage() {
                               handleAddToCart(e, p);
                             }}
                             disabled={!hasStock}
-                            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                            className={`p-2 rounded-lg transition-all cursor-pointer ${
                               isJustAdded
                                 ? 'bg-emerald-600 text-white'
                                 : hasStock
@@ -842,9 +842,9 @@ export function HomePage() {
                             aria-label={`Agregar ${p.name}`}
                           >
                             {isJustAdded ? (
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <Check className="w-4 h-4 stroke-[3]" />
                             ) : (
-                              <ShoppingCart className="w-3.5 h-3.5" />
+                              <ShoppingCart className="w-4 h-4" />
                             )}
                           </button>
                         </div>
