@@ -78,10 +78,10 @@ export function ProductCard<T extends Product>({
   return (
     <div
       onClick={handleCardClick}
-      className="group relative flex flex-col bg-white rounded-2xl border border-gray-150/80 shadow-subtle hover:shadow-md hover:border-primary/40 transition-all duration-200 overflow-hidden cursor-pointer"
+      className="group relative flex flex-col bg-transparent hover:bg-gray-50/70 rounded-xl p-1.5 transition-all duration-200 cursor-pointer"
     >
       {/* Image Container with Fallback & Shimmer Loader */}
-      <div className="relative aspect-square w-full bg-gray-100 overflow-hidden border-b border-gray-100/70">
+      <div className="relative aspect-square w-full bg-transparent overflow-hidden rounded-xl mb-1.5">
         {/* Shimmer skeleton while loading */}
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />

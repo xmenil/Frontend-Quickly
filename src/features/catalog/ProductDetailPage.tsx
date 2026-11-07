@@ -928,7 +928,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
         <RemoteState loading={related.loading} error={related.error} retry={related.reload}/>
         {/* Mercado Libre Style Cards Grid with Next Arrow */}
         <div className="relative">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {similarProducts.map((simProd) => {
               const simStore = merchants.find((m) => m.id === simProd.merchantId);
               const discountPercent =
@@ -939,9 +939,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                         100
                     )
                   : 0;
-              const originalPrice =
-                simProd.originalPriceCents;
-              const cuotaPrice = Math.round(simProd.priceCents / 6);
+              const originalPrice = simProd.originalPriceCents;
 
               return (
                 <Link
@@ -950,51 +948,62 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                   onClick={() => {
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                   }}
-                  className="group bg-white rounded-2xl border border-gray-200/90 hover:border-gray-300 shadow-subtle hover:shadow-card p-3 sm:p-3.5 flex flex-col justify-between transition-all duration-200 text-left relative cursor-pointer"
+                  className="group bg-transparent hover:bg-gray-50/60 rounded-xl p-1.5 sm:p-2.5 flex flex-col justify-between transition-all duration-200 text-left relative cursor-pointer"
                 >
                   <div>
-                    {/* Centered Product Image */}
-                    <div className="aspect-square w-full rounded-xl bg-white overflow-hidden flex items-center justify-center p-2 mb-2 relative">
+                    {/* Centered Product Image integrated directly without white card */}
+                    <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
                       <img
                         src={simProd.imageUrl}
                         alt={simProd.name}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
                       {simStore && (
-                        <span className="absolute top-1 left-1 text-[9px] font-bold text-gray-500 bg-gray-100/90 px-1.5 py-0.5 rounded-full truncate max-w-[120px]">
+                        <span className="absolute top-1 left-1 text-[9px] font-black uppercase tracking-wider text-gray-800 bg-white/90 backdrop-blur-xs px-1.5 py-0.5 rounded shadow-2xs truncate max-w-[120px]">
                           {simStore.name.replace(/Supermercado\s+/i, 'Super ').replace(/\s+Tingo María$/i, '')}
                         </span>
                       )}
                     </div>
 
-                    {/* Product Title (2-3 lines clean text) */}
-                    <h4 className="text-xs sm:text-[13px] text-gray-800 font-normal leading-snug line-clamp-2 min-h-[2.4rem] group-hover:text-primary transition-colors">
+                    {/* Badge ENVIO HOY */}
+                    <div className="mb-1">
+                      <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                        ENVÍO HOY
+                      </span>
+                    </div>
+
+                    {/* Product Brand / Store */}
+                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                      {simStore ? simStore.name : 'OFICIAL'}
+                    </p>
+
+                    {/* Product Title */}
+                    <h4 className="text-xs sm:text-[13px] text-gray-700 font-medium leading-snug line-clamp-2 my-1 group-hover:text-primary transition-colors min-h-[2.4rem]">
                       {simProd.name}
                     </h4>
 
-                    {/* Pricing matching Captura 4 */}
-                    <div className="mt-2 space-y-0.5">
-                      <span className="text-[11px] text-gray-400 line-through tabular-nums block">
-                        {originalPrice ? formatCents(originalPrice) : ''}
-                      </span>
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <span className="text-base sm:text-lg font-bold text-ink tabular-nums">
+                    {/* Pricing */}
+                    <div className="pt-1 mt-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
                           {simProd.hasPrice === false ? 'Sin presentaciones' : formatCents(simProd.priceCents)}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded">
-                          {discountPercent}% OFF
-                        </span>
+                        {discountPercent > 0 && (
+                          <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                            -{discountPercent}%
+                          </span>
+                        )}
                       </div>
 
-                      {/* Cuotas sin interés */}
-                      <p className="text-[11px] text-emerald-700 font-medium leading-tight pt-0.5">
-                        Pago en efectivo contra entrega
-                      </p>
+                      {originalPrice && originalPrice > simProd.priceCents ? (
+                        <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                          {formatCents(originalPrice)}
+                        </p>
+                      ) : null}
 
-                      {/* Envío según destino */}
-                      <p className="text-[11px] text-emerald-700 font-bold pt-0.5">
-                        Envío según dirección
+                      <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                        Pago contra entrega • Envío express
                       </p>
                     </div>
                   </div>

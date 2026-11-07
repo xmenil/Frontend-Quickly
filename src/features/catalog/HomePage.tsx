@@ -813,7 +813,7 @@ export function HomePage() {
         </div>
       )}
 
-      {/* 2. Barra de Garantías y Beneficios Estilo Tarjetas Oficiales (Imagen 4) */}
+      {/* 2. Barra de Garantías y Beneficios Estilo Tarjetas Oficiales (Imagen 1) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
@@ -870,174 +870,229 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* 3. Sección "✦ Encuentra el regalo ideal ✦" con Filtros de Presupuesto y Carrusel (Imagen 3) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7">
-        <div className="bg-white rounded-2xl border border-gray-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-gray-100">
-            <div>
-              <div className="flex items-center gap-2 text-rose-900 text-xs font-black uppercase tracking-wider">
-                <Gift className="w-4 h-4" />
-                <span>✦ Encuentra el regalo ideal ✦</span>
-              </div>
-              <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mt-0.5">
-                Selección de las mejores marcas y detalles
-              </h2>
-            </div>
-
-            {/* Pastillas de presupuesto estilo Falabella / Ripley */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {[
-                { id: 'all', label: 'Todos' },
-                { id: '49', label: 'Hasta S/ 49' },
-                { id: '99', label: 'Hasta S/ 99' },
-                { id: '199', label: 'Hasta S/ 199' },
-                { id: 'more', label: 'Más de S/ 200' },
-              ].map((btn) => (
-                <button
-                  key={btn.id}
-                  type="button"
-                  onClick={() => setGiftFilter(btn.id as any)}
-                  className={`text-[11px] font-bold px-3 py-1 rounded-full transition-all cursor-pointer ${
-                    giftFilter === btn.id
-                      ? 'bg-rose-900 text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
+      {/* 3. Tiendas y Comercios Oficiales de la Ciudad (Imagen 2) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-3">
+        <div className="flex items-center justify-between pb-1 border-b border-gray-200">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+              Tiendas oficiales de la ciudad
+            </h2>
+            <p className="text-xs text-gray-500">
+              Comercios destacados en Rupa Rupa y Castillo Grande
+            </p>
           </div>
 
-          {/* Carrusel horizontal con flechas de navegación */}
-          <div className="relative group/gift">
-            <button
-              type="button"
-              onClick={() => {
-                giftScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' });
-              }}
-              className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
-              aria-label="Anterior regalo"
+          <Link
+            to="/negocios"
+            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Ver más tiendas</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* 4 Tiendas principales */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {stores.slice(0, 4).map((st) => (
+            <Link
+              key={st.id}
+              to={`/negocios/${st.id}`}
+              className="bg-white rounded-2xl border border-gray-200/90 hover:border-primary p-3.5 sm:p-4 shadow-2xs hover:shadow-card transition-all flex flex-col justify-between gap-3 group text-left cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
-            </button>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform flex-shrink-0">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors truncate">
+                    {st.name}
+                  </h4>
+                  <p className="text-[10px] text-gray-400 capitalize truncate">
+                    {st.category_code}
+                  </p>
+                </div>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                giftScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' });
-              }}
-              className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
-              aria-label="Siguiente regalo"
-            >
-              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-            </button>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[10px]">
+                <span className={`font-bold px-2 py-0.5 rounded-full ${
+                  st.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
+                </span>
+                <span className="font-bold text-primary flex items-center">
+                  Entrar <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-            <div
-              ref={giftScrollRef}
-              className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-none pb-2 pt-1 scroll-smooth"
-            >
-              {giftProducts.map((p) => {
-                const sku = preferredSku(p);
-                const price = sku ? sku.priceCents : 0;
-                const hasStock = !!purchasableSku(p);
-                const pImg = getProductImageUrl(p);
-                const brand = extractBrandOrStore(p);
-                const discountPct = getProductDiscountPercent(p);
-                const originalPrice = price > 0 ? Math.round(price / (1 - discountPct / 100)) : 0;
-                const isJustAdded = addedProductId === p.id;
+      {/* 4. Sección Encuentra el regalo ideal (Integrada sin fondo de tarjeta blanca) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-1 border-b border-gray-200">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+              Encuentra el regalo ideal
+            </h2>
+            <p className="text-xs text-gray-500">
+              Selección de las mejores marcas y detalles para sorprender hoy
+            </p>
+          </div>
 
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => navigate('/producto/' + p.id)}
-                    className="w-44 sm:w-52 flex-shrink-0 flex flex-col justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group/card text-left"
-                  >
-                    <div>
-                      {/* Imagen centrada y limpia */}
-                      <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-[#f8f9fa] flex items-center justify-center">
-                        <img
-                          src={pImg}
-                          alt={p.name}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
-                          }}
-                          className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                      </div>
+          {/* Pastillas de presupuesto estilo formal limpio */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { id: 'all', label: 'Todos' },
+              { id: '49', label: 'Hasta S/ 49' },
+              { id: '99', label: 'Hasta S/ 99' },
+              { id: '199', label: 'Hasta S/ 199' },
+              { id: 'more', label: 'Más de S/ 200' },
+            ].map((btn) => (
+              <button
+                key={btn.id}
+                type="button"
+                onClick={() => setGiftFilter(btn.id as any)}
+                className={`text-[11px] font-bold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                  giftFilter === btn.id
+                    ? 'bg-gray-900 text-white shadow-xs'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                      {/* Badge ENVIO HOY */}
-                      <div className="mb-1">
-                        <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
-                          ENVÍO HOY
-                        </span>
-                      </div>
+        {/* Carrusel horizontal integrado con flechas de navegación */}
+        <div className="relative group/gift">
+          <button
+            type="button"
+            onClick={() => {
+              giftScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' });
+            }}
+            className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
+            aria-label="Anterior regalo"
+          >
+            <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+          </button>
 
-                      {/* Marca en mayúsculas negrita */}
-                      <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
-                        {brand}
-                      </p>
+          <button
+            type="button"
+            onClick={() => {
+              giftScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' });
+            }}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white text-gray-900 shadow-md border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 hidden sm:flex"
+            aria-label="Siguiente regalo"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
 
-                      {/* Nombre del producto */}
-                      <h3 className="text-xs text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover/card:text-primary transition-colors">
-                        {p.name}
-                      </h3>
+          <div
+            ref={giftScrollRef}
+            className="flex items-stretch gap-3 sm:gap-5 overflow-x-auto scrollbar-none pb-2 pt-1 scroll-smooth"
+          >
+            {giftProducts.map((p) => {
+              const sku = preferredSku(p);
+              const price = sku ? sku.priceCents : 0;
+              const hasStock = !!purchasableSku(p);
+              const pImg = getProductImageUrl(p);
+              const brand = extractBrandOrStore(p);
+              const discountPct = getProductDiscountPercent(p);
+              const originalPrice = price > 0 ? Math.round(price / (1 - discountPct / 100)) : 0;
+              const isJustAdded = addedProductId === p.id;
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => navigate('/producto/' + p.id)}
+                  className="w-44 sm:w-52 flex-shrink-0 flex flex-col justify-between p-1.5 sm:p-2.5 rounded-xl hover:bg-gray-50/60 transition-all cursor-pointer group/card text-left bg-transparent"
+                >
+                  <div>
+                    {/* Imagen integrada directamente a la pantalla sin marco blanco */}
+                    <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
+                      <img
+                        src={pImg}
+                        alt={p.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                        }}
+                        className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
                     </div>
 
-                    {/* Precios y botón de agregar */}
-                    <div className="pt-1 mt-1 border-t border-gray-100">
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
-                            {sku ? money(price) : 'S/ --'}
-                          </span>
-                          {discountPct > 0 && (
-                            <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
-                              -{discountPct}%
-                            </span>
-                          )}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(e, p);
-                          }}
-                          disabled={!hasStock}
-                          className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                            isJustAdded
-                              ? 'bg-emerald-600 text-white'
-                              : hasStock
-                              ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                          aria-label={`Agregar ${p.name}`}
-                        >
-                          {isJustAdded ? (
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          ) : (
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-
-                      {originalPrice > price && (
-                        <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
-                          {money(originalPrice)}
-                        </p>
-                      )}
+                    {/* Badge ENVIO HOY */}
+                    <div className="mb-1">
+                      <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                        ENVÍO HOY
+                      </span>
                     </div>
+
+                    {/* Marca en mayúsculas negrita */}
+                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                      {brand}
+                    </p>
+
+                    {/* Nombre del producto */}
+                    <h3 className="text-xs text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover/card:text-primary transition-colors">
+                      {p.name}
+                    </h3>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Precios y botón de agregar */}
+                  <div className="pt-1 mt-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
+                          {sku ? money(price) : 'S/ --'}
+                        </span>
+                        {discountPct > 0 && (
+                          <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                            -{discountPct}%
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(e, p);
+                        }}
+                        disabled={!hasStock}
+                        className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          isJustAdded
+                            ? 'bg-emerald-600 text-white'
+                            : hasStock
+                            ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                        aria-label={`Agregar ${p.name}`}
+                      >
+                        {isJustAdded ? (
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        ) : (
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {originalPrice > price && (
+                      <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                        {money(originalPrice)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* 4. Bloques Promocionales Informativos Estilo Imagen 5 (Sin mencionar la palabra categoría) */}
+      {/* 5. Bloques Promocionales Informativos (Sin mencionar la palabra categoría) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
@@ -1108,65 +1163,7 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* 5. Tiendas y Comercios Oficiales de la Ciudad */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-gray-200">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
-              Tiendas oficiales de la ciudad
-            </h2>
-            <p className="text-xs text-gray-500">
-              Comercios destacados en Rupa Rupa y Castillo Grande
-            </p>
-          </div>
-
-          <Link
-            to="/negocios"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <span>Ver más tiendas</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* 4 Tiendas principales */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {stores.slice(0, 4).map((st) => (
-            <Link
-              key={st.id}
-              to={`/negocios/${st.id}`}
-              className="bg-white rounded-2xl border border-gray-200/90 hover:border-primary p-3.5 sm:p-4 shadow-2xs hover:shadow-card transition-all flex flex-col justify-between gap-3 group text-left cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform flex-shrink-0">
-                  <Store className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors truncate">
-                    {st.name}
-                  </h4>
-                  <p className="text-[10px] text-gray-400 capitalize truncate">
-                    {st.category_code}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[10px]">
-                <span className={`font-bold px-2 py-0.5 rounded-full ${
-                  st.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
-                </span>
-                <span className="font-bold text-primary flex items-center">
-                  Entrar <ChevronRight className="w-3 h-3" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* 6. Productos Variados y Mezclados de Diversas Tiendas (Navegación directa al producto) */}
+      {/* 6. Productos Variados y Mezclados de Diversas Tiendas (Integrados sin fondo blanco) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-4">
         <div className="flex items-center justify-between pb-1 border-b border-gray-200">
           <div>
@@ -1200,7 +1197,7 @@ export function HomePage() {
           </div>
         ) : (
           <>
-            {/* Grid de productos estilo Imagen 1: Sin marco ni fondo, directo al detalle del producto */}
+            {/* Grid de productos sin marco ni fondo, directo al detalle del producto */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {mixedDiverseProducts.map((item) => {
                 const isJustAdded = addedProductId === item.id;
@@ -1216,7 +1213,7 @@ export function HomePage() {
                   <div
                     key={item.id}
                     onClick={() => navigate('/producto/' + item.id)}
-                    className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl"
+                    className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl bg-transparent"
                   >
                     <div>
                       {/* Imagen del producto integrada a la página, sin fondo blanco ni marcos */}
@@ -1317,7 +1314,7 @@ export function HomePage() {
         )}
       </div>
 
-      {/* 7. Secciones Informativas: Afiliar Comercio y Ser Repartidor */}
+      {/* 7. Secciones Informativas: Afiliar Comercio y Ser Repartidor (Imagen 3) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8">
         <section className="grid sm:grid-cols-2 gap-4">
           <Link
