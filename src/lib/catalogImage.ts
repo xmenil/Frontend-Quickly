@@ -6,6 +6,10 @@ export const catalogPlaceholder = `data:image/svg+xml,${encodeURIComponent('<svg
 export function catalogImage(url?: string | null) {
   if (!url || typeof url !== 'string' || !url.trim()) return catalogPlaceholder;
   const clean = url.trim();
+  // Override placeholder/wrong seed photo for refrigerators
+  if (clean.includes('photo-1584992236310-6edddc08acff')) {
+    return 'https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=900&auto=format&fit=crop&q=80';
+  }
   if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) {
     return clean;
   }
