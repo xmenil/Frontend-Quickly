@@ -75,18 +75,18 @@ export const CustomerNotificationsPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20 sm:pb-8">
-      {/* Header with Title and Actions */}
+      {/* Header with Title and Actions con Tipografía Oechsle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Centro de Notificaciones</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">Centro de Notificaciones</h1>
             {unreadCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary px-2.5 py-0.5 rounded-full shadow-subtle animate-pulse">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900 bg-gray-100 px-3 py-0.5 rounded-full border border-gray-200">
                 <span>{unreadCount} sin leer</span>
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-ink-light mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
             Actualizaciones de tus pedidos en Tingo María y avisos de la plataforma
           </p>
         </div>
@@ -96,23 +96,23 @@ export const CustomerNotificationsPage: React.FC = () => {
             type="button"
             disabled={busy}
             onClick={() => void markNotificationAsRead()}
-            className="touch-target inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover bg-primary-50/70 hover:bg-primary-50 border border-primary-100 px-3.5 py-2 rounded-xl transition-all self-start sm:self-center"
+            className="touch-target inline-flex items-center gap-1.5 text-xs font-bold text-gray-900 hover:text-black bg-gray-100 hover:bg-gray-200 border border-gray-200 px-4 py-2 rounded-full transition-all self-start sm:self-center cursor-pointer"
           >
-            <CheckCheck className="w-4 h-4 text-primary" />
+            <CheckCheck className="w-4 h-4 stroke-[2.2]" />
             <span>Marcar todas como leídas</span>
           </button>
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl w-fit text-xs font-bold">
+      {/* Filter Tabs Integradas */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-[#eaeff2] rounded-full w-fit text-xs font-bold select-none">
         <button
           type="button"
           onClick={() => setFilter('all')}
-          className={`min-h-[38px] px-4 py-1.5 rounded-xl transition-all touch-target select-none ${
+          className={`min-h-[38px] px-4 py-1.5 rounded-full transition-all cursor-pointer ${
             filter === 'all'
-              ? 'bg-white text-primary shadow-sm font-extrabold'
-              : 'text-ink-light hover:text-ink'
+              ? 'bg-gray-950 text-white font-black shadow-xs'
+              : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
           }`}
         >
           Todas ({userNotifications.length})
@@ -120,10 +120,10 @@ export const CustomerNotificationsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setFilter('unread')}
-          className={`min-h-[38px] px-4 py-1.5 rounded-xl transition-all touch-target select-none ${
+          className={`min-h-[38px] px-4 py-1.5 rounded-full transition-all cursor-pointer ${
             filter === 'unread'
-              ? 'bg-white text-primary shadow-sm font-extrabold'
-              : 'text-ink-light hover:text-ink'
+              ? 'bg-gray-950 text-white font-black shadow-xs'
+              : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
           }`}
         >
           Sin leer ({unreadCount})
@@ -134,29 +134,27 @@ export const CustomerNotificationsPage: React.FC = () => {
       {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
       {/* Notifications List */}
       {resource.loading || resource.error ? null : displayedNotifications.length === 0 ? (
-        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-3 shadow-subtle">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto text-gray-500">
-            <Bell className="w-7 h-7" />
+        <div className="bg-[#eaeff2] p-8 sm:p-12 rounded-3xl border-0 text-center space-y-4 select-none">
+          <div className="w-14 h-14 rounded-2xl bg-gray-950 text-white flex items-center justify-center mx-auto shadow-xs">
+            <Bell className="w-7 h-7 stroke-[2.2]" />
           </div>
-          <h2 className="font-bold text-base sm:text-lg text-ink">
+          <h2 className="font-black text-xl sm:text-2xl text-gray-950 tracking-tight">
             {filter === 'unread' ? 'No tienes notificaciones pendientes' : 'No tienes notificaciones'}
           </h2>
-          <p className="text-xs sm:text-sm text-ink-light max-w-sm mx-auto">
+          <p className="text-xs sm:text-sm text-gray-600 font-medium max-w-md mx-auto leading-relaxed">
             {filter === 'unread'
               ? 'Estás al día con todos los avisos y estados de tus pedidos.'
               : 'Cuando realices un pedido o haya promociones en Tingo María te avisaremos aquí.'}
           </p>
           {filter === 'unread' && (
             <div className="pt-2">
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => setFilter('all')}
-                className="min-h-[44px]"
+                className="inline-flex items-center justify-center min-h-[44px] px-8 py-3 rounded-full bg-gray-950 hover:bg-black text-white font-black text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 Ver todas las notificaciones
-              </Button>
+              </button>
             </div>
           )}
         </div>

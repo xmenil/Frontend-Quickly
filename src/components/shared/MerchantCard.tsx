@@ -20,7 +20,7 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
   return (
     <Link
       to={`/negocios/${merchant.id}`}
-      className="relative group bg-white rounded-2xl border border-gray-100 shadow-subtle hover:shadow-card hover:border-primary-300 hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col cursor-pointer block select-none"
+      className="relative group bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-gray-950 transition-colors overflow-hidden flex flex-col cursor-pointer block select-none"
     >
       {/* Banner Container */}
       <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
@@ -107,12 +107,12 @@ export const MerchantCard: React.FC<MerchantCardProps> = ({ merchant }) => {
       <div className="p-4 flex flex-col flex-1 justify-between space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-bold text-ink text-base group-hover:text-primary transition-colors line-clamp-1">
+            <h3 className="font-black text-gray-950 text-base group-hover:text-primary transition-colors line-clamp-1">
               {merchant.name}
             </h3>
           </div>
 
-          <p className="text-xs text-ink-light line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-600 font-medium line-clamp-2 leading-relaxed">
             {merchant.description}
           </p>
         </div>

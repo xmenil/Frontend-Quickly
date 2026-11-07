@@ -902,59 +902,59 @@ export function HomePage() {
         </div>
       )}
 
-      {/* 2. Barra de Garantías y Beneficios Estilo Tarjetas Oficiales (Imagen 1) */}
+      {/* 2. Barra de Garantías y Beneficios Estilo Tarjetas Oficiales Integradas */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+          <div className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl p-4 transition-all flex items-center justify-between group cursor-pointer border-0 select-none">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
-                <Banknote className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-gray-950 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <Banknote className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="leading-tight">
-                <p className="font-bold text-xs sm:text-sm text-gray-900">Pago contra entrega</p>
-                <p className="text-[11px] text-gray-500">Efectivo o transferencia al recibir</p>
+                <p className="font-black text-xs sm:text-sm text-gray-950 tracking-tight">Pago contra entrega</p>
+                <p className="text-[11px] text-gray-600 font-medium">Efectivo o transferencia al recibir</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-950 group-hover:translate-x-0.5 transition-all flex-shrink-0 stroke-[2.5]" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+          <div className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl p-4 transition-all flex items-center justify-between group cursor-pointer border-0 select-none">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
-                <Store className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-gray-950 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <Store className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="leading-tight">
-                <p className="font-bold text-xs sm:text-sm text-gray-900">Compra y retira</p>
-                <p className="text-[11px] text-gray-500">En más de 400 comercios locales</p>
+                <p className="font-black text-xs sm:text-sm text-gray-950 tracking-tight">Compra y retira</p>
+                <p className="text-[11px] text-gray-600 font-medium">En más de 400 comercios locales</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-950 group-hover:translate-x-0.5 transition-all flex-shrink-0 stroke-[2.5]" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+          <div className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl p-4 transition-all flex items-center justify-between group cursor-pointer border-0 select-none">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
-                <Bike className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-gray-950 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <Bike className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="leading-tight">
-                <p className="font-bold text-xs sm:text-sm text-gray-900">Envío hoy mismo</p>
-                <p className="text-[11px] text-gray-500">Entrega express a domicilio en tu puerta</p>
+                <p className="font-black text-xs sm:text-sm text-gray-950 tracking-tight">Envío hoy mismo</p>
+                <p className="text-[11px] text-gray-600 font-medium">Entrega express a domicilio en tu puerta</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-950 group-hover:translate-x-0.5 transition-all flex-shrink-0 stroke-[2.5]" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200/90 p-4 shadow-2xs hover:shadow-card transition-all flex items-center justify-between group cursor-pointer">
+          <div className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl p-4 transition-all flex items-center justify-between group cursor-pointer border-0 select-none">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-gray-950 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="leading-tight">
-                <p className="font-bold text-xs sm:text-sm text-gray-900">Garantía oficial</p>
-                <p className="text-[11px] text-gray-500">Cambio y respaldo de tiendas físicas</p>
+                <p className="font-black text-xs sm:text-sm text-gray-950 tracking-tight">Garantía oficial</p>
+                <p className="text-[11px] text-gray-600 font-medium">Cambio y respaldo de tiendas físicas</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-950 group-hover:translate-x-0.5 transition-all flex-shrink-0 stroke-[2.5]" />
           </div>
         </div>
       </div>

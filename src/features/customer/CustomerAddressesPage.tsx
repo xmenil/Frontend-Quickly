@@ -63,30 +63,28 @@ export const CustomerAddressesPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20 sm:pb-8">
-      {/* Header */}
+      {/* Header con Tipografía Oechsle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Direcciones Guardadas</h1>
-            <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full">
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">Direcciones Guardadas</h1>
+            <span className="text-xs font-bold text-gray-900 bg-gray-100 px-3 py-0.5 rounded-full border border-gray-200">
               {userAddresses.length} {userAddresses.length === 1 ? 'ubicación' : 'ubicaciones'}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-ink-light mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
             Puntos de entrega para tus pedidos en Tingo María con sus zonas y tarifas
           </p>
         </div>
 
-        <Button
+        <button
           type="button"
-          variant="primary"
-          size="md"
           onClick={handleOpenNew}
-          className="min-h-[44px] px-5 font-bold shadow-subtle self-start sm:self-auto"
+          className="min-h-[44px] px-6 rounded-full bg-gray-950 hover:bg-black text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center self-start sm:self-auto cursor-pointer transition-all active:scale-95"
         >
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
           <span>Nueva Dirección</span>
-        </Button>
+        </button>
       </div>
 
       <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/>
@@ -94,27 +92,26 @@ export const CustomerAddressesPage: React.FC = () => {
       {/* Address List */}
       <div className="space-y-3.5">
         {resource.loading || resource.error ? null : userAddresses.length === 0 ? (
-          <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 text-center space-y-4 shadow-subtle max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto shadow-sm">
-              <MapPin className="w-8 h-8" />
+          <div className="bg-[#eaeff2] p-8 sm:p-12 rounded-3xl border-0 text-center space-y-4 select-none max-w-xl mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-gray-950 text-white flex items-center justify-center mx-auto shadow-xs">
+              <MapPin className="w-7 h-7 stroke-[2.2]" />
             </div>
             <div className="space-y-1">
-              <h2 className="font-extrabold text-lg sm:text-xl text-ink">No tienes direcciones guardadas</h2>
-              <p className="text-xs sm:text-sm text-ink-light max-w-md mx-auto leading-relaxed">
+              <h2 className="font-black text-xl sm:text-2xl text-gray-950 tracking-tight">No tienes direcciones guardadas</h2>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium max-w-md mx-auto leading-relaxed">
                 Guarda tu casa, oficina o lugar de estudio en el Centro, Rupa Rupa, Castillo Grande o
                 cerca de la UNAS para pedir sin tener que volver a ingresar tus referencias.
               </p>
             </div>
             <div className="pt-2">
-              <Button
-                variant="primary"
-                size="md"
+              <button
+                type="button"
                 onClick={handleOpenNew}
-                className="min-h-[44px] px-6 font-bold"
+                className="inline-flex items-center justify-center min-h-[44px] px-8 py-3 rounded-full bg-gray-950 hover:bg-black text-white font-black text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer"
               >
-                <Plus className="w-4 h-4 mr-1.5" />
+                <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
                 <span>Agregar mi primera dirección</span>
-              </Button>
+              </button>
             </div>
           </div>
         ) : (
@@ -126,17 +123,17 @@ export const CustomerAddressesPage: React.FC = () => {
                 key={addr.id}
                 className={`bg-white p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                   addr.isDefault
-                    ? 'border-emerald-300 bg-emerald-50/15 shadow-sm ring-1 ring-emerald-200/50'
-                    : 'border-gray-100 shadow-subtle hover:border-gray-200'
+                    ? 'border-gray-950 bg-gray-50/20 shadow-2xs ring-1 ring-gray-950/20'
+                    : 'border-gray-200/90 shadow-2xs hover:border-gray-950'
                 }`}
               >
                 {/* Information */}
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-extrabold text-base text-ink">{addr.label}</span>
+                    <span className="font-black text-base text-gray-950">{addr.label}</span>
 
                     {addr.isDefault ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 text-[11px] bg-gray-950 text-white font-black px-2.5 py-0.5 rounded-full shadow-xs">
                         <Check className="w-3 h-3 stroke-[3]" />
                         <span>Principal</span>
                       </span>
@@ -144,16 +141,16 @@ export const CustomerAddressesPage: React.FC = () => {
 
                     {(!addr.zoneActive || !zone?.isAvailable) && <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-800">Sin cobertura</span>}
                     {zone && (
-                      <span className="text-[11px] text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-primary" />
+                      <span className="text-[11px] text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-gray-200">
+                        <MapPin className="w-3 h-3 text-gray-950" />
                         <span>{zone.name}</span>
                         <span className="text-gray-400">•</span>
-                        <span className="text-ink font-bold">{formatCents(zone.baseFeeCents)}</span>
+                        <span className="text-gray-950 font-black">{formatCents(zone.baseFeeCents)}</span>
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs sm:text-sm font-bold text-gray-800">
+                  <p className="text-xs sm:text-sm font-black text-gray-950">
                     {addr.street} #{addr.number}
                   </p>
 

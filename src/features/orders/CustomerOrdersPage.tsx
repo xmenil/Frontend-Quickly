@@ -46,32 +46,32 @@ export const CustomerOrdersPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-24 sm:pb-12">
-      {/* Title & Filter Bar */}
+      {/* Title & Filter Bar con Tipografía Oechsle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">Mis Pedidos</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">Mis Pedidos</h1>
             {activePurchasesCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full border border-emerald-200 animate-pulse">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-600" />
                 <span>{activePurchasesCount} en curso</span>
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
             Historial de compras y seguimiento de entregas en Tingo María
           </p>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex gap-1.5 p-1.5 bg-gray-100 rounded-2xl text-xs font-bold overflow-x-auto no-scrollbar">
+        {/* Status Filter Tabs Integradas */}
+        <div className="flex gap-1.5 p-1.5 bg-[#eaeff2] rounded-full text-xs font-bold overflow-x-auto no-scrollbar select-none">
           <button
             type="button"
             onClick={() => setFilter('all')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl transition-all ${
+            className={`min-h-[38px] px-4 py-2 rounded-full transition-all cursor-pointer ${
               filter === 'all'
-                ? 'bg-white text-ink shadow-sm'
-                : 'text-gray-600 hover:text-ink hover:bg-gray-50'
+                ? 'bg-gray-950 text-white font-black shadow-xs'
+                : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
             }`}
           >
             Todos ({userPurchases.length})
@@ -79,10 +79,10 @@ export const CustomerOrdersPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter('active')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl transition-all ${
+            className={`min-h-[38px] px-4 py-2 rounded-full transition-all cursor-pointer ${
               filter === 'active'
-                ? 'bg-white text-primary shadow-sm'
-                : 'text-gray-600 hover:text-ink hover:bg-gray-50'
+                ? 'bg-gray-950 text-white font-black shadow-xs'
+                : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
             }`}
           >
             En Curso ({activePurchasesCount})
@@ -90,10 +90,10 @@ export const CustomerOrdersPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter('completed')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl transition-all ${
+            className={`min-h-[38px] px-4 py-2 rounded-full transition-all cursor-pointer ${
               filter === 'completed'
-                ? 'bg-white text-emerald-700 shadow-sm'
-                : 'text-gray-600 hover:text-ink hover:bg-gray-50'
+                ? 'bg-gray-950 text-white font-black shadow-xs'
+                : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
             }`}
           >
             Completados
@@ -101,10 +101,10 @@ export const CustomerOrdersPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter('cancelled')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl transition-all ${
+            className={`min-h-[38px] px-4 py-2 rounded-full transition-all cursor-pointer ${
               filter === 'cancelled'
-                ? 'bg-white text-red-700 shadow-sm'
-                : 'text-gray-600 hover:text-ink hover:bg-gray-50'
+                ? 'bg-gray-950 text-white font-black shadow-xs'
+                : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
             }`}
           >
             Cancelados
@@ -157,17 +157,17 @@ export const CustomerOrdersPage: React.FC = () => {
             return (
               <div
                 key={purchase.id}
-                className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-5 space-y-4"
+                className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-5 space-y-4"
               >
                 {/* Header: Code & Status */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
                   <div className="flex items-center gap-3">
-                    <span className="font-black text-lg text-ink tabular-nums">
+                    <span className="font-black text-lg text-gray-950 tabular-nums">
                       {purchase.code}
                     </span>
                     <PurchaseStatusBadge status={purchase.status} />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium tabular-nums">
+                  <span className="text-xs text-gray-500 font-medium tabular-nums">
                     {formatDateTime(purchase.createdAt)}
                   </span>
                 </div>
@@ -177,11 +177,11 @@ export const CustomerOrdersPage: React.FC = () => {
                   {purchase.merchantOrders.map((mo) => (
                     <div
                       key={mo.id}
-                      className="p-3.5 bg-gray-50/80 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                      className="p-3.5 bg-gray-50/70 rounded-xl border border-gray-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Store className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="font-extrabold text-ink text-sm sm:text-xs">
+                        <Store className="w-4 h-4 text-gray-950 flex-shrink-0 stroke-[2.2]" />
+                        <span className="font-black text-gray-950 text-sm sm:text-xs">
                           {mo.merchantName}
                         </span>
                         <span className="text-gray-500 font-medium tabular-nums">
@@ -189,7 +189,7 @@ export const CustomerOrdersPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3 self-end sm:self-auto">
-                        <span className="font-black text-ink tabular-nums">
+                        <span className="font-black text-gray-950 tabular-nums">
                           {formatCents(mo.totalCents)}
                         </span>
                         <OrderStatusBadge status={mo.status} />
@@ -201,8 +201,8 @@ export const CustomerOrdersPage: React.FC = () => {
                 {/* Footer: Grand Total & Actions */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                   <div>
-                    <span className="text-xs text-gray-500 block">Total de la orden:</span>
-                    <span className="text-xl font-black text-primary tabular-nums">
+                    <span className="text-xs text-gray-500 font-medium block">Total de la orden:</span>
+                    <span className="text-xl font-black text-gray-950 tabular-nums">
                       {formatCents(purchase.grandTotalCents)}
                     </span>
                   </div>
@@ -211,19 +211,19 @@ export const CustomerOrdersPage: React.FC = () => {
                     {isActive && (
                       <Link
                         to={`/cliente/seguimiento/${purchase.id}${purchase.isGroup ? "?grupo=1" : ""}`}
-                        className="min-h-[44px] bg-primary text-white hover:bg-primary-hover px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
+                        className="min-h-[44px] bg-gray-950 text-white hover:bg-black px-6 py-2.5 rounded-full text-xs font-black flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
-                        <Navigation className="w-4 h-4" />
+                        <Navigation className="w-4 h-4 stroke-[2.2]" />
                         <span>Seguimiento</span>
                       </Link>
                     )}
 
                     <Link
                       to={purchase.detailPath}
-                      className="min-h-[44px] bg-gray-100 hover:bg-gray-200 text-ink px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                      className="min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2.5 rounded-full text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <span>Ver Detalle</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 stroke-[2.2]" />
                     </Link>
                   </div>
                 </div>

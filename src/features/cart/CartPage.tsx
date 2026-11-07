@@ -8,9 +8,7 @@ import { ApiError } from '../../services/api/apiClient';
 import { RemoteState, useRemote } from '../operations/shared';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { Dialog } from '../../components/ui/Dialog';
-import { Input } from '../../components/ui/Input';
 import {
   Trash2,
   Plus,
@@ -18,10 +16,11 @@ import {
   Store,
   ArrowRight,
   ShoppingBag,
+  ShoppingCart,
   AlertCircle,
   ChevronLeft,
   Loader2,
-  Check,
+  RotateCw,
 } from 'lucide-react';
 
 interface LoadedItem {
@@ -41,7 +40,6 @@ export const CartPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
-
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [actionError, setActionError] = useState('');
 
@@ -58,6 +56,7 @@ export const CartPage: React.FC = () => {
   });
   const productsMap = catalog.data || {};
   const loadingProducts = catalog.loading;
+
   useEffect(() => {
     window.addEventListener('focus', catalog.reload);
     return () => window.removeEventListener('focus', catalog.reload);
@@ -138,61 +137,90 @@ export const CartPage: React.FC = () => {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-12">
-        <EmptyState
-          icon={<ShoppingBag className="h-10 w-10 text-primary" aria-hidden="true" />}
-          title="Tu carrito está vacío"
-          description="Explora los comercios y productos de Tingo María y agrega lo que necesites."
-          actionText="Explorar productos"
-          onAction={() => navigate('/')}
-        />
+      <div className="mx-auto w-full max-w-2xl px-4 py-16">
+        <div className="bg-[#eaeff2] rounded-3xl p-8 sm:p-12 text-center space-y-4 select-none">
+          <div className="w-14 h-14 rounded-2xl bg-gray-950 text-white flex items-center justify-center mx-auto shadow-xs">
+            <ShoppingBag className="w-7 h-7 text-white stroke-[2.2]" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+              Tu carrito está vacío
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed max-w-md mx-auto">
+              Explora las tiendas y productos oficiales de Tingo María y agrega lo que necesites para pedirlo hoy mismo.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center min-h-[44px] px-8 py-3 rounded-full bg-gray-950 hover:bg-black text-white font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+            >
+              Explorar productos de Tingo María
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 pb-32 sm:px-6 lg:px-8">
-      {/* Barra superior de navegación rápida */}
+      {/* Barra superior de navegación rápida y acciones */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-primary hover:text-primary-hover"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-gray-950 transition-colors"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
           Seguir comprando
         </Link>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-destructive hover:bg-destructive-soft"
-          onClick={() => setShowClearDialog(true)}
-        >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
-          Vaciar carrito
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs font-bold text-gray-700 hover:text-gray-950 border border-gray-300 bg-white hover:bg-gray-50 rounded-lg shadow-2xs"
+            onClick={catalog.reload}
+          >
+            <RotateCw className={`h-3.5 w-3.5 ${loadingProducts ? 'animate-spin' : ''}`} aria-hidden="true" />
+            Actualizar disponibilidad
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg"
+            onClick={() => setShowClearDialog(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Vaciar carrito
+          </Button>
+        </div>
       </div>
 
-      {/* Encabezado */}
-      <header className="space-y-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-ink">Tu carrito</h1>
-          <span className="rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold tabular-nums text-ink-muted">
-            {totalCount} {totalCount === 1 ? 'producto' : 'productos'}
+      {/* Encabezado con tipografía moderna limpia estilo Imagen 2 y 3 */}
+      <header className="space-y-1 border-b border-gray-200 pb-4">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-950">
+            Carrito de compras
+          </h1>
+          <span className="text-sm font-bold text-gray-500">
+            {totalCount} {totalCount === 1 ? 'Producto' : 'Productos'}
           </span>
         </div>
-        <p className="text-sm text-ink-light">
-          Puedes comprar de una o varias tiendas. Cada comercio cuenta con su propio envío y cobro contra entrega en efectivo.
+        <p className="text-xs sm:text-sm text-gray-600 max-w-2xl leading-relaxed font-medium">
+          Productos de comercios oficiales de Tingo María. Pago contra entrega en efectivo o transferencia.
         </p>
-        <p role="status" className="text-xs tabular-nums text-ink-muted">
-          {selectedCount} {selectedCount === 1 ? 'producto seleccionado' : 'productos seleccionados'} ·{' '}
-          {totalCount - selectedCount} para después
+        <p role="status" className="text-xs tabular-nums text-gray-500">
+          <span className="font-bold text-gray-950">{selectedCount}</span> {selectedCount === 1 ? 'producto seleccionado' : 'productos seleccionados'} ·{' '}
+          <span className="font-bold text-gray-950">{totalCount - selectedCount}</span> para después
         </p>
       </header>
 
       {notice && (
-        <div role="status" className="rounded-xl border border-warning-border bg-warning-soft p-3 text-sm text-warning-strong">
-          {notice}
+        <div role="status" className="rounded-xl border border-warning-border bg-warning-soft p-3 text-sm text-warning-strong flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
 
@@ -202,30 +230,28 @@ export const CartPage: React.FC = () => {
         </div>
       )}
 
-      <RemoteState loading={loadingProducts} error={catalog.error} retry={catalog.reload}/>
-      <Button type="button" variant="outline" onClick={catalog.reload}>Actualizar disponibilidad</Button>
+      <RemoteState loading={loadingProducts} error={catalog.error} retry={catalog.reload} />
+
       {/* Grid principal: Items a la izquierda, Resumen a la derecha */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-        <div className="min-w-0 space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-5 lg:col-span-2">
           {storeGroups.map((group) => {
             const allSelected = group.items.every((it) => it.intent.selected !== false);
-            const someSelected = group.items.some((it) => it.intent.selected !== false);
 
             return (
               <section
                 key={group.storeId}
                 aria-label={`Productos de ${group.storeName}`}
-                className={`min-w-0 rounded-2xl border bg-surface shadow-subtle transition-colors ${
-                  someSelected ? 'border-primary/50' : 'border-border'
-                }`}
+                className="min-w-0 rounded-xl border border-zinc-200/90 bg-white shadow-xs overflow-hidden"
               >
-                {/* Cabecera de la tienda */}
-                <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-subtle/50 px-5 py-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <Store className="h-5 w-5 text-primary" aria-hidden="true" />
-                    <h2 className="text-base font-bold text-ink">
+                {/* Cabecera integrada de la tienda */}
+                <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50/70 px-4 py-3 sm:px-5 sm:py-3.5">
+                  <div className="flex items-center gap-2">
+                    <Store className="h-4.5 w-4.5 text-zinc-500" aria-hidden="true" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Tienda:</span>
+                    <h2 className="text-sm sm:text-base font-bold text-zinc-900">
                       {group.storeId !== 'unknown' ? (
-                        <Link to={`/negocios/${group.storeId}`} className="hover:text-primary">
+                        <Link to={`/negocios/${group.storeId}`} className="hover:text-primary transition-colors">
                           {group.storeName}
                         </Link>
                       ) : (
@@ -236,17 +262,17 @@ export const CartPage: React.FC = () => {
 
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="text-xs font-semibold"
+                    className="h-8 text-xs font-semibold px-3 border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 shadow-2xs"
                     onClick={() => selectStoreItems(group.storeId, !allSelected)}
                   >
                     {allSelected ? 'Desmarcar tienda' : 'Seleccionar tienda'}
                   </Button>
                 </header>
 
-                {/* Lista de productos de la tienda */}
-                <ul className="divide-y divide-border">
+                {/* Lista de productos de la tienda sin bordes redundantes */}
+                <ul className="divide-y divide-zinc-100">
                   {group.items.map(({ intent, product, sku }) => {
                     const included = intent.selected !== false;
                     const productName = product?.name || (loadingProducts ? 'Cargando producto...' : 'Producto no disponible');
@@ -260,14 +286,14 @@ export const CartPage: React.FC = () => {
                     return (
                       <li
                         key={intent.skuId}
-                        className={`space-y-3 p-4 sm:p-5 transition-colors ${
-                          included ? 'bg-primary-50/20' : 'opacity-80'
+                        className={`p-4 sm:p-5 transition-colors ${
+                          included ? 'bg-white' : 'bg-zinc-50/40 opacity-70'
                         }`}
                       >
                         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                           {/* Checkbox de selección */}
                           <label
-                            className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl"
+                            className="flex items-center cursor-pointer pt-1"
                             htmlFor={`cart-select-${intent.skuId}`}
                           >
                             <input
@@ -275,56 +301,68 @@ export const CartPage: React.FC = () => {
                               type="checkbox"
                               checked={included}
                               aria-label={`Seleccionar ${productName}`}
-                              className="h-5 w-5 rounded accent-primary"
+                              className="h-4.5 w-4.5 rounded border-zinc-300 text-primary accent-primary focus:ring-primary cursor-pointer"
                               onChange={(e) => update(intent.skuId, { selected: e.target.checked })}
                             />
                           </label>
 
-                          {/* Imagen */}
+                          {/* Imagen del producto */}
                           {imageUrlSrc ? (
                             <img
                               src={imageUrlSrc}
                               alt={productName}
                               loading="lazy"
                               onError={(e) => { (e.currentTarget as HTMLImageElement).src = catalogPlaceholder; }}
-                              className="h-16 w-16 shrink-0 rounded-xl border border-border bg-surface-subtle object-cover sm:h-20 sm:w-20"
+                              className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 rounded-xl border border-zinc-100 bg-zinc-50 object-cover"
                             />
                           ) : (
-                            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-ink-muted sm:h-20 sm:w-20">
-                              <ShoppingBag className="h-6 w-6" aria-hidden="true" />
+                            <span className="flex h-20 w-20 sm:h-24 sm:w-24 shrink-0 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50 text-zinc-400">
+                              <ShoppingBag className="h-7 w-7" aria-hidden="true" />
                             </span>
                           )}
 
-                          {/* Info del producto */}
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <h3 className="break-words text-sm font-bold text-ink sm:text-base">
-                              {product ? (
-                                <Link to={`/producto/${product.id}`} className="hover:text-primary">
-                                  {productName}
-                                </Link>
-                              ) : (
-                                productName
-                              )}
-                            </h3>
+                          {/* Info del producto & Controles */}
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                              <div className="min-w-0 space-y-1">
+                                <h3 className="break-words text-sm sm:text-base font-bold text-zinc-900 leading-snug">
+                                  {product ? (
+                                    <Link to={`/producto/${product.id}`} className="hover:text-primary transition-colors">
+                                      {productName}
+                                    </Link>
+                                  ) : (
+                                    productName
+                                  )}
+                                </h3>
 
-                            {sku?.variantName && (
-                              <p className="break-words text-xs font-medium text-ink-light">
-                                Presentación: <span className="text-ink">{sku.variantName}</span>
-                              </p>
-                            )}
+                                {sku?.variantName && (
+                                  <p className="break-words text-xs text-zinc-500">
+                                    Presentación: <span className="font-semibold text-zinc-700">{sku.variantName}</span>
+                                  </p>
+                                )}
 
-                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                              <span className="font-semibold tabular-nums text-primary">
-                                {sku ? money(unitPriceCents) + ' c/u' : 'Precio por verificar'}
-                              </span>
-                              {sku && (
-                                <span className="tabular-nums text-ink-muted">
-                                  · {sku.availableStock} disponibles
-                                </span>
-                              )}
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-medium text-zinc-600">
+                                    {sku ? money(unitPriceCents) + ' c/u' : 'Precio por verificar'}
+                                  </span>
+                                  {sku && (
+                                    <span className="tabular-nums text-zinc-400">
+                                      · {sku.availableStock} disponibles
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Bloque de precio visible en pantallas medianas y grandes */}
+                              <div className="hidden sm:block text-right shrink-0">
+                                <p className="text-[11px] uppercase tracking-wider text-zinc-400 font-medium">Precio</p>
+                                <p className="text-base font-bold tabular-nums text-zinc-900" aria-label={`Subtotal de ${productName}`}>
+                                  {sku ? money(unitPriceCents * intent.quantity) : 'Por verificar'}
+                                </p>
+                              </div>
                             </div>
 
-                            {/* Campo de nota personalizada */}
+                            {/* Campo de nota personalizada para el comercio */}
                             <div className="pt-1">
                               <input
                                 type="text"
@@ -332,115 +370,168 @@ export const CartPage: React.FC = () => {
                                 maxLength={500}
                                 value={intent.note || ''}
                                 onChange={(e) => update(intent.skuId, { note: e.target.value })}
-                                className="w-full rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full max-w-md rounded-lg border border-zinc-200/90 bg-zinc-50/70 px-3 py-1.5 text-xs text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
                               />
                             </div>
-                          </div>
-                        </div>
 
-                        {/* Alerta de stock insuficiente */}
-                        {unavailable && !loadingProducts && <p role="alert" className="text-sm text-destructive">Esta presentación no está disponible. Retírala o elígela nuevamente desde el catálogo.</p>}
-                        {hasStockError && (
-                          <div className="flex items-start gap-2 rounded-xl border border-warning-border bg-warning-soft p-3 text-xs text-warning-strong">
-                            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                            <span>
-                              Solo quedan {stockAvailable} unidades disponibles en inventario. Por favor, ajusta la cantidad.
-                            </span>
-                          </div>
-                        )}
+                            {/* Alertas de stock insuficiente o producto no disponible */}
+                            {unavailable && !loadingProducts && (
+                              <p role="alert" className="text-xs sm:text-sm font-medium text-destructive pt-1">
+                                Esta presentación no está disponible. Retírala o elígela nuevamente desde el catálogo.
+                              </p>
+                            )}
+                            {hasStockError && (
+                              <div className="flex items-start gap-2 rounded-lg border border-warning-border bg-warning-soft p-2.5 text-xs text-warning-strong mt-2">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                                <span>
+                                  Solo quedan {stockAvailable} unidades disponibles en inventario. Por favor, ajusta la cantidad.
+                                </span>
+                              </div>
+                            )}
 
-                        {/* Fila de controles: Cantidad, Subtotal y Eliminar */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                          <div
-                            className="inline-flex items-center rounded-xl border border-border bg-surface"
-                            role="group"
-                            aria-label={`Cantidad de ${productName}`}
-                          >
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              disabled={intent.quantity <= 1}
-                              aria-label={`Disminuir cantidad de ${productName}`}
-                              onClick={() => update(intent.skuId, { quantity: intent.quantity - 1 })}
-                            >
-                              <Minus className="h-4 w-4" aria-hidden="true" />
-                            </Button>
-                            <span className="min-w-8 text-center text-sm font-semibold tabular-nums text-ink">
-                              {intent.quantity}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              disabled={unavailable || intent.quantity >= stockAvailable || intent.quantity >= 10000}
-                              aria-label={`Aumentar cantidad de ${productName}`}
-                              onClick={() => update(intent.skuId, { quantity: intent.quantity + 1 })}
-                            >
-                              <Plus className="h-4 w-4" aria-hidden="true" />
-                            </Button>
-                          </div>
+                            {/* Fila de controles: Stepper tipo Imagen 2, Subtotal móvil y Eliminar */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                              <div
+                                className="inline-flex items-center rounded-lg border border-zinc-200 bg-white shadow-2xs overflow-hidden"
+                                role="group"
+                                aria-label={`Cantidad de ${productName}`}
+                              >
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 min-h-0 min-w-0 p-0 rounded-none text-zinc-600 hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-white border-r border-zinc-200"
+                                  disabled={intent.quantity <= 1}
+                                  aria-label={`Disminuir cantidad de ${productName}`}
+                                  onClick={() => update(intent.skuId, { quantity: intent.quantity - 1 })}
+                                >
+                                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                                </Button>
+                                <span className="min-w-9 px-2 text-center text-xs sm:text-sm font-semibold tabular-nums text-zinc-900">
+                                  {intent.quantity}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 min-h-0 min-w-0 p-0 rounded-none text-zinc-600 hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-white border-l border-zinc-200"
+                                  disabled={unavailable || intent.quantity >= stockAvailable || intent.quantity >= 10000}
+                                  aria-label={`Aumentar cantidad de ${productName}`}
+                                  onClick={() => update(intent.skuId, { quantity: intent.quantity + 1 })}
+                                >
+                                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                                </Button>
+                              </div>
 
-                          <div className="flex items-center gap-4">
-                            <p className="text-base font-bold tabular-nums text-ink" aria-label={`Subtotal de ${productName}`}>
-                              {sku ? money(unitPriceCents * intent.quantity) : 'Por verificar'}
-                            </p>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:bg-destructive-soft"
-                              aria-label={`Eliminar ${productName}`}
-                              onClick={() => remove(intent.skuId)}
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            </Button>
+                              <div className="flex items-center gap-3">
+                                <p className="block sm:hidden text-sm font-bold tabular-nums text-zinc-900" aria-label={`Subtotal de ${productName}`}>
+                                  {sku ? money(unitPriceCents * intent.quantity) : 'Por verificar'}
+                                </p>
+
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-destructive hover:bg-destructive-soft px-2 py-1 rounded-md transition-colors"
+                                  aria-label={`Eliminar ${productName}`}
+                                  onClick={() => remove(intent.skuId)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                  <span className="hidden sm:inline">Eliminar</span>
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </li>
                     );
                   })}
                 </ul>
+
+                {/* Pie de tienda estilo Oechsle / Falabella */}
+                <footer className="px-4 py-2.5 sm:px-5 bg-zinc-50/80 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
+                  <span>
+                    Vendido y despachado por <strong className="text-zinc-900 font-bold">{group.storeName}</strong>
+                  </span>
+                  <span className="text-[11px] text-zinc-400 font-medium">Garantía oficial y entrega local</span>
+                </footer>
               </section>
             );
           })}
         </div>
 
-        {/* Barra lateral: Resumen y Checkout */}
+        {/* Barra lateral: Tarjeta plomo estilo Imagen 2 */}
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-28">
-          <section aria-label="Resumen del pedido" className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-subtle">
-            <h2 className="text-lg font-bold text-ink">Resumen de compra</h2>
+          <section
+            aria-label="Resumen del pedido"
+            className="rounded-xl border border-zinc-200/90 bg-white shadow-xs overflow-hidden"
+          >
+            {/* Cabecera plomo distintiva con icono de carrito de compras */}
+            <div className="bg-[#5D636A] px-5 py-3.5 flex items-center gap-2.5 text-white">
+              <ShoppingCart className="h-5 w-5 text-white shrink-0" aria-hidden="true" />
+              <h2 className="text-base font-bold text-white tracking-wide">Resumen de la compra</h2>
+            </div>
 
-            <dl className="space-y-3 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-light">Productos seleccionados</dt>
-                <dd className="font-semibold tabular-nums text-ink">{loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}</dd>
+            <div className="p-5 space-y-4">
+              <dl className="space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-zinc-600">Productos seleccionados</dt>
+                  <dd className="font-semibold tabular-nums text-zinc-900">
+                    {loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}
+                  </dd>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 text-xs text-zinc-500">
+                  <dt>Tarifa de envío</dt>
+                  <dd className="font-medium text-zinc-500">Se calcula en el checkout</dd>
+                </div>
+
+                <div className="flex items-baseline justify-between gap-4 border-t border-zinc-200 pt-3">
+                  <dt className="text-base font-bold text-zinc-900">Subtotal estimado</dt>
+                  <dd className="text-xl font-extrabold tabular-nums text-zinc-900">
+                    {loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}
+                  </dd>
+                </div>
+              </dl>
+
+              {/* Módulo de cupón con líneas simples estilo Oechsle (Imagen 3) */}
+              <div className="pt-3 border-t border-zinc-200">
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
+                  ¿Tienes un cupón de descuento?
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ingresa tu cupón"
+                    className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-xs uppercase font-bold text-zinc-900 placeholder:text-zinc-400 placeholder:font-normal focus:bg-white focus:border-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-950 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-lg bg-zinc-950 hover:bg-black text-white font-black text-xs transition-colors cursor-pointer"
+                  >
+                    Aplicar
+                  </button>
+                </div>
               </div>
 
-              <div className="flex justify-between gap-4 text-xs text-ink-muted">
-                <dt>Tarifa de envío</dt>
-                <dd className="font-medium">Se calcula en el checkout</dd>
-              </div>
+              {stockErrors.length > 0 && (
+                <div role="alert" className="rounded-xl border border-warning-border bg-warning-soft p-3 text-xs text-warning-strong space-y-1">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    Atención con el stock:
+                  </p>
+                  {stockErrors.map((err, idx) => (
+                    <p key={idx} className="pl-5">• {err}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
 
-              <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-3">
-                <dt className="text-base font-bold text-ink">Subtotal estimado</dt>
-                <dd className="text-xl font-bold tabular-nums text-primary">{loadingProducts || catalog.error || stockErrors.length ? 'Por verificar' : money(selectedSubtotalCents)}</dd>
-              </div>
-            </dl>
-
-            {stockErrors.length > 0 && (
-              <div role="alert" className="rounded-xl border border-warning-border bg-warning-soft p-3 text-xs text-warning-strong space-y-1">
-                <p className="font-semibold">Atención con el stock:</p>
-                {stockErrors.map((err, idx) => (
-                  <p key={idx}>• {err}</p>
-                ))}
-              </div>
-            )}
-
+          {/* Botón de compra y acciones debajo de la tarjeta plomo como en la imagen 2 */}
+          <div className="space-y-3">
             <Button
               type="button"
               variant="primary"
-              className="min-h-12 w-full gap-2 text-base font-semibold shadow-md"
+              className="min-h-12 w-full gap-2 text-base font-bold shadow-xs rounded-xl"
               disabled={!canProceed}
               onClick={handleProceed}
             >
@@ -457,16 +548,27 @@ export const CartPage: React.FC = () => {
               )}
             </Button>
 
-            {!isAuthenticated && (
-              <p className="text-center text-xs text-ink-muted">
-                Iniciarás sesión con tu cuenta de cliente para elegir tu dirección de entrega en Tingo María.
-              </p>
-            )}
+            <div className="text-center pt-1">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover hover:underline transition-colors"
+              >
+                Ver más productos
+              </Link>
+            </div>
 
-            <p className="text-xs text-ink-muted leading-relaxed border-t border-border/60 pt-3">
-              Pago 100% contra entrega en efectivo. Puedes comprar de varias tiendas; cada una coordinará su entrega independiente.
-            </p>
-          </section>
+            <div className="space-y-2 pt-2 text-center text-xs text-zinc-500 leading-relaxed">
+              {!isAuthenticated && (
+                <p className="rounded-lg border border-zinc-200/80 bg-zinc-50 p-2.5 text-zinc-600">
+                  Iniciarás sesión con tu cuenta de cliente para elegir tu dirección de entrega en Tingo María.
+                </p>
+              )}
+
+              <p className="text-zinc-400">
+                Pago 100% contra entrega en efectivo. Puedes comprar de varias tiendas; cada una coordinará su entrega independiente.
+              </p>
+            </div>
+          </div>
         </aside>
       </div>
 
@@ -479,7 +581,7 @@ export const CartPage: React.FC = () => {
         maxWidth="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm tabular-nums text-ink-light">
+          <p className="text-sm tabular-nums text-zinc-600">
             {totalCount} {totalCount === 1 ? 'producto se eliminará' : 'productos se eliminarán'} de forma permanente.
           </p>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
