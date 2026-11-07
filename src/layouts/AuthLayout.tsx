@@ -14,7 +14,7 @@ export const AuthLayout: React.FC = () => {
             <BrandLogo size="md" variant="white" showSubtitle={false} />
             <span className="hidden sm:inline-block h-4 w-px bg-white/30" />
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-100 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
-              <span>🚚 Tingo María • Selva Alta</span>
+              <span>Tingo María • Selva Alta</span>
             </span>
           </div>
 

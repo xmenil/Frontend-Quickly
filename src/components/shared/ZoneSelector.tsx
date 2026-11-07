@@ -244,8 +244,9 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
             </div>
 
             {/* Bottom info */}
-            <div className="pt-2 text-center text-[11px] text-gray-500 border-t border-gray-100">
-              <span>🛵 Reparto disponible de 7:00 am a 11:00 pm en todo el valle de la selva</span>
+            <div className="pt-2 text-center text-[11px] text-gray-500 border-t border-gray-100 flex items-center justify-center gap-1.5">
+              <Bike className="w-3.5 h-3.5 text-gray-900 stroke-[2.2]" />
+              <span>Reparto disponible de 7:00 am a 11:00 pm en todo el valle de la selva</span>
             </div>
           </div>
         </div>

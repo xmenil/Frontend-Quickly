@@ -1411,52 +1411,58 @@ export function HomePage() {
               })}
             </div>
 
-            {/* Botón para ver más productos */}
+            {/* Botón integrado para ver más productos con estilo plomo */}
             <div className="flex justify-center pt-4 pb-2">
               <Link
                 to="/negocios"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-primary hover:text-primary text-gray-800 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#eaeff2] hover:bg-[#e2e8ec] text-gray-950 font-black text-xs sm:text-sm shadow-xs transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
               >
                 <span>Explorar todos los productos del catálogo ({allProducts.length})</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </Link>
             </div>
           </>
         )}
       </div>
 
-      {/* 7. Secciones Informativas: Afiliar Comercio y Ser Repartidor (Imagen 3) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8">
-        <section className="grid sm:grid-cols-2 gap-4">
+      {/* 7. Secciones Informativas Integradas con Fondo Plomo y Tipografía Oechsle (Imagen 1 y 2) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-10">
+        <section className="grid sm:grid-cols-2 gap-4 sm:gap-6">
           <Link
             to="/registro/comercio"
-            className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-2 hover:border-primary transition-colors group"
+            className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl sm:rounded-3xl p-6 sm:p-7 space-y-3 transition-all duration-300 group block select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-              <Store className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gray-950 text-white flex items-center justify-center font-bold group-hover:scale-105 transition-transform shadow-xs">
+              <Store className="w-5 h-5 text-white stroke-[2.2]" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">¿Tienes un negocio en Tingo María?</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <h3 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
+              ¿Tienes un negocio en Tingo María?
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
               Afilia tu restaurante, bodega o tienda a Quickly y recibe pedidos en línea de toda la ciudad.
             </p>
-            <span className="inline-flex items-center gap-1.5 font-bold text-xs text-primary pt-1">
-              Afiliar mi negocio <ArrowRight className="w-4 h-4" />
+            <span className="inline-flex items-center gap-2 font-black text-xs sm:text-sm text-gray-950 group-hover:text-primary transition-colors pt-1">
+              <span>Afiliar mi negocio</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5] group-hover:translate-x-1 transition-transform" />
             </span>
           </Link>
 
           <Link
             to="/registro/repartidor"
-            className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-2 hover:border-primary transition-colors group"
+            className="bg-[#eaeff2] hover:bg-[#e2e8ec] rounded-2xl sm:rounded-3xl p-6 sm:p-7 space-y-3 transition-all duration-300 group block select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-              <Bike className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gray-950 text-white flex items-center justify-center font-bold group-hover:scale-105 transition-transform shadow-xs">
+              <Bike className="w-5 h-5 text-white stroke-[2.2]" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">Reparte en tu ciudad</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <h3 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
+              Reparte en tu ciudad
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
               Genera ingresos entregando pedidos en moto, bicicleta o mototaxi en todo el valle del Huallaga.
             </p>
-            <span className="inline-flex items-center gap-1.5 font-bold text-xs text-primary pt-1">
-              Solicitar afiliación como repartidor <ArrowRight className="w-4 h-4" />
+            <span className="inline-flex items-center gap-2 font-black text-xs sm:text-sm text-gray-950 group-hover:text-primary transition-colors pt-1">
+              <span>Solicitar afiliación como repartidor</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5] group-hover:translate-x-1 transition-transform" />
             </span>
           </Link>
         </section>

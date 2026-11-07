@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { catalogApi } from '../../services/api/catalogApi';
 import { RemoteState, useRemote } from '../../features/operations/shared';
-import { ChevronDown, ChevronRight, Menu } from 'lucide-react';
+import { ChevronDown, ChevronRight, Menu, ShoppingBag } from 'lucide-react';
 
 interface SubCategory {
   name: string;
@@ -25,7 +25,7 @@ interface CategoriesDropdownProps {
 export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant = 'default' }) => {
   const resource = useRemote('navigation-categories', signal => catalogApi.categories(signal));
   const CATEGORIES_DATA: CategoryOption[] = resource.error ? [] : (resource.data || []).map(category => ({ id: category.id, name: category.name, hasSubcategories: true, subcategories: [], route: '/negocios?categoriaProducto=' + encodeURIComponent(category.id) }));
-  const LOCAL_DELIVERY_SPECIALS = CATEGORIES_DATA.slice(0, 4).map(category => ({ name: category.name, route: category.route!, icon: '🛍️' }));
+  const LOCAL_DELIVERY_SPECIALS = CATEGORIES_DATA.slice(0, 4).map(category => ({ name: category.name, route: category.route! }));
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<CategoryOption | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -176,9 +176,9 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({ variant 
                       key={loc.name}
                       type="button"
                       onClick={() => handleLocalClick(loc.route)}
-                      className="text-left text-[11px] font-semibold text-amber-300 hover:text-white p-1 rounded hover:bg-neutral-700/60 transition-colors truncate flex items-center gap-1"
+                      className="text-left text-[11px] font-semibold text-gray-200 hover:text-white p-1 rounded hover:bg-neutral-700/60 transition-colors truncate flex items-center gap-1.5"
                     >
-                      <span>{loc.icon}</span>
+                      <ShoppingBag className="w-3 h-3 text-gray-400 flex-shrink-0" />
                       <span className="truncate">{loc.name.split(' ')[0]}</span>
                     </button>
                   ))}

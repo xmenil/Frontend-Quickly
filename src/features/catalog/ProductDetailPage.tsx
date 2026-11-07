@@ -429,15 +429,15 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
               />
 
               {/* Active Color Tag on Preview */}
-              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Imagen: {galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
+              <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                <span>{galleryItems[activeImageIndex]?.label || 'Estándar'}</span>
               </div>
 
               {/* Free Shipping Badge */}
-              <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                <Truck className="w-3 h-3" />
-                <span>Envío según destino</span>
+              <div className="absolute top-3 left-3 bg-gray-950 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5 text-white stroke-[2.2]" />
+                <span>Envío a domicilio</span>
               </div>
 
               {/* Mobile Favorite button inside preview */}
@@ -691,32 +691,32 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                 </span>
                 {discountPercent > 0 && <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">{discountPercent > 0 ? `${discountPercent}% OFF` : ''}</span>}
               </div>
-              <div className="flex items-center gap-2 pt-1 text-xs text-ink-light">
-                <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Preparación y despacho: <strong className="text-ink tabular-nums">{merchant.prepTimeMinutes === undefined ? 'Consultar al comercio' : `${merchant.prepTimeMinutes} min de preparación`}</strong></span>
+              <div className="flex items-center gap-2 pt-1 text-xs text-gray-700">
+                <Clock className="w-3.5 h-3.5 text-gray-900 stroke-[2.2] flex-shrink-0" />
+                <span>Preparación y despacho: <strong className="text-gray-950 font-bold tabular-nums">{merchant.prepTimeMinutes === undefined ? 'Consultar al comercio' : `${merchant.prepTimeMinutes} min`}</strong></span>
               </div>
             </div>
 
-            {/* Coupon Callout */}
-            <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-primary-200 flex items-center gap-2 text-xs text-primary font-semibold">
-              <Sparkles className="w-4 h-4 flex-shrink-0" />
-              <span>Los importes se revisan antes de confirmar la compra</span>
+            {/* Verification Callout */}
+            <div className="p-3 rounded-xl bg-[#f2f4f7] border border-gray-200/80 flex items-center gap-2.5 text-xs text-gray-900 font-medium">
+              <ShieldCheck className="w-4 h-4 text-gray-900 flex-shrink-0 stroke-[2.2]" />
+              <span>Importes y disponibilidad revisados antes de procesar el pedido</span>
             </div>
 
             {/* Shipping Info */}
-            <div className="space-y-2 text-xs text-gray-600 pt-2 border-t border-gray-100">
+            <div className="space-y-2.5 text-xs text-gray-700 pt-2 border-t border-gray-100">
               <div className="flex items-start gap-2.5">
-                <Truck className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                <Truck className="w-4 h-4 text-gray-900 mt-0.5 flex-shrink-0 stroke-[2.2]" />
                 <div>
-                  <p className="font-bold text-emerald-700">Envío según dirección de entrega</p>
-                  <p className="text-[11px] text-gray-400">La tarifa se calcula antes de confirmar</p>
+                  <p className="font-bold text-gray-950">Envío directo a domicilio</p>
+                  <p className="text-[11px] text-gray-500">Tarifa calculada al confirmar tu dirección de entrega</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-gray-900 mt-0.5 flex-shrink-0 stroke-[2.2]" />
                 <div>
-                  <p className="font-semibold text-ink">Entrega a tu dirección registrada</p>
-                  <p className="text-[11px] text-gray-400">Consulta las zonas de cobertura al elegir el destino</p>
+                  <p className="font-bold text-gray-950">Entrega en Tingo María y cobertura local</p>
+                  <p className="text-[11px] text-gray-500">Recepción segura en la puerta de tu domicilio</p>
                 </div>
               </div>
             </div>
@@ -725,29 +725,32 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
             {product.variants && product.variants.length > 0 && (
               <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-ink flex items-center gap-1.5">
-                    <Palette className="w-3.5 h-3.5 text-primary" />
-                    <span>Presentación disponible:</span>
+                  <label className="font-black text-gray-950 tracking-wide uppercase text-[11px]">
+                    Presentación disponible:
                   </label>
-                  <span className="font-extrabold text-primary">
+                  <span className="font-black text-gray-950">
                     {selectedVariantObj?.name.replace(/^Color:\s*/i, '') || 'Seleccionar'}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {product.variants.map((v, vIdx) => {
+                  {product.variants.map((v) => {
                     const isSelected = selectedVariantId === v.id;
                     const colorName = v.name.replace(/^Color:\s*/i, '');
 
                     const getSwatchDot = (name: string) => {
                       const n = name.toLowerCase();
                       if (n.includes('blanco')) return 'bg-white border border-gray-300';
-                      if (n.includes('negro') || n.includes('obsidiana') || n.includes('militar')) return 'bg-gray-900';
+                      if (n.includes('negro') || n.includes('obsidiana') || n.includes('militar')) return 'bg-gray-950';
                       if (n.includes('rosa')) return 'bg-pink-400';
                       if (n.includes('plata') || n.includes('gris') || n.includes('grafito')) return 'bg-slate-400';
                       if (n.includes('azul')) return 'bg-blue-600';
                       if (n.includes('verde')) return 'bg-emerald-600';
-                      return 'bg-primary';
+                      if (n.includes('amarillo') || n.includes('oro')) return 'bg-amber-400';
+                      if (n.includes('rojo') || n.includes('vino') || n.includes('burdeos')) return 'bg-red-600';
+                      return null; // Tallas u otras variantes sin punto de color
                     };
+
+                    const dotClass = getSwatchDot(colorName);
 
                     return (
                       <button
@@ -759,13 +762,15 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                           setSelectedVariantId(v.id);
                           setSelectedQuantity(1);
                         }}
-                        className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                        className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
                           isSelected
-                            ? 'bg-primary text-white shadow-sm ring-2 ring-primary/30 scale-102'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            ? 'bg-gray-950 text-white shadow-xs scale-[1.02]'
+                            : 'bg-white text-gray-800 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
                         }`}
                       >
-                        <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-xs ${getSwatchDot(colorName)}`} />
+                        {dotClass && (
+                          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-xs ${dotClass}`} />
+                        )}
                         <span>{colorName}</span>
                       </button>
                     );
@@ -785,7 +790,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                     className="p-2 hover:bg-gray-200 text-gray-600 transition-colors"
                     aria-label="Disminuir"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <Minus className="w-3.5 h-3.5 text-gray-900 stroke-[2.2]" />
                   </button>
                   <span className="px-3 font-bold text-ink">{selectedQuantity}</span>
                   <button
@@ -794,7 +799,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                     className="p-2 hover:bg-gray-200 text-gray-600 transition-colors"
                     aria-label="Aumentar"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 text-gray-900 stroke-[2.2]" />
                   </button>
                 </div>
                 <span className="text-[11px] text-gray-400">(+{product.stock} disponibles)</span>
@@ -807,9 +812,8 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                 type="button"
                 onClick={handleBuyNow}
                 disabled={!canBuy}
-                className="w-full py-3.5 px-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 rounded-xl bg-gray-950 hover:bg-black text-white text-sm font-black shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Zap className="w-4 h-4 fill-white" />
                 <span>Comprar ahora</span>
               </button>
 
@@ -817,9 +821,9 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!canBuy}
-                className="w-full py-3 px-4 rounded-2xl bg-primary-50 hover:bg-primary-100 text-primary border border-primary-200 text-xs font-bold transition-all active:scale-98 flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-[#f2f4f7] hover:bg-gray-200 text-gray-950 border border-gray-300/80 text-xs font-black transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
+                <ShoppingCart className="w-4 h-4 text-gray-900 stroke-[2.2]" />
                 <span>Agregar al carrito</span>
               </button>
             </div>
@@ -835,7 +839,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <p className="font-extrabold text-ink truncate">{merchant.name}</p>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-gray-900 stroke-[2.2] flex-shrink-0" />
                   </div>
                   <p className="text-[11px] text-gray-400">Comercio afiliado a Quickly</p>
                 </div>
@@ -844,8 +848,8 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
               {/* Reputation Gauge */}
               <div className="space-y-1 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                 <div className="flex items-center justify-between text-[11px] font-bold text-ink">
-                  <span className="text-emerald-700 flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5" /> Valoraciones del comercio
+                  <span className="text-gray-900 flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5 text-gray-900 stroke-[2.2]" /> Valoraciones del comercio
                   </span>
                   <span>{merchant.rating == null ? 'Sin valoraciones' : `${merchant.rating.toFixed(1)} ★`}</span>
                 </div>
@@ -854,7 +858,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                   <div className="bg-orange-400 rounded-full" />
                   <div className="bg-yellow-400 rounded-full" />
                   <div className="bg-lime-400 rounded-full" />
-                  <div className={`bg-emerald-500 rounded-full ${merchant.rating != null && merchant.rating >= 4.5 ? 'ring-2 ring-emerald-300' : ''}`} />
+                  <div className={`bg-gray-900 rounded-full ${merchant.rating != null && merchant.rating >= 4.5 ? 'ring-2 ring-gray-400' : ''}`} />
                 </div>
                 <div className="grid grid-cols-3 text-[10px] text-gray-500 text-center pt-1">
                   <div>
@@ -862,11 +866,11 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
                     <span>Valoraciones</span>
                   </div>
                   <div>
-                    <span className="font-bold text-emerald-600 block">{merchant.isOpen ? 'Abierto' : 'Cerrado'}</span>
+                    <span className="font-bold text-gray-900 block">{merchant.isOpen ? 'Abierto' : 'Cerrado'}</span>
                     <span>Atención</span>
                   </div>
                   <div>
-                    <span className="font-bold text-emerald-600 block">En checkout</span>
+                    <span className="font-bold text-gray-900 block">En checkout</span>
                     <span>Entrega</span>
                   </div>
                 </div>
@@ -883,13 +887,13 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
             {/* Compra Protegida */}
             <div className="space-y-2 pt-3 border-t border-gray-100 text-xs text-gray-600">
               <div className="flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <ShieldCheck className="w-4 h-4 text-gray-900 flex-shrink-0 mt-0.5 stroke-[2.2]" />
                 <p>
                   <span className="font-bold text-ink">Compra Protegida Quickly:</span> Consulta el detalle de tu pedido y contacta a soporte si necesitas ayuda.
                 </p>
               </div>
               <div className="flex items-start gap-2">
-                <RotateCcw className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <RotateCcw className="w-4 h-4 text-gray-900 flex-shrink-0 mt-0.5 stroke-[2.2]" />
                 <p className="text-[11px] text-gray-400">
                   Las consultas de devolución se gestionan con soporte.
                 </p>
@@ -900,7 +904,7 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
             <div className="space-y-2 pt-3 border-t border-gray-100 text-xs">
               <h4 className="font-bold text-ink">Medios de pago disponibles</h4>
               <p className="text-[11px] text-gray-500">Pago contra entrega</p>
-              <div className="flex items-center gap-2 flex-wrap"><span className="px-2 py-1 rounded-md bg-emerald-100 font-extrabold text-[11px] text-emerald-800">Efectivo</span></div>
+              <div className="flex items-center gap-2 flex-wrap"><span className="px-2.5 py-1 rounded-md bg-gray-100 font-extrabold text-[11px] text-gray-900 border border-gray-200">Efectivo</span></div>
             </div>
           </div>
         </div>
