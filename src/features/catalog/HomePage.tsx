@@ -7,6 +7,8 @@ import { catalogPlaceholder, catalogImage } from '../../lib/catalogImage';
 import { catalogApi, CatalogProduct, money } from '../../services/api/catalogApi';
 import { operationsApi } from '../../services/api/operationsApi';
 import { useRemote } from '../operations/shared';
+import fondo2Img from '../../assets/img/fondo2.webp';
+import bannerZapatillasImg from '../../assets/img/banner-zapatillas.jpg';
 import {
   Store,
   ArrowRight,
@@ -36,123 +38,6 @@ function extractBrandOrStore(p: CatalogProduct): string {
     if (name.includes(b)) return b;
   }
   return (p.storeName || 'TIENDA LOCAL').toUpperCase();
-}
-
-function getProductSpecBadges(p: CatalogProduct): [string, string] {
-  const name = (p.name || '').toLowerCase();
-
-  // Celulares y telefonía
-  if (name.includes('celular') || name.includes('smartphone') || name.includes('redmi') || name.includes('samsung') || name.includes('galaxy') || name.includes('xiaomi') || name.includes('poco') || name.includes('honor') || name.includes('iphone')) {
-    if (name.includes('512gb')) return ['512GB ROM', '12GB RAM'];
-    if (name.includes('256gb')) return ['256GB ROM', '8GB RAM'];
-    if (name.includes('128gb')) return ['128GB ROM', '6GB RAM'];
-    if (name.includes('64gb')) return ['64GB ROM', '4GB RAM'];
-    return ['PANTALLA AMOLED', 'CÁMARA IA'];
-  }
-  // Laptops y cómputo
-  if (name.includes('macbook') || name.includes('neo 13')) {
-    return ['256GB SSD', '8GB RAM'];
-  }
-  if (name.includes('loq') || name.includes('gamer')) {
-    return ['512GB SSD', '16GB RAM'];
-  }
-  if (name.includes('15-fc0287la') || name.includes('hp')) {
-    return ['512GB SSD', '8GB RAM'];
-  }
-  if (name.includes('laptop') || name.includes('notebook') || name.includes('lenovo')) {
-    return ['16GB RAM', '512GB SSD'];
-  }
-  // Cosméticos y regalos
-  if (name.includes('labiales') || name.includes('teddy party')) {
-    return ['EDICIÓN LIMITADA', '3 TONOS MATE'];
-  }
-  if (name.includes('máscara') || name.includes('mascara') || name.includes('sumptuous')) {
-    return ['EXTRA VOLUMEN', 'A PRUEBA DE AGUA'];
-  }
-  if (name.includes('living legends') || name.includes('gloss')) {
-    return ['KIT COMPLETO', 'ALTA HIDRATACIÓN'];
-  }
-  // Juguetes
-  if (name.includes('hot wheels')) {
-    return ['PACK X5 AUTOS', 'COLECCIONABLE'];
-  }
-  if (name.includes('pikachu') || name.includes('peluche')) {
-    return ['ORIGINAL 45CM', 'PELUCHE SUAVE'];
-  }
-  // Calzado y zapatillas
-  if (name.includes('nike')) {
-    return ['CORTE CLÁSICO', 'SUELA DE GOMA'];
-  }
-  if (name.includes('adidas')) {
-    return ['CLOUDFOAM', 'TRANSPIRABLE'];
-  }
-  if (name.includes('vans')) {
-    return ['URBANO VANS', 'VULCANIZADO'];
-  }
-  if (name.includes('botines') || name.includes('cuero')) {
-    return ['CUERO IMPERMEABLE', 'ANTIDESLIZANTE'];
-  }
-  if (name.includes('zapatillas') || name.includes('sandalias')) {
-    return ['CALZADO CÓMODO', 'ANTIDESLIZANTE'];
-  }
-  // Camas y colchones
-  if (name.includes('paraíso') || (name.includes('colchón') && name.includes('royal'))) {
-    return ['RESORTES POCKET', '2 PLAZAS'];
-  }
-  if (name.includes('tarima') || name.includes('cama')) {
-    return ['MADERA TORNILLO', 'CON CABECERA'];
-  }
-  if (name.includes('inflable')) {
-    return ['ATERCIOPELADO', 'CON INFLADOR'];
-  }
-  if (name.includes('sábanas') || name.includes('sabanas')) {
-    return ['100% ALGODÓN', '400 HILOS'];
-  }
-  // Ropa y moda
-  if (name.includes('casaca') || name.includes('bomber')) {
-    return ['IMPERMEABLE', 'FORRO LIVIANO'];
-  }
-  if (name.includes('vestido')) {
-    return ['VISCOSA FLORAL', 'CORTE EN A'];
-  }
-  if (name.includes('pantalon') || name.includes('palazzo') || name.includes('denim')) {
-    return ['DENIM FRESCO', 'TIRO ALTO'];
-  }
-  if (name.includes('polo')) {
-    return ['100% ALGODÓN', 'ESTAMPADO LOCAL'];
-  }
-  if (name.includes('sombrero')) {
-    return ['PROTECCIÓN UV', 'IDEAL SELVA'];
-  }
-  // Smart TVs y Electro
-  if (name.includes('tv') || name.includes('televisor')) {
-    return ['4K CRYSTAL UHD', '55 PULGADAS'];
-  }
-  if (name.includes('cocina')) {
-    return ['4 HORNILLAS', 'ENCENDIDO ELÉCTRICO'];
-  }
-  if (name.includes('licuadora')) {
-    return ['VASO DE VIDRIO', 'MOTOR CLÁSICO'];
-  }
-  if (name.includes('freidora')) {
-    return ['4.1 LITROS', 'AIRFRYER DIGITAL'];
-  }
-  if (name.includes('smartwatch') || name.includes('reloj') || name.includes('fit3') || name.includes('band')) {
-    return ['PANTALLA AMOLED', 'BLUETOOTH 5.3'];
-  }
-  if (name.includes('bloqueador') || name.includes('solar')) {
-    return ['FPS 50+', 'RESISTENTE AL AGUA'];
-  }
-  if (name.includes('repelente')) {
-    return ['PROTECCIÓN SELVA', 'SPRAY 150ML'];
-  }
-  if (name.includes('whisky') || name.includes('black label')) {
-    return ['AÑEJADO 12 AÑOS', '750 ML ESCOCÉS'];
-  }
-  if (name.includes('chocolate') || name.includes('cacao') || name.includes('bombones')) {
-    return ['70% CACAO PURO', 'AROMA NATIVO'];
-  }
-  return ['ENVÍO EXPRESS', 'EN STOCK'];
 }
 
 function getProductImageUrl(p: CatalogProduct): string {
@@ -307,137 +192,35 @@ interface BannerSlideConfig {
   badge: string;
   title: string;
   subtitle: string;
-  bgColor: string;
-  benefitBadge: string;
-  benefitTitle: string;
-  benefitSubtitle: string;
+  bannerImg: string;
   linkText: string;
   linkUrl: string;
-  matcher: (p: CatalogProduct) => boolean;
-  isFullBanner?: boolean;
-  bannerImg?: string;
+  alt: string;
+  showCenterText?: boolean;
 }
 
 const BANNER_SLIDES: BannerSlideConfig[] = [
   {
-    id: 'celulares',
+    id: 'tecnologia',
     badge: 'OFICIAL EN TINGO MARÍA',
-    title: 'CELULARES',
-    subtitle: 'Smartphones de alta gama, Xiaomi, Samsung Galaxy, Apple y Redmi con garantía oficial',
-    bgColor: '#064e3b',
-    benefitBadge: 'HASTA 12 CUOTAS SIN INTERESES',
-    benefitTitle: 'Pago contra entrega en efectivo',
-    benefitSubtitle: 'La Curacao, Tiendas EFE y Carsa',
-    linkText: 'Ver celulares',
+    title: 'TECNOLOGÍA & SMARTPHONES',
+    subtitle: 'Laptops, computadoras, celulares y smartwatches con garantía oficial',
+    bannerImg: fondo2Img,
+    linkText: 'Explorar tecnología',
     linkUrl: '/negocios?q=celular',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('celular') || n.includes('smartphone') || n.includes('samsung') ||
-        n.includes('redmi') || n.includes('xiaomi') || n.includes('poco') || n.includes('iphone')
-      );
-    },
-  },
-  {
-    id: 'laptops',
-    badge: 'LO MEJOR EN CÓMPUTO',
-    title: 'LAPTOPS & COMPUTADORAS',
-    subtitle: 'Laptops HP, MacBook Neo y Lenovo Gamer con garantía oficial y soporte técnico',
-    bgColor: '#0f172a',
-    benefitBadge: 'ENVÍO EXPRESS EN EL DÍA',
-    benefitTitle: 'Garantía oficial y servicio técnico',
-    benefitSubtitle: 'Tiendas EFE, Carsa e Importaciones El Balcón',
-    linkText: 'Ver laptops',
-    linkUrl: '/negocios?q=laptop',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') ||
-        n.includes('computadora') || n.includes('macbook') || n.includes('hp') ||
-        n.includes('loq') || n.includes('gamer')
-      );
-    },
+    alt: 'Laptops, smartphones y tecnología oficial en Tingo María',
+    showCenterText: false,
   },
   {
     id: 'shoes',
-    isFullBanner: true,
-    bannerImg: '/assets/banners/banner-zapatillas.jpg',
     badge: 'TENDENCIA EN CALZADO URBANO',
     title: 'LAS MEJORES ZAPATILLAS',
     subtitle: 'Estilo, confort y durabilidad en cada paso • Modelos exclusivos para selva y ciudad con cambio de talla inmediato',
-    bgColor: '#deddd9',
-    benefitBadge: 'HASTA 35% DSCTO',
-    benefitTitle: 'Garantía oficial y cambio de talla',
-    benefitSubtitle: 'Moda Selva Tingo y Galería San Benito',
+    bannerImg: bannerZapatillasImg,
     linkText: 'Ver todas las zapatillas',
     linkUrl: '/negocios?q=zapatillas',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('nike') || n.includes('adidas') || n.includes('vans') ||
-        n.includes('botines') || n.includes('zapatillas') || n.includes('sandalias')
-      );
-    },
-  },
-  {
-    id: 'fashion',
-    badge: 'MODA SELVA',
-    title: 'ROPA & MODA ACTUAL',
-    subtitle: 'Pantalones palazzo denim, casacas bomber, vestidos y polos frescos',
-    bgColor: '#14532d',
-    benefitBadge: 'TENDENCIAS 2026',
-    benefitTitle: 'Confección fresca y cómoda',
-    benefitSubtitle: 'Galería San Benito y Moda Selva Tingo',
-    linkText: 'Ver ropa',
-    linkUrl: '/negocios?q=ropa',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') ||
-        n.includes('polo') || n.includes('pantalon') || n.includes('denim') ||
-        n.includes('sombrero')
-      );
-    },
-  },
-  {
-    id: 'beds',
-    badge: 'DORMITORIO & CONFORT',
-    title: 'CAMAS & COLCHONES',
-    subtitle: 'Colchones Paraíso Royal, camas box tarima y juegos de sábanas finas',
-    bgColor: '#1e1b4b',
-    benefitBadge: 'DORMITORIO COMPLETO',
-    benefitTitle: 'Envío directo y armado en casa',
-    benefitSubtitle: 'Carsa, Tiendas EFE e Importaciones El Balcón',
-    linkText: 'Ver camas y colchones',
-    linkUrl: '/negocios?q=cama',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('paraíso') || n.includes('cama box') || n.includes('colchón') ||
-        n.includes('colchon') || n.includes('tarima') || n.includes('sábanas') ||
-        n.includes('sabanas')
-      );
-    },
-  },
-  {
-    id: 'home',
-    badge: 'EQUIPA TU HOGAR',
-    title: 'ELECTROHOGAR & COCINA',
-    subtitle: 'Smart TVs 55", cocinas Indurama, licuadoras clásicas y freidoras de aire',
-    bgColor: '#312e81',
-    benefitBadge: 'GARANTÍA OFICIAL',
-    benefitTitle: 'Marcas líderes Oster, Samsung e Indurama',
-    benefitSubtitle: 'Importaciones El Balcón, Carsa y Tiendas EFE',
-    linkText: 'Ver electrohogar',
-    linkUrl: '/negocios?q=electrohogar',
-    matcher: (p) => {
-      const n = (p.name || '').toLowerCase();
-      return (
-        n.includes('smart tv') || n.includes('tv') || n.includes('cocina') ||
-        n.includes('licuadora') || n.includes('freidora') || n.includes('refrigeradora') ||
-        n.includes('lavadora') || n.includes('microondas')
-      );
-    },
+    alt: 'Las mejores zapatillas urbanas y deportivas',
+    showCenterText: true,
   },
 ];
 
@@ -535,57 +318,6 @@ export function HomePage() {
 
   const activeSlide = BANNER_SLIDES[currentSlide] || BANNER_SLIDES[0];
 
-  // 3 Productos destacados del slide activo (Garantía absoluta de 3 productos siempre)
-  const currentSlideProducts = useMemo(() => {
-    const isRestaurant = (storeName?: string) =>
-      ['La Selva Gourmet', 'Restaurante & Pollería Rubén', 'El Encanto Amazónico', 'Recreo Campestre El Mirador'].includes(storeName || '');
-
-    const matched = allProducts.filter(p => {
-      if (!purchasableSku(p)) return false;
-      if (isRestaurant(p.storeName)) return false;
-      return activeSlide.matcher(p);
-    });
-
-    if (matched.length >= 3) return matched.slice(0, 3);
-
-    // Fallback inteligente para llenar siempre las 3 columnas sin huecos
-    const slideId = activeSlide.id;
-    const fallbackList = allProducts.filter(p => {
-      if (!purchasableSku(p)) return false;
-      if (isRestaurant(p.storeName)) return false;
-      const n = (p.name || '').toLowerCase();
-      if (slideId === 'celulares') return n.includes('samsung') || n.includes('xiaomi') || n.includes('celular') || n.includes('redmi') || n.includes('poco') || n.includes('iphone');
-      if (slideId === 'laptops') return n.includes('laptop') || n.includes('lenovo') || n.includes('notebook') || n.includes('computadora') || n.includes('hp') || n.includes('macbook') || n.includes('smart tv') || n.includes('smartwatch');
-      if (slideId === 'shoes') return n.includes('nike') || n.includes('adidas') || n.includes('vans') || n.includes('zapatillas') || n.includes('botines') || n.includes('calzado');
-      if (slideId === 'fashion') return n.includes('palazzo') || n.includes('casaca') || n.includes('vestido') || n.includes('polo') || n.includes('denim');
-      if (slideId === 'beds') return n.includes('colchón') || n.includes('cama') || n.includes('paraíso') || n.includes('sabanas') || n.includes('tarima');
-      if (slideId === 'home') return n.includes('tv') || n.includes('cocina') || n.includes('licuadora') || n.includes('freidora') || n.includes('microondas');
-      return false;
-    });
-
-    const combined = [...matched];
-    for (const p of fallbackList) {
-      if (combined.length >= 3) break;
-      if (!combined.some(x => x.id === p.id)) {
-        combined.push(p);
-      }
-    }
-
-    // Si aún faltara por catálogo local corto, rellenar de productos no-restaurante para asegurar 3 siempre
-    if (combined.length < 3) {
-      for (const p of allProducts) {
-        if (combined.length >= 3) break;
-        if (!purchasableSku(p)) continue;
-        if (isRestaurant(p.storeName)) continue;
-        if (!combined.some(x => x.id === p.id)) {
-          combined.push(p);
-        }
-      }
-    }
-
-    return combined.slice(0, 3);
-  }, [allProducts, activeSlide]);
-
   // Selección de Regalos Populares y Reconocidos con filtro de presupuesto (Imagen 3)
   const giftProducts = useMemo(() => {
     const recognized = allProducts.filter(p => {
@@ -665,227 +397,112 @@ export function HomePage() {
   return (
     <div className="w-full flex flex-col bg-[#f8f9fa] select-none min-h-screen">
 
-      {/* 1. Banner Promocional Oechsle / Falabella con Carrusel de Departamentos - Separación superior estilo Ripley */}
-      <section className="relative w-full bg-black overflow-hidden mt-0 min-h-[460px] sm:min-h-[500px] lg:h-[540px] xl:h-[580px]">
-        {activeSlide.isFullBanner ? (
-          /* Diapositiva Panorámica Completa: Imagen 2 integrada al tamaño de toda la sección con diseño profesional de letras */
-          <div
-            onClick={() => navigate(activeSlide.linkUrl)}
-            className="relative w-full h-full min-h-[460px] sm:min-h-[500px] lg:min-h-0 flex items-center justify-center overflow-hidden cursor-pointer select-none group bg-[#deddd9]"
-          >
-            {/* Imagen de zapatillas cubriendo toda la sección */}
-            <img
-              src={activeSlide.bannerImg || '/assets/banners/banner-zapatillas.jpg'}
-              alt="Las mejores zapatillas urbanas y deportivas"
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
-              loading="lazy"
-            />
+      {/* 1. Banner Panorámico Full-Width estilo Metro / Falabella (Ejemplo Imagen 1) */}
+      <section className="relative w-full overflow-hidden bg-gray-100 h-[160px] sm:h-[200px] md:h-[240px] lg:h-[265px] xl:h-[285px] select-none">
+        <div
+          onClick={() => navigate(activeSlide.linkUrl)}
+          className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-pointer select-none group"
+        >
+          {/* Imagen de banner de ancho completo sin productos pegados */}
+          <img
+            src={activeSlide.bannerImg}
+            alt={activeSlide.alt}
+            className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-700"
+            loading="eager"
+          />
 
-            {/* Sutil gradiente central para máximo contraste tipográfico */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-white/20 to-black/10 pointer-events-none" />
-
-            {/* Texto centrado con tipografía profesional */}
-            <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-3.5 py-8">
-              <div className="inline-flex items-center gap-1.5 bg-black/85 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>{activeSlide.badge}</span>
-              </div>
-
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-gray-950 leading-[1.05] drop-shadow-xs">
-                {activeSlide.title}
-              </h2>
-
-              <p className="text-xs sm:text-sm lg:text-base font-semibold text-gray-700 max-w-lg leading-relaxed">
-                {activeSlide.subtitle}
-              </p>
-
-              <div className="pt-2">
-                <Link
-                  to={activeSlide.linkUrl}
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center justify-center gap-2 bg-gray-950 hover:bg-black text-white px-8 py-3 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group-hover:scale-105 active:scale-95"
-                >
-                  <span>{activeSlide.linkText}</span>
-                  <span className="text-emerald-400 group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full flex flex-col lg:flex-row items-stretch relative">
-            {/* Columna Izquierda: Fondo de la Categoría Activa con Tipografía Promocional en Texto Plano (Sin Emojis) */}
-            <div
-              className="text-white p-5 sm:p-6 lg:p-8 xl:p-10 flex flex-col justify-between lg:w-[28%] xl:w-[25%] flex-shrink-0 transition-colors duration-500 relative z-10 h-full"
-              style={{ backgroundColor: activeSlide.bgColor }}
-            >
-              <div className="space-y-3 lg:space-y-4">
-                <div className="space-y-1">
-                  <p className="text-amber-300 text-sm sm:text-base font-serif italic tracking-wide">
-                    Tingo María
-                  </p>
-                  <p className="text-[10px] sm:text-xs font-black tracking-widest text-emerald-300 uppercase">
-                    {activeSlide.badge}
-                  </p>
+          {/* Sutil gradiente para legibilidad cuando hay texto central (ej: zapatillas) */}
+          {activeSlide.showCenterText ? (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-white/15 to-black/5 pointer-events-none" />
+              <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-1.5 sm:space-y-2 py-3 pointer-events-none">
+                <div className="inline-flex items-center gap-1.5 bg-black/85 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>{activeSlide.badge}</span>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight text-gray-950 leading-tight drop-shadow-xs">
                   {activeSlide.title}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-normal line-clamp-3">
+                <p className="text-[11px] sm:text-xs font-semibold text-gray-700 max-w-md hidden sm:block leading-snug">
                   {activeSlide.subtitle}
                 </p>
 
-                {/* Tarjeta de beneficio estilo Oechsle (cyan brillante) */}
-                <div className="bg-[#00a8e8] text-white p-3 sm:p-3.5 rounded-xl shadow-xs space-y-1">
-                  <p className="text-[10px] font-black tracking-wider uppercase text-sky-100">
-                    {activeSlide.benefitBadge}
-                  </p>
-                  <p className="text-xs sm:text-sm lg:text-base font-black leading-snug">
-                    {activeSlide.benefitTitle}
-                  </p>
-                  <p className="text-[10px] sm:text-[11px] text-sky-100 font-medium truncate">
-                    {activeSlide.benefitSubtitle}
-                  </p>
+                <div className="pt-0.5 pointer-events-auto">
+                  <Link
+                    to={activeSlide.linkUrl}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center gap-1.5 bg-gray-950 hover:bg-black text-white px-5 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-xs shadow-md transition-all group-hover:scale-105 active:scale-95"
+                  >
+                    <span>{activeSlide.linkText}</span>
+                    <span className="text-emerald-400 group-hover:translate-x-1 transition-transform">→</span>
+                  </Link>
                 </div>
               </div>
+            </>
+          ) : (
+            /* Banner con overlay discreto en esquinas para no tapar los dispositivos (MacBook, laptops, smartphones) */
+            <>
+              <div className="absolute top-2.5 left-3 sm:top-4 sm:left-6 z-20 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 bg-black/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>{activeSlide.badge}</span>
+                </span>
+              </div>
 
-              <div className="pt-4">
+              <div className="absolute bottom-2.5 right-3 sm:bottom-4 sm:right-6 z-20 pointer-events-auto">
                 <Link
                   to={activeSlide.linkUrl}
-                  className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-6 py-2.5 rounded-full font-black text-xs sm:text-sm shadow-md transition-all group"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 bg-gray-950/90 hover:bg-black text-white text-xs font-black px-4 py-1.5 sm:py-2 rounded-full shadow-md backdrop-blur-xs transition-transform group-hover:scale-105"
                 >
                   <span>{activeSlide.linkText}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  <span className="text-emerald-400">→</span>
                 </Link>
               </div>
-            </div>
+            </>
+          )}
+        </div>
 
-            {/* Columna Derecha: Tarima de 3 productos pegados y del mismo tamaño uniforme exacto */}
-            <div className="relative flex-1 bg-black flex items-stretch h-full overflow-hidden p-0">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-0.5 w-full h-full items-stretch">
-                {currentSlideProducts.map((p) => {
-                  const sku = preferredSku(p);
-                  const price = sku ? sku.priceCents : 0;
-                  const hasStock = !!purchasableSku(p);
-                  const img = getProductImageUrl(p);
-                  const isJustAdded = addedProductId === p.id;
-                  const [spec1, spec2] = getProductSpecBadges(p);
-                  const brand = extractBrandOrStore(p);
-
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => navigate('/producto/' + p.id)}
-                      className="group relative w-full h-full min-h-[460px] sm:min-h-[500px] lg:min-h-0 overflow-hidden bg-slate-900 transition-all duration-300 cursor-pointer flex flex-col justify-between flex-shrink-0"
-                    >
-                      {/* Badges superiores flotantes de especificaciones */}
-                      <div className="absolute top-3 inset-x-3 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
-                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-sm">
-                          {spec1}
-                        </span>
-                        <span className="bg-black/90 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-sm">
-                          {spec2}
-                        </span>
-                      </div>
-
-                      {/* Imagen cuadrada que cubre el 100% del fondo sin bordes ni vacíos */}
-                      <div className="absolute inset-0 w-full h-full overflow-hidden">
-                        <img
-                          src={img}
-                          alt={p.name}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
-                          }}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/40 pointer-events-none" />
-                      </div>
-
-                      {/* Módulo inferior flotante con la información del producto */}
-                      <div className="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-black/95 via-black/85 to-transparent pt-8 pb-3.5 px-3.5 text-white flex flex-col">
-                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-300 line-clamp-1">
-                          {brand}
-                        </span>
-
-                        <h3 className="font-bold text-xs sm:text-sm text-white line-clamp-2 leading-snug my-1 group-hover:text-emerald-200 transition-colors">
-                          {p.name}
-                        </h3>
-
-                        <div className="flex items-center justify-between gap-1.5 mt-1.5">
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="bg-[#00a8e8] text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-xs shadow-xs tabular-nums">
-                              {sku ? money(price) : 'S/ --'}
-                            </span>
-                            {price > 0 && (
-                              <span className="text-[10px] sm:text-xs text-gray-300 line-through tabular-nums">
-                                {money(Math.round(price * 1.25))}
-                              </span>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddToCart(e, p);
-                            }}
-                            disabled={!hasStock}
-                            className={`p-2 rounded-lg transition-all cursor-pointer ${
-                              isJustAdded
-                                ? 'bg-emerald-600 text-white'
-                                : hasStock
-                                ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
-                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            }`}
-                            aria-label={`Agregar ${p.name}`}
-                          >
-                            {isJustAdded ? (
-                              <Check className="w-4 h-4 stroke-[3]" />
-                            ) : (
-                              <ShoppingCart className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Flecha Anterior flotante */}
+        {/* Flecha Anterior flotante estilo Imagen 1 */}
         <button
           type="button"
-          onClick={handlePrevSlide}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePrevSlide();
+          }}
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/85 text-white shadow-xl flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
           aria-label="Diapositiva anterior"
         >
           <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* Flecha Siguiente flotante */}
+        {/* Flecha Siguiente flotante estilo Imagen 1 */}
         <button
           type="button"
-          onClick={handleNextSlide}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-gray-900 shadow-xl border border-gray-200 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNextSlide();
+          }}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/85 text-white shadow-xl flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
           aria-label="Siguiente diapositiva"
         >
           <ChevronRight className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* Paginación de puntos centrada en la base */}
-        <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-30 pointer-events-auto">
+        {/* Paginación de puntos centrada en la base estilo Imagen 1 */}
+        <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-30 pointer-events-auto">
           {BANNER_SLIDES.map((slide, idx) => (
             <button
               key={slide.id}
               type="button"
-              onClick={() => setCurrentSlide(idx)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide(idx);
+              }}
               className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                currentSlide === idx ? 'w-7 bg-primary' : 'w-1.5 bg-gray-400/80 hover:bg-gray-600'
+                currentSlide === idx ? 'w-6 bg-primary' : 'w-1.5 bg-gray-400/80 hover:bg-gray-600'
               }`}
               aria-label={`Ir a ${slide.title}`}
             />
