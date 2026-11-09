@@ -189,38 +189,38 @@ function getProductDiscountPercent(p: CatalogProduct): number {
 
 interface BannerSlideConfig {
   id: string;
-  badge: string;
-  title: string;
-  subtitle: string;
+  categoryTag: string;
+  titleLine1: string;
+  titleLine2: string;
   bannerImg: string;
-  linkText: string;
+  buttonText: string;
   linkUrl: string;
   alt: string;
-  showCenterText?: boolean;
+  layout: 'left-dark' | 'center-light';
 }
 
 const BANNER_SLIDES: BannerSlideConfig[] = [
   {
     id: 'tecnologia',
-    badge: 'OFICIAL EN TINGO MARÍA',
-    title: 'TECNOLOGÍA & SMARTPHONES',
-    subtitle: 'Laptops, computadoras, celulares y smartwatches con garantía oficial',
+    categoryTag: 'TECNOLOGÍA',
+    titleLine1: 'Aquí encuentras las',
+    titleLine2: 'mejores tecnologías',
     bannerImg: fondo2Img,
-    linkText: 'Explorar tecnología',
+    buttonText: '¡VER TODO!',
     linkUrl: '/negocios?q=celular',
-    alt: 'Laptops, smartphones y tecnología oficial en Tingo María',
-    showCenterText: false,
+    alt: 'Aquí encuentras las mejores tecnologías en Tingo María',
+    layout: 'left-dark',
   },
   {
     id: 'shoes',
-    badge: 'TENDENCIA EN CALZADO URBANO',
-    title: 'LAS MEJORES ZAPATILLAS',
-    subtitle: 'Estilo, confort y durabilidad en cada paso • Modelos exclusivos para selva y ciudad con cambio de talla inmediato',
+    categoryTag: 'CALZADO URBANO',
+    titleLine1: 'Aquí encuentras las',
+    titleLine2: 'mejores zapatillas',
     bannerImg: bannerZapatillasImg,
-    linkText: 'Ver todas las zapatillas',
+    buttonText: '¡VER TODO!',
     linkUrl: '/negocios?q=zapatillas',
-    alt: 'Las mejores zapatillas urbanas y deportivas',
-    showCenterText: true,
+    alt: 'Aquí encuentras las mejores zapatillas urbanas y deportivas',
+    layout: 'center-light',
   },
 ];
 
@@ -411,55 +411,67 @@ export function HomePage() {
             loading="eager"
           />
 
-          {/* Sutil gradiente para legibilidad cuando hay texto central (ej: zapatillas) */}
-          {activeSlide.showCenterText ? (
+          {/* Contenido tipográfico y botón sobre el banner estilo Imagen 2 */}
+          {activeSlide.layout === 'left-dark' ? (
             <>
-              <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-white/15 to-black/5 pointer-events-none" />
-              <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-1.5 sm:space-y-2 py-3 pointer-events-none">
-                <div className="inline-flex items-center gap-1.5 bg-black/85 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>{activeSlide.badge}</span>
-                </div>
+              {/* Gradiente oscuro a la izquierda que se desvanece suavemente hacia el centro-derecha estilo Metro */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 via-35% sm:via-40% to-transparent pointer-events-none" />
 
-                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight text-gray-950 leading-tight drop-shadow-xs">
-                  {activeSlide.title}
+              {/* Bloque de texto y botón idéntico a la Imagen 2 */}
+              <div className="absolute inset-y-0 left-0 z-20 flex flex-col justify-center pl-10 sm:pl-16 md:pl-20 lg:pl-24 pr-4 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl pointer-events-none">
+                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-300 tracking-[0.22em] uppercase mb-1 sm:mb-1.5 select-none drop-shadow-xs">
+                  {activeSlide.categoryTag}
+                </span>
+
+                <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight drop-shadow-md mb-2.5 sm:mb-3.5 select-none">
+                  {activeSlide.titleLine1} <br />
+                  {activeSlide.titleLine2}
                 </h2>
 
-                <p className="text-[11px] sm:text-xs font-semibold text-gray-700 max-w-md hidden sm:block leading-snug">
-                  {activeSlide.subtitle}
-                </p>
-
-                <div className="pt-0.5 pointer-events-auto">
+                <div className="pointer-events-auto flex items-center gap-2">
                   <Link
                     to={activeSlide.linkUrl}
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center justify-center gap-1.5 bg-gray-950 hover:bg-black text-white px-5 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-xs shadow-md transition-all group-hover:scale-105 active:scale-95"
+                    className="inline-flex items-center gap-2 group/btn cursor-pointer"
                   >
-                    <span>{activeSlide.linkText}</span>
-                    <span className="text-emerald-400 group-hover:translate-x-1 transition-transform">→</span>
+                    <span className="inline-flex items-center justify-center bg-white hover:bg-gray-100 text-gray-900 font-extrabold text-[11px] sm:text-xs md:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-lg tracking-wider uppercase transition-transform group-hover/btn:scale-105 active:scale-95">
+                      {activeSlide.buttonText}
+                    </span>
+                    <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white hover:bg-gray-100 text-gray-900 flex items-center justify-center shadow-lg transition-transform group-hover/btn:scale-105 active:scale-95">
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                    </span>
                   </Link>
                 </div>
               </div>
             </>
           ) : (
-            /* Banner con overlay discreto en esquinas para no tapar los dispositivos (MacBook, laptops, smartphones) */
             <>
-              <div className="absolute top-2.5 left-3 sm:top-4 sm:left-6 z-20 pointer-events-none">
-                <span className="inline-flex items-center gap-1.5 bg-black/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>{activeSlide.badge}</span>
-                </span>
-              </div>
+              {/* Sutil gradiente para legibilidad en zapatillas */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-white/10 to-black/5 pointer-events-none" />
 
-              <div className="absolute bottom-2.5 right-3 sm:bottom-4 sm:right-6 z-20 pointer-events-auto">
-                <Link
-                  to={activeSlide.linkUrl}
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1.5 bg-gray-950/90 hover:bg-black text-white text-xs font-black px-4 py-1.5 sm:py-2 rounded-full shadow-md backdrop-blur-xs transition-transform group-hover:scale-105"
-                >
-                  <span>{activeSlide.linkText}</span>
-                  <span className="text-emerald-400">→</span>
-                </Link>
+              <div className="relative z-10 max-w-xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-1 sm:space-y-1.5 py-3 pointer-events-none">
+                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-600 tracking-[0.22em] uppercase select-none">
+                  {activeSlide.categoryTag}
+                </span>
+
+                <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-950 leading-tight select-none">
+                  {activeSlide.titleLine1} <br className="hidden sm:inline" /> {activeSlide.titleLine2}
+                </h2>
+
+                <div className="pt-1 sm:pt-2 pointer-events-auto flex items-center justify-center gap-2">
+                  <Link
+                    to={activeSlide.linkUrl}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-2 group/btn cursor-pointer"
+                  >
+                    <span className="inline-flex items-center justify-center bg-gray-950 hover:bg-black text-white font-extrabold text-[11px] sm:text-xs md:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-lg tracking-wider uppercase transition-transform group-hover/btn:scale-105 active:scale-95">
+                      {activeSlide.buttonText}
+                    </span>
+                    <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-950 hover:bg-black text-white flex items-center justify-center shadow-lg transition-transform group-hover/btn:scale-105 active:scale-95">
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                    </span>
+                  </Link>
+                </div>
               </div>
             </>
           )}
@@ -504,7 +516,7 @@ export function HomePage() {
               className={`h-1.5 rounded-full transition-all cursor-pointer ${
                 currentSlide === idx ? 'w-6 bg-primary' : 'w-1.5 bg-gray-400/80 hover:bg-gray-600'
               }`}
-              aria-label={`Ir a ${slide.title}`}
+              aria-label={`Ir a ${slide.titleLine1} ${slide.titleLine2}`}
             />
           ))}
         </div>
