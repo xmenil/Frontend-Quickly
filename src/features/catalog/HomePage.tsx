@@ -7,6 +7,7 @@ import { catalogPlaceholder, catalogImage } from '../../lib/catalogImage';
 import { catalogApi, CatalogProduct, money } from '../../services/api/catalogApi';
 import { operationsApi } from '../../services/api/operationsApi';
 import { useRemote } from '../operations/shared';
+import { getStoreCoverImage } from '../../lib/storeImage';
 import fondo2Img from '../../assets/img/fondo2.webp';
 import bannerZapatillasImg from '../../assets/img/banner-zapatillas.jpg';
 import {
@@ -223,44 +224,6 @@ const BANNER_SLIDES: BannerSlideConfig[] = [
     layout: 'center-light',
   },
 ];
-
-// Perfiles fotográficos de comercios de Tingo María para cubrir tarjetas completas
-const STORE_COVER_IMAGES: Record<string, string> = {
-  'botica san martín': 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80',
-  'cacao & café tingo': 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=700&auto=format&fit=crop&q=80',
-  'carsa tingo maría': 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=700&auto=format&fit=crop&q=80',
-  'el encanto amazónico': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&auto=format&fit=crop&q=80',
-  'la selva gourmet': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&auto=format&fit=crop&q=80',
-  'restaurante & pollería rubén': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=700&auto=format&fit=crop&q=80',
-  'tiendas efe tingo maría': 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=700&auto=format&fit=crop&q=80',
-  'moda selva tingo': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&auto=format&fit=crop&q=80',
-  'muebles tingo': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=700&auto=format&fit=crop&q=80',
-};
-
-function getStoreCoverImage(st: { name: string; bannerUrl?: string | null; category_code?: string }): string {
-  if (st.bannerUrl && st.bannerUrl.startsWith('http')) return st.bannerUrl;
-  const n = st.name.toLowerCase().trim();
-  for (const [key, url] of Object.entries(STORE_COVER_IMAGES)) {
-    if (n.includes(key) || key.includes(n)) return url;
-  }
-  const cat = (st.category_code || '').toLowerCase();
-  if (cat.includes('farmacia') || cat.includes('salud') || cat.includes('botica')) {
-    return 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80';
-  }
-  if (cat.includes('cafe') || cat.includes('café') || cat.includes('cacao') || cat.includes('emprendedor')) {
-    return 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=700&auto=format&fit=crop&q=80';
-  }
-  if (cat.includes('electro') || cat.includes('tecno') || cat.includes('hogar')) {
-    return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=700&auto=format&fit=crop&q=80';
-  }
-  if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('gastronom')) {
-    return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&auto=format&fit=crop&q=80';
-  }
-  if (cat.includes('moda') || cat.includes('ropa') || cat.includes('calzado')) {
-    return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&auto=format&fit=crop&q=80';
-  }
-  return 'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=700&auto=format&fit=crop&q=80';
-}
 
 export function HomePage() {
   const { isAuthenticated } = useAuthStore();

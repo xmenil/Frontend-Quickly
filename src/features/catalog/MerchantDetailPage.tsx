@@ -5,6 +5,7 @@ import { useCatalogFavorite } from './useCatalogFavorite';
 import { RemoteState } from '../operations/shared';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { formatCents } from '../../lib/currency';
+import { getStoreCoverImage } from '../../lib/storeImage';
 import {
   Star,
   Clock,
@@ -43,6 +44,7 @@ export const MerchantDetailPage: React.FC = () => {
   }
 
   const isFavorite = favorite.isFavorite;
+  const storeImage = getStoreCoverImage(merchant);
   const merchantProducts = products.filter((p) => p.merchantId === merchant.id);
 
   // Available unique categories in this merchant's products
@@ -98,21 +100,21 @@ export const MerchantDetailPage: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 space-y-5">
 
-      {/* Banner & Header Card */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Banner */}
-        <div className="relative aspect-[21/9] sm:aspect-[24/8] w-full bg-gray-100 overflow-hidden">
+      {/* Banner & Header Card: Layout Horizontal (Lado izquierdo imagen, Lado derecho información) */}
+      <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden p-3.5 sm:p-5 flex flex-col md:flex-row items-center md:items-stretch gap-4 sm:gap-6">
+        {/* Lado izquierdo: Imagen compacta de la tienda */}
+        <div className="relative w-full md:w-72 lg:w-80 aspect-[16/10] md:aspect-auto md:h-auto rounded-xl overflow-hidden shrink-0 bg-gray-100">
           <img
-            src={merchant.bannerUrl}
+            src={storeImage}
             alt={merchant.name}
             className={`w-full h-full object-cover ${
               !merchant.isOpen ? 'grayscale contrast-75 opacity-70' : ''
             }`}
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" fill="%23FFF1F6"><rect width="800" height="300" fill="%23FFF1F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23C60050" font-family="sans-serif" font-weight="bold" font-size="28">Quickly Tingo María</text></svg>';
+                'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=700&auto=format&fit=crop&q=80';
             }}
           />
 
@@ -122,41 +124,42 @@ export const MerchantDetailPage: React.FC = () => {
             onClick={() => void favorite.toggle()}
             disabled={favorite.busy}
             aria-pressed={isFavorite}
-            className="absolute top-4 right-4 touch-target w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-primary transition-colors cursor-pointer"
+            className="absolute top-2.5 right-2.5 touch-target w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-subtle flex items-center justify-center text-gray-700 hover:text-primary transition-colors cursor-pointer z-10"
             aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
           >
             <Heart
-              className={`w-5 h-5 ${isFavorite ? 'fill-primary text-primary' : ''}`}
+              className={`w-4 h-4 ${isFavorite ? 'fill-primary text-primary' : ''}`}
             />
           </button>
 
           {!merchant.isOpen && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
-              <div className="bg-gray-900/95 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold text-sm shadow-xl">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span>Comercio cerrado en este momento. Horario: {merchant.schedule}</span>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-2 text-center z-10">
+              <div className="bg-gray-900/95 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-bold text-xs shadow-md">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Cerrado ahora</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Merchant Meta Info */}
-        <div className="p-6 sm:p-8 relative">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-6 border-b border-gray-100">
-            <div>
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <span className="text-xs font-bold capitalize text-primary bg-primary-50 px-3 py-1 rounded-full border border-primary-200">
+        {/* Lado derecho: Información organizada, sin redundancia y compacta */}
+        <div className="flex-1 flex flex-col justify-between space-y-3 w-full">
+          <div>
+            {/* Categoría y Estado */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold capitalize text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
                   {merchant.category}
                 </span>
                 <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
                     merchant.isOpen
                       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       : 'bg-red-50 text-red-700 border border-red-200'
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
+                    className={`w-1.5 h-1.5 rounded-full ${
                       merchant.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
                     }`}
                   />
@@ -164,71 +167,68 @@ export const MerchantDetailPage: React.FC = () => {
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black text-ink">{merchant.name}</h1>
-              <p className="text-sm text-ink-light max-w-2xl mt-2 leading-relaxed">
+              {/* Calificación */}
+              <div className="flex items-center gap-1 text-xs font-bold text-gray-800">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span className="tabular-nums">
+                  {merchant.rating == null ? 'Sin valoraciones' : merchant.rating.toFixed(1)}
+                </span>
+                {merchant.rating != null && (
+                  <span className="text-gray-400 font-medium tabular-nums">({merchant.ratingCount})</span>
+                )}
+              </div>
+            </div>
+
+            {/* Nombre del comercio */}
+            <h1 className="text-xl sm:text-2xl font-black text-gray-950 leading-tight">
+              {merchant.name}
+            </h1>
+
+            {/* Descripción breve si existe */}
+            {merchant.description && (
+              <p className="text-xs text-gray-600 font-medium line-clamp-2 mt-1 leading-relaxed">
                 {merchant.description}
               </p>
-            </div>
-
-            {/* Rating Box */}
-            <div className="flex md:flex-col items-center md:items-end justify-between bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl">
-              <div className="flex items-center gap-1.5 text-ink font-black text-lg">
-                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                <span className="tabular-nums">{merchant.rating == null ? 'Sin valoraciones' : merchant.rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-500 font-medium tabular-nums">
-                  ({merchant.ratingCount} valoraciones)
-                </span>
-              </div>
-              <span className="text-xs text-ink-light font-medium mt-1">Horario: {merchant.schedule}</span>
-            </div>
+            )}
           </div>
 
-          {/* Quick Details Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 text-xs text-ink-light">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 flex-shrink-0">
-                <Clock className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <span className="text-gray-500 block text-[11px] font-medium">Tiempo estimado</span>
-                <span className="font-bold text-ink tabular-nums">
-                  {merchant.prepTimeMinutes === undefined ? 'Consultar al comercio' : `${merchant.prepTimeMinutes} min de preparación`}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary flex-shrink-0">
-                <Bike className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-gray-500 block text-[11px] font-medium">Tarifa de envío</span>
-                <span className="font-bold text-ink tabular-nums">
-                  {merchant.deliveryFeeCents === undefined ? 'Se calcula en checkout' : `Desde ${formatCents(merchant.deliveryFeeCents)}`}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 flex-shrink-0">
-                <ShoppingBag className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-gray-500 block text-[11px] font-medium">Pedido mínimo</span>
-                <span className="font-bold text-ink">
-                  {merchant.minOrderCents === undefined ? 'Consultar al comercio' : formatCents(merchant.minOrderCents)}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 flex-shrink-0">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-gray-400 block text-[11px]">Ubicación local</span>
-                <span className="font-bold text-ink truncate max-w-[130px] block">
+          {/* Fila de detalles compactos: Dirección, tiempo, envío, horario */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2.5 border-t border-gray-100 text-xs">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] text-gray-400 block font-medium">Ubicación local</span>
+                <span className="font-bold text-gray-900 truncate block">
                   {merchant.address}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary shrink-0" />
+              <div>
+                <span className="text-[10px] text-gray-400 block font-medium">Tiempo</span>
+                <span className="font-bold text-gray-900 tabular-nums">
+                  {merchant.prepTimeMinutes === undefined ? 'Consultar' : `${merchant.prepTimeMinutes} min de preparación`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Bike className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <span className="text-[10px] text-gray-400 block font-medium">Envío</span>
+                <span className="font-bold text-gray-900 tabular-nums">
+                  {merchant.deliveryFeeCents === undefined ? 'En checkout' : `Desde ${formatCents(merchant.deliveryFeeCents)}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="truncate">
+                <span className="text-[10px] text-gray-400 block font-medium">Atención</span>
+                <span className="font-bold text-gray-900 text-[11px] truncate block" title={merchant.schedule}>
+                  Horario: {merchant.schedule}
                 </span>
               </div>
             </div>
