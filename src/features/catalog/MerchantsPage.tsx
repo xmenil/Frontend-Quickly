@@ -268,50 +268,42 @@ export const MerchantsPage: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Title & Stats */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 space-y-2.5">
+        {/* Cabecera agrupada y compacta: Título, contadores y Limpiar filtros en una sola línea */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h1 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">
               {searchQuery ? (
                 <>
-                  Búsqueda: <span className="text-primary">"{searchQuery}"</span>
+                  Búsqueda: <span className="text-primary font-black">"{searchQuery}"</span>
                 </>
               ) : selectedCategory !== 'all' ? (
                 categories.find((c) => c.id === selectedCategory)?.label
               ) : (
-                'Comercios y Productos en Tingo María'
+                'Catálogo de Comercios y Productos'
               )}
             </h1>
-            <p className="text-xs sm:text-sm text-ink-light font-medium mt-0.5">
-              {searchQuery ? (
-                <>
-                  Encontramos <strong className="text-ink">{filteredProducts.length}</strong> productos de diversas tiendas y <strong className="text-ink">{filteredMerchants.length}</strong> comercios locales.
-                </>
-              ) : (
-                <>
-                  Explora <strong className="text-ink">{merchants.filter((m) => m.status === 'activo').length}</strong> negocios locales y sus productos disponibles en Leoncio Prado.
-                </>
-              )}
-            </p>
+            <span className="text-xs text-gray-500 font-medium">
+              ({filteredProducts.length} productos · {filteredMerchants.length} comercios)
+            </span>
           </div>
 
-          {/* Clear Filters Button if any active */}
+          {/* Botón Limpiar filtros más pequeño y agrupado */}
           {(selectedCategory !== 'all' || onlyOpen || searchQuery || productCategoryParam) && (
             <button
               type="button"
               onClick={handleClearFilters}
-              className="self-start sm:self-auto text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 bg-primary-50 px-3.5 py-1.5 rounded-full border border-primary-200 transition-colors cursor-pointer"
+              className="text-[11px] font-bold text-primary hover:text-primary-hover flex items-center gap-1 bg-primary/10 hover:bg-primary/15 px-2.5 py-1 rounded-full transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3 h-3" />
               <span>Limpiar filtros</span>
             </button>
           )}
         </div>
 
-        {/* Filter and Search Bar */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-subtle space-y-4">
-          {/* Search Input */}
+        {/* Barra de filtros integrada, más simple y delgada */}
+        <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200/80 shadow-2xs space-y-2">
+          {/* Input de búsqueda compacto */}
           <div className="relative">
             <input
               type="text"
@@ -327,9 +319,9 @@ export const MerchantsPage: React.FC = () => {
                 }
               }}
               placeholder="Buscar productos por nombre, marca o tienda (ej: shampoo, xiaomi 15t pro, tacacho, cecina)..."
-              className="w-full min-h-[46px] bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-11 pr-10 text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all shadow-subtle"
+              className="w-full h-9 bg-gray-50/80 border border-gray-200 rounded-lg py-1.5 pl-9 pr-8 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1.5 focus:ring-primary focus:bg-white transition-all"
             />
-            <Search className="w-4.5 h-4.5 text-gray-500 absolute left-3.5 top-3.5 pointer-events-none" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" />
             {searchQuery && (
               <button
                 type="button"
@@ -337,7 +329,7 @@ export const MerchantsPage: React.FC = () => {
                   setSearchQuery('');
                   setSearchParams({});
                 }}
-                className="absolute right-3 top-3 text-xs text-gray-400 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 w-5 h-5 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                className="absolute right-2.5 top-2 text-[10px] text-gray-400 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 w-4.5 h-4.5 rounded-full flex items-center justify-center transition-colors cursor-pointer"
                 title="Borrar búsqueda"
               >
                 ✕
@@ -345,8 +337,8 @@ export const MerchantsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Category Chips Scrollable */}
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+          {/* Chips de categorías: botones más pequeños y compactos */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.id;
               return (
@@ -360,10 +352,10 @@ export const MerchantsPage: React.FC = () => {
                     if (cat.id !== 'all') newParams.categoria = cat.id;
                     setSearchParams(newParams);
                   }}
-                  className={`whitespace-nowrap px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border shadow-2xs ${
+                  className={`whitespace-nowrap px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer border ${
                     isSelected
-                      ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary'
+                      ? 'bg-primary text-white border-primary shadow-2xs font-bold'
+                      : 'bg-gray-50/80 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
                   }`}
                 >
                   {cat.label}
@@ -372,33 +364,33 @@ export const MerchantsPage: React.FC = () => {
             })}
           </div>
 
-          {/* Controls: View Tabs & Sorting & Open Filter */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
-            {/* View Mode Tabs: Productos vs Comercios */}
-            <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl">
+          {/* Fila de controles compacta: Pestañas de vista, solo abiertos y ordenar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 text-xs">
+            {/* Pestañas: Productos vs Comercios con botones más pequeños */}
+            <div className="flex items-center gap-1 bg-gray-100/90 p-0.5 rounded-lg">
               <button
                 type="button"
                 onClick={() => setActiveTab('products')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   activeTab === 'products'
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-gray-600 hover:text-ink'
+                    ? 'bg-white text-primary shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Productos ({filteredProducts.length})</span>
                 {filteredProducts.length > 0 && searchQuery && (
-                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('merchants')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   activeTab === 'merchants'
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-gray-600 hover:text-ink'
+                    ? 'bg-white text-primary shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Store className="w-3.5 h-3.5" />
@@ -406,24 +398,24 @@ export const MerchantsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Right side: Only Open Checkbox & Sort */}
-            <div className="flex flex-wrap items-center gap-4 text-xs">
-              <label className="flex items-center gap-2 font-medium text-ink cursor-pointer select-none">
+            {/* Lado derecho: Solo abiertos y ordenar */}
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <label className="flex items-center gap-1.5 font-medium text-gray-700 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={onlyOpen}
                   onChange={(e) => setOnlyOpen(e.target.checked)}
-                  className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                  className="w-3.5 h-3.5 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
                 />
-                <span>Solo locales abiertos ahora</span>
+                <span className="text-[11px] sm:text-xs">Solo locales abiertos ahora</span>
               </label>
 
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-medium">Ordenar:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-gray-400 font-medium text-[11px] sm:text-xs">Ordenar:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-ink focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  className="bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-[11px] sm:text-xs font-bold text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                 >
                   {activeTab === 'products' ? (
                     <>
