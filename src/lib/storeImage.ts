@@ -59,3 +59,4 @@ export function getStoreCoverImage(st: { name?: string; bannerUrl?: string | nul
   }
   return 'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=700&auto=format&fit=crop&q=80';
 }
+
