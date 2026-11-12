@@ -4,12 +4,10 @@ import { formatCents } from '../../lib/currency';
 import {
   MapPin,
   ChevronDown,
-  Check,
   Bike,
   X,
   Loader2,
   Navigation,
-  Compass,
 } from 'lucide-react';
 
 interface ZoneSelectorProps {
@@ -23,7 +21,7 @@ const DEFAULT_TINGO_ZONES: Zone[] = [
     id: 'zone-castillo-grande',
     code: 'castillo-grande',
     name: 'Castillo Grande',
-    description: 'Cruzando Puente Corpac, Aeropuerto, Las Orquídeas',
+    description: 'Puente Corpac, Aeropuerto, Las Orquídeas',
     baseFeeCents: 650,
     estimatedMinutes: 35,
     isActive: true,
@@ -57,23 +55,6 @@ const DEFAULT_TINGO_ZONES: Zone[] = [
   },
 ];
 
-const ZONE_LANDMARKS: Record<string, string[]> = {
-  castillo: ['Puente Corpac', 'Aeropuerto', 'Las Orquídeas', 'Av. Iquitos'],
-  centro: ['Plaza de Armas', 'Jr. Raymondi', 'Alameda Perú', 'Jr. Ucayali', 'Mercado Modelo'],
-  norte: ['Av. Universitaria', 'Campus UNAS', 'Bella Durmiente', 'Naranjillo'],
-  sur: ['Sector Afilador', 'Jr. Monzón', 'Salida a Huánuco', 'Puente Pérez'],
-};
-
-function getLandmarksForZone(zone: Zone): string[] {
-  const code = ((zone.code || '') + ' ' + (zone.id || '') + ' ' + (zone.name || '')).toLowerCase();
-  for (const [key, landmarks] of Object.entries(ZONE_LANDMARKS)) {
-    if (code.includes(key)) return landmarks;
-  }
-  return zone.description
-    ? zone.description.split(',').map((s) => s.trim()).filter(Boolean)
-    : [];
-}
-
 export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
   className = '',
   variant = 'navbar',
@@ -105,7 +86,6 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
         }
       })
       .catch((err) => {
-        // En caso de corte o desconexión, se conservan los DEFAULT_TINGO_ZONES
         console.debug('Usando zonas por defecto de Tingo María:', err);
       });
     return () => {
@@ -113,7 +93,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
     };
   }, []);
 
-  // Cierre limpio al hacer clic afuera del cuadro desplegable
+  // Cierre al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -135,7 +115,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
     };
   }, [isOpen]);
 
-  // Sincronizar cambios externos de zona
+  // Sincronizar cambios externos
   useEffect(() => {
     const handleZoneChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ zoneId: string }>;
@@ -195,24 +175,18 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        // Búsqueda de coincidencia geográfica en Tingo María
-        // Coordenadas Tingo María aprox: Lat -9.29, Lon -75.99
         let matchedZone = zones[0];
 
         if (longitude < -75.998) {
-          // Oeste del río Huallaga: Castillo Grande
           matchedZone =
             zones.find((z) => z.name.toLowerCase().includes('castillo')) || zones[0];
         } else if (latitude > -9.290) {
-          // Norte: UNAS / Rupa Rupa Norte
           matchedZone =
             zones.find((z) => z.name.toLowerCase().includes('norte')) || zones[0];
         } else if (latitude < -9.304) {
-          // Sur: Afilador / Rupa Rupa Sur
           matchedZone =
             zones.find((z) => z.name.toLowerCase().includes('sur')) || zones[0];
         } else {
-          // Centro
           matchedZone =
             zones.find((z) => z.name.toLowerCase().includes('centro')) || zones[0];
         }
@@ -224,7 +198,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
             handleSelect(matchedZone.id);
             setGpsStatus('idle');
             setGpsMessage('');
-          }, 600);
+          }, 500);
         } else {
           setGpsStatus('error');
           setGpsMessage('Selecciona tu lugar de entrega abajo.');
@@ -232,7 +206,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
       },
       () => {
         setGpsStatus('error');
-        setGpsMessage('GPS no disponible. Selecciona tu lugar de entrega en la lista.');
+        setGpsMessage('GPS no disponible. Selecciona tu lugar en la lista.');
         setTimeout(() => setGpsStatus('idle'), 3000);
       },
       { timeout: 8000, enableHighAccuracy: true }
@@ -323,27 +297,22 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
         </button>
       )}
 
-      {/* Cuadro Blanco Desplegable "Ahí nomás" (Sin fondo flotante oscuro) */}
+      {/* Panel Simple Desplegable "Ahí nomás" (Sin tarjetas internas pesadas) */}
       {isOpen && (
         <div
-          className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 w-[320px] sm:w-[380px] bg-white rounded-2xl shadow-2xl border border-gray-200/90 p-4 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-150 max-h-[80vh] overflow-y-auto"
+          className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 w-[300px] sm:w-[350px] bg-white rounded-2xl shadow-xl border border-gray-200/90 p-3.5 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-150"
           role="dialog"
           aria-labelledby="zone-dropdown-title"
         >
-          {/* Header del cuadro blanco */}
-          <div className="flex items-center justify-between pb-2.5 border-b border-gray-150">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 id="zone-dropdown-title" className="font-extrabold text-xs sm:text-sm text-gray-950">
-                  ¿Dónde estás en Tingo María?
-                </h4>
-                <p className="text-[11px] text-gray-500">
-                  Elige tu lugar para calcular delivery exacto
-                </p>
-              </div>
+          {/* Header simple y limpio */}
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+            <div>
+              <h4 id="zone-dropdown-title" className="font-bold text-xs text-gray-900">
+                Selecciona tu ubicación
+              </h4>
+              <p className="text-[11px] text-gray-500">
+                Departamento: Huánuco · Tingo María
+              </p>
             </div>
 
             <button
@@ -356,113 +325,81 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
             </button>
           </div>
 
-          {/* Opción 1: Activar GPS Automático */}
-          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-2.5 flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Navigation className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span className="text-xs font-bold text-gray-900">Ubicación GPS Automática</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleDetectGPS}
-                disabled={gpsStatus === 'detecting'}
-                className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-60"
-              >
-                {gpsStatus === 'detecting' ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Detectando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Compass className="w-3 h-3" />
-                    <span>Activar GPS</span>
-                  </>
-                )}
-              </button>
+          {/* Opción Simple: Activar GPS Automático (Botón horizontal limpio, no tarjeta) */}
+          <button
+            type="button"
+            onClick={handleDetectGPS}
+            disabled={gpsStatus === 'detecting'}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 text-emerald-900 text-xs font-bold transition-colors cursor-pointer border-0 disabled:opacity-60"
+          >
+            <div className="flex items-center gap-2">
+              <Navigation className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+              <span>{gpsStatus === 'detecting' ? 'Detectando tu GPS...' : 'Usar mi ubicación GPS actual'}</span>
             </div>
-
-            {gpsMessage && (
-              <p
-                className={`text-[10px] font-medium px-2 py-1 rounded-md ${
-                  gpsStatus === 'error'
-                    ? 'text-red-700 bg-red-50 border border-red-200'
-                    : 'text-emerald-800 bg-emerald-100/70 border border-emerald-200'
-                }`}
-              >
-                {gpsMessage}
-              </p>
+            {gpsStatus === 'detecting' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+            ) : (
+              <span className="text-[10px] text-emerald-700 font-semibold bg-white/80 px-1.5 py-0.5 rounded-md">
+                Auto
+              </span>
             )}
-          </div>
+          </button>
 
-          {/* Opción 2: Lista de Lugares de Tingo María */}
-          <div className="space-y-2 pt-0.5">
-            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              O elige tu zona o lugar de entrega:
+          {gpsMessage && (
+            <p
+              className={`text-[10px] font-medium px-2 py-1 rounded-md ${
+                gpsStatus === 'error'
+                  ? 'text-red-700 bg-red-50 border border-red-200'
+                  : 'text-emerald-800 bg-emerald-100/70 border border-emerald-200'
+              }`}
+            >
+              {gpsMessage}
+            </p>
+          )}
+
+          {/* Lista Simple de Opciones / Lugares (Filas limpias sin tarjetas con bordes) */}
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-1">
+              Lugares de entrega en Tingo María:
             </p>
 
             {zones.map((zone) => {
               const isSelected = zone.id === selectedZoneId;
-              const landmarks = getLandmarksForZone(zone);
 
               return (
-                <div
+                <button
                   key={zone.id}
+                  type="button"
                   onClick={() => handleSelect(zone.id)}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer border-0 ${
                     isSelected
-                      ? 'border-emerald-600 bg-emerald-50/50 ring-1 ring-emerald-500/30'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 bg-white'
+                      ? 'bg-emerald-50 text-emerald-950 font-bold'
+                      : 'hover:bg-gray-100/70 text-gray-800'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-xs text-gray-900">{zone.name}</span>
-                      {isSelected && (
-                        <span className="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded-full">
-                          Actual
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                      <span className="font-bold text-gray-900">
-                        {formatCents(zone.baseFeeCents)}
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        isSelected ? 'bg-emerald-600 ring-4 ring-emerald-100' : 'bg-gray-300'
+                      }`}
+                    />
+                    <div className="truncate">
+                      <span className="text-xs block truncate">{zone.name}</span>
+                      <span className="text-[10px] text-gray-500 font-normal block truncate">
+                        {zone.description}
                       </span>
-                      <span className="text-gray-400">~{zone.estimatedMinutes}m</span>
-                      {isSelected ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
-                      ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />
-                      )}
                     </div>
                   </div>
 
-                  {/* Etiquetas de lugares / referencias específicas */}
-                  {landmarks.length > 0 && (
-                    <div className="pt-1.5 flex flex-wrap gap-1">
-                      {landmarks.map((lm) => (
-                        <button
-                          key={lm}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelect(zone.id, lm);
-                          }}
-                          className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-                          }`}
-                        >
-                          {lm}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-xs font-bold text-gray-900 block">
+                      {formatCents(zone.baseFeeCents)}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-normal block">
+                      ~{zone.estimatedMinutes}m
+                    </span>
+                  </div>
+                </button>
               );
             })}
           </div>
