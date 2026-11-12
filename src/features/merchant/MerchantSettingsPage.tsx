@@ -33,6 +33,8 @@ import {
   Plus,
   Trash2,
   Loader2,
+  QrCode,
+  Upload,
 } from 'lucide-react';
 
 interface ToggleSwitchProps {
@@ -127,13 +129,10 @@ export const MerchantSettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Tiempos de preparación por categoría (en minutos)
-  const [prepTimeMainCourses, setPrepTimeMainCourses] = useState('25');
-  const [prepTimeAppetizers, setPrepTimeAppetizers] = useState('15');
-  const [prepTimeDrinks, setPrepTimeDrinks] = useState('8');
-  const [prepTimeDesserts, setPrepTimeDesserts] = useState('10');
+  // Tiempo promedio de despacho/atención (en minutos)
+  const [prepTimeMainCourses, setPrepTimeMainCourses] = useState('20');
 
-  // Tolerancia climática por lluvias en Tingo María
+  // Tolerancia climática por lluvias o contingencias
   const [rainDelayBuffer, setRainDelayBuffer] = useState(() => {
     return localStorage.getItem('quickly_merchant_rain_buffer') !== 'false';
   });
@@ -144,6 +143,7 @@ export const MerchantSettingsPage: React.FC = () => {
   const [acceptCard, setAcceptCard] = useState(false);
   const [yapePhone, setYapePhone] = useState('');
   const [yapeHolder, setYapeHolder] = useState('');
+  const [yapeQrImage, setYapeQrImage] = useState<string>('');
 
   // Alertas operativas y sonido
   const [soundAlerts, setSoundAlerts] = useState(() => {
@@ -193,9 +193,13 @@ export const MerchantSettingsPage: React.FC = () => {
       setCurrentStore(storeDetail);
       setMembers(membersList);
       setIntervals(storeDetail.openingIntervals || []);
-      setPrepTimeMainCourses(String(storeDetail.preparationMinutes || 25));
+      setPrepTimeMainCourses(String(storeDetail.preparationMinutes || 20));
       setYapePhone(displayPhone(storeDetail.phone));
-      setYapeHolder(storeDetail.name || '');
+      const savedQr = localStorage.getItem(`quickly_store_yape_qr_${selectedItem.id}`) ||
+        localStorage.getItem(`quickly_merchant_qr_${selectedItem.id}`) || '';
+      setYapeQrImage(savedQr);
+      const savedHolder = localStorage.getItem(`quickly_store_yape_holder_${selectedItem.id}`);
+      setYapeHolder(savedHolder || storeDetail.name || '');
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'No se pudo cargar la configuración de la tienda.');
     } finally {
@@ -346,6 +350,22 @@ export const MerchantSettingsPage: React.FC = () => {
       localStorage.setItem('quickly_merchant_sound_alerts', String(soundAlerts));
       localStorage.setItem('quickly_merchant_rain_buffer', String(rainDelayBuffer));
 
+      // 4. Persistir datos y código QR de Yape / Plin
+      if (yapeQrImage) {
+        localStorage.setItem(`quickly_store_yape_qr_${currentStore.id}`, yapeQrImage);
+        localStorage.setItem(`quickly_merchant_qr_${currentStore.id}`, yapeQrImage);
+        localStorage.setItem('quickly_last_store_yape_qr', yapeQrImage);
+      } else {
+        localStorage.removeItem(`quickly_store_yape_qr_${currentStore.id}`);
+        localStorage.removeItem(`quickly_merchant_qr_${currentStore.id}`);
+      }
+      if (yapeHolder) {
+        localStorage.setItem(`quickly_store_yape_holder_${currentStore.id}`, yapeHolder);
+      }
+      if (yapePhone) {
+        localStorage.setItem(`quickly_store_yape_phone_${currentStore.id}`, yapePhone);
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 4000);
       await loadSettingsData(currentStore.id);
@@ -470,7 +490,7 @@ export const MerchantSettingsPage: React.FC = () => {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* SECCIÓN 1: Tiempos de Preparación y Despacho en Cocina */}
+        {/* SECCIÓN 1: Tiempo Estimado de Despacho y Atención */}
         <div className="bg-surface p-5 sm:p-7 rounded-3xl border border-border shadow-subtle space-y-5">
           <div className="flex items-center gap-2.5 pb-3 border-b border-border">
             <div className="p-2 rounded-xl bg-primary-50 text-primary border border-primary-100">
@@ -478,169 +498,52 @@ export const MerchantSettingsPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-ink">
-                Tiempos de Preparación por Categoría
+                Tiempo Estimado de Despacho y Atención
               </h2>
               <p className="text-xs text-ink-light">
-                Indica los minutos promedio para que el repartidor reciba la notificación en el momento exacto
+                Indica los minutos promedio que toma tu negocio en alistar un pedido para entrega al cliente o repartidor
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Categoría 1: Platos Principales */}
-            <div className="p-4 rounded-2xl border border-border bg-surface-subtle/50 space-y-2.5">
-              <div className="flex items-center gap-2 text-ink">
-                <Flame className="w-4 h-4 text-warning flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-bold">Platos Calientes y Típicos</span>
-              </div>
-              <p className="text-[11px] text-ink-muted leading-tight">
-                Tacacho con cecina, juanes de gallina, patarashca, costillas ahumadas
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeMainCourses, setPrepTimeMainCourses, -5, 5, 90)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Disminuir minutos"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="5"
-                  max="90"
-                  value={prepTimeMainCourses}
-                  onChange={(e) => setPrepTimeMainCourses(e.target.value)}
-                  className="w-20 text-center font-black text-sm text-ink p-2 bg-surface rounded-xl border border-field focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeMainCourses, setPrepTimeMainCourses, 5, 5, 90)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Aumentar minutos"
-                >
-                  +
-                </button>
-                <span className="text-xs font-semibold text-ink-light ml-1">minutos</span>
-              </div>
+          <div className="p-4 rounded-2xl border border-border bg-surface-subtle/50 space-y-2.5 max-w-xl">
+            <div className="flex items-center gap-2 text-ink">
+              <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-bold">Tiempo promedio de atención / despacho</span>
             </div>
-
-            {/* Categoría 2: Entradas y Porciones Rápidas */}
-            <div className="p-4 rounded-2xl border border-border bg-surface-subtle/50 space-y-2.5">
-              <div className="flex items-center gap-2 text-ink">
-                <UtensilsCrossed className="w-4 h-4 text-selva flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-bold">Entradas y Guarniciones Rápidas</span>
-              </div>
-              <p className="text-[11px] text-ink-muted leading-tight">
-                Plátanos fritos, yucas doradas, ensalada de chonta, caldos
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeAppetizers, setPrepTimeAppetizers, -2, 3, 45)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Disminuir minutos"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="3"
-                  max="45"
-                  value={prepTimeAppetizers}
-                  onChange={(e) => setPrepTimeAppetizers(e.target.value)}
-                  className="w-20 text-center font-black text-sm text-ink p-2 bg-surface rounded-xl border border-field focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeAppetizers, setPrepTimeAppetizers, 2, 3, 45)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Aumentar minutos"
-                >
-                  +
-                </button>
-                <span className="text-xs font-semibold text-ink-light ml-1">minutos</span>
-              </div>
-            </div>
-
-            {/* Categoría 3: Bebidas y Jugos Naturales */}
-            <div className="p-4 rounded-2xl border border-border bg-surface-subtle/50 space-y-2.5">
-              <div className="flex items-center gap-2 text-ink">
-                <Coffee className="w-4 h-4 text-info flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-bold">Bebidas y Jugos Amazónicos</span>
-              </div>
-              <p className="text-[11px] text-ink-muted leading-tight">
-                Camu camu, aguaje, cocona, maracuyá, refrescos embotellados
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeDrinks, setPrepTimeDrinks, -2, 2, 20)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Disminuir minutos"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="2"
-                  max="20"
-                  value={prepTimeDrinks}
-                  onChange={(e) => setPrepTimeDrinks(e.target.value)}
-                  className="w-20 text-center font-black text-sm text-ink p-2 bg-surface rounded-xl border border-field focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeDrinks, setPrepTimeDrinks, 2, 2, 20)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Aumentar minutos"
-                >
-                  +
-                </button>
-                <span className="text-xs font-semibold text-ink-light ml-1">minutos</span>
-              </div>
-            </div>
-
-            {/* Categoría 4: Postres y Cafetería */}
-            <div className="p-4 rounded-2xl border border-border bg-surface-subtle/50 space-y-2.5">
-              <div className="flex items-center gap-2 text-ink">
-                <Coffee className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-bold">Postres, Cacao y Cafetería</span>
-              </div>
-              <p className="text-[11px] text-ink-muted leading-tight">
-                Chocolates de Leoncio Prado, café pasado, postres de la selva
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeDesserts, setPrepTimeDesserts, -2, 2, 30)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Disminuir minutos"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="2"
-                  max="30"
-                  value={prepTimeDesserts}
-                  onChange={(e) => setPrepTimeDesserts(e.target.value)}
-                  className="w-20 text-center font-black text-sm text-ink p-2 bg-surface rounded-xl border border-field focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleStepValue(prepTimeDesserts, setPrepTimeDesserts, 2, 2, 30)}
-                  className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
-                  aria-label="Aumentar minutos"
-                >
-                  +
-                </button>
-                <span className="text-xs font-semibold text-ink-light ml-1">minutos</span>
-              </div>
+            <p className="text-[11px] text-ink-muted leading-tight">
+              Válido para pedidos y compras de tu tienda en Tingo María
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleStepValue(prepTimeMainCourses, setPrepTimeMainCourses, -5, 5, 120)}
+                className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
+                aria-label="Disminuir minutos"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min="5"
+                max="120"
+                value={prepTimeMainCourses}
+                onChange={(e) => setPrepTimeMainCourses(e.target.value)}
+                className="w-20 text-center font-black text-sm text-ink p-2 bg-surface rounded-xl border border-field focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
+              />
+              <button
+                type="button"
+                onClick={() => handleStepValue(prepTimeMainCourses, setPrepTimeMainCourses, 5, 5, 120)}
+                className="w-10 h-10 rounded-xl bg-surface border border-field text-ink font-bold text-base hover:bg-surface-subtle touch-target flex items-center justify-center transition-colors"
+                aria-label="Aumentar minutos"
+              >
+                +
+              </button>
+              <span className="text-xs font-semibold text-ink-light ml-1">minutos</span>
             </div>
           </div>
 
-          {/* Tolerancia por lluvias tropicales en Tingo María */}
+          {/* Tolerancia por lluvias o contingencias en Tingo María */}
           <div
             onClick={() => setRainDelayBuffer(!rainDelayBuffer)}
             className="p-4 rounded-2xl border border-info-border bg-info-soft flex items-center justify-between gap-3 cursor-pointer hover:bg-info-soft/80 transition-colors"
@@ -651,10 +554,10 @@ export const MerchantSettingsPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-bold text-xs sm:text-sm text-ink">
-                  Tolerancia climática automática (+10 min)
+                  Tolerancia climática o contingencias (+10 min)
                 </p>
                 <p className="text-[11px] text-ink-light leading-relaxed">
-                  Añade un margen preventivo de 10 minutos al estimado del comensal durante chaparrones o lluvias tropicales en Tingo María.
+                  Añade un margen preventivo de 10 minutos al tiempo estimado del cliente durante lluvias tropicales o alta demanda en Tingo María.
                 </p>
               </div>
             </div>
@@ -893,7 +796,7 @@ export const MerchantSettingsPage: React.FC = () => {
                 Medios de Cobro Habilitados
               </h2>
               <p className="text-xs text-ink-light">
-                Define las formas de pago que tus comensales pueden usar para pedir a tu tienda
+                Define las formas de pago que tus clientes pueden usar para pedir a tu tienda
               </p>
             </div>
           </div>
@@ -943,9 +846,9 @@ export const MerchantSettingsPage: React.FC = () => {
                     <Smartphone className="w-5 h-5" />
                   </span>
                   <div>
-                    <p className="font-bold text-xs sm:text-sm text-ink">Yape / Plin Digital (Coordinación)</p>
+                    <p className="font-bold text-xs sm:text-sm text-ink">Yape / Plin Digital (Coordinación y QR)</p>
                     <p className="text-xs text-ink-muted leading-relaxed">
-                      Transferencia directa al número celular de tu negocio en Tingo María.
+                      Transferencia directa al número y código QR de tu negocio en Tingo María.
                     </p>
                   </div>
                 </div>
@@ -957,37 +860,107 @@ export const MerchantSettingsPage: React.FC = () => {
               </div>
 
               {acceptYapePlin && (
-                <div className="pt-3 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-ink block mb-1">
-                      Número Celular Yape / Plin (Se guarda en tu perfil comercial)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        inputMode="tel"
-                        value={yapePhone}
-                        onChange={(e) => setYapePhone(e.target.value)}
-                        placeholder="Ej. 962 123 456"
-                        className="w-full bg-surface border border-field rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-ink font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
-                      />
-                      <Phone className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="pt-3 border-t border-border space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-ink block mb-1">
+                        Número Celular Yape / Plin (Se guarda en tu perfil comercial)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="tel"
+                          value={yapePhone}
+                          onChange={(e) => setYapePhone(e.target.value)}
+                          placeholder="Ej. 962 123 456"
+                          className="w-full bg-surface border border-field rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-ink font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+                        />
+                        <Phone className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-ink block mb-1">
+                        Titular de la cuenta
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={yapeHolder}
+                          onChange={(e) => setYapeHolder(e.target.value)}
+                          placeholder="Ej. Tiendas EFE Tingo María"
+                          className="w-full bg-surface border border-field rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-ink font-bold focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+                        />
+                        <User className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-ink block mb-1">
-                      Titular de la cuenta
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={yapeHolder}
-                        onChange={(e) => setYapeHolder(e.target.value)}
-                        placeholder="Ej. La Selva Gourmet SAC"
-                        className="w-full bg-surface border border-field rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-ink font-bold focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
-                      />
-                      <User className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  {/* Carga del Código QR de Yape / Plin */}
+                  <div className="p-3.5 rounded-2xl bg-surface-subtle border border-border space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-bold text-ink">Código QR de Yape / Plin de la tienda</span>
+                      </div>
+                      {yapeQrImage && (
+                        <span className="text-[10px] font-bold text-selva bg-selva-soft px-2 py-0.5 rounded-full border border-selva-border flex items-center gap-1">
+                          <Check className="w-3 h-3" /> QR Cargado
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-ink-muted leading-tight">
+                      Sube la imagen del código QR de tu negocio. El cliente podrá escanearlo o transferir con total facilidad al comprar tus productos.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                      {yapeQrImage ? (
+                        <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-primary/40 bg-surface shadow-subtle flex-shrink-0 group">
+                          <img
+                            src={yapeQrImage}
+                            alt="Código QR Yape/Plin de la tienda"
+                            className="w-full h-full object-contain p-1.5"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setYapeQrImage('')}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-white shadow-xs hover:bg-destructive-strong transition-colors"
+                            title="Eliminar QR"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-field bg-surface flex flex-col items-center justify-center p-2 text-center flex-shrink-0 text-ink-muted">
+                          <QrCode className="w-8 h-8 text-ink-muted mb-1 stroke-[1.5]" />
+                          <span className="text-[10px] font-semibold">Sin imagen QR</span>
+                        </div>
+                      )}
+
+                      <div className="flex-1 space-y-2 w-full">
+                        <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-surface border border-field hover:bg-surface-subtle font-bold text-xs text-ink cursor-pointer transition-colors shadow-2xs touch-target w-full sm:w-auto">
+                          <Upload className="w-4 h-4 text-primary" />
+                          <span>{yapeQrImage ? 'Cambiar imagen de QR' : 'Subir imagen o captura del QR'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const result = event.target?.result as string;
+                                if (result) setYapeQrImage(result);
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                        <p className="text-[10px] text-ink-light">
+                          Formato JPG, PNG o WebP. Asegúrate de que el código QR sea nítido y legible para el cliente.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1023,7 +996,7 @@ export const MerchantSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* SECCIÓN 5: Alertas Operativas y Capacidad en Cocina */}
+        {/* SECCIÓN 5: Alertas Operativas y Capacidad de la Tienda */}
         <div className="bg-surface p-5 sm:p-7 rounded-3xl border border-border shadow-subtle space-y-5">
           <div className="flex items-center gap-2.5 pb-3 border-b border-border">
             <div className="p-2 rounded-xl bg-warning-soft text-warning border border-warning-border">
@@ -1047,16 +1020,16 @@ export const MerchantSettingsPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Volume2 className="w-5 h-5 text-primary flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-xs sm:text-sm text-ink">Timbre sonoro de nueva comanda</p>
+                  <p className="font-bold text-xs sm:text-sm text-ink">Timbre sonoro de nuevo pedido</p>
                   <p className="text-xs text-ink-muted leading-relaxed">
-                    Emite un sonido de campana de cocina al ingresar una orden para llamar la atención del cocinero
+                    Emite un sonido de alerta al ingresar una orden para llamar la atención del personal
                   </p>
                 </div>
               </div>
               <CustomCheckbox
                 checked={soundAlerts}
                 onChange={setSoundAlerts}
-                ariaLabel="Timbre sonoro de nueva comanda"
+                ariaLabel="Timbre sonoro de nuevo pedido"
               />
             </div>
 
@@ -1087,16 +1060,16 @@ export const MerchantSettingsPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-xs sm:text-sm text-ink">Recordatorio de comanda demorada</p>
+                  <p className="font-bold text-xs sm:text-sm text-ink">Recordatorio de pedido demorado</p>
                   <p className="text-xs text-ink-muted leading-relaxed">
-                    Avisa si una comanda supera los 20 minutos de preparación sin haberse marcado como lista
+                    Avisa si un pedido supera los 20 minutos de preparación o empaque sin haberse marcado como listo
                   </p>
                 </div>
               </div>
               <CustomCheckbox
                 checked={alertKitchenDelay}
                 onChange={setAlertKitchenDelay}
-                ariaLabel="Recordatorio de comanda demorada"
+                ariaLabel="Recordatorio de pedido demorado"
               />
             </div>
 
@@ -1104,10 +1077,10 @@ export const MerchantSettingsPage: React.FC = () => {
               <div>
                 <p className="font-bold text-xs sm:text-sm text-ink flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-ink-light" />
-                  <span>Límite de comandas simultáneas en cocina</span>
+                  <span>Límite de pedidos simultáneos en atención</span>
                 </p>
                 <p className="text-xs text-ink-muted">
-                  Pausa temporal automática si la cocina supera este número de órdenes al mismo tiempo
+                  Pausa temporal automática si la tienda supera este número de órdenes al mismo tiempo
                 </p>
               </div>
 
@@ -1116,10 +1089,10 @@ export const MerchantSettingsPage: React.FC = () => {
                 onChange={(e) => setMaxConcurrentOrders(e.target.value)}
                 className="bg-surface border border-field rounded-xl py-2 px-3 text-xs sm:text-sm font-bold text-ink min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="5">Hasta 5 comandas</option>
-                <option value="10">Hasta 10 comandas (Recomendado)</option>
-                <option value="15">Hasta 15 comandas</option>
-                <option value="99">Sin límite (Cocina amplia)</option>
+                <option value="5">Hasta 5 pedidos</option>
+                <option value="10">Hasta 10 pedidos (Recomendado)</option>
+                <option value="15">Hasta 15 pedidos</option>
+                <option value="99">Sin límite (Capacidad amplia)</option>
               </select>
             </div>
           </div>

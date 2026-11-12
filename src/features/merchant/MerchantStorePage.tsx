@@ -225,7 +225,7 @@ export const MerchantStorePage: React.FC = () => {
 
     const parsedPrepTime = parseInt(prepTimeMinutes, 10);
     if (isNaN(parsedPrepTime) || parsedPrepTime < 1 || parsedPrepTime > 1440) {
-      showError('El tiempo de preparación debe estar entre 1 y 1440 minutos.');
+      showError('El tiempo estimado de despacho debe estar entre 1 y 1440 minutos.');
       return;
     }
 
@@ -840,7 +840,7 @@ export const MerchantStorePage: React.FC = () => {
               </div>
 
               <div className="space-y-1 bg-surface-subtle p-2.5 rounded-xl border border-border">
-                <span className="text-[11px] text-ink-muted block font-medium">Tiempo de Preparación</span>
+                <span className="text-[11px] text-ink-muted block font-medium">Tiempo de Despacho Estimado</span>
                 <p className="font-bold text-ink">{currentStore.preparationMinutes || 20} minutos</p>
               </div>
 
@@ -969,7 +969,7 @@ export const MerchantStorePage: React.FC = () => {
             {/* PARÁMETROS OPERATIVOS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
-                label="Tiempo preparación promedio (min)"
+                label="Tiempo estimado de despacho (minutos)"
                 type="number"
                 min="1"
                 max="1440"

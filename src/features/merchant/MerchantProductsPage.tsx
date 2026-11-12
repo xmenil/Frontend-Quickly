@@ -675,12 +675,13 @@ export const MerchantProductsPage: React.FC = () => {
     });
   }, [products, inventory, searchQuery, selectedCategoryId, filterState, categories]);
 
-  const ITEMS_PER_PAGE = 10;
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(6);
+  const totalPages = itemsPerPage === 0 ? 1 : Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
   const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredProducts, currentPage]);
+    if (itemsPerPage === 0) return filteredProducts;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(start, start + itemsPerPage);
+  }, [filteredProducts, currentPage, itemsPerPage]);
 
   const previewPriceCents = useMemo(() => {
     const cleanPrice = String(priceSoles).replace(',', '.').trim();
@@ -1260,37 +1261,76 @@ export const MerchantProductsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Paginación */}
+        {/* Paginación y control de vista */}
         {filteredProducts.length > 0 && (
-          <div className="p-3 sm:p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface text-xs">
-            <div className="text-ink-muted text-xs">
-              Mostrando{' '}
-              <strong className="text-ink font-bold">
-                {(currentPage - 1) * ITEMS_PER_PAGE + 1}
-              </strong>{' '}
-              -{' '}
-              <strong className="text-ink font-bold">
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)}
-              </strong>{' '}
-              de <strong className="text-ink font-bold">{filteredProducts.length}</strong> productos
+          <div className="p-3 sm:p-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-3 bg-surface text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-ink-muted text-xs">
+              <span>
+                Mostrando{' '}
+                <strong className="text-ink font-bold">
+                  {itemsPerPage === 0 ? 1 : (currentPage - 1) * itemsPerPage + 1}
+                </strong>{' '}
+                -{' '}
+                <strong className="text-ink font-bold">
+                  {itemsPerPage === 0 ? filteredProducts.length : Math.min(currentPage * itemsPerPage, filteredProducts.length)}
+                </strong>{' '}
+                de <strong className="text-ink font-bold">{filteredProducts.length}</strong> productos
+              </span>
               {selectedCategoryObj && (
                 <span className="text-primary font-semibold capitalize"> ({selectedCategoryObj.name})</span>
               )}
-            </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1 select-none">
+              {/* Selector de cantidad por página */}
+              <div className="flex items-center gap-1 ml-0 sm:ml-2 pl-2 sm:border-l border-border">
+                <span className="text-[11px] text-ink-light">Ver:</span>
+                {[6, 12, 24].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => {
+                      setItemsPerPage(size);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2 py-0.5 rounded-md font-bold text-[11px] transition-colors ${
+                      itemsPerPage === size
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'bg-surface-subtle text-ink hover:bg-surface border border-border'
+                    }`}
+                  >
+                    {size} por pág
+                  </button>
+                ))}
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="h-8 px-2.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle disabled:opacity-40 disabled:cursor-not-allowed font-medium text-ink transition-colors flex items-center gap-1"
+                  onClick={() => {
+                    setItemsPerPage(0);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2 py-0.5 rounded-md font-bold text-[11px] transition-colors ${
+                    itemsPerPage === 0
+                      ? 'bg-primary text-white shadow-2xs'
+                      : 'bg-surface-subtle text-ink hover:bg-surface border border-border'
+                  }`}
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Anterior</span>
+                  Todos
                 </button>
+              </div>
+            </div>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+            <div className="flex items-center gap-1 select-none">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+                className="h-8 px-2.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle disabled:opacity-40 disabled:cursor-not-allowed font-medium text-ink transition-colors flex items-center gap-1"
+                aria-label="Página anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Anterior</span>
+              </button>
+
+              {itemsPerPage > 0 && totalPages > 1 ? (
+                Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                   <button
                     key={pageNum}
                     type="button"
@@ -1303,19 +1343,22 @@ export const MerchantProductsPage: React.FC = () => {
                   >
                     {pageNum}
                   </button>
-                ))}
+                ))
+              ) : (
+                <span className="px-2 text-xs font-bold text-ink-light">Página 1 de 1</span>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="h-8 px-2.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle disabled:opacity-40 disabled:cursor-not-allowed font-medium text-ink transition-colors flex items-center gap-1"
-                >
-                  <span className="hidden sm:inline">Siguiente</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+                className="h-8 px-2.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle disabled:opacity-40 disabled:cursor-not-allowed font-medium text-ink transition-colors flex items-center gap-1"
+                aria-label="Página siguiente"
+              >
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1338,7 +1381,7 @@ export const MerchantProductsPage: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
                 required
                 maxLength={160}
-                placeholder="Ej. Tacacho con Cecina y Chorizo Amazónico"
+                placeholder="Ej. Smart TV 55', Laptop, Zapatillas, Tacacho o Medicina"
               />
 
               {/* Precio y Stock */}
@@ -1382,11 +1425,11 @@ export const MerchantProductsPage: React.FC = () => {
                 </Select>
 
                 <Input
-                  label="Marca o Sección"
+                  label="Marca o Fabricante"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
                   maxLength={100}
-                  placeholder="Ej. Tradición Selvática"
+                  placeholder="Ej. Samsung, Lenovo, Nike o Marca Propia"
                 />
               </div>
 
@@ -1441,7 +1484,7 @@ export const MerchantProductsPage: React.FC = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   maxLength={4000}
-                  placeholder="Ingredientes, porción, presentación o detalles del producto..."
+                  placeholder="Detalles, especificaciones técnicas, modelo, talla o presentación..."
                   className="w-full text-xs p-2.5 rounded-xl border border-field bg-surface text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-y leading-relaxed"
                 />
               </div>

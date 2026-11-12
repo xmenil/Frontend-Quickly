@@ -1,6 +1,7 @@
 import { CatalogProduct, CatalogSku, InventoryItem, imageUrl } from '../../services/api/catalogApi';
 import { Store, StoreMember } from '../../services/api/operationsApi';
 import { prepareImage } from '../../services/media/prepareImage';
+import { catalogImage, catalogPlaceholder } from '../../lib/catalogImage';
 
 export const WEEKDAYS = [
   { day: 1, name: 'Lunes' },
@@ -12,8 +13,7 @@ export const WEEKDAYS = [
   { day: 7, name: 'Domingo' },
 ];
 
-export const DEFAULT_PRODUCT_IMAGE =
-  'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+export const DEFAULT_PRODUCT_IMAGE = catalogPlaceholder;
 
 export const BANNER_PRESETS = [
   {
@@ -159,19 +159,19 @@ export function getProductStock(product: CatalogProduct, inventory?: InventoryIt
  * Obtiene la imagen principal de un producto a partir de sus imágenes
  */
 export function getProductMainImage(product: CatalogProduct): string {
-  if (!product.images || product.images.length === 0) return DEFAULT_PRODUCT_IMAGE;
+  if (!product.images || product.images.length === 0) return catalogPlaceholder;
   const sorted = [...product.images].sort((a, b) => a.position - b.position);
   const found = sorted[0]?.url;
-  return found ? imageUrl(found) || DEFAULT_PRODUCT_IMAGE : DEFAULT_PRODUCT_IMAGE;
+  return catalogImage(found);
 }
 
 /**
  * Obtiene las URLs de galería de un producto
  */
 export function getProductGalleryImages(product: CatalogProduct): string[] {
-  if (!product.images || product.images.length === 0) return [DEFAULT_PRODUCT_IMAGE];
+  if (!product.images || product.images.length === 0) return [catalogPlaceholder];
   const sorted = [...product.images].sort((a, b) => a.position - b.position);
-  const urls = sorted.map((img) => imageUrl(img.url)).filter(Boolean);
-  return urls.length > 0 ? urls : [DEFAULT_PRODUCT_IMAGE];
+  const urls = sorted.map((img) => catalogImage(img.url)).filter(Boolean);
+  return urls.length > 0 ? urls : [catalogPlaceholder];
 }
 
