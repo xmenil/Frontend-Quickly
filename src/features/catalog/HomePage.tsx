@@ -24,6 +24,8 @@ import {
   ShieldCheck,
   Gift,
   Sparkles,
+  ChevronDown,
+  ShoppingBag,
 } from 'lucide-react';
 
 function extractBrandOrStore(p: CatalogProduct): string {
@@ -258,6 +260,42 @@ export function HomePage() {
   const allProducts = productsResource.data?.items || [];
 
   // Estados locales
+  const [mainView, setMainView] = useState<'products' | 'stores'>('products');
+  const [catalogCategory, setCatalogCategory] = useState<string>('all');
+  const [catalogVisibleCount, setCatalogVisibleCount] = useState<number>(16);
+  const [storesVisibleCount, setStoresVisibleCount] = useState<number>(8);
+  const [selectedZoneName, setSelectedZoneName] = useState<string>(() => {
+    return localStorage.getItem('quickly_selected_zone_name') || 'Tingo María';
+  });
+
+  useEffect(() => {
+    const handleZone = (e: Event) => {
+      const ce = e as CustomEvent<{ zoneName?: string }>;
+      if (ce.detail?.zoneName) {
+        setSelectedZoneName(ce.detail.zoneName);
+      }
+    };
+    window.addEventListener('quickly:zone-changed', handleZone);
+    return () => window.removeEventListener('quickly:zone-changed', handleZone);
+  }, []);
+
+  const handleCategorySelect = (catId: string) => {
+    setCatalogCategory(catId);
+    setCatalogVisibleCount(16);
+  };
+
+  const filteredCatalogProducts = useMemo(() => {
+    let list = allProducts.filter((p) => purchasableSku(p));
+    if (catalogCategory !== 'all') {
+      const catLower = catalogCategory.toLowerCase();
+      list = list.filter((p) => {
+        const c = ((p.categoryId || '') + ' ' + (p.name || '')).toLowerCase();
+        return c.includes(catLower);
+      });
+    }
+    return list;
+  }, [allProducts, catalogCategory]);
+
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -551,84 +589,310 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* 3. Tiendas y Comercios Oficiales de la Ciudad (Imagen 2) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-gray-200">
+      {/* 3. Selector Principal: Ver Productos vs Ver Tiendas */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-7 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200">
           <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                Catálogo Tingo María
+              </p>
+            </div>
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
-              Tiendas oficiales de la ciudad
+              {mainView === 'products'
+                ? 'Explorar Productos por Categoría'
+                : 'Tiendas Oficiales de la Ciudad'}
             </h2>
             <p className="text-xs text-gray-500">
-              Comercios destacados en Rupa Rupa y Castillo Grande
+              {mainView === 'products'
+                ? `Mostrando variedad multitienda con entrega disponible en ${selectedZoneName}`
+                : 'Comercios destacados en Rupa Rupa y Castillo Grande con atención directa'}
             </p>
           </div>
 
-          <Link
-            to="/negocios"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <span>Ver más tiendas</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* 4 Tiendas principales con perfil de imagen de fondo que cubre la tarjeta completa */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {stores.slice(0, 4).map((st) => {
-            const coverImg = getStoreCoverImage(st);
-            return (
-              <Link
-                key={st.id}
-                to={`/negocios/${st.id}`}
-                className="relative group rounded-2xl overflow-hidden h-36 sm:h-44 flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:shadow-card hover:-translate-y-1 cursor-pointer select-none border border-gray-200/50"
+          {/* Toggle Pestañas: Ver Productos / Ver Tiendas */}
+          <div className="inline-flex p-1 rounded-2xl bg-[#eaeff2] border border-gray-200/90 shadow-2xs self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMainView('products')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+                mainView === 'products'
+                  ? 'bg-gray-950 text-white shadow-xs'
+                  : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Ver Productos</span>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  mainView === 'products' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-800'
+                }`}
               >
-                {/* Imagen de fondo que cubre la tarjeta completa */}
-                <img
-                  src={coverImg}
-                  alt={st.name}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+                {filteredCatalogProducts.length}
+              </span>
+            </button>
 
-                {/* Capa de contraste / degradado oscuro para que el texto sea perfectamente legible */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 group-hover:via-black/60 transition-colors" />
-
-                {/* Header de la tarjeta sobre la imagen: Badge de estado y logo */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <span
-                    className={`font-black text-[10px] tracking-wide px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-xs ${
-                      st.isOpen
-                        ? 'bg-emerald-500/90 text-white'
-                        : 'bg-black/65 text-gray-300'
-                    }`}
-                  >
-                    {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
-                  </span>
-
-                  <div className="w-7 h-7 rounded-lg bg-white/95 text-emerald-900 flex items-center justify-center shadow-xs">
-                    <Store className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-
-                {/* Footer de la tarjeta sobre la imagen: Nombre de la tienda, categoría y Entrar > */}
-                <div className="relative z-10 pt-2">
-                  <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider line-clamp-1 mb-0.5">
-                    {st.category_code}
-                  </p>
-                  <h4 className="font-black text-xs sm:text-sm text-white group-hover:text-emerald-200 transition-colors truncate drop-shadow-xs">
-                    {st.name}
-                  </h4>
-                  <div className="flex items-center justify-between mt-1 text-[11px] text-gray-200">
-                    <span className="font-semibold text-white/90">Ver catálogo</span>
-                    <span className="font-bold text-white group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
-                      Entrar <ChevronRight className="w-3 h-3 text-emerald-400" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+            <button
+              type="button"
+              onClick={() => setMainView('stores')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+                mainView === 'stores'
+                  ? 'bg-gray-950 text-white shadow-xs'
+                  : 'text-gray-700 hover:text-gray-950 hover:bg-white/60'
+              }`}
+            >
+              <Store className="w-3.5 h-3.5" />
+              <span>Ver Tiendas</span>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  mainView === 'stores' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-800'
+                }`}
+              >
+                {stores.length}
+              </span>
+            </button>
+          </div>
         </div>
+
+        {mainView === 'products' ? (
+          <div className="space-y-4">
+            {/* Categorías filtro rápido */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
+              {[
+                { id: 'all', label: 'Todos' },
+                { id: 'tecnologia', label: 'Tecnología' },
+                { id: 'calzado', label: 'Zapatillas' },
+                { id: 'ropa', label: 'Ropa & Moda' },
+                { id: 'farmacia', label: 'Farmacia' },
+                { id: 'electrohogar', label: 'Electrohogar' },
+                { id: 'cama', label: 'Dormitorio' },
+                { id: 'juguetes', label: 'Juguetes & Regalos' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat.id)}
+                  className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    catalogCategory === cat.id
+                      ? 'bg-gray-950 text-white shadow-xs'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid de Productos con Paginación hacia abajo */}
+            {productsResource.loading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-gray-500 bg-white rounded-2xl border border-gray-200">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span>Cargando productos de Tingo María...</span>
+              </div>
+            ) : filteredCatalogProducts.length === 0 ? (
+              <div className="py-10 text-center text-xs text-gray-500 bg-white rounded-2xl border border-gray-200 p-6 space-y-2">
+                <p className="font-bold text-sm text-gray-800">No hay productos en esta categoría</p>
+                <button
+                  type="button"
+                  onClick={() => handleCategorySelect('all')}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  Ver todos los productos
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {filteredCatalogProducts.slice(0, catalogVisibleCount).map((item) => {
+                    const isJustAdded = addedProductId === item.id;
+                    const sku = preferredSku(item);
+                    const price = sku ? sku.priceCents : 0;
+                    const hasStock = !!purchasableSku(item);
+                    const productImg = getProductImageUrl(item);
+                    const brand = extractBrandOrStore(item);
+                    const discountPct = getProductDiscountPercent(item);
+                    const originalPrice =
+                      price > 0 ? Math.round(price / (1 - discountPct / 100)) : 0;
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => navigate('/producto/' + item.id)}
+                        className="group cursor-pointer flex flex-col justify-between text-left p-1.5 sm:p-2.5 transition-all duration-200 hover:bg-gray-50/60 rounded-xl bg-transparent"
+                      >
+                        <div>
+                          <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl bg-transparent">
+                            <img
+                              src={productImg}
+                              alt={item.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = catalogPlaceholder;
+                              }}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </div>
+
+                          <div className="mb-1">
+                            <span className="bg-[#4b5563] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs inline-block">
+                              ENVÍO HOY
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] font-black uppercase tracking-wider text-gray-900 line-clamp-1">
+                            {brand}
+                          </p>
+
+                          <h3 className="text-xs sm:text-[13px] text-gray-700 font-medium line-clamp-2 leading-snug my-1 group-hover:text-primary transition-colors">
+                            {item.name}
+                          </h3>
+                        </div>
+
+                        <div className="pt-1 mt-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm sm:text-base font-black text-gray-900 tabular-nums">
+                                {sku ? money(price) : 'S/ --'}
+                              </span>
+                              {discountPct > 0 && (
+                                <span className="bg-[#1f2937] text-white text-[10px] font-bold px-1 py-0.5 rounded-xs">
+                                  -{discountPct}%
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(e, item);
+                              }}
+                              disabled={!hasStock}
+                              className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
+                                isJustAdded
+                                  ? 'bg-emerald-600 text-white'
+                                  : hasStock
+                                  ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
+                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              }`}
+                              aria-label={`Agregar ${item.name} al carrito`}
+                            >
+                              {isJustAdded ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              ) : (
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          {originalPrice > price && (
+                            <p className="text-[11px] text-gray-400 line-through tabular-nums mt-0.5">
+                              {money(originalPrice)}
+                            </p>
+                          )}
+
+                          <p className="text-[10px] text-gray-400 capitalize truncate mt-0.5">
+                            {item.storeName}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Botón Paginación hacia abajo */}
+                {catalogVisibleCount < filteredCatalogProducts.length && (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCatalogVisibleCount((prev) => prev + 16)}
+                      className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-gray-950 hover:bg-black text-white font-extrabold text-xs sm:text-sm shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
+                    >
+                      <span>Mostrar más productos hacia abajo</span>
+                      <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                    <p className="text-[11px] text-gray-500 font-medium">
+                      Mostrando {Math.min(catalogVisibleCount, filteredCatalogProducts.length)} de{' '}
+                      {filteredCatalogProducts.length} productos en catálogo
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          /* Grid de Tiendas Oficiales con fotos reales */
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {stores.slice(0, storesVisibleCount).map((st) => {
+                const coverImg = getStoreCoverImage(st);
+                return (
+                  <Link
+                    key={st.id}
+                    to={`/negocios/${st.id}`}
+                    className="relative group rounded-2xl overflow-hidden h-36 sm:h-44 flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:shadow-card hover:-translate-y-1 cursor-pointer select-none border border-gray-200/50"
+                  >
+                    <img
+                      src={coverImg}
+                      alt={st.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 group-hover:via-black/60 transition-colors" />
+
+                    <div className="relative z-10 flex items-center justify-between">
+                      <span
+                        className={`font-black text-[10px] tracking-wide px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-xs ${
+                          st.isOpen
+                            ? 'bg-emerald-500/90 text-white'
+                            : 'bg-black/65 text-gray-300'
+                        }`}
+                      >
+                        {st.isOpen ? 'Abierto ahora' : 'Cerrado'}
+                      </span>
+
+                      <div className="w-7 h-7 rounded-lg bg-white/95 text-emerald-900 flex items-center justify-center shadow-xs">
+                        <Store className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 pt-2">
+                      <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider line-clamp-1 mb-0.5">
+                        {st.category_code}
+                      </p>
+                      <h4 className="font-black text-xs sm:text-sm text-white group-hover:text-emerald-200 transition-colors truncate drop-shadow-xs">
+                        {st.name}
+                      </h4>
+                      <div className="flex items-center justify-between mt-1 text-[11px] text-gray-200">
+                        <span className="font-semibold text-white/90">Ver catálogo</span>
+                        <span className="font-bold text-white group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+                          Entrar <ChevronRight className="w-3 h-3 text-emerald-400" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {storesVisibleCount < stores.length && (
+              <div className="flex flex-col items-center justify-center pt-4 pb-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStoresVisibleCount((prev) => prev + 8)}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-gray-900 hover:bg-black text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
+                >
+                  <span>Mostrar más tiendas</span>
+                  <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+                </button>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Mostrando {Math.min(storesVisibleCount, stores.length)} de {stores.length} tiendas oficiales
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 4. Sección Encuentra el regalo ideal (Integrada sin fondo de tarjeta blanca) */}

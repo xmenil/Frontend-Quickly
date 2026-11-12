@@ -1,3 +1,5 @@
+import { catalogImage } from './catalogImage';
+
 export const STORE_COVER_IMAGES: Record<string, string> = {
   'botica san martín': 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80',
   'botica san martin': 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&auto=format&fit=crop&q=80',
@@ -27,9 +29,27 @@ export const STORE_COVER_IMAGES: Record<string, string> = {
   'muebles tingo': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=700&auto=format&fit=crop&q=80',
 };
 
-export function getStoreCoverImage(st: { name?: string; bannerUrl?: string | null; category?: string; category_code?: string }): string {
-  if (st.bannerUrl && typeof st.bannerUrl === 'string' && st.bannerUrl.startsWith('http') && !st.bannerUrl.includes('data:image')) {
-    return st.bannerUrl;
+export function getStoreCoverImage(st: {
+  id?: string;
+  name?: string;
+  bannerUrl?: string | null;
+  logoUrl?: string | null;
+  category?: string;
+  category_code?: string;
+}): string {
+  // Si la tienda subió su banner o foto de perfil / logo, se prioriza
+  if (st.bannerUrl && typeof st.bannerUrl === 'string' && st.bannerUrl.trim()) {
+    const resolved = catalogImage(st.bannerUrl);
+    if (resolved && !resolved.includes('data:image/svg')) return resolved;
+  }
+  if (st.logoUrl && typeof st.logoUrl === 'string' && st.logoUrl.trim()) {
+    const resolved = catalogImage(st.logoUrl);
+    if (resolved && !resolved.includes('data:image/svg')) return resolved;
+  }
+  if (st.id) {
+    const localCover = localStorage.getItem(`quickly_store_cover_${st.id}`) ||
+      localStorage.getItem(`quickly_store_logo_${st.id}`);
+    if (localCover && localCover.trim()) return localCover;
   }
   const n = (st.name || '').toLowerCase().trim();
   for (const [key, url] of Object.entries(STORE_COVER_IMAGES)) {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 import { useStorefrontStore } from './useStorefront';
 import { useCatalogFavorite } from './useCatalogFavorite';
 import { RemoteState } from '../operations/shared';
@@ -13,17 +14,21 @@ import {
   MapPin,
   Heart,
   ChevronLeft,
+  ChevronDown,
   AlertTriangle,
   ShoppingBag,
+  Store,
 } from 'lucide-react';
 
 export const MerchantDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { currentUser } = useAuthStore();
   const resource = useStorefrontStore(id || '');
   const favorite = useCatalogFavorite('store', id || '');
   const products = resource.data?.products || [];
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
+  const [visibleCount, setVisibleCount] = useState<number>(8);
 
   const merchant = resource.data?.merchant;
   if (resource.loading || resource.error) return <div className="max-w-4xl mx-auto py-16 px-4"><RemoteState loading={resource.loading} error={resource.error} retry={resource.reload}/><Link to="/negocios" className="text-primary font-bold">Volver a Comercios</Link></div>;
@@ -43,12 +48,23 @@ export const MerchantDetailPage: React.FC = () => {
     );
   }
 
+  const isOwnerMerchant = Boolean(
+    currentUser &&
+      (currentUser.role === 'comercio' || Boolean(currentUser.merchantId)) &&
+      currentUser.merchantId === merchant.id
+  );
+
   const isFavorite = favorite.isFavorite;
   const storeImage = getStoreCoverImage(merchant);
   const merchantProducts = products.filter((p) => p.merchantId === merchant.id);
 
   // Available unique categories in this merchant's products
   const productCategories = Array.from(new Set(merchantProducts.map((p) => p.categoryId || p.category)));
+
+  const handleCategoryFilter = (cat: string) => {
+    setActiveCategoryFilter(cat);
+    setVisibleCount(8);
+  };
 
   const filteredProducts =
     activeCategoryFilter === 'all'
@@ -101,6 +117,43 @@ export const MerchantDetailPage: React.FC = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 space-y-5">
+
+        {/* Modo Vista Previa para el Comercio Dueño */}
+        {isOwnerMerchant && (
+          <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Store className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="font-extrabold text-xs sm:text-sm text-amber-950 flex items-center gap-1.5">
+                  <span>Modo Vista Previa de tu Comercio</span>
+                  <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
+                    Solo lectura
+                  </span>
+                </p>
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  Estás visualizando cómo ven los clientes tus publicaciones en Tingo María. Las compras a tu propio negocio están desactivadas. Para gestionar productos, stock, precios o datos de cobro, ingresa a tu panel.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
+              <Link
+                to="/comercio/productos"
+                className="flex-1 sm:flex-initial text-center px-4 py-2 rounded-xl bg-gray-950 hover:bg-black text-white text-xs font-bold transition-all shadow-xs"
+              >
+                Gestionar Productos
+              </Link>
+              <Link
+                to="/comercio/ajustes"
+                className="flex-1 sm:flex-initial text-center px-3.5 py-2 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-800 text-xs font-bold transition-all bg-white"
+              >
+                Ajustes de Tienda
+              </Link>
+            </div>
+          </div>
+        )}
 
       {/* Banner & Header Card: Layout Horizontal (Lado izquierdo imagen, Lado derecho información) */}
       <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden p-3.5 sm:p-5 flex flex-col md:flex-row items-center md:items-stretch gap-4 sm:gap-6">
@@ -249,7 +302,7 @@ export const MerchantDetailPage: React.FC = () => {
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
               <button
                 type="button"
-                onClick={() => setActiveCategoryFilter('all')}
+                onClick={() => handleCategoryFilter('all')}
                 className={`touch-target px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border shadow-2xs ${
                   activeCategoryFilter === 'all'
                     ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
@@ -262,7 +315,7 @@ export const MerchantDetailPage: React.FC = () => {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setActiveCategoryFilter(cat)}
+                  onClick={() => handleCategoryFilter(cat)}
                   className={`touch-target px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl capitalize transition-all cursor-pointer border shadow-2xs ${
                     activeCategoryFilter === cat
                       ? 'bg-white text-primary border-primary ring-2 ring-primary/20 font-bold'
@@ -288,22 +341,41 @@ export const MerchantDetailPage: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={() => setActiveCategoryFilter('all')}
+              onClick={() => handleCategoryFilter('all')}
               className="mt-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors cursor-pointer"
             >
               Ver todos los productos
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                merchant={merchant}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {filteredProducts.slice(0, visibleCount).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  merchant={merchant}
+                />
+              ))}
+            </div>
+
+            {/* Paginación / Mostrar más productos hacia abajo */}
+            {visibleCount < filteredProducts.length && (
+              <div className="flex flex-col items-center justify-center pt-8 pb-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 8)}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-gray-900 hover:bg-black text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
+                >
+                  <span>Mostrar más productos ({filteredProducts.length - visibleCount} restantes)</span>
+                  <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+                </button>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Mostrando {Math.min(visibleCount, filteredProducts.length)} de {filteredProducts.length} productos
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

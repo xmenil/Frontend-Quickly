@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { operationsApi, Zone } from '../../services/api/operationsApi';
 import { formatCents } from '../../lib/currency';
-import { MapPin, ChevronDown, Check, Clock, Bike, X, Loader2 } from 'lucide-react';
+import { MapPin, ChevronDown, Check, Clock, Bike, X, Loader2, Navigation, Compass } from 'lucide-react';
 
 interface ZoneSelectorProps {
   className?: string;
   variant?: 'navbar' | 'compact' | 'button' | 'header-light' | 'topbar';
   onChangeZone?: (zoneId: string) => void;
+}
+
+const ZONE_LANDMARKS: Record<string, string[]> = {
+  'castillo': ['Puente Corpac', 'Aeropuerto', 'Las Orquídeas', 'Av. Iquitos'],
+  'centro': ['Plaza de Armas', 'Jr. Raymondi', 'Alameda Perú', 'Jr. Ucayali', 'Mercado Modelo'],
+  'norte': ['Av. Universitaria', 'Campus UNAS', 'Bella Durmiente', 'Naranjillo'],
+  'sur': ['Sector Afilador', 'Jr. Monzón', 'Salida a Huánuco', 'Puente Pérez'],
+};
+
+function getLandmarksForZone(zone: Zone): string[] {
+  const code = ((zone.code || '') + ' ' + (zone.id || '') + ' ' + (zone.name || '')).toLowerCase();
+  for (const [key, landmarks] of Object.entries(ZONE_LANDMARKS)) {
+    if (code.includes(key)) return landmarks;
+  }
+  return zone.description
+    ? zone.description.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
 }
 
 export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
@@ -20,6 +37,8 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
     return localStorage.getItem('quickly_selected_zone') || '';
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<'idle' | 'detecting' | 'success' | 'error'>('idle');
+  const [gpsMessage, setGpsMessage] = useState<string>('');
 
   useEffect(() => {
     let isMounted = true;
@@ -47,20 +66,128 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
     };
   }, []);
 
+  // Solicitar ubicación al ingresar por primera vez si no está configurada
+  useEffect(() => {
+    const hasSetLocation = localStorage.getItem('quickly_user_location_set');
+    if (!hasSetLocation) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Sincronizar cambios externos de zona
+  useEffect(() => {
+    const handleZoneChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ zoneId: string }>;
+      if (customEvent.detail?.zoneId) {
+        setSelectedZoneId(customEvent.detail.zoneId);
+      }
+    };
+    window.addEventListener('quickly:zone-changed', handleZoneChange);
+    return () => {
+      window.removeEventListener('quickly:zone-changed', handleZoneChange);
+    };
+  }, []);
+
   useEffect(() => {
     if (selectedZoneId) {
       localStorage.setItem('quickly_selected_zone', selectedZoneId);
+      const matched = zones.find((z) => z.id === selectedZoneId);
+      if (matched) {
+        localStorage.setItem('quickly_selected_zone_name', matched.name);
+      }
     }
-  }, [selectedZoneId]);
+  }, [selectedZoneId, zones]);
 
   const currentZone = zones.find((z) => z.id === selectedZoneId) || zones[0];
 
-  const handleSelect = (zoneId: string) => {
+  const handleSelect = (zoneId: string, landmark?: string) => {
     setSelectedZoneId(zoneId);
+    localStorage.setItem('quickly_user_location_set', 'true');
+    const matched = zones.find((z) => z.id === zoneId);
+    if (matched) {
+      localStorage.setItem('quickly_selected_zone_name', matched.name);
+    }
+    if (landmark) {
+      localStorage.setItem('quickly_selected_landmark', landmark);
+    }
+    window.dispatchEvent(
+      new CustomEvent('quickly:zone-changed', {
+        detail: { zoneId, zoneName: matched?.name || '', landmark },
+      })
+    );
     setIsOpen(false);
     if (onChangeZone) {
       onChangeZone(zoneId);
     }
+  };
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      setGpsStatus('error');
+      setGpsMessage('Tu navegador no soporta geolocalización GPS.');
+      return;
+    }
+
+    setGpsStatus('detecting');
+    setGpsMessage('Detectando tu ubicación en Tingo María...');
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Búsqueda de coincidencia geográfica en Tingo María
+        // Coordenadas Tingo María aprox: Lat -9.29, Lon -75.99
+        let matchedZone = zones[0];
+
+        if (longitude < -75.998) {
+          // Oeste del río Huallaga: Castillo Grande
+          matchedZone =
+            zones.find((z) => z.name.toLowerCase().includes('castillo')) || zones[0];
+        } else if (latitude > -9.290) {
+          // Norte: UNAS / Rupa Rupa Norte
+          matchedZone =
+            zones.find((z) => z.name.toLowerCase().includes('norte')) || zones[0];
+        } else if (latitude < -9.304) {
+          // Sur: Afilador / Rupa Rupa Sur
+          matchedZone =
+            zones.find((z) => z.name.toLowerCase().includes('sur')) || zones[0];
+        } else {
+          // Centro
+          matchedZone =
+            zones.find((z) => z.name.toLowerCase().includes('centro')) || zones[0];
+        }
+
+        if (matchedZone) {
+          setGpsStatus('success');
+          setGpsMessage(`Ubicación detectada: ${matchedZone.name}`);
+          setTimeout(() => {
+            handleSelect(matchedZone.id);
+            setGpsStatus('idle');
+            setGpsMessage('');
+          }, 800);
+        } else {
+          setGpsStatus('error');
+          setGpsMessage('No se pudo determinar la zona exacta. Elige una opción abajo.');
+        }
+      },
+      () => {
+        // En caso de denegación de permisos o error
+        const fallbackZone =
+          zones.find((z) => z.name.toLowerCase().includes('centro')) || zones[0];
+        setGpsStatus('error');
+        setGpsMessage(
+          'Permiso de GPS no concedido. Selecciona tu lugar de entrega en la lista.'
+        );
+        if (fallbackZone) {
+          setTimeout(() => {
+            setGpsStatus('idle');
+          }, 3500);
+        }
+      },
+      { timeout: 7000, enableHighAccuracy: true }
+    );
   };
 
   return (
@@ -180,6 +307,50 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
               </button>
             </div>
 
+            {/* GPS Ubicación Automática */}
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Navigation className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Ubicación GPS Automática</p>
+                    <p className="text-[11px] text-gray-600">Detecta tu zona exacta con un solo toque</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDetectGPS}
+                  disabled={gpsStatus === 'detecting'}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-60"
+                >
+                  {gpsStatus === 'detecting' ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Detectando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Usar mi GPS</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {gpsMessage && (
+                <p className={`text-[11px] font-medium px-2 py-1 rounded-lg ${
+                  gpsStatus === 'error'
+                    ? 'text-red-700 bg-red-50 border border-red-200'
+                    : 'text-emerald-800 bg-emerald-100/70 border border-emerald-200'
+                }`}>
+                  {gpsMessage}
+                </p>
+              )}
+            </div>
+
             {/* Zone List */}
             <div className="space-y-2.5 pt-1">
               {loading ? (
@@ -194,6 +365,8 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
               ) : (
                 zones.map((zone) => {
                   const isSelected = zone.id === selectedZoneId;
+                  const landmarks = getLandmarksForZone(zone);
+
                   return (
                     <button
                       key={zone.id}
@@ -217,6 +390,29 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
                       <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
                         {zone.description}
                       </p>
+
+                      {/* Desglose de lugares de referencia como etiquetas interactivas */}
+                      {landmarks.length > 0 && (
+                        <div className="pt-1.5 flex flex-wrap gap-1">
+                          {landmarks.map((lm) => (
+                            <span
+                              key={lm}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelect(zone.id, lm);
+                              }}
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                                isSelected
+                                  ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {lm}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-3 pt-1 text-xs text-gray-500 font-medium">
                         <span className="flex items-center gap-1 text-ink font-semibold">
                           <Bike className="w-3.5 h-3.5 text-primary" />
