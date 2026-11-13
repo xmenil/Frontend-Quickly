@@ -14,6 +14,60 @@ const quote:z.ZodType<Quote>=z.object({storeId:uuid,storeName:z.string(),subtota
 const groupQuote:z.ZodType<GroupQuote>=z.object({stores:z.array(quote).min(1).max(10),subtotalCents:cents,deliveryFeeCents:cents,totalCents:cents});
 const groupCheckout:z.ZodType<GroupCheckout>=z.object({id:uuid,createdAt:date,subtotalCents:cents,deliveryFeeCents:cents,totalCents:cents,
   orders:z.array(z.object({orderId:uuid,purchaseId:uuid,storeId:uuid,storeName:z.string(),code:z.string(),status:summaryShape.status,paymentStatus:z.string(),subtotalCents:cents,deliveryFeeCents:cents,totalCents:cents})).min(1).max(10)});
+const storeCourierSchema = z.object({
+  courierUserId: uuid,
+  fullName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  vehicleType: z.enum(['motorcycle', 'bicycle', 'mototaxi']),
+  plate: z.string().nullable(),
+  isOnline: z.boolean(),
+  currentZoneId: uuid.nullable(),
+  zoneName: z.string().nullable(),
+  associationStatus: z.string().nullable(),
+  isAssociated: z.boolean(),
+  associatedAt: z.string().nullable().optional(),
+  deliveredOrdersCount: z.number().int().nonnegative().optional(),
+  hasActiveOrder: z.boolean().optional(),
+});
+export type StoreCourier = z.infer<typeof storeCourierSchema>;
+
+const deliveryRecordSchema = z.object({
+  assignmentId: uuid,
+  orderId: uuid,
+  orderCode: z.string(),
+  assignmentStatus: z.string(),
+  orderStatus: z.string(),
+  agreedFeeCents: cents,
+  totalCents: cents,
+  acceptedAt: z.string(),
+  pickedUpAt: z.string().nullable(),
+  deliveredAt: z.string().nullable(),
+  cancelledAt: z.string().nullable(),
+  courier: z.object({
+    userId: uuid,
+    fullName: z.string(),
+    phone: z.string(),
+    vehicleType: z.string(),
+    plate: z.string().nullable(),
+  }),
+  customer: z.object({
+    recipientName: z.string(),
+    phone: z.string(),
+    street: z.string(),
+    streetNumber: z.string(),
+    reference: z.string(),
+    zoneName: z.string().nullable().optional(),
+  }),
+  items: z.array(z.object({
+    productName: z.string(),
+    variantName: z.string(),
+    quantity: z.number().int(),
+    unitPriceCents: cents,
+  })),
+});
+export type StoreDeliveryRecord = z.infer<typeof deliveryRecordSchema>;
+
 function checked<T>(schema:z.ZodType<T>,value:unknown):T{const result=schema.safeParse(value);if(!result.success)throw new ApiError('La respuesta del servicio de pedidos no es válida.',0,'INVALID_RESPONSE');return result.data;}
 export const orderingApi={
   groupQuote:async(body:PurchaseInput,signal?:AbortSignal)=>checked(groupQuote,await apiRequest('/checkout/groups/quote',{method:'POST',body,signal})),
@@ -27,6 +81,10 @@ export const orderingApi={
   list:async(path:string,query:Record<string,string|undefined>={},signal?:AbortSignal)=>{const params=new URLSearchParams();Object.entries(query).forEach(([key,value])=>{if(value)params.set(key,value);});return checked(z.object({items:z.array(summary),nextCursor:uuid.nullable()}),await apiRequest(`${path}?${params}`,{signal}));},
   action:(path:string,body:unknown={})=>apiRequest(path,{method:'POST',body}),
   merchantCouriers: async(signal?:AbortSignal)=>checked(z.array(z.object({courierUserId:uuid,fullName:z.string(),email:z.string(),phone:z.string(),vehicleType:z.enum(['motorcycle','bicycle','mototaxi']),plate:z.string().nullable(),isOnline:z.boolean(),currentZoneId:uuid.nullable(),zoneName:z.string().nullable()})),await apiRequest('/merchant/available-couriers',{signal})),
+  listStoreCouriers: async(signal?:AbortSignal)=>checked(z.array(storeCourierSchema),await apiRequest('/merchant/couriers',{signal})),
+  associateCourier: async(body:{courierUserId?:string;phone?:string;notes?:string})=>checked(z.array(storeCourierSchema),await apiRequest('/merchant/couriers',{method:'POST',body})),
+  removeStoreCourier: async(courierUserId:string)=>apiRequest<{success:boolean}>(`/merchant/couriers/${courierUserId}`,{method:'DELETE'}),
+  storeDeliveryHistory: async(signal?:AbortSignal)=>checked(z.array(deliveryRecordSchema),await apiRequest('/merchant/delivery-history',{signal})),
   couriers:async(storeId:string,signal?:AbortSignal)=>checked(z.array(z.object({userId:uuid,fullName:z.string()})),await apiRequest(`/admin/courier-options?storeId=${storeId}`,{signal})),
 };
 export function cashCents(value:string):number{if(!/^\d+(?:\.\d{1,2})?$/.test(value))throw new Error('Ingresa un importe con hasta dos decimales.');const[whole,fraction='']=value.split('.');const result=Number(whole)*100+Number(fraction.padEnd(2,'0'));if(!Number.isSafeInteger(result)||result<1||result>100000000000000)throw new Error('Importe fuera de rango.');return result;}

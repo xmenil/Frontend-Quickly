@@ -29,6 +29,11 @@ import {
   ShieldCheck,
   Check,
   ExternalLink,
+  Users,
+  History,
+  UserPlus,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 
 const QUICK_REJECTION_REASONS = [
@@ -55,19 +60,90 @@ export const MerchantOrdersPage: React.FC = () => {
   // Modal detalle de entrega del repartidor
   const [deliveryDetailSelection, setDeliveryDetailOrder] = useState<SuborderExtended | null>(null);
 
-  // Modal selección y asignación de repartidor
+  // Modal selección y asignación de repartidor a pedido
   const [assignCourierOrderId, setAssignCourierOrderId] = useState<string | null>(null);
+
+  // Modales de Gestión de Repartidores de la Tienda e Historial de Delivery
+  const [isCouriersModalOpen, setIsCouriersModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [couriersRefreshKey, setCouriersRefreshKey] = useState(0);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
+  // Formulario vinculación rápida de repartidor
+  const [courierPhoneInput, setCourierPhoneInput] = useState('');
+  const [courierNotesInput, setCourierNotesInput] = useState('');
+  const [courierActionBusy, setCourierActionBusy] = useState(false);
+  const [courierActionMsg, setCourierActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const deliveryDetailOrder = subordersWithPurchase.find(order => order.id === deliveryDetailSelection?.id) || null;
   const courierResource = useRemote('merchant-couriers:' + resource.storeId + ':' + assignCourierOrderId, signal => assignCourierOrderId ? orderingApi.merchantCouriers(signal) : Promise.resolve([]));
   const couriers = (courierResource.data || []).filter(c => c.isOnline).map(c => ({ ...c, id: c.courierUserId, name: c.fullName, vehicleType: c.vehicleType === 'motorcycle' ? 'moto' : c.vehicleType === 'bicycle' ? 'bicicleta' : 'mototaxi' }));
-  React.useEffect(() => { setRejectOrderId(null); setAssignCourierOrderId(null); setDeliveryDetailOrder(null); }, [resource.storeId]);
+
+  // Resources remotos para gestión de repartidores e historial de reparto
+  const storeCouriersResource = useRemote(
+    'merchant-store-couriers:' + resource.storeId + ':' + couriersRefreshKey,
+    signal => isCouriersModalOpen ? orderingApi.listStoreCouriers(signal) : Promise.resolve([])
+  );
+
+  const historyResource = useRemote(
+    'merchant-store-history:' + resource.storeId + ':' + historyRefreshKey,
+    signal => isHistoryModalOpen ? orderingApi.storeDeliveryHistory(signal) : Promise.resolve([])
+  );
+
+  React.useEffect(() => {
+    setRejectOrderId(null);
+    setAssignCourierOrderId(null);
+    setDeliveryDetailOrder(null);
+    setIsCouriersModalOpen(false);
+    setIsHistoryModalOpen(false);
+  }, [resource.storeId]);
+
   // Alerta feedback
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const handleAssignCourier = async (orderId: string, courierId: string) => {
     if (courierResource.loading || courierResource.error || !couriers.some(c => c.id === courierId)) return;
     if (await actions.assign(orderId, courierId)) setAssignCourierOrderId(null); else courierResource.reload();
+  };
+
+  const handleAssociateCourier = async (courierUserId?: string, phone?: string) => {
+    setCourierActionBusy(true);
+    setCourierActionMsg(null);
+    try {
+      await orderingApi.associateCourier({
+        courierUserId,
+        phone: phone || courierPhoneInput.trim(),
+        notes: courierNotesInput.trim() || undefined,
+      });
+      setCourierPhoneInput('');
+      setCourierNotesInput('');
+      setCourierActionMsg({ type: 'success', text: 'Repartidor vinculado a tu tienda exitosamente.' });
+      setCouriersRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setCourierActionMsg({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'No se pudo vincular al repartidor.',
+      });
+    } finally {
+      setCourierActionBusy(false);
+    }
+  };
+
+  const handleRemoveCourier = async (courierUserId: string) => {
+    setCourierActionBusy(true);
+    setCourierActionMsg(null);
+    try {
+      await orderingApi.removeStoreCourier(courierUserId);
+      setCourierActionMsg({ type: 'success', text: 'Repartidor desvinculado de la tienda.' });
+      setCouriersRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setCourierActionMsg({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'No se pudo desvincular al repartidor.',
+      });
+    } finally {
+      setCourierActionBusy(false);
+    }
   };
   // Contadores reactivos
   const counts = useMemo(() => {
@@ -140,8 +216,8 @@ export const MerchantOrdersPage: React.FC = () => {
       <RemoteState loading={resource.loading} error={resource.error} retry={resource.reload} />
       {actions.error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{actions.error}</p>}
       {actions.notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{actions.notice}</p>}
-      {/* Cabecera Compacta */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Cabecera Compacta con Acciones de Reparto */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-extrabold text-ink tracking-tight">Pedidos y Reparto</h1>
@@ -154,25 +230,52 @@ export const MerchantOrdersPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Buscador compacto */}
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar código, cliente o repartidor..."
-            className="w-full bg-surface border border-field rounded-xl py-1.5 pl-8 pr-7 text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary min-h-[38px] transition-colors"
-          />
-          <Search className="w-3.5 h-3.5 text-ink-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-muted hover:text-ink p-1"
-            >
-              ✕
-            </button>
-          )}
+        {/* Acciones de Reparto y Buscador */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Botón Gestión de Repartidores */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => { setCourierActionMsg(null); setIsCouriersModalOpen(true); }}
+            className="min-h-[38px] px-3 text-xs font-bold rounded-xl flex items-center gap-1.5 border-primary/40 text-primary hover:bg-primary-50 bg-surface shadow-xs transition-colors"
+          >
+            <Users className="w-4 h-4 text-primary" />
+            <span>Repartidores</span>
+          </Button>
+
+          {/* Botón Historial Delivery */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsHistoryModalOpen(true)}
+            className="min-h-[38px] px-3 text-xs font-bold rounded-xl flex items-center gap-1.5 border-border text-ink hover:bg-surface-subtle bg-surface shadow-xs transition-colors"
+          >
+            <History className="w-4 h-4 text-ink-light" />
+            <span>Historial Delivery</span>
+          </Button>
+
+          {/* Buscador compacto */}
+          <div className="relative w-full sm:w-56">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar código o cliente..."
+              className="w-full bg-surface border border-field rounded-xl py-1.5 pl-8 pr-7 text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary min-h-[38px] transition-colors"
+            />
+            <Search className="w-3.5 h-3.5 text-ink-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-muted hover:text-ink p-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -791,7 +894,7 @@ export const MerchantOrdersPage: React.FC = () => {
 
           <div className="flex justify-end pt-3 border-t border-border">
             <Button
-                            disabled={actions.busy || resource.loading || !!resource.error}
+              disabled={actions.busy || resource.loading || !!resource.error}
               type="button"
               variant="outline"
               size="sm"
@@ -799,6 +902,362 @@ export const MerchantOrdersPage: React.FC = () => {
               className="text-xs font-semibold px-4 rounded-xl"
             >
               Cancelar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Modal Gestión de Repartidores de la Tienda */}
+      <Dialog
+        isOpen={isCouriersModalOpen}
+        onClose={() => { if (!courierActionBusy) setIsCouriersModalOpen(false); }}
+        title="Gestión de Repartidores de la Tienda"
+        maxWidth="3xl"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
+            <p className="text-xs text-ink-muted leading-relaxed">
+              Administra tus repartidores de confianza asociados a tu tienda en Tingo María y vincula nuevos motorizados para asignarles pedidos directamente.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { setCourierActionMsg(null); setCouriersRefreshKey(k => k + 1); }}
+              disabled={courierActionBusy || storeCouriersResource.loading}
+              className="text-[11px] h-7 px-2.5 flex items-center gap-1 text-ink-muted hover:text-ink flex-shrink-0"
+            >
+              <RefreshCw className={`w-3 h-3 ${storeCouriersResource.loading ? 'animate-spin' : ''}`} />
+              <span>Actualizar lista</span>
+            </Button>
+          </div>
+
+          {/* Formulario para agregar / asociar un repartidor */}
+          <div className="bg-surface-subtle border border-border rounded-xl p-3.5 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-primary" />
+              <h3 className="text-xs font-bold text-ink">Vincular nuevo repartidor a tu comercio</h3>
+            </div>
+            <p className="text-[11px] text-ink-light">
+              Ingresa el número de celular del repartidor registrado en Quickly para asociarlo a tu tienda de manera permanente:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-1">
+                <input
+                  type="tel"
+                  value={courierPhoneInput}
+                  onChange={(e) => setCourierPhoneInput(e.target.value)}
+                  placeholder="Celular (ej. 987654321)"
+                  disabled={courierActionBusy}
+                  className="w-full bg-surface border border-field rounded-lg px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary min-h-[36px]"
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <input
+                  type="text"
+                  value={courierNotesInput}
+                  onChange={(e) => setCourierNotesInput(e.target.value)}
+                  placeholder="Nota (ej. Turno tarde / Fijo)"
+                  disabled={courierActionBusy}
+                  className="w-full bg-surface border border-field rounded-lg px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary min-h-[36px]"
+                />
+              </div>
+              <div className="sm:col-span-1 flex items-center">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleAssociateCourier(undefined, courierPhoneInput)}
+                  disabled={courierActionBusy || !courierPhoneInput.trim()}
+                  className="w-full min-h-[36px] text-xs font-bold rounded-lg flex items-center justify-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Vincular Repartidor</span>
+                </Button>
+              </div>
+            </div>
+
+            {courierActionMsg && (
+              <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                courierActionMsg.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}>
+                {courierActionMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />}
+                <span>{courierActionMsg.text}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Estado de carga / error */}
+          <RemoteState loading={storeCouriersResource.loading} error={storeCouriersResource.error} retry={storeCouriersResource.reload} />
+
+          {/* Lista de repartidores */}
+          {!storeCouriersResource.loading && !storeCouriersResource.error && (
+            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              {(!storeCouriersResource.data || storeCouriersResource.data.length === 0) ? (
+                <div className="text-center py-8 bg-surface-subtle rounded-xl border border-dashed border-border p-6">
+                  <Bike className="w-8 h-8 text-ink-muted mx-auto mb-2" />
+                  <p className="text-xs font-bold text-ink">No hay repartidores registrados en este momento</p>
+                  <p className="text-[11px] text-ink-muted mt-1">
+                    Cuando los repartidores se registren en Tingo María aparecerán en esta lista para que los puedas vincular.
+                  </p>
+                </div>
+              ) : (
+                storeCouriersResource.data.map((c) => (
+                  <div
+                    key={c.courierUserId}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      c.isAssociated
+                        ? 'border-emerald-200 bg-emerald-50/20 shadow-xs'
+                        : 'border-border bg-surface hover:border-field'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${
+                          c.isAssociated
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-primary-50 text-primary border border-primary-100'
+                        }`}>
+                          <Bike className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-xs font-bold text-ink">{c.fullName}</h4>
+                            {c.isAssociated && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                                <ShieldCheck className="w-3 h-3" />
+                                Vinculado a tu tienda
+                              </span>
+                            )}
+                            {c.hasActiveOrder ? (
+                              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                                En reparto ahora
+                              </span>
+                            ) : c.isOnline ? (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                En línea
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-medium text-ink-muted bg-surface-subtle px-2 py-0.5 rounded-full border border-border">
+                                Desconectado
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-ink-muted flex items-center gap-3 flex-wrap">
+                            <span>Vehículo: <strong className="text-ink font-semibold">{c.vehicleType === 'motorcycle' ? 'Moto lineal' : c.vehicleType === 'mototaxi' ? 'Mototaxi' : 'Bicicleta'}</strong></span>
+                            <span>Placa: <strong className="text-ink font-semibold">{c.plate || 'Sin placa'}</strong></span>
+                            <span>Zona: <strong className="text-ink font-semibold">{c.zoneName || 'Tingo María'}</strong></span>
+                          </div>
+                          <div className="text-[11px] text-ink-light flex items-center gap-3 flex-wrap pt-0.5">
+                            <a
+                              href={`tel:${c.phone}`}
+                              className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>{c.phone}</span>
+                            </a>
+                            <span className="text-ink-muted">·</span>
+                            <span>Entregas a tu tienda: <strong className="text-ink font-bold">{c.deliveredOrdersCount || 0}</strong> pedidos</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                        {c.isAssociated ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={courierActionBusy}
+                            onClick={() => handleRemoveCourier(c.courierUserId)}
+                            className="min-h-[32px] px-3 text-xs font-bold rounded-lg border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1.5"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Desvincular</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            disabled={courierActionBusy}
+                            onClick={() => handleAssociateCourier(c.courierUserId)}
+                            className="min-h-[32px] px-3 text-xs font-bold rounded-lg flex items-center gap-1.5"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Vincular</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCouriersModalOpen(false)}
+              className="text-xs font-semibold px-4 rounded-xl min-h-[36px]"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Modal Historial de Delivery */}
+      <Dialog
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        title="Historial de Delivery y Despachos"
+        maxWidth="3xl"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
+            <p className="text-xs text-ink-muted leading-relaxed">
+              Consulta todos los pedidos despachados con repartidor asignado, detalle de productos, tiempos y confirmación de entrega en Tingo María.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryRefreshKey(k => k + 1)}
+              disabled={historyResource.loading}
+              className="text-[11px] h-7 px-2.5 flex items-center gap-1 text-ink-muted hover:text-ink flex-shrink-0"
+            >
+              <RefreshCw className={`w-3 h-3 ${historyResource.loading ? 'animate-spin' : ''}`} />
+              <span>Actualizar historial</span>
+            </Button>
+          </div>
+
+          <RemoteState loading={historyResource.loading} error={historyResource.error} retry={historyResource.reload} />
+
+          {!historyResource.loading && !historyResource.error && (
+            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+              {(!historyResource.data || historyResource.data.length === 0) ? (
+                <div className="text-center py-10 bg-surface-subtle rounded-xl border border-dashed border-border p-6">
+                  <History className="w-8 h-8 text-ink-muted mx-auto mb-2" />
+                  <p className="text-xs font-bold text-ink">No hay historial de repartos registrado aún</p>
+                  <p className="text-[11px] text-ink-muted mt-1">
+                    Cuando asignes repartidores a tus órdenes y se despachen los productos, verás aquí el registro completo de tiempos y entregas.
+                  </p>
+                </div>
+              ) : (
+                historyResource.data.map((record) => (
+                  <div
+                    key={record.assignmentId}
+                    className="p-3.5 rounded-xl border border-border bg-surface hover:border-field transition-all space-y-3 shadow-xs"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/60">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-extrabold text-ink tracking-tight font-mono bg-surface-subtle px-2 py-0.5 rounded border border-border">
+                          {record.orderCode}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                          record.assignmentStatus === 'delivered'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : record.assignmentStatus === 'picked_up'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : record.assignmentStatus === 'accepted'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
+                          {record.assignmentStatus === 'delivered' ? '✓ Entregado al cliente' :
+                           record.assignmentStatus === 'picked_up' ? ' En camino al destino' :
+                           record.assignmentStatus === 'accepted' ? '⏳ Esperando recojo en tienda' :
+                           ' Cancelado'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-ink-muted">
+                        Asignado: {formatDateTime(record.acceptedAt)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* Motorizado */}
+                      <div className="bg-surface-subtle p-2.5 rounded-lg border border-border/80 space-y-1">
+                        <div className="flex items-center gap-1.5 text-ink font-bold text-xs">
+                          <Bike className="w-3.5 h-3.5 text-primary" />
+                          <span>Repartidor: {record.courier.fullName}</span>
+                        </div>
+                        <p className="text-[11px] text-ink-muted">
+                          {record.courier.vehicleType === 'motorcycle' ? 'Moto lineal' : record.courier.vehicleType === 'mototaxi' ? 'Mototaxi' : 'Bicicleta'} · Placa: <strong>{record.courier.plate || 'S/P'}</strong>
+                        </p>
+                        <p className="text-[11px] text-primary font-medium">
+                          Cel: {record.courier.phone}
+                        </p>
+                      </div>
+
+                      {/* Cliente / Destino */}
+                      <div className="bg-surface-subtle p-2.5 rounded-lg border border-border/80 space-y-1">
+                        <div className="flex items-center gap-1.5 text-ink font-bold text-xs">
+                          <MapPin className="w-3.5 h-3.5 text-primary" />
+                          <span>Cliente: {record.customer.recipientName}</span>
+                        </div>
+                        <p className="text-[11px] text-ink-muted">
+                          {record.customer.street} #{record.customer.streetNumber} {record.customer.reference ? `(${record.customer.reference})` : ''}
+                        </p>
+                        <p className="text-[11px] text-ink-light">
+                          Zona: <strong>{record.customer.zoneName || 'Tingo María'}</strong> · Cel: {record.customer.phone}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Productos del pedido */}
+                    <div className="space-y-1 bg-surface-subtle/50 p-2.5 rounded-lg border border-border/60">
+                      <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Productos Asignados:</p>
+                      <div className="space-y-1">
+                        {record.items.map((it, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs text-ink">
+                            <span className="font-medium">
+                              {it.quantity}x {it.productName} {it.variantName && it.variantName !== 'Estándar' ? `(${it.variantName})` : ''}
+                            </span>
+                            <span className="font-semibold text-ink-light tabular-nums">
+                              {formatCents(it.unitPriceCents * it.quantity)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tiempos y Cobros */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-[11px] text-ink-muted">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {record.pickedUpAt && (
+                          <span>Retiro: <strong className="text-ink font-medium">{formatDateTime(record.pickedUpAt)}</strong></span>
+                        )}
+                        {record.deliveredAt && (
+                          <span>Entrega: <strong className="text-emerald-700 font-bold">{formatDateTime(record.deliveredAt)}</strong></span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 self-end sm:self-center">
+                        <span>Envío repartidor: <strong className="text-ink font-bold">{formatCents(record.agreedFeeCents)}</strong></span>
+                        <span>Total cobrado: <strong className="text-primary font-extrabold text-xs">{formatCents(record.totalCents)}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsHistoryModalOpen(false)}
+              className="text-xs font-semibold px-4 rounded-xl min-h-[36px]"
+            >
+              Cerrar
             </Button>
           </div>
         </div>
