@@ -184,7 +184,8 @@ export const ProductDetailPage: React.FC = () => {
 function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Product; merchant: StorefrontMerchant }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, activeRole } = useAuthStore();
+  const isMerchant = activeRole === 'comercio';
   const favorite = useCatalogFavorite('product', initialProduct.id);
   const isFavorite = favorite.isFavorite;
   const [actionError, setActionError] = useState('');
@@ -263,6 +264,10 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
   const selectedVariantObj = product.variants?.find((v) => v.id === selectedVariantId);
 
   const handleAddToCart = () => {
+    if (isMerchant) {
+      setActionError('Modo tienda (Solo lectura): Las cuentas de comercio no pueden agregar productos al carrito ni realizar compras.');
+      return false;
+    }
     if (!initialProduct.source || !selectedSku || !canBuy) return false;
     try { addCatalogProduct(initialProduct.source, selectedSku.id, selectedQuantity); setActionError(''); }
     catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo agregar al carrito.'); return false; }
@@ -807,26 +812,48 @@ function ProductDetailContent({ initialProduct, merchant }: { initialProduct: Pr
             </div>
 
             {/* Primary Action Buttons */}
-            <div className="space-y-2.5 pt-2">
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={!canBuy}
-                className="w-full py-3.5 px-4 rounded-xl bg-gray-950 hover:bg-black text-white text-sm font-black shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Comprar ahora</span>
-              </button>
+            {isMerchant ? (
+              <div className="space-y-2.5 pt-2">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1">
+                  <p className="text-xs font-bold text-emerald-950 flex items-center justify-center gap-1.5">
+                    <Store className="w-4 h-4 text-primary" />
+                    <span>Vista Previa de Tienda</span>
+                    <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">Solo lectura</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-800">
+                    Estás visualizando cómo se muestra este producto a los clientes. Las cuentas de comercio no realizan compras ni reservas.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl bg-gray-100 text-gray-400 text-xs font-bold border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>Reserva / Compra no disponible en modo tienda</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={!canBuy}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gray-950 hover:bg-black text-white text-sm font-black shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Comprar ahora</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={!canBuy}
-                className="w-full py-3 px-4 rounded-xl bg-[#f2f4f7] hover:bg-gray-200 text-gray-950 border border-gray-300/80 text-xs font-black transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ShoppingCart className="w-4 h-4 text-gray-900 stroke-[2.2]" />
-                <span>Agregar al carrito</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!canBuy}
+                  className="w-full py-3 px-4 rounded-xl bg-[#f2f4f7] hover:bg-gray-200 text-gray-950 border border-gray-300/80 text-xs font-black transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ShoppingCart className="w-4 h-4 text-gray-900 stroke-[2.2]" />
+                  <span>Agregar al carrito</span>
+                </button>
+              </div>
+            )}
 
             {/* Official Store Badge & Reputation */}
             <div className="pt-4 border-t border-gray-100 space-y-3 text-xs">

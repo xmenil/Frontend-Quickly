@@ -95,6 +95,7 @@ export function useCheckout() {
   useEffect(() => {
     if (auth.sessionStatus !== 'ready') return;
     if (!auth.isAuthenticated || !userId) navigate('/login', { state: { from: '/checkout' }, replace: true });
+    else if (auth.activeRole === 'comercio') navigate('/comercio/tienda', { replace: true });
     else if (!selectedItems.length && !pending && !invalidIntent && !submissionRef.current && !recordedPurchaseId) navigate('/carrito', { replace: true });
   }, [auth.sessionStatus, auth.isAuthenticated, userId, selectedItems.length, pending, invalidIntent, recordedPurchaseId, navigate]);
   useEffect(() => {
@@ -127,6 +128,9 @@ export function useCheckout() {
   function selectPaymentMethod(method: PaymentMethod) {
     if (checkoutLocked || method !== 'efectivo' || !cashAvailable) return;
     setPaymentMethod(method); setReviewedPaymentKey(''); setOrderError(null);
+    if (!cashAmountGivenSoles && quote?.totalCents) {
+      setCashAmountGivenSoles(String(quote.totalCents / 100));
+    }
   }
   function setCashAmount(value: string) {
     if (checkoutLocked || multi) return;
@@ -195,7 +199,14 @@ export function useCheckout() {
   const products = quote?.stores.flatMap(store => store.items.map(line => ({ id: selectedItems.find(item => item.skuId === line.skuId)?.productId, name: line.productName }))) || [];
   const paymentOptions = [
     { method: 'yape_plin' as const, label: 'Yape / Plin', description: 'El pago digital todavía no está habilitado.', icon: Smartphone, available: false },
-    { method: 'efectivo' as const, label: 'Efectivo contra entrega', description: methods.error || (methods.loading ? 'Estamos comprobando la disponibilidad del pago.' : cashAvailable ? 'Indica con cuánto pagarás al recibir el pedido.' : cashMethod?.unavailableReason || 'El efectivo no está disponible para este pedido.'), icon: Banknote, available: !!cashAvailable },
+    {
+      method: 'efectivo' as const,
+      label: 'Efectivo contra entrega',
+      sublabel: 'Reserva de compra (Sin tarjeta ni adelanto)',
+      description: methods.error || (methods.loading ? 'Estamos comprobando la disponibilidad del pago.' : cashAvailable ? 'Reserva tu pedido sin tarjeta. Paga en efectivo el monto exacto al recibir tu entrega o directamente en la tienda.' : cashMethod?.unavailableReason || 'El efectivo no está disponible para este pedido.'),
+      icon: Banknote,
+      available: !!cashAvailable,
+    },
     { method: 'tarjeta' as const, label: 'Tarjeta de débito o crédito', description: 'El pago con tarjeta todavía no está habilitado.', icon: CreditCard, available: false },
   ];
   return { ...auth, currentStep, userAddresses: addresses, zones, selectedAddressId, selectedAddress, selectedZone,

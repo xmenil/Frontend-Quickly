@@ -1,6 +1,7 @@
 import {create} from 'zustand';
 import {z} from 'zod';
 import type { CatalogProduct } from '../services/api/catalogApi';
+import { useAuthStore } from './authStore';
 const key='quickly_cart_real_v2';
 export const intent=z.object({skuId:z.string().uuid(),productId:z.string().uuid(),storeId:z.string().uuid(),quantity:z.number().int().min(1).max(10000),note:z.string().max(500),selected:z.boolean(),revision:z.string().uuid()});
 export type CartIntent=z.infer<typeof intent>;
@@ -17,6 +18,9 @@ export const useRealCartStore=create<State>((set,get)=>{
 
 /** All public catalog entry points preserve the actual product / store / SKU relation. */
 export function addCatalogProduct(product: CatalogProduct, skuId: string, quantity: number, note?: string) {
+  if (useAuthStore.getState().activeRole === 'comercio') {
+    throw new Error('Modo tienda (Solo lectura): Las cuentas de comercio no pueden agregar productos al carrito ni realizar compras.');
+  }
   const sku = product.skus.find(row => row.id === skuId);
   const state = useRealCartStore.getState();
   const existing = state.items.find(row => row.skuId === skuId)?.quantity || 0;

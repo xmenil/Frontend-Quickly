@@ -138,7 +138,18 @@ export const CheckoutPage: React.FC = () => {
                       checked={paymentMethod === option.method} onChange={() => selectPaymentMethod(option.method)}
                       className="mt-1 h-5 w-5 shrink-0 accent-primary" />
                     <option.icon className="mt-1 h-5 w-5 shrink-0 text-ink-muted" aria-hidden="true" />
-                    <span className="min-w-0 space-y-1"><span className="block text-sm font-semibold text-ink">{option.label}{!option.available && <Badge variant="warning">No disponible</Badge>}</span><span className="block text-xs text-ink-light">{option.description}</span></span>
+                    <span className="min-w-0 space-y-1">
+                      <span className="block text-sm font-semibold text-ink">
+                        {option.label}
+                        {!option.available && <Badge variant="warning">No disponible</Badge>}
+                      </span>
+                      {option.sublabel && (
+                        <span className="block text-xs font-bold text-emerald-800">
+                          {option.sublabel}
+                        </span>
+                      )}
+                      <span className="block text-xs text-ink-light">{option.description}</span>
+                    </span>
                   </label>
                 ))}
               </fieldset>
@@ -147,6 +158,12 @@ export const CheckoutPage: React.FC = () => {
 
               {paymentMethod === 'efectivo' && (
                 <div className="space-y-4 border-t border-border pt-4">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      <strong>Reserva asegurada:</strong> Tu pedido queda reservado con el comercio sin necesidad de tarjeta. Pagas en efectivo al recibir tu entrega o al coordinar en tienda.
+                    </span>
+                  </div>
                   <h3 className="text-sm font-semibold text-ink">Prepara el efectivo y tu vuelto</h3>
                   {multi && <p className="rounded-xl border border-info-border bg-info-soft p-3 text-sm text-info-strong">Cada tienda cobrará su propio pedido. Prepara el importe exacto de cada entrega que aparece en el resumen.</p>}
                   <div className="flex flex-wrap gap-2" role="group" aria-label="Montos rápidos de efectivo">
@@ -237,7 +254,7 @@ export const CheckoutPage: React.FC = () => {
               <footer className="space-y-3 border-t border-border pt-4">
                 <Button type="button" variant="primary" className="min-h-12 w-full flex-wrap gap-2 text-sm" isLoading={isSubmitting}
                   disabled={!paymentCompleted || checkoutLocked} onClick={handleConfirmOrder}>
-                  <span>{isSubmitting ? 'Registrando pedido…' : recordedPurchaseId ? 'Pedido registrado' : 'Confirmar pedido'}</span><span aria-hidden="true">·</span><span className="tabular-nums">{formatCents(cartCalculations.grandTotalCents)}</span>
+                  <span>{isSubmitting ? 'Registrando pedido…' : recordedPurchaseId ? 'Pedido registrado' : 'Confirmar pedido (Reserva)'}</span><span aria-hidden="true">·</span><span className="tabular-nums">{formatCents(cartCalculations.grandTotalCents)}</span>
                 </Button>
                 <Button type="button" variant="ghost" size="sm" className="w-full text-ink-light" onClick={() => goToStep(2)}>Volver a pago</Button>
                 <p className="text-xs text-ink-muted">Podrás consultar el estado del pedido después de registrarlo.</p>

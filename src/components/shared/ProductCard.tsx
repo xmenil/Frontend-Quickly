@@ -6,7 +6,8 @@ import { addCatalogProduct } from '../../store/realCartStore';
 import { purchasableSku } from '../../domain/catalogRules';
 import { formatCents } from '../../lib/currency';
 import { getCategoryFallbackSvg } from '../../lib/imageFallback';
-import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag, BadgeCheck, Building2 } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
+import { ShoppingCart, Heart, AlertCircle, Sparkles, Check, Utensils, Coffee, Pill, ShoppingBag, BadgeCheck, Building2, Eye } from 'lucide-react';
 
 interface ProductCardProps<T extends Product> {
   product: T;
@@ -28,6 +29,9 @@ export function ProductCard<T extends Product>({
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
+  const { activeRole } = useAuthStore();
+  const isMerchant = activeRole === 'comercio';
+
   const isFavorite = favorite.isFavorite;
   const isOutOfStock = product.stock <= 0 || !product.isAvailable;
   const isLowStock = product.stock > 0 && product.stock <= 3;
@@ -46,6 +50,10 @@ export function ProductCard<T extends Product>({
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isMerchant) {
+      if (onOpenDetail) onOpenDetail(product); else navigate(`/producto/${product.id}`);
+      return;
+    }
     if (isOutOfStock) return;
 
     if (product.hasVariants || !product.source) {
@@ -181,19 +189,24 @@ export function ProductCard<T extends Product>({
 
           <button
             type="button"
-            disabled={isOutOfStock}
+            disabled={isOutOfStock && !isMerchant}
             onClick={handleQuickAdd}
             className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
               isAdded
                 ? 'bg-emerald-600 text-white'
+                : isMerchant
+                ? 'bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-primary border border-gray-200'
                 : !isOutOfStock
                 ? 'bg-primary hover:bg-primary-hover text-white shadow-2xs active:scale-95'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
-            aria-label="Agregar al pedido"
+            aria-label={isMerchant ? 'Ver vista previa del producto' : 'Agregar al pedido'}
+            title={isMerchant ? 'Vista previa (Modo tienda)' : undefined}
           >
             {isAdded ? (
               <Check className="w-3.5 h-3.5 stroke-[3]" />
+            ) : isMerchant ? (
+              <Eye className="w-3.5 h-3.5" />
             ) : (
               <ShoppingCart className="w-3.5 h-3.5" />
             )}

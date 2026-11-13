@@ -30,6 +30,8 @@ import {
   Tag,
   Sparkles,
   HelpCircle,
+  ExternalLink,
+  Eye,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -161,15 +163,17 @@ export const Navbar: React.FC = () => {
                   </Link>
                 )}
 
-                {/* Wishlist / Favoritos (Ícono corazón) */}
-                <Link
-                  to="/cliente/favoritos"
-                  className="p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
-                  aria-label="Mis favoritos"
-                  title="Mis favoritos"
-                >
-                  <Heart className="w-5 h-5 stroke-[2]" />
-                </Link>
+                {/* Wishlist / Favoritos (Solo clientes) */}
+                {activeRole !== 'comercio' && (
+                  <Link
+                    to="/cliente/favoritos"
+                    className="p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                    aria-label="Mis favoritos"
+                    title="Mis favoritos"
+                  >
+                    <Heart className="w-5 h-5 stroke-[2]" />
+                  </Link>
+                )}
 
                 {/* Notifications Bell */}
                 <div className="relative" ref={notificationsRef}>
@@ -220,19 +224,21 @@ export const Navbar: React.FC = () => {
                   )}
                 </div>
 
-                {/* Cart Button with Count Badge */}
-                <Link
-                  to="/carrito"
-                  className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
-                  aria-label={`Ver carrito con ${cartCount} productos`}
-                >
-                  <ShoppingCart className="w-5 h-5 stroke-[2]" />
-                  {cartCount > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+                {/* Cart Button with Count Badge (Solo clientes) */}
+                {activeRole !== 'comercio' && (
+                  <Link
+                    to="/carrito"
+                    className="relative p-2 rounded-xl text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                    aria-label={`Ver carrito con ${cartCount} productos`}
+                  >
+                    <ShoppingCart className="w-5 h-5 stroke-[2]" />
+                    {cartCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
 
                 {/* User Account Button ("Hola, Inicia sesión ⌵" o "Hola, [Nombre] ⌵") */}
                 {isAuthenticated && currentUser ? (
@@ -267,71 +273,111 @@ export const Navbar: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-0.5 text-xs text-gray-700">
-                          <Link
-                            to="/cliente/pedidos"
-                            onClick={() => setShowProfileMenu(false)}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
-                          >
-                            <ShoppingBag className="w-4 h-4 text-gray-400" />
-                            Mis Compras
-                          </Link>
-                          <Link
-                            to="/cliente/direcciones"
-                            onClick={() => setShowProfileMenu(false)}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
-                          >
-                            <MapPin className="w-4 h-4 text-gray-400" />
-                            Direcciones guardadas
-                          </Link>
-                          <Link
-                            to="/cliente/favoritos"
-                            onClick={() => setShowProfileMenu(false)}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
-                          >
-                            <Heart className="w-4 h-4 text-gray-400" />
-                            Mis Favoritos
-                          </Link>
-                          <Link
-                            to="/cliente/perfil"
-                            onClick={() => setShowProfileMenu(false)}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
-                          >
-                            <User className="w-4 h-4 text-gray-400" />
-                            Mi Perfil
-                          </Link>
-
-                          {roles?.includes('admin') && (
-                            <Link
-                              to="/admin/resumen"
-                              onClick={() => setShowProfileMenu(false)}
-                              className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold"
-                            >
-                              <ShieldCheck className="w-4 h-4 text-purple-700" />
-                              Panel Administrador
-                            </Link>
-                          )}
-                          {roles?.includes('comercio') && (
+                        {/* Si la cuenta activa es de comercio, solo dar acceso a su panel y ver perfil como cliente */}
+                        {activeRole === 'comercio' ? (
+                          <div className="space-y-1 text-xs text-gray-700">
                             <Link
                               to="/comercio/tienda"
                               onClick={() => setShowProfileMenu(false)}
-                              className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 text-primary hover:bg-emerald-100 font-bold"
+                              className="flex items-center gap-2 p-2 rounded-xl bg-emerald-50 text-primary hover:bg-emerald-100 font-bold border border-emerald-200"
                             >
                               <Store className="w-4 h-4 text-primary" />
                               Panel Mi Tienda
                             </Link>
-                          )}
-                          {!roles?.includes('comercio') && (
                             <Link
-                              to="/registro/comercio"
+                              to="/comercio/pedidos"
                               onClick={() => setShowProfileMenu(false)}
-                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium text-primary"
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
                             >
-                              <Store className="w-4 h-4 text-primary" />
-                              Afiliar mi Tienda (Vender)
+                              <ShoppingBag className="w-4 h-4 text-gray-400" />
+                              Pedidos de clientes
                             </Link>
-                          )}
-                        </div>
+                            {currentUser?.merchantId ? (
+                              <Link
+                                to={`/comercio/${currentUser.merchantId}`}
+                                onClick={() => setShowProfileMenu(false)}
+                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-emerald-50 font-medium text-emerald-800"
+                              >
+                                <Eye className="w-4 h-4 text-emerald-600" />
+                                Ver mi tienda como cliente
+                              </Link>
+                            ) : null}
+                            <Link
+                              to="/comercio/tienda"
+                              onClick={() => setShowProfileMenu(false)}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                            >
+                              <User className="w-4 h-4 text-gray-400" />
+                              Perfil del comercio
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5 text-xs text-gray-700">
+                            <Link
+                              to="/cliente/pedidos"
+                              onClick={() => setShowProfileMenu(false)}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                            >
+                              <ShoppingBag className="w-4 h-4 text-gray-400" />
+                              Mis Compras
+                            </Link>
+                            <Link
+                              to="/cliente/direcciones"
+                              onClick={() => setShowProfileMenu(false)}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                            >
+                              <MapPin className="w-4 h-4 text-gray-400" />
+                              Direcciones guardadas
+                            </Link>
+                            <Link
+                              to="/cliente/favoritos"
+                              onClick={() => setShowProfileMenu(false)}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                            >
+                              <Heart className="w-4 h-4 text-gray-400" />
+                              Mis Favoritos
+                            </Link>
+                            <Link
+                              to="/cliente/perfil"
+                              onClick={() => setShowProfileMenu(false)}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium"
+                            >
+                              <User className="w-4 h-4 text-gray-400" />
+                              Mi Perfil
+                            </Link>
+
+                            {roles?.includes('admin') && (
+                              <Link
+                                to="/admin/resumen"
+                                onClick={() => setShowProfileMenu(false)}
+                                className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold"
+                              >
+                                <ShieldCheck className="w-4 h-4 text-purple-700" />
+                                Panel Administrador
+                              </Link>
+                            )}
+                            {roles?.includes('comercio') && (
+                              <Link
+                                to="/comercio/tienda"
+                                onClick={() => setShowProfileMenu(false)}
+                                className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 text-primary hover:bg-emerald-100 font-bold"
+                              >
+                                <Store className="w-4 h-4 text-primary" />
+                                Panel Mi Tienda
+                              </Link>
+                            )}
+                            {!roles?.includes('comercio') && (
+                              <Link
+                                to="/registro/comercio"
+                                onClick={() => setShowProfileMenu(false)}
+                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 font-medium text-primary"
+                              >
+                                <Store className="w-4 h-4 text-primary" />
+                                Afiliar mi Tienda (Vender)
+                              </Link>
+                            )}
+                          </div>
+                        )}
 
                         <div className="pt-1 mt-1 border-t border-gray-100">
                           <button
@@ -418,13 +464,15 @@ export const Navbar: React.FC = () => {
                 <span>Moda</span>
               </Link>
 
-              <Link
-                to="/cliente/pedidos"
-                className="flex items-center gap-1.5 text-white hover:text-emerald-100 transition-colors whitespace-nowrap py-1 cursor-pointer"
-              >
-                <Bike className="w-3.5 h-3.5" />
-                <span>Sigue tu compra</span>
-              </Link>
+              {activeRole !== 'comercio' && (
+                <Link
+                  to="/cliente/pedidos"
+                  className="flex items-center gap-1.5 text-white hover:text-emerald-100 transition-colors whitespace-nowrap py-1 cursor-pointer"
+                >
+                  <Bike className="w-3.5 h-3.5" />
+                  <span>Sigue tu compra</span>
+                </Link>
+              )}
 
               <Link
                 to="/cliente/ayuda"
@@ -543,52 +591,94 @@ export const Navbar: React.FC = () => {
                 <h3 className="px-2 py-1 text-[11px] font-black text-gray-900 uppercase tracking-wider">
                   Programas y servicios
                 </h3>
-                <Link
-                  to="/cliente/favoritos"
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-gray-400" />
-                    <span>Mis Favoritos</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </Link>
-                {isAuthenticated && (
+                {activeRole === 'comercio' ? (
                   <>
                     <Link
-                      to="/cliente/pedidos"
+                      to="/comercio/tienda"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 text-primary font-bold transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4 text-primary" />
+                        <span>Panel Mi Tienda</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      to="/comercio/pedidos"
                       onClick={() => setShowMobileDrawer(false)}
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <ShoppingBag className="w-4 h-4 text-gray-400" />
-                        <span>Mis Compras</span>
+                        <span>Pedidos de clientes</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400" />
                     </Link>
+                    {currentUser?.merchantId ? (
+                      <Link
+                        to={`/comercio/${currentUser.merchantId}`}
+                        onClick={() => setShowMobileDrawer(false)}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-emerald-50 text-emerald-800 font-medium transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-emerald-600" />
+                          <span>Ver mi tienda como cliente</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </Link>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
                     <Link
-                      to="/cliente/direcciones"
+                      to="/cliente/favoritos"
                       onClick={() => setShowMobileDrawer(false)}
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span>Direcciones guardadas</span>
+                        <Heart className="w-4 h-4 text-gray-400" />
+                        <span>Mis Favoritos</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400" />
                     </Link>
-                    <Link
-                      to="/cliente/perfil"
-                      onClick={() => setShowMobileDrawer(false)}
-                      className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span>Mi Perfil</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </Link>
+                    {isAuthenticated && (
+                      <>
+                        <Link
+                          to="/cliente/pedidos"
+                          onClick={() => setShowMobileDrawer(false)}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ShoppingBag className="w-4 h-4 text-gray-400" />
+                            <span>Mis Compras</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </Link>
+                        <Link
+                          to="/cliente/direcciones"
+                          onClick={() => setShowMobileDrawer(false)}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span>Direcciones guardadas</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </Link>
+                        <Link
+                          to="/cliente/perfil"
+                          onClick={() => setShowMobileDrawer(false)}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span>Mi Perfil</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </Link>
+                      </>
+                    )}
                   </>
                 )}
                 <Link

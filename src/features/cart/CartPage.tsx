@@ -37,7 +37,7 @@ interface StoreGroup {
 
 export const CartPage: React.FC = () => {
   const { items, notice, update, remove, clear, selectStoreItems } = useRealCartStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, activeRole } = useAuthStore();
   const navigate = useNavigate();
 
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -134,6 +134,28 @@ export const CartPage: React.FC = () => {
       navigate('/checkout');
     }
   };
+
+  if (activeRole === 'comercio') {
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-16 text-center space-y-4">
+        <div className="w-16 h-16 bg-emerald-100 text-primary rounded-full flex items-center justify-center mx-auto shadow-sm">
+          <Store className="w-8 h-8" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">Modo Comercio Activo</h1>
+        <p className="text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
+          Has iniciado sesión con una cuenta de comercio. Las tiendas gestionan sus publicaciones y pedidos desde su propio panel y no realizan pedidos como clientes.
+        </p>
+        <div className="pt-4 flex flex-wrap justify-center gap-3">
+          <Button variant="primary" onClick={() => navigate('/comercio/tienda')}>
+            Ir a mi Panel de Tienda
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/')}>
+            Ver Catálogo General
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

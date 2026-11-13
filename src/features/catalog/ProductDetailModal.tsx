@@ -7,6 +7,7 @@ import { preferredSku } from '../../domain/catalogRules';
 import type { Product } from '../../domain/types';
 import { catalogApi, CatalogProduct, imageUrl, money } from '../../services/api/catalogApi';
 import { useCatalogFavorite } from './useCatalogFavorite';
+import { useAuthStore } from '../../store/authStore';
 import { Plus, Minus, AlertCircle, ShoppingCart, Loader2, Store, Check, Heart } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -31,6 +32,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [note, setNote] = useState('');
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const { activeRole } = useAuthStore();
+  const isMerchant = activeRole === 'comercio';
 
   const targetId = propProduct?.id || propProductId;
   const favorite = useCatalogFavorite('product', targetId || '');
@@ -85,6 +88,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const totalPrice = unitPrice * quantity;
 
   const handleAddToCart = () => {
+    if (isMerchant) {
+      setErrorMessage('Modo tienda (Solo lectura): Las cuentas de comercio no pueden agregar productos al carrito ni realizar compras.');
+      return;
+    }
     if (!currentProduct || !selectedSku || isOutOfStock) return;
 
     try {
@@ -285,28 +292,42 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
 
             {/* Add Button */}
-            <Button
-              type="button"
-              disabled={isOutOfStock || stock < 1}
-              onClick={handleAddToCart}
-              variant="primary"
-              size="lg"
-              className="flex-1 shadow-md"
-            >
-              {addedAnimation ? (
-                <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 stroke-[3]" />
-                  <span>¡Agregado al carrito!</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" />
-                  <span>
-                    {isOutOfStock ? 'Sin existencias' : `Agregar • ${money(totalPrice)}`}
-                  </span>
-                </div>
-              )}
-            </Button>
+            {isMerchant ? (
+              <div className="flex-1 space-y-1">
+                <Button
+                  type="button"
+                  disabled
+                  variant="outline"
+                  size="lg"
+                  className="w-full text-xs font-bold text-gray-500 bg-gray-100 cursor-not-allowed border-gray-200"
+                >
+                  Vista previa (Modo tienda)
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                disabled={isOutOfStock || stock < 1}
+                onClick={handleAddToCart}
+                variant="primary"
+                size="lg"
+                className="flex-1 shadow-md"
+              >
+                {addedAnimation ? (
+                  <div className="flex items-center gap-2">
+                    <Check className="w-5 h-5 stroke-[3]" />
+                    <span>¡Agregado al carrito!</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>
+                      {isOutOfStock ? 'Sin existencias' : `Agregar • ${money(totalPrice)}`}
+                    </span>
+                  </div>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       ) : null}
